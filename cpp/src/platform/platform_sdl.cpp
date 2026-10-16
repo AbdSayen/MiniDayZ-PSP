@@ -127,6 +127,7 @@ public:
     out.reload = keys[SDL_SCANCODE_R] != 0;
     out.bag = keys[SDL_SCANCODE_TAB] != 0;
     out.run = keys[SDL_SCANCODE_LSHIFT] != 0;
+    out.crouch = keys[SDL_SCANCODE_LCTRL] != 0 || keys[SDL_SCANCODE_RCTRL] != 0;
     out.pause = keys[SDL_SCANCODE_P] != 0;
     out.confirm = keys[SDL_SCANCODE_RETURN] != 0;
     out.cancel = keys[SDL_SCANCODE_ESCAPE] != 0;

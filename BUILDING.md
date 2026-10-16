@@ -30,22 +30,27 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 |-----|--------|
 | WASD / arrows | Move |
 | Shift | Run |
+| Ctrl | Crouch (slower, quieter vs zeds) |
 | Z / Space | Attack / confirm |
-| E | Loot / bunker / mount car·boat / bush forage / fish |
-| C | Use item (food/med/NVG/flare) / wear / gas / toolbox |
-| R | Craft (first matching recipe) / cook near fire |
-| F | Throw F1 grenade (or stick) |
+| E | Loot / bunker / mount / chop tree (axe) / fish / building search / forage |
+| C | Use item (food/med/NVG/flare/morphine/energy) / wear armor·bag |
+| R | Craft (bow/arrows/bag/molotov…) / cook near fire |
+| F | Throw F1 / molotov / stick |
 | C + Battery | Refill torch/NVG charge |
 | C + Tent | Place shelter (long warmth) |
-| C + Gasmask | Wear (infection resist) |
-| F + Molotov | Throw firebomb (leaves fire) |
+| C + Duct tape | Reinforce melee (less break chance) |
+| C + Bear trap / Barbed wire | Place trap / slow zone |
+| C + Cleaning / Sewing kit | Clear jam / dry·patch gear |
+| C + Whiskey | Drink (warmth + short adrenaline) |
+| C + Radio | Airdrop ETA (uses battery) |
+| C + Gasmask/Headlamp | Wear |
 | G | Drop one from equipped slot |
-| V | Mag reload stub (guns) |
+| V | Reload mag from reserve ammo |
 | T | Place campfire (if kit) / else toggle torch |
 | Q / X / mousewheel | Cycle hotbar |
 | Tab | Hold: inventory list |
 | 1–8 | Equip hotbar slot |
-| F5 / F9 | Save / load (`save.mdaz` v3) |
+| F5 / F9 | Save / load (`save.mdaz` v6) |
 | P | Pause |
 | Enter | New game from menu |
 | 1/2/3 (menu) | Novice / Regular / Veteran |

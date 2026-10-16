@@ -28,6 +28,12 @@ int test_inventory() {
   }
 
   mdaz::Inventory inv;
+  if (inv.capacity() != 12) {
+    std::printf("FAIL base capacity %d\n", inv.capacity());
+    ++fail;
+  } else {
+    std::printf("OK   base bag capacity 12\n");
+  }
   if (!inv.add_item(1, 1, db) || inv.slot(0).id != 1) {
     std::printf("FAIL add_item\n");
     ++fail;
@@ -37,15 +43,31 @@ int test_inventory() {
 
   mdaz::SurvivalState surv;
   surv.food = 10.f;
-  if (!inv.use_consumable(0, surv, db)) {
-    std::printf("FAIL use food\n");
-    ++fail;
-  } else if (!(surv.food > 10.f)) {
-    std::printf("FAIL food not restored\n");
+  // Canned food needs a knife
+  if (inv.use_consumable(0, surv, db)) {
+    std::printf("FAIL canned without knife should fail\n");
     ++fail;
   } else {
-    std::printf("OK   use food restores hunger\n");
+    std::printf("OK   canned needs knife\n");
   }
+  {
+    mdaz::ItemDatabase knifedb;
+    knifedb.load_from_json_string(
+      "{\"items\":[{\"id\":1,\"name\":\"Canned beans\"},{\"id\":42,\"name\":\"Hunter knife\"}]}");
+    mdaz::Inventory kinv;
+    kinv.add_item(1, 1, knifedb);
+    kinv.add_item(42, 1, knifedb);
+    mdaz::SurvivalState ks;
+    ks.food = 10.f;
+    if (!kinv.use_consumable(0, ks, knifedb) || !(ks.food > 10.f)) {
+      std::printf("FAIL canned with knife\n");
+      ++fail;
+    } else {
+      std::printf("OK   use food restores hunger\n");
+    }
+  }
+  // Clear canned for bandage tests — re-add nothing on inv slot0 may still have beans
+  inv.remove_at(0, 1);
 
   inv.add_item(18, 1, db);
   surv.bleeding = 4.f;
@@ -104,6 +126,21 @@ int test_inventory() {
       } else {
         std::printf("OK   morphine stops bleed\n");
       }
+    }
+  }
+
+  {
+    mdaz::ItemDatabase bagdb;
+    bagdb.load_from_json_string(
+      "{\"items\":[{\"id\":454,\"name\":\"Improvised bag\"},{\"id\":450,\"name\":\"Taloon backpack\"}]}");
+    mdaz::Inventory binv;
+    binv.add_item(454, 1, bagdb);
+    binv.wear_clothing(0, bagdb);
+    if (binv.capacity() != 15) {
+      std::printf("FAIL improvised bag cap %d\n", binv.capacity());
+      ++fail;
+    } else {
+      std::printf("OK   improvised bag capacity 15\n");
     }
   }
 

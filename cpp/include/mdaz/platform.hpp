@@ -16,6 +16,7 @@ struct InputState {
   bool reload;
   bool reload_pressed;
   bool run;
+  bool crouch; // Ctrl — quieter / slower
   bool pause;
   bool pause_pressed;
   bool confirm;
@@ -36,7 +37,7 @@ struct InputState {
       attack(false), attack_pressed(false),
       interact(false), interact_pressed(false),
       inventory(false), inventory_pressed(false),
-      reload(false), reload_pressed(false), run(false),
+      reload(false), reload_pressed(false), run(false), crouch(false),
       pause(false), pause_pressed(false),
       confirm(false), confirm_pressed(false),
       cancel(false), save_pressed(false), load_pressed(false),

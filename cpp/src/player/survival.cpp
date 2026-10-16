@@ -149,7 +149,12 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
     }
   }
 
-  if (infected) blood -= 0.03f * dt;
+  if (infected) {
+    blood -= 0.045f * dt; // infection DoT
+    temperature -= 0.8f * dt; // fever chill toward freeze
+    if (temperature < 0.f) temperature = 0.f;
+    set_reason(*this, "Infection");
+  }
   blood = clampf(blood, 0.f, 100.f);
 }
 

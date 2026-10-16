@@ -33,7 +33,7 @@ public:
   void clear();
   Animal* spawn(AnimalType t, Vec2 p);
   // Returns melee damage dealt to player this frame (wolves/dogs).
-  float update(float dt, Vec2 player_pos);
+  float update(float dt, Vec2 player_pos, bool player_bleeding = false);
   int count() const { return count_; }
   int alive_count() const;
   int alive_of_type(AnimalType t) const;

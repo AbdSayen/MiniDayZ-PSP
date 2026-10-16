@@ -1,10 +1,13 @@
 #include "mdaz/hud.hpp"
 #include "mdaz/game.hpp"
+#include "mdaz/map_labels.hpp"
 #include "mdaz/mapgen.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/quest.hpp"
+#include "mdaz/types.hpp"
 #include "mdaz/vehicle.hpp"
 #include "mdaz/weapons.hpp"
+#include "mdaz/zombie.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -37,10 +40,27 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   platform.draw_text(134, 8, buf, 0.95f, 0.95f, 0.9f);
 
   if (pl.survival.bleeding > 0.f) {
-    platform.draw_text(134, 20, "BLEEDING", 1.f, 0.25f, 0.2f);
+    platform.draw_text(134, 20, "BLEEDING - ZEDS", 1.f, 0.25f, 0.2f);
   }
   if (pl.survival.infected) {
-    platform.draw_text(220, 20, "SICK", 0.55f, 0.9f, 0.35f);
+    platform.draw_text(220, 20, "INFECTED FEVER", 0.45f, 0.95f, 0.35f);
+  }
+  if (pl.survival.food < 20.f) {
+    platform.draw_text(8, 84, pl.survival.food < 8.f ? "STARVING NO SPRINT" : "STARVING",
+                       0.95f, 0.55f, 0.25f);
+  }
+  if (pl.survival.water < 20.f) {
+    platform.draw_text(90, 84, pl.survival.water < 8.f ? "THIRSTY NO SPRINT" : "THIRSTY",
+                       0.45f, 0.7f, 0.95f);
+  }
+  if (pl.survival.temperature < 25.f) {
+    platform.draw_text(160, 84, "FREEZING", 0.55f, 0.75f, 0.95f);
+  }
+  if (game.indoor_t() > 0.f) {
+    platform.draw_text(340, 58, "INSIDE", 0.7f, 0.65f, 0.45f);
+  }
+  if (game.tent_warmth_t() > 0.f) {
+    platform.draw_text(340, 70, "TENT", 0.65f, 0.8f, 0.45f);
   }
   if (pl.torch_on) {
     char tbuf[32];
@@ -58,55 +78,214 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     platform.draw_text(180, 140, "INV FULL", 1.f, 0.55f, 0.2f);
   }
   {
-    char pbuf[96];
+    char pbuf[128];
     pbuf[0] = 0;
     int n = 0;
     if (pl.perk_metabolism) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "MET ");
     if (pl.perk_hamster) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "HAM ");
     if (pl.perk_camel) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "CAM ");
     if (pl.perk_runner) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "RUN ");
-    if (pl.perk_hunter) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "HNT ");
-    if (pl.perk_farmer) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "FRM ");
     if (pl.perk_regen) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "RGN ");
+    if (pl.perk_snowborn) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "SNW ");
+    if (pl.perk_hunter) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "HNT ");
+    else if (pl.animals_killed > 0)
+      n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "HNT%d/5 ", pl.animals_killed);
+    if (pl.perk_farmer) n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "FRM ");
+    else if (pl.forage_count > 0)
+      n += std::snprintf(pbuf + n, sizeof(pbuf) - n, "FRM%d/8 ", pl.forage_count);
     if (n > 0) platform.draw_text(8, 70, pbuf, 0.55f, 0.7f, 0.85f);
   }
   if (game.zombies().scream_active()) {
     platform.draw_text(180, 100, "SCREAM", 1.f, 0.3f, 0.2f);
   }
-  if (!game.in_bunker() && game.weather().rain > 0.7f) {
-    platform.draw_text(340, 46, "WET", 0.45f, 0.65f, 0.9f);
+  {
+    // Buried ambush warning when a buried zed is close underground
+    for (const Zombie* z = game.zombies().begin(); z != game.zombies().end(); ++z) {
+      if (!z->alive || z->type != Zed_Buried) continue;
+      const float dx = z->pos.x - pl.pos.x;
+      const float dy = z->pos.y - pl.pos.y;
+      if (dx * dx + dy * dy < 100.f * 100.f && z->ambush_boost <= 0.f) {
+        platform.draw_text(180, 112, "UNEASY...", 0.6f, 0.5f, 0.35f);
+        break;
+      }
+    }
+  }
+  if (!game.in_bunker() && game.weather().rain > 0.75f && game.indoor_t() <= 0.f &&
+      game.tent_warmth_t() <= 0.f) {
+    platform.draw_text(300, 96, "MATCHES WET", 0.7f, 0.65f, 0.4f);
+  }
+  if (game.wetness() > 40.f) {
+    char wbuf[24];
+    std::snprintf(wbuf, sizeof(wbuf), "WET %.0f", game.wetness());
+    platform.draw_text(340, 46, wbuf, 0.45f, 0.65f, 0.9f);
+  }
+  if (game.wearing_gasmask()) {
+    char fbuf[28];
+    std::snprintf(fbuf, sizeof(fbuf), "FILTER %.0f", game.gasmask_filter());
+    const float fr = game.gasmask_filter() < 15.f ? 0.95f : 0.55f;
+    platform.draw_text(340, 58, fbuf, fr, 0.7f, 0.45f);
+  }
+  if (game.mag_capacity_equipped() > 0 && game.mag_rounds() <= 0 &&
+      game.ammo_for_equipped() > 0) {
+    platform.draw_text(200, 132, "V RELOAD", 0.9f, 0.8f, 0.35f);
   }
   // Near-fire hint is drawn via temperature color already; bag tip covers T=fire kit
-  if (game.driving()) {
+  if (game.crouching()) {
+    platform.draw_text(320, 20, "CROUCH AIM", 0.55f, 0.7f, 0.55f);
+  } else if (game.driving()) {
     platform.draw_text(320, 20, "DRIVING", 0.6f, 0.75f, 1.f);
     const Vehicle* v = game.driven_vehicle();
     if (v) {
       char fbuf[48];
       std::snprintf(fbuf, sizeof(fbuf), "FUEL %.0f HP %.0f", v->fuel, v->hp);
-      platform.draw_text(240, 228, fbuf, 0.6f, 0.75f, 1.f);
+      const float fr = v->fuel < 20.f ? 0.95f : 0.6f;
+      const float fg = v->fuel < 20.f ? 0.35f : 0.75f;
+      platform.draw_text(240, 228, fbuf, fr, fg, 1.f);
+      if (v->fuel < 20.f && v->type != Vehicle_Bike)
+        platform.draw_text(240, 216, "LOW FUEL", 0.95f, 0.4f, 0.2f);
+      else if (v->hp < 30.f)
+        platform.draw_text(240, 216, "VEHICLE DAMAGED", 0.95f, 0.5f, 0.2f);
+      else if (game.weather().is_night &&
+               (v->type == Vehicle_Car || v->type == Vehicle_Bike))
+        platform.draw_text(240, 216, "HEADLIGHTS", 0.85f, 0.8f, 0.4f);
+      if (v->type == Vehicle_Boat) {
+        const float m = 420.f;
+        const bool shore =
+          pl.pos.x < m || pl.pos.y < m ||
+          pl.pos.x > kMapLayoutW - m || pl.pos.y > kMapLayoutH - m;
+        if (!shore) platform.draw_text(240, 204, "BOAT BEACHED", 0.7f, 0.55f, 0.35f);
+      }
     }
   }
   if (game.near_campfire()) {
-    platform.draw_text(300, 32, "FIRE - R COOK", 1.f, 0.55f, 0.2f);
+    bool has_pan = false;
+    for (int i = 0; i < game.inventory().slot_count(); ++i) {
+      if (game.inventory().slot(i).id == 210) { has_pan = true; break; }
+    }
+    if (has_pan)
+      platform.draw_text(240, 32, "FIRE+PAN - R COOK", 1.f, 0.6f, 0.25f);
+    else if (game.weather().is_night)
+      platform.draw_text(260, 32, "FIRE - COOK / SLEEP", 1.f, 0.55f, 0.2f);
+    else
+      platform.draw_text(280, 32, "FIRE - R COOK / REST", 1.f, 0.55f, 0.2f);
+  }
+  if (game.limp_t() > 0.f) {
+    platform.draw_text(160, 148, "R SPLINT: sticks+rags", 0.75f, 0.55f, 0.4f);
+  }
+  {
+    const ItemId eq = game.inventory().slot(game.equipped_slot()).id;
+    if (eq == 201)
+      platform.draw_text(200, 160, "E DIG (shovel)", 0.55f, 0.7f, 0.45f);
+    else if (game.near_choppable_tree() &&
+             (eq == 202 || eq == 204 || eq == 206))
+      platform.draw_text(200, 160, "E CHOP TREE", 0.55f, 0.8f, 0.4f);
+  }
+  {
+    // Fishing tip near water with rod
+    bool has_rod = false;
+    for (int i = 0; i < game.inventory().slot_count(); ++i) {
+      const ItemId id = game.inventory().slot(i).id;
+      if (id == 86 || id == 87) { has_rod = true; break; }
+    }
+    if (has_rod && !game.in_bunker()) {
+      const float m = 400.f;
+      const bool near_water =
+        pl.pos.x < m || pl.pos.y < m ||
+        pl.pos.x > kMapLayoutW - m || pl.pos.y > kMapLayoutH - m;
+      if (near_water) {
+        bool has_bait = false;
+        for (int i = 0; i < game.inventory().slot_count(); ++i) {
+          const ItemId bid = game.inventory().slot(i).id;
+          if (bid == 6 || bid == 27 || bid == 73 || bid == 74 || bid == 60 || bid == 71) {
+            if (game.inventory().slot(i).count > 0) { has_bait = true; break; }
+          }
+        }
+        platform.draw_text(160, 184, has_bait ? "E FISH (+BAIT)" : "E FISH (bait helps)",
+                           0.5f, 0.7f, 0.85f);
+      }
+    }
+  }
+  {
+    const ItemId eq = game.inventory().slot(game.equipped_slot()).id;
+    if (eq == 68 || eq == 47 || eq == 48)
+      platform.draw_text(200, 160, "E PLANT SEEDS", 0.55f, 0.85f, 0.45f);
+    else if (eq == 50)
+      platform.draw_text(180, 160, "C FENCE (pile+2 sticks)", 0.65f, 0.55f, 0.35f);
+    else if (eq == 53)
+      platform.draw_text(180, 160, "C GAS->FIRE or puddle", 0.85f, 0.55f, 0.25f);
+    else if (eq == 99)
+      platform.draw_text(200, 160, "C PLACE CLAYMORE", 0.85f, 0.4f, 0.25f);
+    else if (eq == 56)
+      platform.draw_text(200, 160, "C PLACE LANDMINE", 0.9f, 0.35f, 0.2f);
+    else if (eq == 83)
+      platform.draw_text(200, 160, "C WEAR BANDOLIER", 0.7f, 0.65f, 0.4f);
+    else if (eq == 82)
+      platform.draw_text(180, 160, "C CUT WIRE/FENCE", 0.7f, 0.6f, 0.45f);
+    else if (eq == 205)
+      platform.draw_text(180, 160, "E PRY (crowbar)", 0.65f, 0.7f, 0.5f);
+  }
+  if (game.near_vehicle() && !game.driving()) {
+    platform.draw_text(180, 172, "E MOUNT  C+GAS/TOOLBOX", 0.55f, 0.7f, 0.85f);
   }
   if (game.airdrop_alert() > 0.f) {
     platform.draw_text(160, 70, "AIRDROP INBOUND", 0.95f, 0.85f, 0.2f);
   }
-  if (game.reload_cd() > 0.f) {
+  // Flare lure warning uses same area as airdrop — shown via FIRE glow already
+  if (game.radio_t() > 0.f) {
+    char rbuf[40];
+    std::snprintf(rbuf, sizeof(rbuf), "RADIO AIR ETA %.0fs", game.airdrop_eta());
+    platform.draw_text(140, 82, rbuf, 0.7f, 0.85f, 0.55f);
+  }
+  {
+    bool has_sil = false;
+    float best_scope = 1.f;
+    const char* scope_lbl = 0;
+    for (int i = 0; i < game.inventory().slot_count(); ++i) {
+      const ItemId sid = game.inventory().slot(i).id;
+      if (sid == 80 || sid == 81) has_sil = true;
+      if (sid == 98 && best_scope > 0.28f) { best_scope = 0.28f; scope_lbl = "LR SCOPE"; }
+      else if (sid == 79 && best_scope > 0.32f) { best_scope = 0.32f; scope_lbl = "ACOG"; }
+      else if (sid == 78 && best_scope > 0.36f) { best_scope = 0.36f; scope_lbl = "PSO-1"; }
+      else if (sid == 77 && best_scope > 0.40f) { best_scope = 0.40f; scope_lbl = "PU SCOPE"; }
+      else if (sid == 76 && best_scope > 0.45f) { best_scope = 0.45f; scope_lbl = "RDS"; }
+    }
+    if (scope_lbl) platform.draw_text(390, 70, scope_lbl, 0.55f, 0.8f, 0.95f);
+    if (has_sil) platform.draw_text(390, 82, "SILENCED", 0.45f, 0.7f, 0.55f);
+  }
+  if (game.gun_jammed()) {
+    platform.draw_text(200, 120, "JAMMED - V", 1.f, 0.45f, 0.25f);
+  } else if (game.reload_cd() > 0.f) {
     platform.draw_text(200, 120, "RELOAD", 0.85f, 0.75f, 0.35f);
+  } else if (game.mag_capacity_equipped() > 0 && game.mag_rounds() <= 0) {
+    platform.draw_text(200, 120, "EMPTY - V", 0.9f, 0.55f, 0.3f);
+  }
+  if (game.adrenaline_t() > 0.f) {
+    platform.draw_text(200, 88, "ADRENALINE", 0.95f, 0.55f, 0.3f);
+  }
+  if (game.limp_t() > 0.f) {
+    platform.draw_text(200, 100, "LIMP", 0.9f, 0.5f, 0.35f);
   }
   {
     const int ammo = game.ammo_for_equipped();
+    const int cap = game.mag_capacity_equipped();
     if (ammo >= 0) {
-      char abuf[32];
-      std::snprintf(abuf, sizeof(abuf), "AMMO %d", ammo);
-      platform.draw_text(240, 240, abuf, 0.85f, 0.85f, 0.55f);
+      char abuf[40];
+      if (cap > 0)
+        std::snprintf(abuf, sizeof(abuf), "MAG %d/%d  +%d", game.mag_rounds(), cap, ammo);
+      else
+        std::snprintf(abuf, sizeof(abuf), "AMMO %d", ammo);
+      platform.draw_text(200, 240, abuf, 0.85f, 0.85f, 0.55f);
     }
   }
   if (game.inventory().worn_count() > 0) {
-    char wbuf[32];
-    std::snprintf(wbuf, sizeof(wbuf), "GEAR %d", game.inventory().worn_count());
-    platform.draw_text(380, 84, wbuf, 0.65f, 0.7f, 0.8f);
+    char wbuf[40];
+    std::snprintf(wbuf, sizeof(wbuf), "GEAR %d BAG %d", game.inventory().worn_count(),
+                  game.inventory().capacity());
+    platform.draw_text(360, 84, wbuf, 0.65f, 0.7f, 0.8f);
+  } else {
+    char wbuf[24];
+    std::snprintf(wbuf, sizeof(wbuf), "BAG %d", game.inventory().capacity());
+    platform.draw_text(400, 84, wbuf, 0.55f, 0.6f, 0.65f);
   }
   if (game.quest().active != Quest_None) {
     char qbuf[80];
@@ -131,24 +310,42 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   platform.draw_text(8, 46, buf, 0.75f, 0.8f, 0.7f);
 
   if (game.in_bunker()) {
-    platform.draw_text(300, 8, "BUNKER", 0.85f, 0.7f, 0.5f);
+    platform.draw_text(300, 8, "BUNKER WARM", 0.85f, 0.7f, 0.5f);
   } else {
-    // Nearest bunker entrance bearing (simple compass)
+    // Nearest useful POI compass
     float best = 1e12f;
-    float bx = 0.f, by = 0.f;
+    LocationType best_t = Loc_BunkerEntrance;
     bool found = false;
     for (int i = 0; i < game.mapgen().location_count(); ++i) {
       const MapLocation& L = game.mapgen().location(i);
-      if (L.type != Loc_BunkerEntrance) continue;
+      if (L.type != Loc_BunkerEntrance && L.type != Loc_Hospital &&
+          L.type != Loc_Military && L.type != Loc_GasStation &&
+          L.type != Loc_Police && L.type != Loc_Church &&
+          L.type != Loc_Firestation) continue;
       const float dx = L.pos.x - pl.pos.x;
       const float dy = L.pos.y - pl.pos.y;
       const float d2 = dx * dx + dy * dy;
-      if (d2 < best) { best = d2; bx = dx; by = dy; found = true; }
+      if (d2 < best) { best = d2; best_t = L.type; found = true; }
     }
     if (found) {
-      std::snprintf(buf, sizeof(buf), "BUNKER %.0f", std::sqrt(best));
-      platform.draw_text(300, 8, buf, 0.7f, 0.75f, 0.55f);
-      (void)bx; (void)by;
+      // Bearing letter toward nearest POI (N/NE/E/…)
+      float bdx = 0.f, bdy = 0.f;
+      for (int i = 0; i < game.mapgen().location_count(); ++i) {
+        const MapLocation& L = game.mapgen().location(i);
+        if (L.type != best_t) continue;
+        const float dx = L.pos.x - pl.pos.x;
+        const float dy = L.pos.y - pl.pos.y;
+        if (dx * dx + dy * dy <= best + 0.1f) { bdx = dx; bdy = dy; break; }
+      }
+      const char* dir = "?";
+      const float ax = std::fabs(bdx), ay = std::fabs(bdy);
+      if (ax < 1.f && ay < 1.f) dir = "HERE";
+      else if (ay >= ax * 2.f) dir = (bdy < 0.f) ? "N" : "S";
+      else if (ax >= ay * 2.f) dir = (bdx > 0.f) ? "E" : "W";
+      else if (bdy < 0.f) dir = (bdx > 0.f) ? "NE" : "NW";
+      else dir = (bdx > 0.f) ? "SE" : "SW";
+      std::snprintf(buf, sizeof(buf), "%s %s %.0f", location_label(best_t), dir, std::sqrt(best));
+      platform.draw_text(260, 8, buf, 0.7f, 0.75f, 0.55f);
     }
   }
 
@@ -237,9 +434,17 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       float py = my + mh * 0.5f + (L.pos.y - pl.pos.y) * scale;
       if (px < mx || py < my || px > mx + mw - 2 || py > my + mh - 2) continue;
       float r = 0.5f, g = 0.5f, b = 0.3f;
-      if (L.type == Loc_BunkerEntrance) { r = 0.9f; g = 0.6f; b = 0.2f; }
-      if (L.type == Loc_Military) { r = 0.3f; g = 0.55f; b = 0.3f; }
-      if (L.type == Loc_City) { r = 0.7f; g = 0.55f; b = 0.25f; }
+      if (L.type == Loc_BunkerEntrance) { r = 0.95f; g = 0.65f; b = 0.2f; }
+      else if (L.type == Loc_Military) { r = 0.25f; g = 0.7f; b = 0.3f; }
+      else if (L.type == Loc_Hospital) { r = 0.9f; g = 0.35f; b = 0.35f; }
+      else if (L.type == Loc_GasStation) { r = 0.85f; g = 0.75f; b = 0.2f; }
+      else if (L.type == Loc_City) { r = 0.75f; g = 0.55f; b = 0.25f; }
+      else if (L.type == Loc_Village) { r = 0.55f; g = 0.65f; b = 0.35f; }
+      else if (L.type == Loc_Helicrash) { r = 0.9f; g = 0.4f; b = 0.15f; }
+      else if (L.type == Loc_Firestation) { r = 0.85f; g = 0.3f; b = 0.2f; }
+      else if (L.type == Loc_Police) { r = 0.35f; g = 0.45f; b = 0.95f; }
+      else if (L.type == Loc_Church) { r = 0.8f; g = 0.75f; b = 0.55f; }
+      else if (L.type == Loc_Secret) { r = 0.85f; g = 0.35f; b = 0.95f; }
       platform.draw_rect(px, py, 2, 2, r, g, b, 1.f);
     }
     if (game.airdrop_alert() > 0.f) {

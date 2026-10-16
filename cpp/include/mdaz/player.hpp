@@ -20,6 +20,8 @@ struct Player {
   int zeds_killed;
   int bandits_killed;
   int animals_killed;
+  int fish_caught;
+  int forage_count; // bush forages toward perk_farmer
   float hear_radius;
 
   Player();
@@ -37,6 +39,13 @@ struct Player {
   bool perk_runner;
   bool perk_hunter; // extra meat on animal kills
   bool perk_farmer; // better bush forage odds
+  bool perk_snowborn; // cold resistance after enduring freeze
+  float cold_endure_t_; // seconds spent freezing toward snowborn
+  float thirst_endure_t_; // seconds thirsty toward camel
+  float starve_endure_t_; // seconds starving toward hamster
+  float wound_endure_t_; // seconds low-blood toward regen
+  float sprint_t_; // cumulative sprint toward runner
+  float bleed_endure_t_; // cumulative bleeding toward metabolism
 };
 
 } // namespace mdaz

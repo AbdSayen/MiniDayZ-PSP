@@ -17,6 +17,8 @@ struct CraftRecipe {
   ItemId ing_b;
   int count_b;
   bool requires_fire;     // cook recipes need nearby campfire
+  ItemId tool_id;         // required in inventory but not consumed (0=none); any of 42/43/44 if tool_any_knife
+  bool tool_any_knife;    // if true, any hunter/army/butcher knife counts as tool
 };
 
 int craft_recipe_count();

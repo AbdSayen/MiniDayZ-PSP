@@ -24,10 +24,28 @@ Campfire* CampfireSystem::place(Vec2 pos, float life) {
   return &f;
 }
 
-void CampfireSystem::update(float dt) {
+bool CampfireSystem::boost_near(Vec2 pos, float add_life, float radius) {
+  int best = -1;
+  float best_d2 = radius * radius;
   for (int i = 0; i < count_; ++i) {
     if (!fires_[i].active) continue;
-    fires_[i].life -= dt;
+    const float dx = fires_[i].pos.x - pos.x;
+    const float dy = fires_[i].pos.y - pos.y;
+    const float d2 = dx * dx + dy * dy;
+    if (d2 < best_d2) { best_d2 = d2; best = i; }
+  }
+  if (best < 0) return false;
+  fires_[best].life += add_life;
+  if (fires_[best].life > 600.f) fires_[best].life = 600.f;
+  return true;
+}
+
+void CampfireSystem::update(float dt, float rain01) {
+  for (int i = 0; i < count_; ++i) {
+    if (!fires_[i].active) continue;
+    float drain = dt;
+    if (rain01 > 0.7f) drain += dt * (2.5f + rain01 * 4.f); // storm kills open fire
+    fires_[i].life -= drain;
     if (fires_[i].life <= 0.f) fires_[i].active = false;
   }
 }

@@ -1,8 +1,16 @@
 #include "mdaz/vehicle.hpp"
+#include "mdaz/types.hpp"
 
 #include <cmath>
 
 namespace mdaz {
+
+namespace {
+bool near_water_band(Vec2 p, float margin = 420.f) {
+  return p.x < margin || p.y < margin ||
+         p.x > kMapLayoutW - margin || p.y > kMapLayoutH - margin;
+}
+} // namespace
 
 Vehicle::Vehicle() { reset(); }
 
@@ -62,7 +70,7 @@ const Vehicle* VehicleSystem::driven() const {
 }
 
 bool VehicleSystem::update(float dt, Vec2& player_pos, float move_x, float move_y,
-                           bool interact_pressed) {
+                           bool interact_pressed, bool has_paddle) {
   // Mount/dismount
   if (interact_pressed && !driving_) {
     for (int i = 0; i < count_; ++i) {
@@ -109,11 +117,20 @@ bool VehicleSystem::update(float dt, Vec2& player_pos, float move_x, float move_
     v.fuel -= 0.8f * dt;
     if (v.fuel < 0.f) v.fuel = 0.f;
   } else if (v.type == Vehicle_Boat && v.fuel <= 0.f) {
-    spd = 35.f; // paddle stub
+    // Paddle: wood sticks (or ashwood) in inventory = decent speed; else crawl
+    spd = has_paddle ? 70.f : 22.f;
   }
 
-  v.pos.x += move_x * spd * dt;
-  v.pos.y += move_y * spd * dt;
+  Vec2 next(v.pos.x + move_x * spd * dt, v.pos.y + move_y * spd * dt);
+  if (v.type == Vehicle_Boat && !near_water_band(next)) {
+    // Beached — crawl only along shore, don't leave water band
+    next = v.pos;
+    if (near_water_band(Vec2(v.pos.x + move_x * 40.f * dt, v.pos.y)))
+      next.x = v.pos.x + move_x * 40.f * dt;
+    if (near_water_band(Vec2(v.pos.x, v.pos.y + move_y * 40.f * dt)))
+      next.y = v.pos.y + move_y * 40.f * dt;
+  }
+  v.pos = next;
   player_pos = v.pos;
   return true;
 }

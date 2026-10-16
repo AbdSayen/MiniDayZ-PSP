@@ -35,6 +35,9 @@ int test_systems() {
   q.start(mdaz::Quest_KillZeds10);
   if (!q.tick(1, 10, false)) { std::printf("FAIL quest complete\n"); ++fail; }
   else std::printf("OK   quest kill-10\n");
+  q.start(mdaz::Quest_VisitHospital);
+  if (!q.tick(1, 0, false, true)) { std::printf("FAIL quest hospital\n"); ++fail; }
+  else std::printf("OK   quest hospital\n");
 
   const mdaz::WeaponDef* fnx = mdaz::find_weapon(151);
   if (!fnx || fnx->stats.damage != 23.f) {

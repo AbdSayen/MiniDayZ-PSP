@@ -15,6 +15,8 @@ enum LocationType {
   Loc_Helicrash,
   Loc_Secret,
   Loc_BunkerEntrance,
+  Loc_Police,
+  Loc_Church,
   Loc_Count
 };
 

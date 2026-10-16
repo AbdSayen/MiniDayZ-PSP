@@ -44,15 +44,25 @@ float BanditSystem::update(float dt, Vec2 player_pos) {
 
     float spd = b.speed;
     if (b.has_gun && dist < 180.f) spd *= 0.4f;
+    const bool fleeing = b.hp < b.max_hp * 0.3f;
 
-    if (dist < b.aggro_radius && dist > 1.f) {
-      b.pos.x += (dx / dist) * spd * dt;
-      b.pos.y += (dy / dist) * spd * dt;
+    if (dist > 1.f && dist < b.aggro_radius) {
+      if (fleeing) {
+        // Low HP — run away
+        b.pos.x -= (dx / dist) * spd * 1.2f * dt;
+        b.pos.y -= (dy / dist) * spd * 1.2f * dt;
+      } else {
+        b.pos.x += (dx / dist) * spd * dt;
+        b.pos.y += (dy / dist) * spd * dt;
+      }
     }
 
-    if (!b.has_gun && dist < 28.f && b.attack_cooldown <= 0.f) {
-      dmg += 12.f; // stub until Bot_dmg extract
-      b.attack_cooldown = 1.0f;
+    // Melee bandits always; gun bandits bayonet when very close
+    if (!fleeing && dist < 28.f && b.attack_cooldown <= 0.f) {
+      if (!b.has_gun || dist < 22.f) {
+        dmg += b.has_gun ? 10.f : 12.f;
+        b.attack_cooldown = b.has_gun ? 1.2f : 1.0f;
+      }
     }
   }
   return dmg;

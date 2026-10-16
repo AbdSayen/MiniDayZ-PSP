@@ -32,7 +32,8 @@ public:
   // Repair driven or nearest vehicle; returns true if repaired.
   bool try_repair(Vec2 player_pos, float amount);
   // Returns true if player is currently driving (movement applied to vehicle).
-  bool update(float dt, Vec2& player_pos, float move_x, float move_y, bool interact_pressed);
+  bool update(float dt, Vec2& player_pos, float move_x, float move_y, bool interact_pressed,
+              bool has_paddle = true);
   bool player_driving() const { return driving_; }
   Vehicle* driven();
   const Vehicle* driven() const;

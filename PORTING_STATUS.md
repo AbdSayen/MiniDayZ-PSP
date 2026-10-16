@@ -9,7 +9,7 @@ Baseline: Mini DAYZ **1.4.1** (`original_docs/`)
 | Balance globals | **Сверена с оригиналом** | `balance_globals.hpp` |
 | Survival tick (States) | **Сверена с оригиналом** | Every 5s / bleed 1s / cold on difficulty |
 | Item catalog (200) | Протестирована | |
-| Item consumable numbers | Исследована | Blood/saline/morphine/vitamins wired; most food still placeholders |
+| Item consumable numbers | Исследована | Meds + whiskey/veg/meat/fish restores; many still placeholders |
 | Map fog / visited | Реализуется | 16×16 sector visited + minimap fog |
 | Weapon base damage | Исследована | Fist **10**/range **45**; FNX IV0 candidate **23**; sword **15** |
 | Bullet hit variance | **Сверена с оригиналом** | ±25% (`roll_bullet_damage`) |
@@ -19,16 +19,16 @@ Baseline: Mini DAYZ **1.4.1** (`original_docs/`)
 | Dispersion | **Сверена с оригиналом** | Persistent `DispersionState` on Game |
 | Timers loot/zed/airdrop | **Сверена с оригиналом** (constants) | |
 | Loot piles | Реализуется | Hospital/gas/civ/military POI tables; airdrop |
-| Zombie AI types | Реализуется | Buried ambush, screamer alert, army shooter bullets |
-| Animals | Реализуется | Meat drops; 90s respawn; wolf packs |
-| Bandits / bots | Реализуется | Melee + gun stub; BOT_RESPAWN_TIME wired |
-| Vehicles | Реализуется | Car + boat mount; fuel / paddle stub |
-| Quests | Реализуется | Kill-10-zeds starter objective |
-| Map generation | Реализуется | POI scaffold 16×16 + bunker enter + collision |
+| Zombie AI types | Реализуется | Buried/screamer/army/tank; mil tanks; secret screamers |
+| Animals | Реализуется | Pack howl; night denser wolves; deer stampede; meat drops |
+| Bandits / bots | Реализуется | Melee + gun; flee <30% HP; BOT_RESPAWN_TIME wired |
+| Vehicles | Реализуется | Car/boat/bike; fuel; paddle from sticks; headlights |
+| Quests | Реализуется | Chain: kill10→hosp→bunker→bandits→fish→day2 |
+| Map generation | Реализуется | POI 16×16 + roads/trees/water band + bunker enter |
 | Bunker loader | Протестирована | 225×74; enter/exit + loot/zeds dens |
-| Craft | Реализуется | Rags/arrows/bow/firekit/fishing rod/cook; R key |
-| Save | Протестирована | MDAZ v3 + visited fog bits; v2 load OK |
-| Audio | Реализуется | Procedural SDL `SdlAudio` (gunshot/melee/hit/pickup) |
+| Craft | Реализуется | Bow/arrows/bag/splint/rope/torch/molotov/cook/firekit |
+| Save | Протестирована | MDAZ v6 filter/fish; v2–v5 load OK |
+| Audio | Реализуется | Procedural SDL (gun/hit/howl/airdrop/cough/rain/craft) |
 | Campfire | Реализуется | Place kit (T), warmth, cook requires fire |
 | Desktop SDL host | Протестирована | Vendored SDL2 2.30.9; 480×272 logical @ 2× |
 | Platform / PSP | Заблокирована внешним ограничением | PSPSDK EBOOT not verified |
@@ -44,7 +44,7 @@ mingw32-make -j4
 .\minidayz_desktop.exe
 ```
 
-Controls: WASD move, Shift run, Z/Space attack, E loot/bunker, G drop, V reload, C use, R craft, 1–8 / Q·X / wheel hotbar, P pause, Esc menu/quit.
+Controls: WASD move, Shift run, Ctrl crouch, Z/Space attack, E loot/chop/search/fish, G drop, V mag reload, C use (traps/kits/meds), R craft, T torch/fire, F throw, 1–8 hotbar, P pause, Esc menu/quit.
 
 ## Tests
 
@@ -87,3 +87,31 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 | 2026-10-16 | Raincoat wet resist; sector [x,y] HUD; bunker dens visible |
 | 2026-10-16 | NVG battery share; tent/molotov/gasmask; crow flocks; INV FULL; molotov craft |
 | 2026-10-16 | Perks HUD (HNT/FRM); death log `last_death.txt`; hunter meat x2 |
+| 2026-10-16 | Save v4; bandit loot; melee break; POI labels; night stars; rain drink |
+| 2026-10-16 | Mag capacity+V reload; helmet/vest armor; morphine adrenaline; scream→wolves |
+| 2026-10-16 | Military loot+armor; more craft; limp/headlamp; rain drink; POI compass |
+| 2026-10-16 | Craft sverka: bow=ash+rope, arrows=sticks+knife, bag=burlap+rope |
+| 2026-10-16 | Axe harvest wood; backpack capacity; energy drink; military armor loot |
+| 2026-10-16 | Canned+knife; sprint zed aggro; duct tape melee; minimap POI colors |
+| 2026-10-16 | POI interior search+warmth; INSIDE HUD; duct tape starter |
+| 2026-10-16 | Car headlights; boat paddle from sticks; craft recipe sverka notes |
+| 2026-10-16 | Bandit flee low HP; wolf pack howl; BUILDING controls refresh |
+| 2026-10-16 | Wetness meter; matches+sticks fire; V RELOAD hint; deer stampede |
+| 2026-10-16 | Zed/loot respawn prefer POI tables; typed military loot refresh |
+| 2026-10-16 | Quest chain hospital→bunker→bandits→day2; quieter walk |
+| 2026-10-16 | Save v5 mag/wetness; unvisited sector fog on world view |
+| 2026-10-16 | Hand-drill fire (2 sticks, 25%); continuous play-loop polish |
+| 2026-10-16 | Low-blood vignette; STARVING/THIRSTY/FREEZING HUD |
+| 2026-10-16 | Gun jam when wet/low mag; rest-at-fire blood regen |
+| 2026-10-16 | Jam clear with V + JAMMED HUD |
+| 2026-10-16 | Auto heatpack when freezing |
+| 2026-10-16 | Shooter aim spread; raincoat/burlap in civ loot |
+| 2026-10-16 | Night sleep at fire advances dawn + day count |
+| 2026-10-16 | Buried UNEASY HUD; SLEEP at night fire hint |
+| 2026-10-16 | Sleep refreshes is_night; hospital rare armor |
+| 2026-10-16 | Edge water tint; fishing requires water band |
+| 2026-10-16 | Boat spawns on west water edge |
+| 2026-10-16 | Fishing rod in starter kit |
+| 2026-10-16 | Whiskey warmth+courage; veg food; sewing/cleaning kits |
+| 2026-10-16 | Richer airdrop (med/armor/gun); POI bearings N/E/S/W |
+| 2026-10-16 | Improvised splint craft (sticks+rags) clears limp |

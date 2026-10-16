@@ -23,12 +23,40 @@ void unpack_visited(const unsigned char in[32], bool* visited, int len) {
   }
 }
 
+int pack_perks(const Player& p) {
+  int f = 0;
+  if (p.perk_metabolism) f |= 1;
+  if (p.perk_hamster) f |= 2;
+  if (p.perk_camel) f |= 4;
+  if (p.perk_runner) f |= 8;
+  if (p.perk_hunter) f |= 16;
+  if (p.perk_farmer) f |= 32;
+  if (p.perk_regen) f |= 64;
+  if (p.perk_snowborn) f |= 128;
+  return f;
+}
+
+void unpack_perks(Player& p, int f) {
+  p.perk_metabolism = (f & 1) != 0;
+  p.perk_hamster = (f & 2) != 0;
+  p.perk_camel = (f & 4) != 0;
+  p.perk_runner = (f & 8) != 0;
+  p.perk_hunter = (f & 16) != 0;
+  p.perk_farmer = (f & 32) != 0;
+  p.perk_regen = (f & 64) != 0;
+  p.perk_snowborn = (f & 128) != 0;
+}
+
 } // namespace
 
 bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
                                  const WeatherState& weather, int equipped_slot,
                                  SaveBlob& out,
-                                 const bool* visited, int visited_len) {
+                                 const bool* visited, int visited_len,
+                                 float torch_battery,
+                                 int quest_active, int quest_progress,
+                                 int mag_rounds, float wetness,
+                                 float gasmask_filter, int fish_caught) {
   std::memset(&out, 0, sizeof(out));
   out.magic = kMagic;
   out.version = kVersion;
@@ -56,14 +84,27 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   out.torch_on = (player.torch_on ? 1 : 0) | (player.nvg_on ? 2 : 0);
   out.equipped_slot = equipped_slot;
   pack_visited(visited, visited_len, out.visited);
+  out.torch_battery = torch_battery;
+  out.animals_killed = player.animals_killed;
+  out.quest_active = quest_active;
+  out.quest_progress = quest_progress;
+  out.perk_flags = pack_perks(player);
+  out.mag_rounds = mag_rounds;
+  out.wetness = wetness;
+  out.gasmask_filter = gasmask_filter;
+  out.fish_caught = fish_caught;
   return true;
 }
 
 bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory& inv,
                                   WeatherState& weather, int* equipped_slot,
-                                  bool* visited, int visited_len) {
+                                  bool* visited, int visited_len,
+                                  float* torch_battery,
+                                  int* quest_active, int* quest_progress,
+                                  int* mag_rounds, float* wetness,
+                                  float* gasmask_filter, int* fish_caught) {
   if (in.magic != kMagic) return false;
-  if (in.version != 2 && in.version != kVersion) return false;
+  if (in.version < 2 || in.version > kVersion) return false;
   player.reset_new_game(in.difficulty);
   player.pos.x = in.pos_x;
   player.pos.y = in.pos_y;
@@ -91,15 +132,48 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
     if (in.version >= 3) unpack_visited(in.visited, visited, visited_len);
     else for (int i = 0; i < visited_len; ++i) visited[i] = false;
   }
+  if (in.version >= 4) {
+    player.animals_killed = in.animals_killed;
+    unpack_perks(player, in.perk_flags);
+    if (torch_battery) *torch_battery = in.torch_battery;
+    if (quest_active) *quest_active = in.quest_active;
+    if (quest_progress) *quest_progress = in.quest_progress;
+  } else {
+    if (torch_battery) *torch_battery = 100.f;
+    if (quest_active) *quest_active = 0;
+    if (quest_progress) *quest_progress = 0;
+  }
+  if (in.version >= 5) {
+    if (mag_rounds) *mag_rounds = in.mag_rounds;
+    if (wetness) *wetness = in.wetness;
+  } else {
+    if (mag_rounds) *mag_rounds = 0;
+    if (wetness) *wetness = 0.f;
+  }
+  if (in.version >= 6) {
+    if (gasmask_filter) *gasmask_filter = in.gasmask_filter;
+    if (fish_caught) *fish_caught = in.fish_caught;
+    player.fish_caught = in.fish_caught;
+  } else {
+    if (gasmask_filter) *gasmask_filter = 100.f;
+    if (fish_caught) *fish_caught = 0;
+    player.fish_caught = 0;
+  }
   return true;
 }
 
 bool SaveSystem::save_file(IPlatform& io, const char* path, const Player& player,
                            const Inventory& inv, const WeatherState& weather,
                            int equipped_slot,
-                           const bool* visited, int visited_len) {
+                           const bool* visited, int visited_len,
+                           float torch_battery,
+                           int quest_active, int quest_progress,
+                           int mag_rounds, float wetness,
+                           float gasmask_filter, int fish_caught) {
   SaveBlob blob;
-  if (!write_to_buffer(player, inv, weather, equipped_slot, blob, visited, visited_len))
+  if (!write_to_buffer(player, inv, weather, equipped_slot, blob, visited, visited_len,
+                       torch_battery, quest_active, quest_progress, mag_rounds, wetness,
+                       gasmask_filter, fish_caught))
     return false;
   return io.write_file(path, &blob, sizeof(blob));
 }
@@ -107,18 +181,23 @@ bool SaveSystem::save_file(IPlatform& io, const char* path, const Player& player
 bool SaveSystem::load_file(IPlatform& io, const char* path, Player& player,
                            Inventory& inv, WeatherState& weather,
                            int* equipped_slot,
-                           bool* visited, int visited_len) {
+                           bool* visited, int visited_len,
+                           float* torch_battery,
+                           int* quest_active, int* quest_progress,
+                           int* mag_rounds, float* wetness,
+                           float* gasmask_filter, int* fish_caught) {
   char* data = 0;
   std::size_t size = 0;
   if (!io.read_file(path, &data, &size)) return false;
   bool ok = false;
-  // v3 = full SaveBlob; v2 = SaveBlob without visited[32]
-  const std::size_t v2_size = sizeof(SaveBlob) - 32;
-  if (size == sizeof(SaveBlob) || size == v2_size) {
+  // Accept current and older truncated blobs (v2..v6)
+  if (size >= 64 && size <= sizeof(SaveBlob)) {
     SaveBlob blob;
     std::memset(&blob, 0, sizeof(blob));
-    std::memcpy(&blob, data, size < sizeof(blob) ? size : sizeof(blob));
-    ok = read_from_buffer(blob, player, inv, weather, equipped_slot, visited, visited_len);
+    std::memcpy(&blob, data, size);
+    ok = read_from_buffer(blob, player, inv, weather, equipped_slot, visited, visited_len,
+                          torch_battery, quest_active, quest_progress, mag_rounds, wetness,
+                          gasmask_filter, fish_caught);
   }
   delete[] data;
   return ok;

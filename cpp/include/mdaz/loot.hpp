@@ -28,6 +28,11 @@ public:
   LootPile* spawn_hospital(Vec2 pos, Rng& rng);
   LootPile* spawn_gas_station(Vec2 pos, Rng& rng);
   LootPile* spawn_civilian(Vec2 pos, Rng& rng);
+  LootPile* spawn_military(Vec2 pos, Rng& rng);
+  LootPile* spawn_bandit(Vec2 pos, Rng& rng);
+  LootPile* spawn_secret(Vec2 pos, Rng& rng);
+  LootPile* spawn_helicrash(Vec2 pos, Rng& rng);
+  LootPile* spawn_police(Vec2 pos, Rng& rng);
   LootPile* spawn_item(Vec2 pos, ItemId id, int count);
   LootPile* spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int table_len, int min_n, int max_n);
   int count() const { return count_; }

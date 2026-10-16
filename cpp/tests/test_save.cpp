@@ -15,6 +15,9 @@ int test_save() {
   p.survival.food = 44.f;
   p.survival.blood = 77.f;
   p.zeds_killed = 3;
+  p.animals_killed = 7;
+  p.perk_hunter = true;
+  p.nvg_on = true;
 
   mdaz::ItemDatabase db;
   db.load_from_json_string("{\"items\":[{\"id\":1,\"name\":\"Canned beans\"}]}");
@@ -31,11 +34,12 @@ int test_save() {
 
   mdaz::SaveBlob blob;
   if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, 3, blob, visited,
-                                         mdaz::kMapSectorsX * mdaz::kMapSectorsY)) {
+                                         mdaz::kMapSectorsX * mdaz::kMapSectorsY,
+                                         66.f, 2, 4, 11, 55.f, 72.f, 3)) {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 3) {
+  if (blob.version != 6) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -44,10 +48,18 @@ int test_save() {
   mdaz::Inventory inv2;
   mdaz::WeatherState w2;
   int eq = -1;
+  float batt = 0.f;
+  int qact = -1, qprog = -1;
+  int mag = -1;
+  float wet = -1.f;
+  float gfilt = -1.f;
+  int fish = -1;
   bool visited2[mdaz::kMapSectorsX * mdaz::kMapSectorsY];
   for (int i = 0; i < mdaz::kMapSectorsX * mdaz::kMapSectorsY; ++i) visited2[i] = false;
   if (!mdaz::SaveSystem::read_from_buffer(blob, p2, inv2, w2, &eq, visited2,
-                                          mdaz::kMapSectorsX * mdaz::kMapSectorsY)) {
+                                          mdaz::kMapSectorsX * mdaz::kMapSectorsY,
+                                          &batt, &qact, &qprog, &mag, &wet,
+                                          &gfilt, &fish)) {
     std::printf("FAIL read\n");
     return 1;
   }
@@ -79,6 +91,23 @@ int test_save() {
     std::printf("FAIL visited fog bits\n");
     ++fail;
   } else std::printf("OK   visited fog roundtrip\n");
+
+  if (batt != 66.f || qact != 2 || qprog != 4 || !p2.perk_hunter || !p2.nvg_on ||
+      p2.animals_killed != 7) {
+    std::printf("FAIL v4 fields batt=%.1f q=%d/%d hunt=%d nvg=%d animals=%d\n",
+                batt, qact, qprog, (int)p2.perk_hunter, (int)p2.nvg_on, p2.animals_killed);
+    ++fail;
+  } else std::printf("OK   v4 battery/quest/perks\n");
+
+  if (mag != 11 || wet != 55.f) {
+    std::printf("FAIL v5 mag/wet mag=%d wet=%.1f\n", mag, wet);
+    ++fail;
+  } else std::printf("OK   v5 mag/wetness\n");
+
+  if (gfilt != 72.f || fish != 3 || p2.fish_caught != 3) {
+    std::printf("FAIL v6 filter/fish g=%.1f fish=%d pfish=%d\n", gfilt, fish, p2.fish_caught);
+    ++fail;
+  } else std::printf("OK   v6 filter/fish\n");
 
   return fail ? 1 : 0;
 }

@@ -61,7 +61,8 @@ void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   hp = max_hp;
 }
 
-void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& out_damage) {
+void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& out_damage,
+                       float aggro_mul) {
   out_hit_player = false;
   out_damage = 0.f;
   if (!alive) return;
@@ -70,13 +71,15 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
   const float dx = player_pos.x - pos.x;
   const float dy = player_pos.y - pos.y;
   const float dist = std::sqrt(dx * dx + dy * dy);
+  const float hear = aggro_radius * (aggro_mul > 0.1f ? aggro_mul : 1.f);
 
   // Buried: stay put until player enters ambush radius, then rush with boost.
-  if (type == Zed_Buried && dist > aggro_radius) {
+  if (type == Zed_Buried && dist > hear) {
     return;
   }
-  if (type == Zed_Buried && ambush_boost <= 0.f && dist <= aggro_radius) {
+  if (type == Zed_Buried && ambush_boost <= 0.f && dist <= hear) {
     ambush_boost = 1.6f; // pop-up sprint
+    // Flag just-sprung via brief boost > 1.55 (Game listens for audio)
   }
   if (ambush_boost > 0.f) ambush_boost -= dt;
 
@@ -91,7 +94,7 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
     melee_reach = 36.f;
   }
 
-  if (dist < aggro_radius && dist > 1.f) {
+  if (dist < hear && dist > 1.f) {
     pos.x += (dx / dist) * move_spd * dt;
     pos.y += (dy / dist) * move_spd * dt;
   }
@@ -105,9 +108,9 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
   }
 }
 
-ZombieSystem::ZombieSystem() : count_(0), next_id_(1), scream_active_(false) {}
+ZombieSystem::ZombieSystem() : count_(0), next_id_(1), scream_active_(false), scream_pos_() {}
 
-void ZombieSystem::clear() { count_ = 0; scream_active_ = false; }
+void ZombieSystem::clear() { count_ = 0; scream_active_ = false; scream_pos_ = Vec2(); }
 
 Zombie* ZombieSystem::spawn(ZedType t, Vec2 p) {
   if (count_ >= kMaxZombies) return 0;
@@ -116,9 +119,15 @@ Zombie* ZombieSystem::spawn(ZedType t, Vec2 p) {
   return &z;
 }
 
-void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player) {
+void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player, bool player_running,
+                          bool player_crouch, bool player_bleeding, bool player_coughing) {
   damage_to_player = 0.f;
   scream_active_ = false;
+  float aggro_mul = 1.f;
+  if (player_running) aggro_mul = 1.45f;
+  else if (player_crouch) aggro_mul = 0.55f;
+  if (player_bleeding) aggro_mul *= 1.35f; // blood scent pulls infected
+  if (player_coughing) aggro_mul *= 1.2f;  // cough noise
 
   // Screamer alert: if a screamer is within its aggro of the player, pull nearby zeds in.
   Vec2 scream_pos;
@@ -126,7 +135,8 @@ void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player) {
     if (!zombies_[i].alive || zombies_[i].type != Zed_Screamer) continue;
     const float dx = player_pos.x - zombies_[i].pos.x;
     const float dy = player_pos.y - zombies_[i].pos.y;
-    if (dx * dx + dy * dy < zombies_[i].aggro_radius * zombies_[i].aggro_radius) {
+    const float ar = zombies_[i].aggro_radius * aggro_mul;
+    if (dx * dx + dy * dy < ar * ar) {
       scream_active_ = true;
       scream_pos = zombies_[i].pos;
       break;
@@ -143,11 +153,12 @@ void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player) {
       }
     }
   }
+  scream_pos_ = scream_pos;
 
   for (int i = 0; i < count_; ++i) {
     bool hit = false;
     float dmg = 0.f;
-    zombies_[i].update_ai(dt, player_pos, hit, dmg);
+    zombies_[i].update_ai(dt, player_pos, hit, dmg, aggro_mul);
     if (hit) damage_to_player += dmg;
   }
 }

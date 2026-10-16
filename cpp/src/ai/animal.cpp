@@ -67,8 +67,18 @@ int AnimalSystem::alive_of_type(AnimalType t) const {
   return n;
 }
 
-float AnimalSystem::update(float dt, Vec2 player_pos) {
+float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding) {
   float dmg = 0.f;
+  // Pack howl: if any wolf is close, pull distant packmates in
+  bool pack_alert = false;
+  for (int i = 0; i < count_; ++i) {
+    if (!animals_[i].alive) continue;
+    if (animals_[i].type != Animal_Wolf && animals_[i].type != Animal_Dog) continue;
+    const float dx = player_pos.x - animals_[i].pos.x;
+    const float dy = player_pos.y - animals_[i].pos.y;
+    if (dx * dx + dy * dy < 180.f * 180.f) { pack_alert = true; break; }
+  }
+
   for (int i = 0; i < count_; ++i) {
     Animal& a = animals_[i];
     if (!a.alive) continue;
@@ -79,9 +89,13 @@ float AnimalSystem::update(float dt, Vec2 player_pos) {
     const float dist = std::sqrt(dx * dx + dy * dy);
 
     if (a.type == Animal_Wolf || a.type == Animal_Dog) {
-      if (dist > 1.f && dist < 400.f) {
-        a.pos.x += (dx / dist) * a.speed * dt;
-        a.pos.y += (dy / dist) * a.speed * dt;
+      float range = pack_alert ? 520.f : 400.f;
+      if (player_bleeding) range += 140.f; // blood scent
+      float spd = a.speed * (pack_alert ? 1.15f : 1.f);
+      if (player_bleeding) spd *= 1.1f;
+      if (dist > 1.f && dist < range) {
+        a.pos.x += (dx / dist) * spd * dt;
+        a.pos.y += (dy / dist) * spd * dt;
       }
       if (dist < 26.f && a.attack_cooldown <= 0.f) {
         dmg += (a.type == Animal_Wolf) ? wolf_melee_damage() : wolf_melee_damage() * 0.7f;
@@ -94,10 +108,12 @@ float AnimalSystem::update(float dt, Vec2 player_pos) {
         a.pos.y -= (dy / dist) * a.speed * 1.15f * dt;
       }
     } else {
-      // Prey flees
+      // Prey flees; deer stampede slightly faster when pack-alert wolves nearby
+      float flee_spd = a.speed;
+      if (a.type == Animal_Deer && pack_alert) flee_spd *= 1.35f;
       if (dist < 250.f && dist > 1.f) {
-        a.pos.x -= (dx / dist) * a.speed * dt;
-        a.pos.y -= (dy / dist) * a.speed * dt;
+        a.pos.x -= (dx / dist) * flee_spd * dt;
+        a.pos.y -= (dy / dist) * flee_spd * dt;
       }
     }
   }

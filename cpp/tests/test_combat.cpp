@@ -1,5 +1,8 @@
 #include "mdaz/combat.hpp"
+#include "mdaz/inventory.hpp"
+#include "mdaz/item_db.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/weapons.hpp"
 #include "mdaz/zombie.hpp"
 #include "mdaz/animal.hpp"
 
@@ -76,6 +79,34 @@ int test_combat() {
     ++fail;
   } else {
     std::printf("OK   fist melee dmg 10\n");
+  }
+
+  const mdaz::WeaponDef* fnx = mdaz::find_weapon(151);
+  if (!fnx || fnx->mag_capacity != 15) {
+    std::printf("FAIL FNX mag_capacity want 15\n");
+    ++fail;
+  } else {
+    std::printf("OK   FNX mag capacity 15\n");
+  }
+
+  {
+    mdaz::ItemDatabase db;
+    db.load_from_json_string(
+      "{\"items\":[{\"id\":251,\"name\":\"Army helmet\"},{\"id\":400,\"name\":\"Bulletproof vest\"}]}");
+    mdaz::Inventory inv;
+    inv.clear();
+    inv.add_item(251, 1, db);
+    inv.add_item(400, 1, db);
+    inv.wear_clothing(0, db);
+    inv.wear_clothing(1, db);
+    const float mul = inv.armor_damage_mul();
+    // 0.85 * 0.65 = 0.5525
+    if (mul > 0.56f || mul < 0.54f) {
+      std::printf("FAIL armor mul got %g\n", mul);
+      ++fail;
+    } else {
+      std::printf("OK   armor mul helmet+vest %.3f\n", mul);
+    }
   }
 
   return fail ? 1 : 0;

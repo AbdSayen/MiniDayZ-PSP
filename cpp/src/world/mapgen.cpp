@@ -48,6 +48,12 @@ void MapGenerator::generate_new_game(int seed) {
     add(Loc_Firestation, rng.next_int(1, kMapSectorsX - 2), rng.next_int(1, kMapSectorsY - 2));
   for (int i = 0; i < helis; ++i)
     add(Loc_Helicrash, rng.next_int(0, kMapSectorsX - 1), rng.next_int(0, kMapSectorsY - 1));
+  // 1–2 police stations
+  const int police = 1 + rng.next_int(0, 1);
+  for (int i = 0; i < police; ++i)
+    add(Loc_Police, rng.next_int(1, kMapSectorsX - 2), rng.next_int(1, kMapSectorsY - 2));
+  // 1 church (meds / papers / whiskey)
+  add(Loc_Church, rng.next_int(1, kMapSectorsX - 2), rng.next_int(1, kMapSectorsY - 2));
 
   // One bunker entrance
   add(Loc_BunkerEntrance, rng.next_int(3, kMapSectorsX - 4), rng.next_int(3, kMapSectorsY - 4));

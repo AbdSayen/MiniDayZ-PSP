@@ -48,10 +48,11 @@ void ItemDatabase::classify(ItemDef& d) {
   } else if (n.find("Pipsi") != std::string::npos || n.find("Spite") != std::string::npos ||
              n.find("Kvas") != std::string::npos || n.find("Cola") != std::string::npos ||
              n.find("Whiskey") != std::string::npos || n.find("Canteen") != std::string::npos ||
-             n.find("Water bottle") != std::string::npos || n.find("drink") != std::string::npos) {
+             n.find("Water bottle") != std::string::npos || n.find("Energy drink") != std::string::npos ||
+             n.find("drink") != std::string::npos) {
     d.category = ItemCat_Drink;
     // PLACEHOLDER restores until extracted from C2 — marked known_stats=false
-    d.water_restore = 25.f;
+    d.water_restore = n.find("Energy") != std::string::npos ? 20.f : 25.f;
   } else if (n.find("Canned") != std::string::npos || n.find("Apple") != std::string::npos ||
              n.find("Banana") != std::string::npos || n.find("Rice") != std::string::npos ||
              n.find("bacon") != std::string::npos || n.find("steak") != std::string::npos ||
@@ -74,6 +75,7 @@ void ItemDatabase::classify(ItemDef& d) {
   if (d.id == 25) { // Whiskey — IV14≈20/25 water-like restores in events
     d.category = ItemCat_Drink;
     d.water_restore = 20.f;
+    d.food_restore = 5.f; // mild caloric bump from alcohol events
     d.known_stats = true;
   } else if (d.id == 28) { // Saline bag
     d.category = ItemCat_Medical;
@@ -117,6 +119,7 @@ void ItemDatabase::classify(ItemDef& d) {
   else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; }
   else if (d.id == 10) { d.category = ItemCat_Drink; d.water_restore = 35.f; } // Water bottle
   else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE
+  else if (d.id == 97) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Mushroom — risky
   else if (d.id == 21) { d.category = ItemCat_Misc; } // F1 grenade
   else if (d.id == 102) { d.category = ItemCat_Misc; } // Molotov
   else if (d.id == 456) { d.category = ItemCat_Misc; } // Tent

@@ -84,6 +84,13 @@ public:
     clips_["craft"] = make_noise_burst(0.1f, 660.f, 0.3f);
     clips_["bunker"] = make_thud(0.25f, 0.4f);
     clips_["death"] = make_thud(0.5f, 0.6f);
+    clips_["airdrop"] = make_noise_burst(0.35f, 95.f, 0.45f);
+    clips_["howl"] = make_noise_burst(0.55f, 140.f, 0.4f);
+    clips_["cough"] = make_noise_burst(0.18f, 220.f, 0.3f);
+    clips_["rain"] = make_noise_burst(0.4f, 60.f, 0.22f);
+    clips_["thunder"] = make_thud(0.7f, 0.65f);
+    clips_["click"] = make_noise_burst(0.04f, 1200.f, 0.2f);
+    clips_["wind"] = make_noise_burst(0.5f, 80.f, 0.18f);
     SDL_PauseAudioDevice(device_, 0);
   }
 

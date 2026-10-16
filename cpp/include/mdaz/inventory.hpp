@@ -29,10 +29,14 @@ public:
   bool wear_clothing(int slot, const ItemDatabase& db);
   void restore_worn(const ItemId* ids, int count);
   float clothing_insulation() const;
+  // Damage multiplier 0..1 after worn helmet/vest (1 = no armor).
+  float armor_damage_mul() const;
 
   InvSlot& slot(int i);
   const InvSlot& slot(int i) const;
   int slot_count() const { return kInventorySlots; }
+  // Usable bag slots (base 12 + backpack bonuses); physical array stays kInventorySlots.
+  int capacity() const;
   int worn_count() const { return worn_count_; }
   ItemId worn_at(int i) const { return (i >= 0 && i < worn_count_) ? worn_[i] : 0; }
 

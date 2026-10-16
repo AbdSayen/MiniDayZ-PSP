@@ -19,6 +19,8 @@ Player::Player()
     zeds_killed(0),
     bandits_killed(0),
     animals_killed(0),
+    fish_caught(0),
+    forage_count(0),
     hear_radius(static_cast<float>(balance::Player_Hear_radius)),
     perk_camel(false),
     perk_hamster(false),
@@ -26,7 +28,14 @@ Player::Player()
     perk_metabolism(false),
     perk_runner(false),
     perk_hunter(false),
-    perk_farmer(false) {}
+    perk_farmer(false),
+    perk_snowborn(false),
+    cold_endure_t_(0.f),
+    thirst_endure_t_(0.f),
+    starve_endure_t_(0.f),
+    wound_endure_t_(0.f),
+    sprint_t_(0.f),
+    bleed_endure_t_(0.f) {}
 
 void Player::reset_new_game(Difficulty d) {
   difficulty = d;
@@ -40,6 +49,8 @@ void Player::reset_new_game(Difficulty d) {
   zeds_killed = 0;
   bandits_killed = 0;
   animals_killed = 0;
+  fish_caught = 0;
+  forage_count = 0;
   perk_camel = false;
   perk_hamster = false;
   perk_regen = false;
@@ -47,6 +58,13 @@ void Player::reset_new_game(Difficulty d) {
   perk_runner = false;
   perk_hunter = false;
   perk_farmer = false;
+  perk_snowborn = false;
+  cold_endure_t_ = 0.f;
+  thirst_endure_t_ = 0.f;
+  starve_endure_t_ = 0.f;
+  wound_endure_t_ = 0.f;
+  sprint_t_ = 0.f;
+  bleed_endure_t_ = 0.f;
   survival.reset_full();
   hear_radius = static_cast<float>(balance::Player_Hear_radius);
 }

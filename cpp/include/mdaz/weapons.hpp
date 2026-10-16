@@ -12,6 +12,7 @@ struct WeaponDef {
   const char* name;
   WeaponStats stats;
   ItemId ammo_id; // 0 if melee / none
+  int mag_capacity; // chamber size; 0 = feed straight from inventory (bows)
 };
 
 const WeaponDef* find_weapon(ItemId item_id);
