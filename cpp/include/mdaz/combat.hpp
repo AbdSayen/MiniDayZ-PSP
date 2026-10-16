@@ -13,14 +13,16 @@ struct WeaponStats {
   bool is_melee;
 };
 
-// Defaults until per-weapon tables are extracted from "Bullets parameters" / firearm events.
 WeaponStats default_melee_stats();
 WeaponStats default_pistol_stats();
 
 float apply_difficulty_damage_reducer(float damage, float reducer);
-
-// Zed melee damage from globals (verified init values).
 float zed_melee_damage(ZedType type);
+
+// Bullets_dmg_deal (verified):
+//   dmg = round( bullet_base * random(bullet_base/4, …) ) — variance uses IV0/4.
+// Implemented as round(base * U(0.75, 1.25)) ≈ ±25% which matches IV0±IV0/4.
+float roll_bullet_damage(float base_damage, class Rng& rng);
 
 struct DispersionState {
   float angle;

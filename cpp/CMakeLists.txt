@@ -17,6 +17,8 @@ set(MDAZ_CORE_SOURCES
   src/player/survival.cpp
   src/world/world.cpp
   src/world/bunker.cpp
+  src/world/loot.cpp
+  src/world/mapgen.cpp
   src/inventory/item_db.cpp
   src/inventory/inventory.cpp
   src/inventory/craft.cpp
@@ -56,10 +58,28 @@ if(MDAZ_DESKTOP)
 
   find_package(SDL2 QUIET)
   if(SDL2_FOUND)
-    target_compile_definitions(minidayz_desktop PRIVATE MDAZ_HAS_SDL2=1)
+    message(STATUS "SDL2 found — building windowed desktop host")
+    # Keep our own main(); do not pull in SDL2main's WinMain wrapper.
+    target_compile_definitions(minidayz_desktop PRIVATE MDAZ_HAS_SDL2=1 SDL_MAIN_HANDLED=1)
     target_link_libraries(minidayz_desktop PRIVATE SDL2::SDL2)
-    if(TARGET SDL2::SDL2main)
-      target_link_libraries(minidayz_desktop PRIVATE SDL2::SDL2main)
+    if(WIN32 AND MINGW)
+      # Shared MinGW SDL2 also needs these when using the import lib.
+      target_link_libraries(minidayz_desktop PRIVATE imm32 winmm version setupapi ole32 oleaut32)
+    endif()
+
+    # Copy SDL2.dll next to the exe when available (shared builds).
+    if(DEFINED SDL2_BINDIR AND EXISTS "${SDL2_BINDIR}/SDL2.dll")
+      add_custom_command(TARGET minidayz_desktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${SDL2_BINDIR}/SDL2.dll"
+          $<TARGET_FILE_DIR:minidayz_desktop>/SDL2.dll
+      )
+    elseif(EXISTS "${CMAKE_PREFIX_PATH}/bin/SDL2.dll")
+      add_custom_command(TARGET minidayz_desktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_PREFIX_PATH}/bin/SDL2.dll"
+          $<TARGET_FILE_DIR:minidayz_desktop>/SDL2.dll
+      )
     endif()
   else()
     message(WARNING "SDL2 not found — desktop host will use null/software console fallback")

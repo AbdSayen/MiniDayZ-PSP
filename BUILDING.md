@@ -6,18 +6,23 @@
 - C++11 compiler (MinGW g++ / MSVC / Clang)
 - Optional: SDL2 (for windowed host). Without SDL2 the desktop binary uses a null/console platform.
 
-### Windows (MinGW example)
+### Windows (MinGW + bundled SDL2)
+
+SDL2 MinGW devel is vendored under `cpp/third_party/SDL2-2.30.9/` (downloaded once).
 
 ```bat
 cd cpp
-cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+set SDL=C:\Users\abdur\Desktop\MiniDayZ\cpp\third_party\SDL2-2.30.9\x86_64-w64-mingw32
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=%SDL%
 cmake --build build -j
+copy /Y third_party\SDL2-2.30.9\x86_64-w64-mingw32\bin\SDL2.dll build\SDL2.dll
 cd build
 mdaz_tests.exe
 minidayz_desktop.exe
 ```
 
-Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_json).
+Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_json).  
+`SDL2.dll` must sit next to `minidayz_desktop.exe`.
 
 ### Controls (desktop)
 

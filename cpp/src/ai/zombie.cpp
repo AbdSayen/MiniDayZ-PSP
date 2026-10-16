@@ -16,32 +16,39 @@ void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   pos = p;
   alive = true;
   attack_cooldown = 0.f;
+  // Speeds / HP are stubs pending full Zeds_common extract.
+  // Aggro uses Player_Hear_radius (1000) as upper sight budget for shooters;
+  // melee types use shorter radii from observed behavior groups.
   switch (t) {
   case Zed_Fast:
     max_hp = 60.f;
     speed = 95.f;
-    aggro_radius = 260.f;
+    aggro_radius = 280.f;
     break;
   case Zed_Army:
-  case Zed_ArmyShooter:
     max_hp = 120.f;
     speed = 55.f;
-    aggro_radius = 280.f;
+    aggro_radius = 300.f;
+    break;
+  case Zed_ArmyShooter:
+    max_hp = 110.f;
+    speed = 50.f;
+    aggro_radius = static_cast<float>(balance::Player_Hear_radius) * 0.45f;
     break;
   case Zed_Tank:
     max_hp = 400.f;
     speed = 35.f;
-    aggro_radius = 300.f;
+    aggro_radius = 340.f;
     break;
   case Zed_Screamer:
     max_hp = 80.f;
     speed = 50.f;
-    aggro_radius = 320.f;
+    aggro_radius = 360.f; // alerts others — scream radius TBD
     break;
   case Zed_Buried:
     max_hp = 90.f;
     speed = 45.f;
-    aggro_radius = 180.f;
+    aggro_radius = 160.f; // ambush — jumps when close
     break;
   case Zed_Normal:
   default:

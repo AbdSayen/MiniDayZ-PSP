@@ -3,6 +3,8 @@
 #include "mdaz/animal.hpp"
 #include "mdaz/inventory.hpp"
 #include "mdaz/item_db.hpp"
+#include "mdaz/loot.hpp"
+#include "mdaz/mapgen.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
 #include "mdaz/rng.hpp"
@@ -49,6 +51,8 @@ private:
   ZombieSystem zombies_;
   AnimalSystem animals_;
   WorldTimers timers_;
+  LootSystem loot_;
+  MapGenerator mapgen_;
   Rng rng_;
   float state_timer_;
   char data_dir_[512];

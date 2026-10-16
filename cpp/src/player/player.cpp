@@ -17,7 +17,11 @@ Player::Player()
     days_survived(1),
     zeds_killed(0),
     bandits_killed(0),
-    hear_radius(static_cast<float>(balance::Player_Hear_radius)) {}
+    hear_radius(static_cast<float>(balance::Player_Hear_radius)),
+    perk_camel(false),
+    perk_hamster(false),
+    perk_regen(false),
+    perk_metabolism(false) {}
 
 void Player::reset_new_game(Difficulty d) {
   difficulty = d;
@@ -29,6 +33,10 @@ void Player::reset_new_game(Difficulty d) {
   days_survived = static_cast<int>(balance::Day_survived);
   zeds_killed = 0;
   bandits_killed = 0;
+  perk_camel = false;
+  perk_hamster = false;
+  perk_regen = false;
+  perk_metabolism = false;
   survival.reset_full();
   hear_radius = static_cast<float>(balance::Player_Hear_radius);
 }
@@ -58,8 +66,9 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
   if (pos.y > kMapLayoutH) pos.y = kMapLayoutH;
 }
 
-void Player::update_survival(float dt, float weather_temp) {
-  survival.update(dt, rates_for_difficulty(difficulty), weather_temp, running);
+void Player::update_survival(float dt, float weather_temp, bool is_night, bool is_raining) {
+  survival.update(dt, rates_for_difficulty(difficulty), weather_temp, running,
+                  is_night, is_raining, perk_camel, perk_hamster, perk_regen, perk_metabolism);
 }
 
 Aabb Player::bounds() const {

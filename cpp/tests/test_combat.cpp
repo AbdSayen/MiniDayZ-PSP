@@ -1,4 +1,5 @@
 #include "mdaz/combat.hpp"
+#include "mdaz/rng.hpp"
 #include "mdaz/zombie.hpp"
 #include "mdaz/animal.hpp"
 
@@ -44,6 +45,30 @@ int test_combat() {
       std::printf("FAIL zed should hit for 9, got %g\n", dmg);
       ++fail;
     } else std::printf("OK   zed melee hit %.0f\n", dmg);
+  }
+
+  mdaz::Rng rng(1);
+  float sum = 0.f;
+  float mn = 1e9f, mx = -1e9f;
+  for (int i = 0; i < 200; ++i) {
+    float d = mdaz::roll_bullet_damage(40.f, rng);
+    sum += d;
+    if (d < mn) mn = d;
+    if (d > mx) mx = d;
+  }
+  // ±25% of 40 => [30, 50]
+  if (mn < 30.f || mx > 50.f) {
+    std::printf("FAIL bullet roll range %g..%g\n", mn, mx);
+    ++fail;
+  } else {
+    std::printf("OK   bullet dmg variance 40 -> [%g..%g] avg %.1f\n", mn, mx, sum / 200.f);
+  }
+
+  if (mdaz::default_melee_stats().range != 45.f) {
+    std::printf("FAIL fist range\n");
+    ++fail;
+  } else {
+    std::printf("OK   fist melee range 45\n");
   }
 
   return fail ? 1 : 0;

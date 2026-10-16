@@ -1,12 +1,14 @@
 #include "mdaz/combat.hpp"
 #include "mdaz/rng.hpp"
 
+// Fist melee pick distance observed as 45 in event data near "Fist".
+
 namespace mdaz {
 
 WeaponStats default_melee_stats() {
   WeaponStats w;
-  w.damage = 20.f;
-  w.range = 40.f;
+  w.damage = 20.f; // per-weapon melee dmg still extracting; Fist uses NPC_get_damage path
+  w.range = 45.f;  // verified pick-distance near "Fist"
   w.fire_interval = 0.55f;
   w.dispersion_deg = 0.f;
   w.is_melee = true;
@@ -38,13 +40,24 @@ float zed_melee_damage(ZedType type) {
   case Zed_ArmyShooter:
     return static_cast<float>(balance::Zed_army_dmg); // 13
   case Zed_Tank:
-    return static_cast<float>(balance::Zed_army_dmg) * 1.5f; // tank group separate; scale TBD
+    // Zed_tank_dmg_deal group exists; exact multiplier still extracting — use army as floor
+    return static_cast<float>(balance::Zed_army_dmg) * 1.5f;
   case Zed_Screamer:
   case Zed_Buried:
   case Zed_Normal:
   default:
     return static_cast<float>(balance::Zed_dmg); // 9
   }
+}
+
+float roll_bullet_damage(float base_damage, Rng& rng) {
+  // From Bullets_dmg_deal: uses bullet IV0 with random(IV0/4, …) variance.
+  // Equivalent band: [base - base/4, base + base/4] = [0.75, 1.25] * base
+  const float lo = base_damage * 0.75f;
+  const float hi = base_damage * 1.25f;
+  const float v = rng.range(lo, hi);
+  // round() as in original
+  return static_cast<float>(static_cast<int>(v + (v >= 0.f ? 0.5f : -0.5f)));
 }
 
 DispersionState::DispersionState() { reset_from_globals(); }

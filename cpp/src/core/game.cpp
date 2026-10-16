@@ -52,13 +52,18 @@ void Game::start_new_game(Difficulty d) {
   weather_.reset();
   zombies_.clear();
   animals_.clear();
+  loot_.clear();
+  timers_.reset();
   rng_.seed(140u);
+  mapgen_.generate_new_game(140);
 
   // Spawn a few nearby threats for playable loop
   zombies_.spawn(Zed_Normal, Vec2(player_.pos.x + 180.f, player_.pos.y));
   zombies_.spawn(Zed_Fast, Vec2(player_.pos.x - 220.f, player_.pos.y + 40.f));
+  zombies_.spawn(Zed_Buried, Vec2(player_.pos.x + 90.f, player_.pos.y + 160.f));
   animals_.spawn(Animal_Wolf, Vec2(player_.pos.x + 300.f, player_.pos.y - 100.f));
   animals_.spawn(Animal_Deer, Vec2(player_.pos.x - 400.f, player_.pos.y));
+  loot_.spawn_random(Vec2(player_.pos.x + 60.f, player_.pos.y - 40.f), rng_);
 
   state_ = AppState_Playing;
 }
@@ -86,14 +91,25 @@ void Game::update_playing(float dt, const InputState& in) {
   }
 
   weather_.update(dt);
-  player_.update_survival(dt, weather_.ambient_temp);
+  player_.update_survival(dt, weather_.ambient_temp, weather_.is_night, weather_.rain > 0.7f);
   timers_.update(dt);
 
-  if (timers_.consume_zed_respawn() && zombies_.alive_count() < 4) {
+  if (timers_.consume_zed_respawn() && zombies_.alive_count() < 6) {
     const float ang = rng_.next_float() * 6.28318f;
     const float dist = 200.f + rng_.next_float() * 150.f;
-    zombies_.spawn(Zed_Normal, Vec2(player_.pos.x + std::cos(ang) * dist,
-                                    player_.pos.y + std::sin(ang) * dist));
+    const ZedType zt = static_cast<ZedType>(rng_.next_int(0, Zed_Fast));
+    zombies_.spawn(zt, Vec2(player_.pos.x + std::cos(ang) * dist,
+                            player_.pos.y + std::sin(ang) * dist));
+  }
+  if (timers_.consume_loot_respawn()) {
+    const float ang = rng_.next_float() * 6.28318f;
+    const float dist = 120.f + rng_.next_float() * 200.f;
+    loot_.spawn_random(Vec2(player_.pos.x + std::cos(ang) * dist,
+                            player_.pos.y + std::sin(ang) * dist), rng_);
+  }
+  if (timers_.consume_airdrop()) {
+    loot_.spawn_airdrop(Vec2(player_.pos.x + rng_.range(-400.f, 400.f),
+                             player_.pos.y + rng_.range(-400.f, 400.f)), rng_);
   }
 
   float zed_dmg = 0.f;

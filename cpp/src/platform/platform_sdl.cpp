@@ -8,6 +8,9 @@ IPlatform* create_null_platform();
 }
 
 #if defined(MDAZ_HAS_SDL2) && MDAZ_HAS_SDL2
+#ifndef SDL_MAIN_HANDLED
+#define SDL_MAIN_HANDLED
+#endif
 #include <SDL.h>
 
 namespace mdaz {

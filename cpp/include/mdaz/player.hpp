@@ -24,8 +24,13 @@ struct Player {
 
   void reset_new_game(Difficulty d);
   void apply_input(float move_x, float move_y, bool want_run, float dt);
-  void update_survival(float dt, float weather_temp);
+  void update_survival(float dt, float weather_temp, bool is_night, bool is_raining);
   Aabb bounds() const;
+
+  bool perk_camel;
+  bool perk_hamster;
+  bool perk_regen;
+  bool perk_metabolism;
 };
 
 } // namespace mdaz

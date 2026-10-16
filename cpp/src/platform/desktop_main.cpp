@@ -2,6 +2,10 @@
 #include "mdaz/platform.hpp"
 #include "mdaz/platform_null.hpp"
 
+#ifndef SDL_MAIN_HANDLED
+#define SDL_MAIN_HANDLED
+#endif
+
 #include <cstdio>
 
 int main(int argc, char** argv) {
