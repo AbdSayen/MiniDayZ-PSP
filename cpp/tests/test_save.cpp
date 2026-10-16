@@ -24,18 +24,36 @@ int test_save() {
   mdaz::WeatherState w;
   w.day_phase = 0.42f;
 
+  bool visited[mdaz::kMapSectorsX * mdaz::kMapSectorsY];
+  for (int i = 0; i < mdaz::kMapSectorsX * mdaz::kMapSectorsY; ++i) visited[i] = false;
+  visited[0] = true;
+  visited[17] = true;
+
   mdaz::SaveBlob blob;
-  if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, blob)) {
+  if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, 3, blob, visited,
+                                         mdaz::kMapSectorsX * mdaz::kMapSectorsY)) {
     std::printf("FAIL write\n");
     return 1;
+  }
+  if (blob.version != 3) {
+    std::printf("FAIL save version %d\n", blob.version);
+    ++fail;
   }
 
   mdaz::Player p2;
   mdaz::Inventory inv2;
   mdaz::WeatherState w2;
-  if (!mdaz::SaveSystem::read_from_buffer(blob, p2, inv2, w2)) {
+  int eq = -1;
+  bool visited2[mdaz::kMapSectorsX * mdaz::kMapSectorsY];
+  for (int i = 0; i < mdaz::kMapSectorsX * mdaz::kMapSectorsY; ++i) visited2[i] = false;
+  if (!mdaz::SaveSystem::read_from_buffer(blob, p2, inv2, w2, &eq, visited2,
+                                          mdaz::kMapSectorsX * mdaz::kMapSectorsY)) {
     std::printf("FAIL read\n");
     return 1;
+  }
+  if (eq != 3) {
+    std::printf("FAIL equipped_slot\n");
+    ++fail;
   }
 
   if (p2.pos.x != 1234.f || p2.survival.food != 44.f || p2.zeds_killed != 3) {
@@ -56,6 +74,11 @@ int test_save() {
     std::printf("FAIL weather\n");
     ++fail;
   } else std::printf("OK   weather roundtrip\n");
+
+  if (!visited2[0] || !visited2[17] || visited2[1]) {
+    std::printf("FAIL visited fog bits\n");
+    ++fail;
+  } else std::printf("OK   visited fog roundtrip\n");
 
   return fail ? 1 : 0;
 }

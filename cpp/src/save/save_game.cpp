@@ -4,8 +4,31 @@
 
 namespace mdaz {
 
+namespace {
+
+void pack_visited(const bool* visited, int len, unsigned char out[32]) {
+  std::memset(out, 0, 32);
+  if (!visited || len <= 0) return;
+  if (len > 256) len = 256;
+  for (int i = 0; i < len; ++i) {
+    if (visited[i]) out[i >> 3] |= static_cast<unsigned char>(1u << (i & 7));
+  }
+}
+
+void unpack_visited(const unsigned char in[32], bool* visited, int len) {
+  if (!visited || len <= 0) return;
+  if (len > 256) len = 256;
+  for (int i = 0; i < len; ++i) {
+    visited[i] = (in[i >> 3] & (1u << (i & 7))) != 0;
+  }
+}
+
+} // namespace
+
 bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
-                                 const WeatherState& weather, SaveBlob& out) {
+                                 const WeatherState& weather, int equipped_slot,
+                                 SaveBlob& out,
+                                 const bool* visited, int visited_len) {
   std::memset(&out, 0, sizeof(out));
   out.magic = kMagic;
   out.version = kVersion;
@@ -19,18 +42,28 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   out.bleeding = player.survival.bleeding;
   out.days_survived = player.days_survived;
   out.zeds_killed = player.zeds_killed;
+  out.bandits_killed = player.bandits_killed;
   for (int i = 0; i < kInventorySlots; ++i) {
     out.inv_ids[i] = inv.slot(i).id;
     out.inv_counts[i] = inv.slot(i).count;
   }
+  out.worn_count = inv.worn_count();
+  if (out.worn_count > 6) out.worn_count = 6;
+  for (int i = 0; i < out.worn_count; ++i) out.worn_ids[i] = inv.worn_at(i);
   out.day_phase = weather.day_phase;
   out.rain = weather.rain;
+  out.infected = player.survival.infected ? 1 : 0;
+  out.torch_on = (player.torch_on ? 1 : 0) | (player.nvg_on ? 2 : 0);
+  out.equipped_slot = equipped_slot;
+  pack_visited(visited, visited_len, out.visited);
   return true;
 }
 
 bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory& inv,
-                                  WeatherState& weather) {
-  if (in.magic != kMagic || in.version != kVersion) return false;
+                                  WeatherState& weather, int* equipped_slot,
+                                  bool* visited, int visited_len) {
+  if (in.magic != kMagic) return false;
+  if (in.version != 2 && in.version != kVersion) return false;
   player.reset_new_game(in.difficulty);
   player.pos.x = in.pos_x;
   player.pos.y = in.pos_y;
@@ -39,35 +72,53 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   player.survival.blood = in.blood;
   player.survival.temperature = in.temperature;
   player.survival.bleeding = in.bleeding;
+  player.survival.infected = in.infected != 0;
+  player.torch_on = (in.torch_on & 1) != 0;
+  player.nvg_on = (in.torch_on & 2) != 0;
   player.days_survived = in.days_survived;
   player.zeds_killed = in.zeds_killed;
+  player.bandits_killed = in.bandits_killed;
   inv.clear();
   for (int i = 0; i < kInventorySlots; ++i) {
     inv.slot(i).id = in.inv_ids[i];
     inv.slot(i).count = in.inv_counts[i];
   }
+  inv.restore_worn(in.worn_ids, in.worn_count);
   weather.day_phase = in.day_phase;
   weather.rain = in.rain;
+  if (equipped_slot) *equipped_slot = in.equipped_slot;
+  if (visited && visited_len > 0) {
+    if (in.version >= 3) unpack_visited(in.visited, visited, visited_len);
+    else for (int i = 0; i < visited_len; ++i) visited[i] = false;
+  }
   return true;
 }
 
 bool SaveSystem::save_file(IPlatform& io, const char* path, const Player& player,
-                           const Inventory& inv, const WeatherState& weather) {
+                           const Inventory& inv, const WeatherState& weather,
+                           int equipped_slot,
+                           const bool* visited, int visited_len) {
   SaveBlob blob;
-  if (!write_to_buffer(player, inv, weather, blob)) return false;
+  if (!write_to_buffer(player, inv, weather, equipped_slot, blob, visited, visited_len))
+    return false;
   return io.write_file(path, &blob, sizeof(blob));
 }
 
 bool SaveSystem::load_file(IPlatform& io, const char* path, Player& player,
-                           Inventory& inv, WeatherState& weather) {
+                           Inventory& inv, WeatherState& weather,
+                           int* equipped_slot,
+                           bool* visited, int visited_len) {
   char* data = 0;
   std::size_t size = 0;
   if (!io.read_file(path, &data, &size)) return false;
   bool ok = false;
-  if (size == sizeof(SaveBlob)) {
+  // v3 = full SaveBlob; v2 = SaveBlob without visited[32]
+  const std::size_t v2_size = sizeof(SaveBlob) - 32;
+  if (size == sizeof(SaveBlob) || size == v2_size) {
     SaveBlob blob;
-    std::memcpy(&blob, data, sizeof(blob));
-    ok = read_from_buffer(blob, player, inv, weather);
+    std::memset(&blob, 0, sizeof(blob));
+    std::memcpy(&blob, data, size < sizeof(blob) ? size : sizeof(blob));
+    ok = read_from_buffer(blob, player, inv, weather, equipped_slot, visited, visited_len);
   }
   delete[] data;
   return ok;

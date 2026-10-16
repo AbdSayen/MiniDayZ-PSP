@@ -31,12 +31,25 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | WASD / arrows | Move |
 | Shift | Run |
 | Z / Space | Attack / confirm |
-| C | Use first consumable |
-| E | Interact (reserved) |
-| R | Reload (reserved) |
+| E | Loot / bunker / mount car·boat / bush forage / fish |
+| C | Use item (food/med/NVG/flare) / wear / gas / toolbox |
+| R | Craft (first matching recipe) / cook near fire |
+| F | Throw F1 grenade (or stick) |
+| C + Battery | Refill torch/NVG charge |
+| C + Tent | Place shelter (long warmth) |
+| C + Gasmask | Wear (infection resist) |
+| F + Molotov | Throw firebomb (leaves fire) |
+| G | Drop one from equipped slot |
+| V | Mag reload stub (guns) |
+| T | Place campfire (if kit) / else toggle torch |
+| Q / X / mousewheel | Cycle hotbar |
+| Tab | Hold: inventory list |
+| 1–8 | Equip hotbar slot |
+| F5 / F9 | Save / load (`save.mdaz` v3) |
 | P | Pause |
 | Enter | New game from menu |
-| Esc | Quit |
+| 1/2/3 (menu) | Novice / Regular / Veteran |
+| Esc | Menu / quit |
 
 ## Analysis tools (Node.js)
 
@@ -46,6 +59,8 @@ node tools/extract_globals_and_groups.js original_docs/data.js
 node tools/extract_group_tree.js original_docs/data.js
 node tools/extract_items.js
 node tools/gen_balance_hpp.js
+node tools/extract_melee_npc_dmg.js
+node tools/extract_bullet_iv0.js
 ```
 
 Outputs land in `cpp/docs_gen/` and `cpp/include/mdaz/balance_globals.hpp`.
@@ -59,12 +74,4 @@ Outputs land in `cpp/docs_gen/` and `cpp/include/mdaz/balance_globals.hpp`.
 make
 ```
 
-3. Copy `EBOOT.PBP` + `data/` to `ms0:/PSP/GAME/MINIDAYZ/`.
-
-**Do not claim PSP support until `make` produces a runnable EBOOT and it is tested on hardware or PPSSPP.**
-
-See `cpp/platform/psp/Makefile` and `KNOWN_ISSUES.md`.
-
-## Baseline
-
-Gameplay numbers are taken from **original_docs** Mini DAYZ **1.4.1** (`gameversion=140`). Plus/Reloaded are not the port baseline.
+See `KNOWN_ISSUES.md` — do not claim a working EBOOT until built with PSPSDK.

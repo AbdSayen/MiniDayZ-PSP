@@ -34,10 +34,11 @@ struct SurvivalState {
   void reset_full();
 
   // dt in seconds. Perks match original globals perk_camel / perk_hamster / perk_regen / perk_metabolism.
+  // clothing_insulation: reduces Day_cold (and part of Night/Rain) — stub until C2 gear extract.
   void update(float dt, const SurvivalRates& rates, float weather_temp,
               bool is_running, bool is_night, bool is_raining,
               bool perk_camel, bool perk_hamster, bool perk_regen,
-              bool perk_metabolism);
+              bool perk_metabolism, float clothing_insulation = 0.f);
 
   bool is_dead() const { return blood <= 0.f; }
 

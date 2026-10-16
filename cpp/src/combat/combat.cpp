@@ -7,8 +7,10 @@ namespace mdaz {
 
 WeaponStats default_melee_stats() {
   WeaponStats w;
-  w.damage = 20.f; // per-weapon melee dmg still extracting; Fist uses NPC_get_damage path
-  w.range = 45.f;  // verified pick-distance near "Fist"
+  // Fist: pick-distance 45 verified; damage candidate 10 from IV4 "Fist" window
+  // (melee_damage_hints / melee_npc_dmg extract). Per-weapon values in weapons.cpp.
+  w.damage = 10.f;
+  w.range = 45.f;
   w.fire_interval = 0.55f;
   w.dispersion_deg = 0.f;
   w.is_melee = true;

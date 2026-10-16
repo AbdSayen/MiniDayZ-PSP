@@ -14,6 +14,7 @@ struct Zombie {
   float aggro_radius;
   bool alive;
   float attack_cooldown;
+  float ambush_boost; // Buried pop-up speed burst
 
   Zombie();
   void setup(ZedType t, Vec2 p, EntityId eid);
@@ -29,6 +30,7 @@ public:
   Zombie* spawn(ZedType t, Vec2 p);
   void update(float dt, Vec2 player_pos, float& damage_to_player);
   int alive_count() const;
+  bool scream_active() const { return scream_active_; }
   Zombie* begin() { return zombies_; }
   Zombie* end() { return zombies_ + count_; }
   const Zombie* begin() const { return zombies_; }
@@ -38,6 +40,7 @@ private:
   Zombie zombies_[kMaxZombies];
   int count_;
   EntityId next_id_;
+  bool scream_active_;
 };
 
 } // namespace mdaz

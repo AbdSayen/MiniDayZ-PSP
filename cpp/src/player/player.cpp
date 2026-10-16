@@ -13,15 +13,20 @@ Player::Player()
     run_multiplier(1.55f),
     running(false),
     torch_on(false),
+    nvg_on(false),
     difficulty(Difficulty_Novice),
     days_survived(1),
     zeds_killed(0),
     bandits_killed(0),
+    animals_killed(0),
     hear_radius(static_cast<float>(balance::Player_Hear_radius)),
     perk_camel(false),
     perk_hamster(false),
     perk_regen(false),
-    perk_metabolism(false) {}
+    perk_metabolism(false),
+    perk_runner(false),
+    perk_hunter(false),
+    perk_farmer(false) {}
 
 void Player::reset_new_game(Difficulty d) {
   difficulty = d;
@@ -30,13 +35,18 @@ void Player::reset_new_game(Difficulty d) {
   facing_deg = 0.f;
   running = false;
   torch_on = false;
+  nvg_on = false;
   days_survived = static_cast<int>(balance::Day_survived);
   zeds_killed = 0;
   bandits_killed = 0;
+  animals_killed = 0;
   perk_camel = false;
   perk_hamster = false;
   perk_regen = false;
   perk_metabolism = false;
+  perk_runner = false;
+  perk_hunter = false;
+  perk_farmer = false;
   survival.reset_full();
   hear_radius = static_cast<float>(balance::Player_Hear_radius);
 }
@@ -55,7 +65,9 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
     running = false;
   }
 
-  const float spd = move_speed * (running ? run_multiplier : 1.f);
+  float run_mul = run_multiplier;
+  if (perk_runner) run_mul += 0.2f; // stub until perk_runner extract
+  const float spd = move_speed * (running ? run_mul : 1.f);
   vel = Vec2(move_x * spd, move_y * spd);
   pos.x += vel.x * dt;
   pos.y += vel.y * dt;
@@ -66,9 +78,11 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
   if (pos.y > kMapLayoutH) pos.y = kMapLayoutH;
 }
 
-void Player::update_survival(float dt, float weather_temp, bool is_night, bool is_raining) {
+void Player::update_survival(float dt, float weather_temp, bool is_night, bool is_raining,
+                             float clothing_insulation) {
   survival.update(dt, rates_for_difficulty(difficulty), weather_temp, running,
-                  is_night, is_raining, perk_camel, perk_hamster, perk_regen, perk_metabolism);
+                  is_night, is_raining, perk_camel, perk_hamster, perk_regen, perk_metabolism,
+                  clothing_insulation);
 }
 
 Aabb Player::bounds() const {

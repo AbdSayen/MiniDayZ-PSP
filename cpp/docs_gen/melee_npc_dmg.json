@@ -1,0 +1,85 @@
+{
+  "callCount": 109,
+  "byWeapon": {
+    "Fist": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {
+        "10": 2,
+        "45": 1
+      }
+    },
+    "fireaxe": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "pipewrench": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "crowbar": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "pitchfork": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "pickaxe": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "sledgehammer": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "shovel": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "bat": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "splitaxe": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "sword": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {
+        "15": 1
+      }
+    },
+    "knife": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "knife_army": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "knife_hunter": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    },
+    "knife_butcher": {
+      "callHits": 0,
+      "dmgCandidates": {},
+      "rangeCandidates": {}
+    }
+  }
+}

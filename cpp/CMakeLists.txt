@@ -19,16 +19,21 @@ set(MDAZ_CORE_SOURCES
   src/world/bunker.cpp
   src/world/loot.cpp
   src/world/mapgen.cpp
+  src/world/vehicle.cpp
+  src/world/campfire.cpp
   src/inventory/item_db.cpp
   src/inventory/inventory.cpp
   src/inventory/craft.cpp
   src/combat/combat.cpp
   src/combat/weapons.cpp
+  src/combat/bullet.cpp
   src/ai/zombie.cpp
   src/ai/animal.cpp
+  src/ai/bandit.cpp
   src/weather/weather.cpp
   src/save/save_game.cpp
   src/ui/hud.cpp
+  src/ui/quest.cpp
   src/platform/platform_null.cpp
 )
 
@@ -53,6 +58,7 @@ if(MDAZ_DESKTOP)
   add_executable(minidayz_desktop
     src/platform/desktop_main.cpp
     src/platform/platform_sdl.cpp
+    src/platform/audio_sdl.cpp
   )
   target_link_libraries(minidayz_desktop PRIVATE mdaz_core)
 
@@ -105,6 +111,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_save.cpp
     tests/test_bunker.cpp
     tests/test_craft.cpp
+    tests/test_systems.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

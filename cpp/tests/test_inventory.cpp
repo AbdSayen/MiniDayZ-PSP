@@ -61,5 +61,51 @@ int test_inventory() {
     std::printf("OK   bandage stops bleeding\n");
   }
 
+  {
+    mdaz::ItemDatabase med;
+    const char* mjson =
+      "{\"version\":\"1.4.1\",\"items\":["
+      "{\"id\":19,\"name\":\"Blood bag\"},"
+      "{\"id\":28,\"name\":\"Saline bag\"},"
+      "{\"id\":45,\"name\":\"Morphine\"},"
+      "{\"id\":29,\"name\":\"Vitamins\"}"
+      "]}";
+    if (!med.load_from_json_string(mjson)) {
+      std::printf("FAIL medical db\n");
+      ++fail;
+    } else {
+      mdaz::Inventory minv;
+      mdaz::SurvivalState ms;
+      ms.blood = 40.f;
+      minv.add_item(19, 1, med);
+      if (!minv.use_consumable(0, ms, med) || ms.blood < 80.f) {
+        std::printf("FAIL blood bag heal (blood=%.1f)\n", ms.blood);
+        ++fail;
+      } else {
+        std::printf("OK   blood bag heal\n");
+      }
+      ms.blood = 50.f;
+      minv.add_item(28, 1, med);
+      int sal = -1;
+      for (int i = 0; i < minv.slot_count(); ++i) if (minv.slot(i).id == 28) sal = i;
+      if (sal < 0 || !minv.use_consumable(sal, ms, med) || ms.blood < 70.f) {
+        std::printf("FAIL saline heal (blood=%.1f)\n", ms.blood);
+        ++fail;
+      } else {
+        std::printf("OK   saline heal\n");
+      }
+      ms.bleeding = 2.f;
+      minv.add_item(45, 1, med);
+      int mor = -1;
+      for (int i = 0; i < minv.slot_count(); ++i) if (minv.slot(i).id == 45) mor = i;
+      if (mor < 0 || !minv.use_consumable(mor, ms, med) || ms.bleeding != 0.f) {
+        std::printf("FAIL morphine\n");
+        ++fail;
+      } else {
+        std::printf("OK   morphine stops bleed\n");
+      }
+    }
+  }
+
   return fail ? 1 : 0;
 }

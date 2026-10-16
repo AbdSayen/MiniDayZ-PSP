@@ -1,13 +1,13 @@
 # Known Issues & Limitations
 
-Last updated: 2026-10-16
+Last updated: 2026-10-16 (desktop playable; PSP EBOOT still unverified)
 
 ## External / environment
 
 | Issue | Impact | Status |
 |-------|--------|--------|
 | No Construct `.capx` source — only HTML5 export | Some editor-only data unavailable | Permanent for this repo |
-| SDL2 not installed on build PC | Desktop uses null/console platform (quits after 3 frames) | Install SDL2 for interactive window |
+| SDL2 previously missing | Desktop host now uses vendored `cpp/third_party/SDL2-2.30.9` | Working on this PC |
 | PSPSDK not verified on this PC | No successful EBOOT yet | **Do not claim PSP support** |
 | Online login / DeltaDNA / ads in original | Not ported | Intentionally stubbed offline |
 
@@ -21,13 +21,13 @@ Last updated: 2026-10-16
 | Day/Night / Rain mapping | Globals `Day_Night_speed=720`, `Rain_speed=360` are used, but Construct timeline units ≠ seconds; phase advancement is approximate. |
 | Weathercold globals init=0 | Extracted initial values are 0; runtime assignment in events not yet reverse-engineered. |
 | Map generation | Full C2 `Map generation` / `Location loader` not ported — sector grid + collision stub only. |
-| Bunker | RLE loader implemented; gameplay integration incomplete. |
-| Firearms per-weapon base dmg | Still not fully extracted (bullet IV0 set at spawn is expression-driven). **Hit variance is sverka:** `roll_bullet_damage` = round(base×U(0.75,1.25)) from `Bullets_dmg_deal`. Melee Fist range **45** verified. |
-| Vehicles, perks, quests | Groups identified; logic not ported. |
+| Bunker | RLE loader fixed (was empty due to JSON string parse bug); wall collision heuristic on tile IDs; dens/loot stub. |
+| Firearms per-weapon base dmg | Partial: Fist **10**/range **45**, FNX IV0 candidate **23**, sword **15**. Other guns still placeholders. **Hit variance is sverka:** `roll_bullet_damage` = round(base×U(0.75,1.25)). Bleed start **sverka:** `random(3)>=1.5`. |
+| Vehicles, perks, quests | Vehicle mount/drive stub + quest HUD scaffold; full C2 car/boat/quest groups still incomplete. Perks partially in survival. |
 | Crafting recipes | Partial scaffold (`craft.cpp`); only a few inferred recipes — full `Craft_*` C2 groups not ported. |
 | Airdrop / loot respawn | Timer constants wired (`60`/`1480`/`400`); spawn content logic incomplete. |
 | Audio / full sprite rendering | Not started. |
-| Exact starter inventory | Placeholder (beans, bandage, water bottle). |
+| Exact starter inventory | Expanded playable kit (medical, NVG, flare, craft mats) — not original spawn table. |
 | Plus / Reloaded content | Out of scope (baseline is 1.4.1). |
 
 ## Build notes

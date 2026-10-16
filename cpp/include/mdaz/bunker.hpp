@@ -15,6 +15,8 @@ struct BunkerMap {
   bool load_from_file(const char* path);
   bool load_from_c2_json(const char* json);
   int tile_at(int x, int y) const;
+  // Non-zero tiles treated as solid walls (0 = walkable floor / empty).
+  bool is_blocked_world(float wx, float wy, float tile_size = 8.f) const;
 };
 
 } // namespace mdaz

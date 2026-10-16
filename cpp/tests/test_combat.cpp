@@ -71,5 +71,12 @@ int test_combat() {
     std::printf("OK   fist melee range 45\n");
   }
 
+  if (mdaz::default_melee_stats().damage != 10.f) {
+    std::printf("FAIL fist dmg want 10 got %g\n", mdaz::default_melee_stats().damage);
+    ++fail;
+  } else {
+    std::printf("OK   fist melee dmg 10\n");
+  }
+
   return fail ? 1 : 0;
 }

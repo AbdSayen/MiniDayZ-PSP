@@ -28,10 +28,11 @@ WeaponStats melee(float dmg, float range, float interval) {
   return w;
 }
 
-// Damage numbers are INITIAL GUESSES for structure only — KNOWN_ISSUES.md
+// Firearm base dmg: FNX SetInstanceVar IV0=23 candidate from bullet_iv0_hints.
+// Other guns still placeholders (KNOWN_ISSUES). Melee IDs match items.json 1.4.1.
 const WeaponDef kWeapons[] = {
-  { 151, "FNX pistol", gun(28.f, 320.f, 0.28f, 3.f), 12 },
-  { 152, "Colt 1911", gun(30.f, 300.f, 0.32f, 3.f), 12 },
+  { 151, "FNX pistol", gun(23.f, 320.f, 0.28f, 3.f), 12 }, // IV0 candidate 23
+  { 152, "Colt 1911", gun(25.f, 300.f, 0.32f, 3.f), 12 },
   { 153, "Magnum", gun(45.f, 340.f, 0.55f, 5.f), 16 },
   { 154, "IZH-43", gun(55.f, 180.f, 0.9f, 8.f), 17 },
   { 155, "Remington shotgun", gun(60.f, 200.f, 0.85f, 8.f), 17 },
@@ -50,10 +51,22 @@ const WeaponDef kWeapons[] = {
   { 168, "SVD", gun(75.f, 600.f, 0.8f, 1.5f), 13 },
   { 169, "MP5k", gun(28.f, 300.f, 0.1f, 3.5f), 69 },
   { 170, "Glock", gun(26.f, 300.f, 0.22f, 3.f), 69 },
-  { 200, "Pipewrench", melee(22.f, 38.f, 0.6f), 0 },
-  { 204, "Fire axe", melee(35.f, 42.f, 0.75f), 0 },
-  { 205, "Crowbar", melee(28.f, 40.f, 0.65f), 0 },
-  { 209, "Sword", melee(32.f, 44.f, 0.55f), 0 },
+  // Knives (items 42-44)
+  { 42, "Hunter knife", melee(14.f, 36.f, 0.4f), 0 },
+  { 43, "Army knife", melee(16.f, 36.f, 0.4f), 0 },
+  { 44, "Butcher knife", melee(12.f, 36.f, 0.4f), 0 },
+  // Melee tools — Fist default 10/45 in combat.cpp; sword near-literal 15
+  { 200, "Pipewrench", melee(18.f, 40.f, 0.6f), 0 },
+  { 201, "Shovel", melee(18.f, 42.f, 0.7f), 0 },
+  { 202, "Hatchet", melee(24.f, 40.f, 0.65f), 0 },
+  { 203, "Baseball bat", melee(20.f, 42.f, 0.6f), 0 },
+  { 204, "Fire axe", melee(30.f, 42.f, 0.75f), 0 },
+  { 205, "Crowbar", melee(22.f, 40.f, 0.65f), 0 },
+  { 206, "Pickaxe", melee(28.f, 40.f, 0.8f), 0 },
+  { 207, "Pitchfork", melee(24.f, 48.f, 0.7f), 0 },
+  { 208, "Sledgehammer", melee(40.f, 40.f, 1.0f), 0 },
+  { 209, "Sword", melee(15.f, 44.f, 0.55f), 0 },
+  { 210, "Pan", melee(12.f, 36.f, 0.5f), 0 },
 };
 
 const int kWeaponCount = static_cast<int>(sizeof(kWeapons) / sizeof(kWeapons[0]));

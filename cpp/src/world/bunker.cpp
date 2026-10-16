@@ -51,9 +51,10 @@ bool BunkerMap::load_from_c2_json(const char* json) {
   width = std::atoi(std::strchr(wkey, ':') + 1);
   height = std::atoi(std::strchr(hkey, ':') + 1);
 
-  const char* q1 = std::strchr(dkey, '\"');
-  if (!q1) return false;
-  q1 = std::strchr(q1 + 1, '\"');
+  // After "data" key, find the string value's opening quote
+  const char* colon = std::strchr(dkey, ':');
+  if (!colon) return false;
+  const char* q1 = std::strchr(colon, '\"');
   if (!q1) return false;
   ++q1;
   const char* q2 = std::strchr(q1, '\"');
@@ -78,6 +79,17 @@ bool BunkerMap::load_from_file(const char* path) {
 int BunkerMap::tile_at(int x, int y) const {
   if (x < 0 || y < 0 || x >= width || y >= height) return -1;
   return tiles[static_cast<std::size_t>(y * width + x)];
+}
+
+bool BunkerMap::is_blocked_world(float wx, float wy, float tile_size) const {
+  if (width <= 0 || height <= 0 || tile_size <= 0.f) return true;
+  const int tx = static_cast<int>(wx / tile_size);
+  const int ty = static_cast<int>(wy / tile_size);
+  const int id = tile_at(tx, ty);
+  if (id < 0) return true; // OOB
+  // Walkable fills seen in 1.4.1 bunker RLE: empty/dirt/interior floors
+  if (id == 0 || id == 1 || id == 6 || id == 16 || id == 20) return false;
+  return true;
 }
 
 } // namespace mdaz

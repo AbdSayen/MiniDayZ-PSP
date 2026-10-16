@@ -1,0 +1,157 @@
+{
+  "FNX": [],
+  "fnx": [
+    {
+      "setIv0": [
+        23
+      ],
+      "nums": [
+        23
+      ]
+    },
+    {
+      "setIv0": [
+        23
+      ],
+      "nums": [
+        23
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        8
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        22
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        23
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        18
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        19
+      ]
+    }
+  ],
+  "Glock": [],
+  "Magnum": [],
+  "AKM": [],
+  "AK-74": [],
+  "AKs": [],
+  "M4": [],
+  "Mosin": [],
+  "SKS": [],
+  "SVD": [],
+  "MP5": [],
+  "IZH": [],
+  "Remington": [],
+  "Crossbow": [],
+  "bow": [
+    {
+      "setIv0": [],
+      "nums": [
+        8
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        20
+      ]
+    }
+  ],
+  "Sporter": [],
+  "Amphibia": [],
+  "Repeater": [],
+  "L85": [],
+  "Colt": [],
+  "fireaxe": [],
+  "pipewrench": [],
+  "crowbar": [],
+  "sword": [
+    {
+      "setIv0": [
+        1
+      ],
+      "nums": [
+        15
+      ]
+    }
+  ],
+  "Fist": [
+    {
+      "setIv0": [
+        1
+      ],
+      "nums": [
+        45
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        10
+      ]
+    },
+    {
+      "setIv0": [],
+      "nums": [
+        10
+      ]
+    }
+  ],
+  "bat": [],
+  "shovel": [
+    {
+      "setIv0": [
+        1
+      ],
+      "nums": []
+    }
+  ]
+}

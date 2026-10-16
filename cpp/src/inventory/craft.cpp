@@ -8,10 +8,18 @@ namespace {
 // and common Mini DAYZ recipes; FULL C2 Craft_N groups still need porting.
 // Documented as PARTIAL in KNOWN_ISSUES.
 const CraftRecipe kRecipes[] = {
-  { "Craft_rags_bandage", 18, 1, 26, 1, 0, 0 },          // Rags -> Bandage
-  { "Craft_sticks_arrow", 51, 1, 38, 1, 0, 0 },          // Wood sticks -> Crafted arrows
-  { "Craft_ashwood_bow", 163, 1, 37, 1, 38, 2 },         // Ashwood + sticks -> Improvised bow
-  { "Craft_firekit", 23, 1, 50, 1, 24, 1 },              // Wood piles + Matches -> Campfire kit
+  { "Craft_rags_bandage", 18, 1, 26, 1, 0, 0, false },
+  { "Craft_shirt_rags", 26, 2, 350, 1, 0, 0, false }, // T-shirt → rags
+  { "Craft_sticks_arrow", 51, 1, 38, 1, 0, 0, false },
+  { "Craft_pile_sticks", 38, 3, 50, 1, 0, 0, false }, // wood pile → sticks
+  { "Craft_ashwood_bow", 163, 1, 37, 1, 38, 2, false },
+  { "Craft_firekit", 23, 1, 50, 1, 24, 1, false },
+  { "Craft_fishing_rod", 87, 1, 37, 1, 41, 1, false },
+  { "Craft_molotov", 102, 1, 25, 1, 26, 1, false }, // whiskey + rags
+  // Cook — requires nearby campfire (Game checks requires_fire)
+  { "Cook_steak", 61, 1, 60, 1, 0, 0, true },
+  { "Cook_rabbit", 72, 1, 71, 1, 0, 0, true },
+  { "Cook_perch", 95, 1, 94, 1, 0, 0, true },
 };
 
 const int kCount = static_cast<int>(sizeof(kRecipes) / sizeof(kRecipes[0]));

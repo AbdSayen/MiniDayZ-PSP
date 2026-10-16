@@ -76,7 +76,7 @@ void set_reason(SurvivalState& s, const char* why) {
 void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_temp,
                            bool is_running, bool is_night, bool is_raining,
                            bool perk_camel, bool perk_hamster, bool perk_regen,
-                           bool perk_metabolism) {
+                           bool perk_metabolism, float clothing_insulation) {
   (void)is_running;
   (void)weather_temp;
 
@@ -115,8 +115,11 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
     float delta = 0.f;
     if (is_night) delta -= rates.night_cold;
     if (is_raining) delta -= rates.rain_cold;
-    delta -= rates.day_cold;
-    // Without clothing, original still runs Day_cold path; fire/bunker not applied here yet.
+    float day_cold = rates.day_cold - clothing_insulation;
+    if (day_cold < 0.f) day_cold = 0.f;
+    delta -= day_cold;
+    // snowborn / fire bonuses applied via clothing_insulation from Game for now
+    // fire / bunker bonuses still pending full extract
     temperature += delta;
 
     food = clampf(food, 0.f, 100.f);

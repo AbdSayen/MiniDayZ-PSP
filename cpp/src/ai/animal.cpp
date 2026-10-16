@@ -37,7 +37,7 @@ void Animal::setup(AnimalType t, Vec2 p, EntityId eid) {
     break;
   case Animal_Crow:
     hp = 10.f;
-    speed = 80.f;
+    speed = 140.f; // flock flees fast
     break;
   }
 }
@@ -51,6 +51,20 @@ Animal* AnimalSystem::spawn(AnimalType t, Vec2 p) {
   Animal& a = animals_[count_++];
   a.setup(t, p, next_id_++);
   return &a;
+}
+
+int AnimalSystem::alive_count() const {
+  int n = 0;
+  for (int i = 0; i < count_; ++i) if (animals_[i].alive) ++n;
+  return n;
+}
+
+int AnimalSystem::alive_of_type(AnimalType t) const {
+  int n = 0;
+  for (int i = 0; i < count_; ++i) {
+    if (animals_[i].alive && animals_[i].type == t) ++n;
+  }
+  return n;
 }
 
 float AnimalSystem::update(float dt, Vec2 player_pos) {
@@ -72,6 +86,12 @@ float AnimalSystem::update(float dt, Vec2 player_pos) {
       if (dist < 26.f && a.attack_cooldown <= 0.f) {
         dmg += (a.type == Animal_Wolf) ? wolf_melee_damage() : wolf_melee_damage() * 0.7f;
         a.attack_cooldown = 1.1f;
+      }
+    } else if (a.type == Animal_Crow) {
+      // Crows scatter farther / faster
+      if (dist < 320.f && dist > 1.f) {
+        a.pos.x -= (dx / dist) * a.speed * dt;
+        a.pos.y -= (dy / dist) * a.speed * 1.15f * dt;
       }
     } else {
       // Prey flees

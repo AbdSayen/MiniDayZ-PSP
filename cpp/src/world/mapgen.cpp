@@ -1,5 +1,6 @@
 #include "mdaz/mapgen.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/world.hpp"
 
 namespace mdaz {
 
@@ -51,6 +52,24 @@ void MapGenerator::generate_new_game(int seed) {
   // One bunker entrance
   add(Loc_BunkerEntrance, rng.next_int(3, kMapSectorsX - 4), rng.next_int(3, kMapSectorsY - 4));
   add(Loc_Secret, rng.next_int(0, kMapSectorsX - 1), rng.next_int(0, kMapSectorsY - 1));
+}
+
+void MapGenerator::apply_collision(World& world) const {
+  // Approximate solid footprints around POIs (full building tiles TBD).
+  for (int i = 0; i < count_; ++i) {
+    const MapLocation& L = locs_[i];
+    float span = 48.f;
+    if (L.type == Loc_City) span = 90.f;
+    if (L.type == Loc_Military) span = 70.f;
+    if (L.type == Loc_Village) span = 55.f;
+    // Leave a walkable ring; block a cross of cells in the center
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        if (dx == 0 && dy == 0) continue; // keep center walkable for loot
+        world.set_blocked_world(L.pos.x + dx * span * 0.35f, L.pos.y + dy * span * 0.35f, true);
+      }
+    }
+  }
 }
 
 } // namespace mdaz

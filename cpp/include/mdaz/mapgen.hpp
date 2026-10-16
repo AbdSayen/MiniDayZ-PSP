@@ -35,6 +35,8 @@ public:
   MapGenerator();
   void clear();
   void generate_new_game(int seed);
+  // Stamp POI footprints into World collision grid (approximate building blockers).
+  void apply_collision(class World& world) const;
   int location_count() const { return count_; }
   const MapLocation& location(int i) const { return locs_[i]; }
 

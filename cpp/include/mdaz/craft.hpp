@@ -16,6 +16,7 @@ struct CraftRecipe {
   int count_a;
   ItemId ing_b;
   int count_b;
+  bool requires_fire;     // cook recipes need nearby campfire
 };
 
 int craft_recipe_count();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mdaz/item_db.hpp"
+#include "mdaz/rng.hpp"
 #include "mdaz/survival.hpp"
 #include "mdaz/types.hpp"
 
@@ -23,14 +24,23 @@ public:
   void clear();
   bool add_item(ItemId id, int count, const ItemDatabase& db);
   bool remove_at(int slot, int count);
-  bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db);
+  bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db, Rng* rng = 0);
+  // Equip clothing from inventory into worn slot (does not remove from bag — stub).
+  bool wear_clothing(int slot, const ItemDatabase& db);
+  void restore_worn(const ItemId* ids, int count);
+  float clothing_insulation() const;
 
   InvSlot& slot(int i);
   const InvSlot& slot(int i) const;
   int slot_count() const { return kInventorySlots; }
+  int worn_count() const { return worn_count_; }
+  ItemId worn_at(int i) const { return (i >= 0 && i < worn_count_) ? worn_[i] : 0; }
 
 private:
+  static const int kMaxWorn = 6;
   InvSlot slots_[kInventorySlots];
+  ItemId worn_[kMaxWorn];
+  int worn_count_;
 };
 
 } // namespace mdaz

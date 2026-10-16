@@ -7,6 +7,7 @@ int test_combat();
 int test_save();
 int test_bunker();
 int test_craft();
+int test_systems();
 
 int main() {
   int failed = 0;
@@ -17,6 +18,7 @@ int main() {
   failed += test_save();
   failed += test_bunker();
   failed += test_craft();
+  failed += test_systems();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

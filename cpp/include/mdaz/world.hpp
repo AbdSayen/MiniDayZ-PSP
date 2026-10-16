@@ -22,6 +22,7 @@ public:
   // Simple obstacle grid stub (solid cells). Full map gen from C2 "Map generation" TBD.
   bool is_blocked(float x, float y) const;
   void set_blocked(int cell_x, int cell_y, bool blocked);
+  void set_blocked_world(float x, float y, bool blocked);
 
   static const int kGridW = 256;
   static const int kGridH = 256;

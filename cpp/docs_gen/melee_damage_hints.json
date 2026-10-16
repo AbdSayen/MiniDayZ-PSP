@@ -1,0 +1,282 @@
+{
+  "Fist": [
+    {
+      "dmgish": [
+        45
+      ],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "0],[0,[0,0]],[4,172],[0,[0,360]],[0,[0,360]],[0,[0,5]],[1,[2,\"zmb\"]]]],[195,88,null,771990150636031,false,[[10,4],[7,[2,\"Fist\"]]]]],[[0,null,false,null,93356492"
+    },
+    {
+      "dmgish": [
+        10
+      ],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]],[],[[0,null,false,null,927174055512122,[[910,71,null,0,false,false,false,495790977804080,false,[[10,4],[8,0],[7,[2,\"Fist\"]]]],[-1,46,null,0,false,false,fal"
+    },
+    {
+      "dmgish": [
+        10
+      ],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]],[],[[0,null,false,null,768274499980882,[[910,71,null,0,false,false,false,390763370200714,false,[[10,4],[8,0],[7,[2,\"Fist\"]]]],[-1,46,null,0,false,false,fal"
+    }
+  ],
+  "fireaxe": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]]]],[0,null,true,null,965833735246218,[[910,71,null,0,false,false,false,779031316934233,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]]]],[0,null,true,null,153995354575680,[[910,71,null,0,false,false,false,875889453222854,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]],[0,null,true,null,7014328894211364,[[910,71,null,0,false,false,false,9604545568861126,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "\"]]]]]]]],[0,null,true,null,317704813160503,[[910,71,null,0,false,false,false,823589090871691,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false"
+    }
+  ],
+  "pipewrench": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "4233,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false,false,244667343319715,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,fa"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "2854,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false,false,705486387560287,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,fa"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "126,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false,false,6269736015938895,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,fa"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "1691,false,[[10,4],[8,0],[7,[2,\"fireaxe\"]]]],[910,71,null,0,false,false,false,103762257939892,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,fa"
+    }
+  ],
+  "crowbar": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "5,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,false,false,302531054253632,false,[[10,4],[8,0],[7,[2,\"crowbar\"]]]]],[],[[0,null,false,null,46"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "7,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,false,false,250991339246203,false,[[10,4],[8,0],[7,[2,\"crowbar\"]]]]],[],[[0,null,false,null,14"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": ",false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,false,false,6561763427266119,false,[[10,4],[8,0],[7,[2,\"crowbar\"]]]]],[],[[0,null,false,null,80"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "2,false,[[10,4],[8,0],[7,[2,\"pipewrench\"]]]],[910,71,null,0,false,false,false,203879033735957,false,[[10,4],[8,0],[7,[2,\"crowbar\"]]]]],[],[[0,null,false,null,39"
+    }
+  ],
+  "pitchfork": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "8]]]]]]]],[0,null,true,null,183656747645543,[[910,71,null,0,false,false,false,589349205013532,false,[[10,4],[8,0],[7,[2,\"pitchfork\"]]]],[910,71,null,0,false,fal"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "8]]]]]]]],[0,null,true,null,274494569728651,[[910,71,null,0,false,false,false,549993398840527,false,[[10,4],[8,0],[7,[2,\"pitchfork\"]]]],[910,71,null,0,false,fal"
+    }
+  ],
+  "pickaxe": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "32,false,[[10,4],[8,0],[7,[2,\"pitchfork\"]]]],[910,71,null,0,false,false,false,242813221188557,false,[[10,4],[8,0],[7,[2,\"pickaxe\"]]]],[910,71,null,0,false,false"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "27,false,[[10,4],[8,0],[7,[2,\"pitchfork\"]]]],[910,71,null,0,false,false,false,789755758856346,false,[[10,4],[8,0],[7,[2,\"pickaxe\"]]]],[910,71,null,0,false,false"
+    }
+  ],
+  "sledgehammer": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "8557,false,[[10,4],[8,0],[7,[2,\"pickaxe\"]]]],[910,71,null,0,false,false,false,278079867743894,false,[[10,4],[8,0],[7,[2,\"sledgehammer\"]]]]],[],[[0,null,false,nu"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "6346,false,[[10,4],[8,0],[7,[2,\"pickaxe\"]]]],[910,71,null,0,false,false,false,579531327485611,false,[[10,4],[8,0],[7,[2,\"sledgehammer\"]]]]],[],[[0,null,false,nu"
+    }
+  ],
+  "shovel": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]],[0,\"on_ground\",0,1]],[[-245,5828,0,30,8,0,0,1,0.5,0.5,0,0,[]],182,718,[[0],[1],[0],[0],[1.2],[-1],[100],[0],[0],[0],[\"shovel\"],[0],[0],[0],[0],[201],[0],[0],"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "],[0,\"on_ground\",0,1]],[[-116,5496,0,30,8,0,0,1,0.5,0.5,0,0,[]],182,1364,[[0],[1],[0],[0],[1.2],[-1],[100],[0],[0],[0],[\"shovel\"],[0],[0],[0],[0],[201],[0],[0],"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]],[0,null,false,null,4613426704991998,[[909,71,null,0,false,false,false,5404593983981327,false,[[10,10],[8,0],[7,[2,\"shovel\"]]]]],[[180,69,null,831298174897"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "149,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,false,false,242348067105914,false,[[10,4],[8,0],[7,[2,\"shovel\"]]]]],[],[[0,null,false,null,114"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "755,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,false,false,784351818739961,false,[[10,4],[8,0],[7,[2,\"shovel\"]]]]],[],[[0,null,false,null,486"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "17,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,false,false,5712137324879216,false,[[10,4],[8,0],[7,[2,\"shovel\"]]]]],[],[[0,null,false,null,880"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "184,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,false,false,570480488544093,false,[[10,4],[8,0],[7,[2,\"shovel\"]]]]],[],[[0,null,false,null,302"
+    }
+  ],
+  "bat": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]]],[0,null,false,null,950354036687853,[[910,71,null,0,false,false,false,821655843173469,false,[[10,4],[8,0],[7,[2,\"bat\"]]]]],[],[[0,null,false,null,901672"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]]],[0,null,false,null,605039180076758,[[910,71,null,0,false,false,false,991548652917420,false,[[10,4],[8,0],[7,[2,\"bat\"]]]]],[],[[0,null,false,null,791300"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "]]]]]]],[0,null,true,null,2654884921224986,[[910,71,null,0,false,false,false,3830839489484338,false,[[10,4],[8,0],[7,[2,\"bat\"]]]],[910,71,null,0,false,false,fal"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "13]]]]]]],[0,null,true,null,666542326113274,[[910,71,null,0,false,false,false,154885127815653,false,[[10,4],[8,0],[7,[2,\"bat\"]]]],[910,71,null,0,false,false,fal"
+    }
+  ],
+  "splitaxe": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "0,0,0,0,1,1],[]],[0,\"Default\",0,1]],[[277,-233,0,10,21,0,0,1,0,0.5714285969734192,0,0,[]],195,9409,[[10],[0],[0],[400],[\"splitaxe\"],[1],[0],[0],[0],[0]],[[100,0"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "00,0,0,0,1,1],[]],[0,\"Default\",0,1]],[[248,-132,0,10,21,0,0,1,0,0.5714285969734192,0,0,[]],195,166,[[10],[0],[0],[400],[\"splitaxe\"],[1],[0],[0],[0],[0]],[[100,0"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "0,0,0,0,1,1],[]],[0,\"Default\",0,1]],[[266,-246,0,10,21,0,0,1,0,0.5714285969734192,0,0,[]],195,1764,[[10],[0],[0],[400],[\"splitaxe\"],[1],[0],[0],[0],[0]],[[100,0"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "8]]]]]]]],[0,null,true,null,412572760347875,[[910,71,null,0,false,false,false,252425299008149,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,fals"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "8]]]]]]]],[0,null,true,null,260731715033649,[[910,71,null,0,false,false,false,488661912412755,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,fals"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "9484338,false,[[10,4],[8,0],[7,[2,\"bat\"]]]],[910,71,null,0,false,false,false,7352551941176517,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,fals"
+    },
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "27815653,false,[[10,4],[8,0],[7,[2,\"bat\"]]]],[910,71,null,0,false,false,false,438574633368184,false,[[10,4],[8,0],[7,[2,\"splitaxe\"]]]],[910,71,null,0,false,fals"
+    }
+  ],
+  "sword": [
+    {
+      "dmgish": [],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": ",0,1]],[[-245,5908,0,21,8,0,0,1,0.523809552192688,0.625,0,0,[]],770,1133,[[0],[1],[0],[0],[1.5],[-1],[100],[0],[0],[0],[\"sword\"],[0],[0],[0],[0],[209],[0],[0],["
+    },
+    {
+      "dmgish": [
+        15
+      ],
+      "hasCall": false,
+      "callDmg": null,
+      "preview": "\"]]]]]],[0,null,false,null,877320441968782,[[909,71,null,0,false,false,false,767263337137097,false,[[10,10],[8,0],[7,[2,\"sword\"]]]]],[[180,69,null,1071059062852"
+    }
+  ],
+  "knife": [],
+  "knife_army": [],
+  "knife_hunter": [],
+  "knife_butcher": []
+}

@@ -50,5 +50,31 @@ int test_bunker() {
   } else {
     std::printf("NOTE dimensions are sample/not original (%dx%d)\n", map.width, map.height);
   }
-  return 0;
+
+  int fail = 0;
+  if (map.is_blocked_world(-8.f, 0.f)) {
+    std::printf("OK   OOB blocked\n");
+  } else {
+    std::printf("FAIL OOB should block\n");
+    ++fail;
+  }
+  bool found_floor = false, found_wall = false;
+  int nonzero = 0;
+  for (int y = 0; y < map.height; ++y) {
+    for (int x = 0; x < map.width; ++x) {
+      const int id = map.tile_at(x, y);
+      if (id != 0) ++nonzero;
+      const bool blocked = map.is_blocked_world(x * 8.f + 4.f, y * 8.f + 4.f);
+      if (!blocked) found_floor = true;
+      else if (id > 0) found_wall = true;
+    }
+  }
+  if (nonzero > 1000) std::printf("OK   decoded non-empty tiles (%d)\n", nonzero);
+  else { std::printf("FAIL RLE decode sparse nonzero=%d\n", nonzero); ++fail; }
+  if (found_floor) std::printf("OK   floor walkable\n");
+  else { std::printf("FAIL no walkable floor\n"); ++fail; }
+  if (found_wall) std::printf("OK   wall solid\n");
+  else { std::printf("FAIL no solid wall sample\n"); ++fail; }
+
+  return fail ? 1 : 0;
 }

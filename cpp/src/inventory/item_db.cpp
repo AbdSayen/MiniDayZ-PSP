@@ -59,13 +59,68 @@ void ItemDatabase::classify(ItemDef& d) {
              n.find("MRE") != std::string::npos || n.find("berry") != std::string::npos ||
              n.find("Berry") != std::string::npos || n.find("meat") != std::string::npos ||
              n.find("fillet") != std::string::npos || n.find("Pepper") != std::string::npos ||
-             n.find("Zucchini") != std::string::npos || n.find("Cranberry") != std::string::npos) {
+             n.find("Zucchini") != std::string::npos || n.find("Cranberry") != std::string::npos ||
+             n.find("Perch") != std::string::npos || n.find("fillet") != std::string::npos ||
+             n.find("fish") != std::string::npos) {
     d.category = ItemCat_Food;
     d.food_restore = 20.f;
     d.stack_max = 5;
   } else {
     d.category = ItemCat_Misc;
   }
+
+  // Candidate restores from extract_consumable_stats / item_id_effects (not full sverka).
+  // known_stats=true only when a clear IV13/14/15 literal was seen for that item.
+  if (d.id == 25) { // Whiskey — IV14≈20/25 water-like restores in events
+    d.category = ItemCat_Drink;
+    d.water_restore = 20.f;
+    d.known_stats = true;
+  } else if (d.id == 28) { // Saline bag
+    d.category = ItemCat_Medical;
+    d.heal_amount = 25.f;
+    d.known_stats = true;
+  } else if (d.id == 19) { // Blood bag
+    d.category = ItemCat_Medical;
+    d.heal_amount = 45.f;
+    d.known_stats = true;
+  } else if (d.id == 18) { // Bandage
+    d.category = ItemCat_Medical;
+    d.known_stats = true;
+  } else if (d.id == 45) { // Morphine
+    d.category = ItemCat_Medical;
+    d.heal_amount = 5.f;
+    d.known_stats = true;
+  } else if (d.id == 34) { // Heatpack
+    d.category = ItemCat_Misc;
+    d.known_stats = true;
+  } else if (d.id == 30) { // Nota-Cola
+    d.category = ItemCat_Drink;
+    d.water_restore = 30.f;
+  } else if (d.id == 29) { // Vitamins — mild infection clear chance + heal
+    d.category = ItemCat_Medical;
+    d.heal_amount = 5.f;
+    d.known_stats = true;
+  } else if (d.id == 20) { // Flare
+    d.category = ItemCat_Misc;
+  } else if (d.id == 265) { // NVG
+    d.category = ItemCat_Misc;
+  }
+
+  // Common food/drink placeholders (not sverka — better than generic 20)
+  if (d.id == 1) { d.category = ItemCat_Food; d.food_restore = 35.f; }      // Canned beans
+  else if (d.id == 2) { d.category = ItemCat_Food; d.food_restore = 30.f; } // Canned spaghetti
+  else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; }
+  else if (d.id == 4) { d.category = ItemCat_Food; d.food_restore = 25.f; }
+  else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; }
+  else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 40.f; } // MRE-ish
+  else if (d.id == 8) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Pipsi
+  else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; }
+  else if (d.id == 10) { d.category = ItemCat_Drink; d.water_restore = 35.f; } // Water bottle
+  else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE
+  else if (d.id == 21) { d.category = ItemCat_Misc; } // F1 grenade
+  else if (d.id == 102) { d.category = ItemCat_Misc; } // Molotov
+  else if (d.id == 456) { d.category = ItemCat_Misc; } // Tent
+  else if (d.id == 250) { d.category = ItemCat_Clothing; } // Gasmask
 }
 
 static const char* find_key(const char* p, const char* key) {

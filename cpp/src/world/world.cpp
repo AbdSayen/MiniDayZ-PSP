@@ -42,4 +42,10 @@ void World::set_blocked(int cell_x, int cell_y, bool blocked) {
   blocked_[cell_y * kGridW + cell_x] = blocked;
 }
 
+void World::set_blocked_world(float x, float y, bool blocked) {
+  int cx = static_cast<int>(x / cell_w_);
+  int cy = static_cast<int>(y / cell_h_);
+  set_blocked(cx, cy, blocked);
+}
+
 } // namespace mdaz
