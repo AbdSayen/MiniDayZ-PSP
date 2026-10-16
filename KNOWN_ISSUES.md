@@ -26,7 +26,7 @@ Last updated: 2026-10-16 (desktop playable; PSP EBOOT still unverified)
 | Vehicles, perks, quests | Car/boat/bike drive + fuel/paddle/headlights/runover; quest chain kill→hospital→bunker→bandits→fish→police→day2. Perks unlock via play (snowborn/camel/hamster/regen/runner/metabolism/hunter/farmer). Full C2 groups incomplete. |
 | Crafting recipes | Partial: bow/arrows/bag/pack/molotov/cook(+ruffe)/firekit/splint/torch/rope/fence — full `Craft_*` C2 groups not ported. |
 | Airdrop / loot respawn | Timers + richer airdrop tables wired; exact Spawn_drop parity incomplete. |
-| Audio / full sprite rendering | Procedural SDL cues (gun/hit/howl/airdrop); sprites not ported. |
+| Audio / sprite rendering | Procedural SDL cues (gun/hit/howl/airdrop). Core overworld uses original `images/*-sheetN.png` (player/zeds/animals/buildings/vehicles/trees); full HUD atlas / clothing layers / tilemap parity still partial. |
 | Traps | Bear trap + barbed wire + wood fence + claymore placeable stubs (not full C2 trap events). |
 | Exact starter inventory | Expanded playable kit (medical, NVG, flare, craft mats, traps) — not original spawn table. |
 | Crouch | Ctrl crouch quieter vs zeds (aggro mul 0.55) — not full C2 stealth group. |

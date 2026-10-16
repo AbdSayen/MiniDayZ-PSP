@@ -20,7 +20,85 @@ float dist2(Vec2 a, Vec2 b) {
   return dx * dx + dy * dy;
 }
 
-float world_to_screen_scale() { return 0.35f; }
+float world_to_screen_scale() { return 0.55f; }
+
+// C2 packs many 30×30 frames into 128×128 sheets at (1+col*32, 1+row*32).
+// data.js: idle_down/up/right/left = cols 0..3 on row 0; walk rows 1..3.
+int facing_to_col(float deg) {
+  while (deg > 180.f) deg -= 360.f;
+  while (deg < -180.f) deg += 360.f;
+  if (deg >= -45.f && deg < 45.f) return 2;   // right
+  if (deg >= 45.f && deg < 135.f) return 0;   // down
+  if (deg >= -135.f && deg < -45.f) return 1; // up
+  return 3; // left
+}
+
+void sprite_sheet_name(char* out, int out_n, const char* base, int sheet) {
+  if (sheet < 0) sheet = 0;
+  if (sheet > 2) sheet = sheet % 3;
+  std::snprintf(out, out_n, "%s-sheet%d", base, sheet);
+}
+
+// Draw one C2 character/animal frame (default 30×30 cell). No rotation —
+// direction is already encoded in the frame column (as in the original).
+void draw_c2_char(IPlatform* p, float sx, float sy, float size,
+                  const char* base, float facing_deg, int walk_frame,
+                  int cell = 30, int stride = 32) {
+  if (!p || !base) return;
+  char name[64];
+  // Prefer sheet0; walk uses rows. sheet1/2 are weapon poses etc.
+  sprite_sheet_name(name, (int)sizeof(name), base, 0);
+  if (!p->has_sprite(name)) return;
+  const int col = facing_to_col(facing_deg);
+  int row = 0;
+  if (walk_frame > 0) row = 1 + ((walk_frame - 1) % 3);
+  const int srcx = 1 + col * stride;
+  const int srcy = 1 + row * stride;
+  p->draw_sprite_frame(name, sx - size * 0.5f, sy - size * 0.5f, size, size,
+                       srcx, srcy, cell, cell, 0.f, 1.f);
+}
+
+void draw_world_sprite(IPlatform* p, float cx, float cy, float sc, Vec2 cam, Vec2 world,
+                       const char* name, float size, float angle_deg = 0.f, float alpha = 1.f) {
+  if (!p || !name) return;
+  const float sx = cx + (world.x - cam.x) * sc;
+  const float sy = cy + (world.y - cam.y) * sc;
+  if (p->has_sprite(name))
+    p->draw_sprite(name, sx - size * 0.5f, sy - size * 0.5f, size, size, angle_deg, alpha);
+}
+
+// Pine tree: first frame is 47×92 at 1,1 (not the whole 128 sheet).
+void draw_pine(IPlatform* p, float sx, float sy, float h) {
+  if (!p) return;
+  const char* name = "tree_pine-sheet0";
+  if (!p->has_sprite(name)) name = "tree_pine2-sheet0";
+  if (!p->has_sprite(name)) return;
+  const float w = h * (47.f / 92.f);
+  p->draw_sprite_frame(name, sx - w * 0.5f, sy - h * 0.75f, w, h, 1, 1, 47, 92, 0.f, 1.f);
+}
+
+const char* poi_building_sprite(LocationType t, int variant) {
+  switch (t) {
+  case Loc_Hospital: return "b_hospital-sheet0";
+  case Loc_GasStation: return "b_gas_station-sheet0";
+  case Loc_Police: return "b_police_station-sheet0";
+  case Loc_Firestation: return "b_fire_station-sheet0";
+  case Loc_Church: return "b_church-sheet0";
+  case Loc_Military: return (variant & 1) ? "b_military_barrack-sheet0" : "b_military_shtab-sheet0";
+  case Loc_Helicrash: return "car_explode-sheet0";
+  case Loc_BunkerEntrance: return "b_hunter_shelter-sheet0";
+  case Loc_Secret: return "b_hunter_shelter-sheet0";
+  case Loc_City: return "b_hostel-sheet0";
+  case Loc_Village:
+  default:
+    switch (variant % 4) {
+    case 0: return "b_village_brown-sheet0";
+    case 1: return "b_village_green-sheet0";
+    case 2: return "b_village_red-sheet0";
+    default: return "b_village_yellow-sheet0";
+    }
+  }
+}
 
 } // namespace
 
@@ -108,6 +186,33 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
 
   std::snprintf(path, sizeof(path), "%s/bunker_json", data_dir_);
   bunker_.load_from_file(path);
+
+  // Original 1.4.1 Construct sprites (original_docs/images)
+  {
+    // Absolute-ish candidates relative to common launch cwds (repo / cpp / cpp/build)
+    static const char* kImgCandidates[] = {
+      "C:/Users/abdur/Desktop/MiniDayZ/original_docs/images",
+      "../../original_docs/images",
+      "../original_docs/images",
+      "original_docs/images",
+      "../../../original_docs/images",
+      0
+    };
+    bool loaded = false;
+    for (int i = 0; kImgCandidates[i]; ++i) {
+      if (platform_->load_sprites(kImgCandidates[i])) {
+        loaded = true;
+        break;
+      }
+    }
+    if (!loaded) {
+      char img[600];
+      std::snprintf(img, sizeof(img), "%s/../../original_docs/images", data_dir_);
+      if (platform_->load_sprites(img)) loaded = true;
+    }
+    if (!loaded)
+      std::printf("[mdaz] WARNING: original sprites not found — colored rects fallback\n");
+  }
 
   state_ = AppState_Menu;
   state_timer_ = 0.f;
@@ -2479,7 +2584,17 @@ void Game::render() {
 
   if (state_ == AppState_Menu) {
     platform_->clear(0.06f, 0.07f, 0.05f);
-    platform_->draw_rect(0, 0, 480, 272, 0.08f, 0.1f, 0.07f, 1.f);
+    if (platform_->has_sprite("tilemap_forest.png") || platform_->has_sprite("tilemap_forest")) {
+      // Tiled original forest backdrop
+      for (int ty = 0; ty < 3; ++ty)
+        for (int tx = 0; tx < 3; ++tx)
+          platform_->draw_sprite("tilemap_forest", (float)(tx * 160 - 20), (float)(ty * 120 - 20),
+                                 180.f, 140.f, 0.f, 0.55f);
+    } else {
+      platform_->draw_rect(0, 0, 480, 272, 0.08f, 0.1f, 0.07f, 1.f);
+    }
+    if (platform_->has_sprite("player_skin_def_1-sheet0"))
+      platform_->draw_sprite("player_skin_def_1-sheet0", 360, 140, 72, 72, 0.f, 1.f);
     platform_->draw_text(40, 50, "MINI DAYZ C++", 0.95f, 0.9f, 0.75f);
     platform_->draw_text(40, 75, "BASELINE 1.4.1", 0.7f, 0.75f, 0.6f);
     platform_->draw_text(40, 110, "1 NOVICE  2 REGULAR  3 VETERAN", 0.75f, 0.8f, 0.65f);
@@ -2523,30 +2638,31 @@ void Game::render() {
       }
       platform_->draw_text(8, 220, "BUNKER  E - EXIT", 0.75f, 0.7f, 0.55f);
     } else {
-      // Ground grid relative to player (unvisited sectors darker fog)
-      const float sw = kMapLayoutW / static_cast<float>(kMapSectorsX);
-      const float sh = kMapLayoutH / static_cast<float>(kMapSectorsY);
-      for (int gx = -8; gx <= 8; ++gx) {
-        for (int gy = -5; gy <= 5; ++gy) {
-          float wx = player_.pos.x + gx * 64.f;
-          float wy = player_.pos.y + gy * 64.f;
-          float sx = cx + (wx - player_.pos.x) * sc;
-          float sy = cy + (wy - player_.pos.y) * sc;
-          const bool alt = ((gx + gy) & 1) != 0;
-          int ssx = static_cast<int>(wx / sw);
-          int ssy = static_cast<int>(wy / sh);
-          const bool vis = sector_visited(ssx, ssy);
-          float r = alt ? 0.16f : 0.13f;
-          float g = alt ? 0.20f : 0.17f;
-          float b = alt ? 0.12f : 0.10f;
-          // Map-edge water tint
-          const float margin = 400.f;
-          if (wx < margin || wy < margin || wx > kMapLayoutW - margin ||
-              wy > kMapLayoutH - margin) {
-            r = 0.12f; g = 0.22f; b = 0.35f;
+      // Ground: original forest tilemap (tiled), fallback checker
+      {
+        const float tile = 96.f;
+        const bool has_forest = platform_->has_sprite("tilemap_forest");
+        for (int gx = -4; gx <= 4; ++gx) {
+          for (int gy = -3; gy <= 3; ++gy) {
+            const float wx = player_.pos.x + gx * (tile / sc);
+            const float wy = player_.pos.y + gy * (tile / sc);
+            const float sx = cx + (wx - player_.pos.x) * sc;
+            const float sy = cy + (wy - player_.pos.y) * sc;
+            const float margin = 400.f;
+            const bool water = wx < margin || wy < margin ||
+              wx > kMapLayoutW - margin || wy > kMapLayoutH - margin;
+            if (water) {
+              platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                                   0.12f, 0.22f, 0.35f, 1.f);
+            } else if (has_forest) {
+              platform_->draw_sprite("tilemap_forest",
+                                     sx - tile * 0.5f, sy - tile * 0.5f, tile, tile, 0.f, 1.f);
+            } else {
+              const bool alt = ((gx + gy) & 1) != 0;
+              platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                                   alt ? 0.16f : 0.13f, alt ? 0.20f : 0.17f, alt ? 0.12f : 0.10f, 1.f);
+            }
           }
-          if (!vis) { r *= 0.35f; g *= 0.35f; b *= 0.45f; }
-          platform_->draw_rect(sx - 30, sy - 30, 60, 60, r, g, b, 1.f);
         }
       }
 
@@ -2557,16 +2673,18 @@ void Game::render() {
         float sx = cx + (blood_drips_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (blood_drips_[i].pos.y - player_.pos.y) * sc;
         const float a = blood_drips_[i].life / 8.f;
-        platform_->draw_rect(sx - 2, sy - 2, 4, 3, 0.55f, 0.05f, 0.08f, 0.25f + 0.45f * a);
+        if (platform_->has_sprite("blood_drop-sheet0"))
+          platform_->draw_sprite("blood_drop-sheet0", sx - 3, sy - 3, 6, 6, 0.f, 0.35f + 0.5f * a);
+        else
+          platform_->draw_rect(sx - 2, sy - 2, 4, 3, 0.55f, 0.05f, 0.08f, 0.25f + 0.45f * a);
       }
 
-      // Forest tree stubs
+      // Forest trees — crop first pine frame (47×92), not whole sheet
       for (int i = 0; i < tree_count_; ++i) {
         if (dist2(trees_[i], player_.pos) > 380.f * 380.f) continue;
         float sx = cx + (trees_[i].x - player_.pos.x) * sc;
         float sy = cy + (trees_[i].y - player_.pos.y) * sc;
-        platform_->draw_rect(sx - 2, sy - 8, 4, 10, 0.25f, 0.18f, 0.1f, 0.9f);
-        platform_->draw_rect(sx - 6, sy - 14, 12, 10, 0.15f, 0.35f, 0.12f, 0.75f);
+        draw_pine(platform_, sx, sy, 70.f);
       }
 
       // Dirt roads between nearby POIs (scaffold until tile roads ported)
@@ -2593,25 +2711,25 @@ void Game::render() {
         }
       }
 
-      // Map POIs + labels when close
+      // Map POIs — original building sprites + labels when close
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
         float sx = cx + (L.pos.x - player_.pos.x) * sc;
         float sy = cy + (L.pos.y - player_.pos.y) * sc;
-        float r = 0.5f, g = 0.5f, b = 0.35f;
-        if (L.type == Loc_City) { r = 0.55f; g = 0.45f; b = 0.25f; }
-        if (L.type == Loc_Military) { r = 0.35f; g = 0.45f; b = 0.3f; }
-        if (L.type == Loc_Hospital) { r = 0.7f; g = 0.7f; b = 0.75f; }
-        if (L.type == Loc_Police) { r = 0.3f; g = 0.4f; b = 0.85f; }
-        if (L.type == Loc_Church) { r = 0.75f; g = 0.7f; b = 0.55f; }
-        if (L.type == Loc_BunkerEntrance) { r = 0.3f; g = 0.25f; b = 0.2f; }
-        if (L.type == Loc_Secret) { r = 0.75f; g = 0.35f; b = 0.85f; }
-        platform_->draw_rect(sx - 4, sy - 4, 8, 8, r, g, b, 0.9f);
-        if (L.type == Loc_Secret)
-          platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.6f, 0.2f, 0.7f, 0.35f);
         const float d2p = dist2(L.pos, player_.pos);
+        if (d2p < 520.f * 520.f) {
+          const char* bspr = poi_building_sprite(L.type, i);
+          float bsz = 90.f;
+          if (L.type == Loc_Hospital || L.type == Loc_City) bsz = 110.f;
+          if (L.type == Loc_Military) bsz = 100.f;
+          if (L.type == Loc_Helicrash) bsz = 64.f;
+          if (platform_->has_sprite(bspr))
+            platform_->draw_sprite(bspr, sx - bsz * 0.5f, sy - bsz * 0.5f, bsz, bsz, 0.f, 1.f);
+          else
+            platform_->draw_rect(sx - 8, sy - 8, 16, 16, 0.5f, 0.45f, 0.3f, 0.9f);
+        }
         if (d2p < 450.f * 450.f && sx > 20.f && sx < 440.f && sy > 20.f && sy < 220.f) {
-          platform_->draw_text(sx - 10.f, sy - 14.f, location_label(L.type), r, g, b);
+          platform_->draw_text(sx - 10.f, sy - 14.f, location_label(L.type), 0.85f, 0.85f, 0.7f);
         }
       }
     }
@@ -2625,37 +2743,49 @@ void Game::render() {
         float sx = cx + (p->pos.x - player_.pos.x) * lsc;
         float sy = cy + (p->pos.y - player_.pos.y) * lsc;
         if (p->is_airdrop) {
-          platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
-          platform_->draw_rect(sx - 2, sy - 10, 4, 4, 0.9f, 0.9f, 0.9f, 0.8f);
+          if (platform_->has_sprite("airdrop_box-sheet0"))
+            platform_->draw_sprite("airdrop_box-sheet0", sx - 10, sy - 8, 20, 16, 0.f, 1.f);
+          else
+            platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
+        } else if (platform_->has_sprite("spawn_loot_point-sheet0")) {
+          platform_->draw_sprite("spawn_loot_point-sheet0", sx - 6, sy - 6, 12, 12, 0.f, 1.f);
         } else {
           platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.9f, 0.85f, 0.2f, 1.f);
         }
       }
     }
 
-    // Zombies (also in bunker)
+    // Zombies — one 30×30 C2 frame (facing col + walk row), not whole sheet
     {
       const float zsc = in_bunker_ ? 1.f : sc;
+      const int zanim = 1 + (static_cast<int>(state_timer_ * 6.f) % 3);
       for (const Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
         if (!z->alive) continue;
         float sx = cx + (z->pos.x - player_.pos.x) * zsc;
         float sy = cy + (z->pos.y - player_.pos.y) * zsc;
-        float r = 0.7f, g = 0.2f, b = 0.15f;
-        if (z->type == Zed_Fast) { r = 0.85f; g = 0.35f; b = 0.1f; }
-        if (z->type == Zed_Army || z->type == Zed_ArmyShooter) { r = 0.35f; g = 0.45f; b = 0.25f; }
-        if (z->type == Zed_Buried) { r = 0.4f; g = 0.35f; b = 0.2f; }
-        if (z->type == Zed_Tank) { r = 0.55f; g = 0.15f; b = 0.1f; }
-        if (z->type == Zed_Screamer) { r = 0.9f; g = 0.55f; b = 0.85f; }
-        // Buried: dirt mound until ambush triggers
+        float zsz = 40.f;
         if (z->type == Zed_Buried && z->ambush_boost <= 0.f) {
-          platform_->draw_rect(sx - 7, sy - 3, 14, 8, 0.32f, 0.28f, 0.18f, 0.9f);
-          platform_->draw_rect(sx - 4, sy - 5, 8, 4, 0.28f, 0.24f, 0.14f, 0.85f);
-        } else {
-          platform_->draw_rect(sx - 5, sy - 5, 10, 10, r, g, b, 1.f);
-          if (z->type == Zed_Tank)
-            platform_->draw_rect(sx - 7, sy - 7, 14, 14, r, g, b, 0.5f);
-          platform_->draw_rect(sx - 5, sy - 8, 10.f * (z->hp / z->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+          if (platform_->has_sprite("zed_buried_hidden-sheet0"))
+            platform_->draw_sprite_frame("zed_buried_hidden-sheet0",
+                                        sx - 16, sy - 10, 32, 20, 1, 1, 30, 30, 0.f, 1.f);
+          else
+            platform_->draw_rect(sx - 7, sy - 3, 14, 8, 0.32f, 0.28f, 0.18f, 0.9f);
+          continue;
         }
+        const char* base = "zed_normal_skin1";
+        if (z->type == Zed_Fast) base = "zed_fast_skin1";
+        else if (z->type == Zed_Army || z->type == Zed_ArmyShooter) base = "zed_army_skin1";
+        else if (z->type == Zed_Buried) base = "zed_buried_skin";
+        else if (z->type == Zed_Tank) { base = "zed_tank_skin"; zsz = 56.f; }
+        else if (z->type == Zed_Screamer) base = "zed_screamer_skin";
+        const float fdeg = std::atan2(player_.pos.y - z->pos.y, player_.pos.x - z->pos.x) * 57.2957795f;
+        char probe[64];
+        sprite_sheet_name(probe, (int)sizeof(probe), base, 0);
+        if (platform_->has_sprite(probe))
+          draw_c2_char(platform_, sx, sy, zsz, base, fdeg, zanim);
+        else
+          platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.7f, 0.2f, 0.15f, 1.f);
+        platform_->draw_rect(sx - 5, sy - zsz * 0.5f - 3.f, 10.f * (z->hp / z->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
       }
     }
 
@@ -2679,41 +2809,65 @@ void Game::render() {
                              0.95f, 0.5f, 0.9f, 0.22f);
       }
 
-      // Animals
-      for (int i = 0; i < animals_.count(); ++i) {
-        const Animal* a = animals_.at(i);
-        if (!a->alive) continue;
-        float sx = cx + (a->pos.x - player_.pos.x) * sc;
-        float sy = cy + (a->pos.y - player_.pos.y) * sc;
-        if (a->type == Animal_Wolf || a->type == Animal_Dog)
-          platform_->draw_rect(sx - 5, sy - 4, 10, 8, 0.45f, 0.4f, 0.35f, 1.f);
-        else if (a->type == Animal_Crow)
-          platform_->draw_rect(sx - 2, sy - 2, 4, 4, 0.15f, 0.15f, 0.18f, 1.f);
-        else
-          platform_->draw_rect(sx - 4, sy - 4, 8, 8, 0.55f, 0.5f, 0.3f, 1.f);
+      // Animals — cropped frames (wolf 30×30, deer 38×38)
+      {
+        const int aanim = 1 + (static_cast<int>(state_timer_ * 5.f) % 3);
+        for (int i = 0; i < animals_.count(); ++i) {
+          const Animal* a = animals_.at(i);
+          if (!a->alive) continue;
+          float sx = cx + (a->pos.x - player_.pos.x) * sc;
+          float sy = cy + (a->pos.y - player_.pos.y) * sc;
+          const float fdeg = std::atan2(player_.pos.y - a->pos.y, player_.pos.x - a->pos.x) * 57.2957795f;
+          if (a->type == Animal_Wolf || a->type == Animal_Dog) {
+            draw_c2_char(platform_, sx, sy, 42.f, "wolf_skin", fdeg, aanim);
+          } else if (a->type == Animal_Deer) {
+            // deer cells are 38×38 with stride 40
+            draw_c2_char(platform_, sx, sy, 46.f, "deer_skin", fdeg, aanim, 38, 40);
+          } else if (a->type == Animal_Rabbit) {
+            draw_c2_char(platform_, sx, sy, 28.f, "rabbit_skin", fdeg, aanim);
+          } else {
+            platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.2f, 0.2f, 0.22f, 1.f);
+          }
+        }
       }
 
-      // Bandits (blue-ish)
-      for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
-        if (!bd->alive) continue;
-        float sx = cx + (bd->pos.x - player_.pos.x) * sc;
-        float sy = cy + (bd->pos.y - player_.pos.y) * sc;
-        platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
-        platform_->draw_rect(sx - 5, sy - 8, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+      // Bandits — 30×30 frames
+      {
+        const int banim = 1 + (static_cast<int>(state_timer_ * 5.f) % 3);
+        for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
+          if (!bd->alive) continue;
+          float sx = cx + (bd->pos.x - player_.pos.x) * sc;
+          float sy = cy + (bd->pos.y - player_.pos.y) * sc;
+          const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
+          if (platform_->has_sprite("bandit_skin-sheet0"))
+            draw_c2_char(platform_, sx, sy, 40.f, "bandit_skin", fdeg, banim);
+          else
+            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
+          platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+        }
       }
 
-      // Vehicles
+      // Vehicles (UAZ / boat sprites)
       for (int i = 0; i < vehicles_.count(); ++i) {
         const Vehicle* v = vehicles_.at(i);
         if (!v->active) continue;
         float sx = cx + (v->pos.x - player_.pos.x) * sc;
         float sy = cy + (v->pos.y - player_.pos.y) * sc;
         if (v->type == Vehicle_Boat) {
-          platform_->draw_rect(sx - 10, sy - 4, 20, 8, 0.25f, 0.45f, 0.55f, 1.f);
+          if (platform_->has_sprite("boat_arrive-sheet0"))
+            platform_->draw_sprite("boat_arrive-sheet0", sx - 36, sy - 22, 72, 44, v->facing_deg, 1.f);
+          else
+            platform_->draw_rect(sx - 10, sy - 4, 20, 8, 0.25f, 0.45f, 0.55f, 1.f);
         } else if (v->type == Vehicle_Bike) {
-          platform_->draw_rect(sx - 6, sy - 3, 12, 6, 0.55f, 0.35f, 0.2f, 1.f);
+          if (platform_->has_sprite("car_hatch_red-sheet0"))
+            platform_->draw_sprite("car_hatch_red-sheet0", sx - 22, sy - 12, 44, 24, v->facing_deg, 1.f);
+          else
+            platform_->draw_rect(sx - 6, sy - 3, 12, 6, 0.55f, 0.35f, 0.2f, 1.f);
         } else {
-          platform_->draw_rect(sx - 8, sy - 5, 16, 10, 0.4f, 0.4f, 0.45f, 1.f);
+          if (platform_->has_sprite("car_uaz_base-sheet0"))
+            platform_->draw_sprite("car_uaz_base-sheet0", sx - 36, sy - 16, 72, 32, v->facing_deg, 1.f);
+          else
+            platform_->draw_rect(sx - 8, sy - 5, 16, 10, 0.4f, 0.4f, 0.45f, 1.f);
         }
       }
 
@@ -2723,8 +2877,12 @@ void Game::render() {
         if (!f->active) continue;
         float sx = cx + (f->pos.x - player_.pos.x) * sc;
         float sy = cy + (f->pos.y - player_.pos.y) * sc;
-        platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.9f, 0.35f, 0.05f, 0.9f);
-        platform_->draw_rect(sx - 3, sy - 10, 6, 6, 1.f, 0.7f, 0.15f, 0.7f);
+        if (platform_->has_sprite("fire_place_warm-sheet0"))
+          platform_->draw_sprite("fire_place_warm-sheet0", sx - 22, sy - 22, 44, 44, 0.f, 1.f);
+        else {
+          platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.9f, 0.35f, 0.05f, 0.9f);
+          platform_->draw_rect(sx - 3, sy - 10, 6, 6, 1.f, 0.7f, 0.15f, 0.7f);
+        }
       }
 
       // Placed traps / barbed wire
@@ -2839,10 +2997,16 @@ void Game::render() {
       platform_->draw_rect(0, 0, 480, 272, 0.15f, 0.35f, 0.1f, 0.08f);
     }
 
-    // Player
-    platform_->draw_rect(cx - 6, cy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
-    // facing / aim line
+    // Player — one 30×30 C2 frame (facing=column, walk=row); hands layered
     {
+      const int panim = player_.running ? (1 + static_cast<int>(state_timer_ * 10.f) % 3) : 0;
+      const float psz = crouching_ ? 36.f : 44.f;
+      if (platform_->has_sprite("player_skin_def_1-sheet0")) {
+        draw_c2_char(platform_, cx, cy, psz, "player_skin_def_1", player_.facing_deg, panim);
+        draw_c2_char(platform_, cx, cy, psz, "player_hands_white", player_.facing_deg, panim);
+      } else {
+        platform_->draw_rect(cx - 6, cy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
+      }
       const float rad = player_.facing_deg * 0.01745329252f;
       const InvSlot& eq = inventory_.slot(equipped_slot_);
       const WeaponDef* w = eq.empty() ? 0 : find_weapon(eq.id);

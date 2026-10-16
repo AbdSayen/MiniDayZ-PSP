@@ -61,6 +61,9 @@ if(MDAZ_DESKTOP)
     src/platform/audio_sdl.cpp
   )
   target_link_libraries(minidayz_desktop PRIVATE mdaz_core)
+  target_include_directories(minidayz_desktop PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
+  )
 
   find_package(SDL2 QUIET)
   if(SDL2_FOUND)

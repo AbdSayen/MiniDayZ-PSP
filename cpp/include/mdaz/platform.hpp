@@ -56,6 +56,17 @@ public:
   virtual void clear(float r, float g, float b) = 0;
   virtual void draw_rect(float x, float y, float w, float h, float r, float g, float b, float a) = 0;
   virtual void draw_text(float x, float y, const char* text, float r, float g, float b) = 0;
+  // Original C2 PNG sprites (name without path, e.g. "player_skin_def_1-sheet0").
+  virtual bool load_sprites(const char* images_dir) { (void)images_dir; return false; }
+  virtual bool has_sprite(const char* /*name*/) const { return false; }
+  // Draw whole texture (buildings / single-frame art).
+  virtual void draw_sprite(const char* /*name*/, float /*x*/, float /*y*/, float /*w*/, float /*h*/,
+                           float /*angle_deg*/ = 0.f, float /*alpha*/ = 1.f) {}
+  // Draw a cropped frame from a C2 spritesheet (src in pixels).
+  virtual void draw_sprite_frame(const char* /*name*/,
+                                 float /*dx*/, float /*dy*/, float /*dw*/, float /*dh*/,
+                                 int /*sx*/, int /*sy*/, int /*sw*/, int /*sh*/,
+                                 float /*angle_deg*/ = 0.f, float /*alpha*/ = 1.f) {}
   virtual void end_frame() = 0;
   virtual bool read_file(const char* path, char** out_data, std::size_t* out_size) = 0;
   virtual bool write_file(const char* path, const void* data, std::size_t size) = 0;
