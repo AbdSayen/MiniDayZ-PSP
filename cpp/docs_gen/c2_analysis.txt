@@ -1,0 +1,1614 @@
+=== Mini DAYZ Construct 2 Analysis ===
+Source: original_docs\data.js
+Version field: 1.4.1
+Title: Mini DAYZ
+Resolution: 1024x768
+First layout: Loading
+
+=== LAYOUTS ===
+  [0] GUI_layout  size=1024x768
+  [1] Polygon  size=1500x1500
+  [2] Map  size=17850x20000
+  [3] Tutorial  size=8300x2000
+  [4] Menu  size=2500x1500
+  [5] Login  size=850x890
+  [6] Loading  size=2000x1500
+
+=== EVENT SHEETS ===
+  [0] Game_events  top-level groups/events: 299
+  [1] Menu_Events  top-level groups/events: 108
+  [2] Login_events  top-level groups/events: 27
+  [3] Loading_events  top-level groups/events: 15
+  [4] Everywere  top-level groups/events: 4
+  [5] Tutorial_events  top-level groups/events: 13
+
+=== OBJECT TYPES: 947 ===
+Plugin usage:
+  plugin 19: 801
+  plugin 17: 76
+  plugin 2: 19
+  plugin 14: 11
+  plugin 18: 9
+  plugin 0: 6
+  plugin 12: 6
+  plugin 16: 6
+  plugin 13: 2
+  plugin 1: 1
+  plugin 3: 1
+  plugin 4: 1
+  plugin 5: 1
+  plugin 6: 1
+  plugin 7: 1
+  plugin 8: 1
+  plugin 9: 1
+  plugin 10: 1
+  plugin 11: 1
+  plugin 15: 1
+
+Unique image-name prefixes (896):
+  ach_24 (1)
+  ach_beepboy (1)
+  ach_blackbox (1)
+  ach_boomstick (1)
+  ach_bow (1)
+  ach_bro (1)
+  ach_builder (1)
+  ach_bunker (1)
+  ach_camel (1)
+  ach_city_counter (1)
+  ach_darksoul (1)
+  ach_deusvult (1)
+  ach_farmer (1)
+  ach_gluttony (1)
+  ach_gta (1)
+  ach_heli_counter (1)
+  ach_hitman (1)
+  ach_hunter (1)
+  ach_lumberjack (1)
+  ach_mtg (1)
+  ach_mummy (1)
+  ach_pistols (1)
+  ach_russianmafia (1)
+  ach_shelter (1)
+  ach_smb (1)
+  ach_stillinservice (1)
+  ach_survivegod (1)
+  ach_terminator (1)
+  ach_tourist (1)
+  ach_untouchable (1)
+  ach_vampire (1)
+  ach_zedkiller (1)
+  achieve_info_card (1)
+  achieve_rank (1)
+  aim_line_1 (2)
+  airdrop_box (1)
+  airdrop_drop (1)
+  airdrop_parachute (1)
+  ak74_rifle (1)
+  akm_bullet (1)
+  akm_rifle (1)
+  aks74u_rifle (1)
+  alife_marker (1)
+  amenu_bg (1)
+  ammo_12cal (1)
+  ammo_22lr (1)
+  ammo_357 (1)
+  ammo_45acp (1)
+  ammo_5x45 (1)
+  ammo_5x56 (1)
+  ammo_7x62 (1)
+  ammo_7x62x39 (1)
+  ammo_9mm (1)
+  ammo_9x18 (1)
+  ammo_9x39 (1)
+  ammo_count_inv_bg (1)
+  amphibia (1)
+  amphibia_bullet (3)
+  apple (1)
+  arrow_bullet (1)
+  arrow_bullet_c (1)
+  ashwood_stick (1)
+  aug_rifle (1)
+  axe_red (1)
+  b_car_bus (1)
+  b_car_bus_int (1)
+  b_castle (1)
+  b_castle_int (1)
+  b_church (1)
+  b_church_int (1)
+  b_city_house_1 (1)
+  b_city_house_1_int (1)
+  b_city_house_2 (1)
+  b_city_house_2_int (1)
+  b_city_house_3 (1)
+  b_city_house_3_int (1)
+  b_city_house_4 (1)
+  b_city_house_4_int (1)
+  b_deer_stand (1)
+  b_dot (1)
+  b_dot_int (1)
+  b_exit (1)
+  b_fire_station (1)
+  b_fire_station_int (1)
+  b_garage_blue (1)
+  b_garage_blue_int (2)
+  b_garage_brown (1)
+  b_garage_green (1)
+  b_garage_green_int (1)
+  b_gas_station (1)
+  b_gas_station_fueling (1)
+  b_gas_station_fueling_int (1)
+  b_gas_station_int (1)
+  b_gunshop (1)
+  b_gunshop_int (1)
+  b_hospital (1)
+  b_hospital_int (1)
+  b_hostel (1)
+  b_hostel_int (1)
+  b_hunter_shelter (1)
+  b_hunter_shelter_int (1)
+  b_military_barrack (1)
+  b_military_barrack2 (1)
+  b_military_barrack2_int (1)
+  b_military_barrack_int (1)
+  b_military_shtab (1)
+  b_military_shtab_int (1)
+  b_militay_tent (1)
+  b_militay_tent_east (1)
+  b_militay_tent_east_int (1)
+  b_militay_tent_int (1)
+  b_piano_house (1)
+  b_piano_house_int (1)
+  b_police_station (1)
+  b_police_station_int (1)
+  b_red_brick (1)
+  b_red_brick_int (1)
+  b_school (1)
+  b_school_int (1)
+  b_shadows (1)
+  b_shed (1)
+  b_shed_int (1)
+  b_small_shed (1)
+  b_small_shed_int (1)
+  b_supermarket (1)
+  b_supermarket_int (1)
+  b_village_brown (1)
+  b_village_brown_int (1)
+  b_village_green (1)
+  b_village_green_int (1)
+  b_village_red (1)
+  b_village_red2 (1)
+  b_village_red2_int (1)
+  b_village_red_int (1)
+  b_village_yard (1)
+  b_village_yard_int (1)
+  b_village_yellow (1)
+  b_village_yellow_int (1)
+  balaklava (1)
+  banana (1)
+  bandage (1)
+  bandana (1)
+  bandit_dead (1)
+  bandit_skin (1)
+  bandolier (1)
+  barbedwire (1)
+  barberwire_deployed (1)
+  baseball_bat (1)
+  baseball_cap (1)
+  batteries (1)
+  beartrap (1)
+  beartrap_deployed (1)
+  bell_pepper (1)
+  beret_red (1)
+  berries_blue (1)
+  berries_red (1)
+  berries_yellow (1)
+  berry_bush (1)
+  bg_button_perks (1)
+  bg_rust (1)
+  big_obstacle_base (1)
+  bizon_smg (1)
+  blood_bag (1)
+  blood_drop (1)
+  bm16_shotgun (1)
+  boat_arrive (1)
+  bot_bandit_melee_marker (2)
+  bot_bandit_team_marker (1)
+  bot_bandit_waypoint (1)
+  bot_bandits_controller (1)
+  bot_enemy_bandit (1)
+  bot_enemy_puncher (1)
+  bot_enemy_shooter (1)
+  bot_enemy_teammate (1)
+  bot_firearm_tour_point (1)
+  bot_friend (1)
+  bot_friend_point (1)
+  bot_neutral_marker (1)
+  bot_puncher_tour_point (1)
+  bot_respawn_point (1)
+  bot_team_controller (1)
+  bot_team_waypoint (1)
+  bot_tutor_1 (1)
+  bot_tutor_2 (1)
+  btn_restart (1)
+  buddy_marker (1)
+  build_ghost (1)
+  build_ghost_obstacle (1)
+  bunker_crates (1)
+  bunker_door (1)
+  bunker_entrance (1)
+  bunker_exit (1)
+  bunker_lootbox (1)
+  bunker_zed_spawner (1)
+  burplap_sack (1)
+  camera (1)
+  camera_aim (1)
+  camera_menu (1)
+  camera_waypoint (1)
+  campfire_off (1)
+  canned_beans (1)
+  canned_tuna (1)
+  canteen (1)
+  car_body_corpse (1)
+  car_btr (1)
+  car_hatch_grey (1)
+  car_hatch_red (1)
+  car_hatch_white (1)
+  car_light (1)
+  car_loot_point (1)
+  car_police (1)
+  car_police_vert (1)
+  car_regular_blue (1)
+  car_regular_blue_vert (1)
+  car_regular_gray (1)
+  car_regular_gray_vert (1)
+  car_regular_green_vert (1)
+  car_regular_red (1)
+  car_regular_red_vert (1)
+  car_resp_truck (1)
+  car_resp_uaz (1)
+  car_resp_volga (1)
+  car_truck (1)
+  car_uaz_anims (1)
+  car_uaz_base (1)
+  car_van_black (1)
+  car_van_blue (1)
+  car_van_red (1)
+  car_volga_anims (1)
+  car_volga_base (1)
+  char_select (1)
+  char_update (2)
+  choke_bor (1)
+  civilian_tent (1)
+  civilian_tent_deploy_down (1)
+  civilian_tent_deploy_ruines (1)
+  civilian_tent_deploy_up (1)
+  claymore_deployed (1)
+  claymore_item (1)
+  cleaning_kit (1)
+  cloak_brown (1)
+  cloud_shadow (1)
+  composite_arrows (1)
+  cooked_rabbit_steak (1)
+  cooked_steak (1)
+  cowboy_hat (1)
+  crossbow (1)
+  crosshair_acog (1)
+  crosshair_long (1)
+  crosshair_pso (1)
+  crosshair_pu (1)
+  crosshair_rds (1)
+  crow_skin (1)
+  crowbar (1)
+  dead_screen (1)
+  deer_dead (1)
+  deer_dead_done (1)
+  deer_eyes (1)
+  deer_skin (1)
+  dog_dead (1)
+  dog_eyes (1)
+  dog_marker (1)
+  dog_skin (1)
+  door (1)
+  down_jacket (1)
+  dress (1)
+  duct_tape (1)
+  edrink (1)
+  ee_bi_car (1)
+  ee_bpla (1)
+  ee_car_destroyed (1)
+  ee_castle_tower (1)
+  ee_fallcar (1)
+  ee_kv2 (1)
+  ee_piles (1)
+  ee_predator (1)
+  ee_predator_trigger (1)
+  ee_pubg_drop (1)
+  ee_pubg_drop_smoke (1)
+  ee_radar (1)
+  ee_radiotower (1)
+  ee_radiotower_part2 (1)
+  ee_ruins (1)
+  ee_stalker_cross (1)
+  ee_stalker_fireplace (1)
+  ee_stalker_radio (1)
+  ee_stones (1)
+  ee_strange_tree (1)
+  ee_tent (1)
+  ee_typhoon (1)
+  eff_barricade_piece (1)
+  eff_car_smoke_particles (1)
+  eff_fence_piece (1)
+  eff_lavka_piece (1)
+  eff_tire_dirt_particles (1)
+  eff_trash_piece (1)
+  eff_uaz_piece (1)
+  effect_env_fly (1)
+  effect_env_perekat (1)
+  exp_hole (1)
+  explolsion_ground (1)
+  explolsion_water (1)
+  f1_grenade (1)
+  f1_grenade_active (1)
+  fade_sprite (2)
+  fence_horizontal (1)
+  fence_vertical (1)
+  fire_place_warm (1)
+  fireaxe (1)
+  fireplace (1)
+  fish_filet_big (1)
+  fish_filet_small (1)
+  fish_herring (1)
+  fish_nest (1)
+  fish_perch (1)
+  fish_ruff (1)
+  fish_salmon (1)
+  fish_sprite (1)
+  fishing_rod (1)
+  flame_medium (1)
+  flame_small (1)
+  flare (1)
+  flare_active (1)
+  flare_hand (1)
+  fncal_rifle (1)
+  fnx_pistol (4)
+  friend_hp_background (1)
+  friend_hp_bar (1)
+  fueltank (1)
+  gasmask (1)
+  glock_pistol (1)
+  gorka_helmet (1)
+  gorka_jacket (1)
+  gorka_pants (1)
+  grenadeparticles (1)
+  ground_enviroment_tilemap (1)
+  ground_lvl1_tilemap (1)
+  ground_lvl2_tilemap (1)
+  ground_lvl3_tilemap (1)
+  ground_lvl4_tilemap (1)
+  groza_rifle (1)
+  gui_airdrop_btn (1)
+  gui_airdrop_btn_filler (1)
+  gui_airdrop_icon (1)
+  gui_airdrop_icon_select (1)
+  gui_bleeding (1)
+  gui_blood_bar (1)
+  gui_boost (1)
+  gui_btn_attack (1)
+  gui_btn_builder (1)
+  gui_btn_car_backward (1)
+  gui_btn_car_forward (1)
+  gui_btn_car_leave (1)
+  gui_btn_car_wheel_left (1)
+  gui_btn_car_wheel_right (1)
+  gui_btn_flare (1)
+  gui_btn_interact (1)
+  gui_btn_inventory (1)
+  gui_btn_perks (1)
+  gui_btn_perks_notify (1)
+  gui_btn_reload (1)
+  gui_btn_switch (1)
+  gui_btn_talk (1)
+  gui_btn_zoom (1)
+  gui_car_bg (1)
+  gui_car_condition (1)
+  gui_car_disable_icon (2)
+  gui_car_fuel (1)
+  gui_card_cover (1)
+  gui_dog_control (1)
+  gui_dpad_field (1)
+  gui_dpad_stick (1)
+  gui_dpad_stick_fake (1)
+  gui_dpad_stick_shadow (1)
+  gui_drag_starter (1)
+  gui_dragger (1)
+  gui_firearm (1)
+  gui_food_bar (1)
+  gui_heat (1)
+  gui_heat_arrow (1)
+  gui_heat_bar (1)
+  gui_heat_text (1)
+  gui_help (1)
+  gui_hint_bar (1)
+  gui_inv_card_backpack (1)
+  gui_inv_card_vest (3)
+  gui_inventory (1)
+  gui_inventory_dropzone (1)
+  gui_item_backpack (8)
+  gui_item_helmet (1)
+  gui_melee (1)
+  gui_meleefight_ring_ramka (1)
+  gui_pad_btn (1)
+  gui_panel (1)
+  gui_perk_icon (1)
+  gui_perk_icon_buy (1)
+  gui_perk_icon_select (1)
+  gui_perk_panel (1)
+  gui_pickpile_panel (1)
+  gui_pickpile_scroll (1)
+  gui_pickpile_scroll_bg (1)
+  gui_pistol (1)
+  gui_portrait_backpack (1)
+  gui_portrait_bg (1)
+  gui_portrait_helmet (1)
+  gui_portrait_outerwear (1)
+  gui_portrait_vest (1)
+  gui_quest_panel (1)
+  gui_rad_bar (1)
+  gui_radiation (1)
+  gui_radiation_text (1)
+  gui_regeneration (1)
+  gui_safezone (1)
+  gui_sick (1)
+  gui_slot_bg (1)
+  gui_slot_hider_bp (2)
+  gui_slot_hider_out (3)
+  gui_starving (1)
+  gui_target (1)
+  gui_thirsty (1)
+  gui_time_bg (1)
+  gui_tutor_controls (1)
+  gui_tutor_controls_char (1)
+  gui_tutor_controls_hand (1)
+  gui_tutor_tip_bg (1)
+  gui_water_bar (1)
+  hacksaw (1)
+  hammer_crash (1)
+  hammercrash_point (1)
+  handmade_arrows (1)
+  headlamp (1)
+  headshot_particles (1)
+  headshoticon (1)
+  heatpack (1)
+  heli_crash (1)
+  helicrash_point (1)
+  helm (1)
+  helmet_army (1)
+  helmet_hard (1)
+  helmet_moto (1)
+  helmet_moto_red (1)
+  helmet_nvg (1)
+  hesco_horizontal (1)
+  hesco_vertical (1)
+  hoodie_gray (1)
+  hoodie_red (1)
+  hunter_backpack (2)
+  hunter_jacket (1)
+  hunter_pants (1)
+  improvised_backpack (1)
+  improvised_bag (1)
+  improvised_bow (1)
+  jeans (1)
+  knife_any (1)
+  knife_army (1)
+  knife_butcher (1)
+  knife_hunter (1)
+  kvas (1)
+  l85_rifle (1)
+  landmine (1)
+  landmine_deployed (1)
+  lang_selector (1)
+  light_bot1 (2)
+  light_color (1)
+  light_nvg_color_tiled (1)
+  light_sprite (1)
+  light_tower (1)
+  loaderrunner (1)
+  logo_welcome (1)
+  m4_bullet (8)
+  m4_bullet_bot (1)
+  m4_rifle (1)
+  mac10_pistol (1)
+  madsen_bullet (1)
+  madsen_mg (1)
+  magnum_pistol (1)
+  main_menu_achieves_back (1)
+  main_menu_checkbox (1)
+  main_menu_logo (1)
+  main_menu_wpn_icon (1)
+  map_element (1)
+  mapgen (1)
+  matches (1)
+  melee_swing_general (1)
+  menu_achieves_bg (1)
+  menu_bg (1)
+  menu_btn (1)
+  menu_btn_wood (1)
+  mines (1)
+  minimap_dragger (1)
+  minimap_hint (2)
+  minimap_mark (1)
+  minimap_player (1)
+  minimap_tile (1)
+  molotov_cocktail (1)
+  molotov_flame (2)
+  molotov_fly (1)
+  morphine (1)
+  mosin_bullet (3)
+  mosin_nagant (1)
+  mountain_backpack (1)
+  mp5_bullet (4)
+  mp5_smg (2)
+  mre (1)
+  muzzle_dust (1)
+  muzzle_flash (1)
+  muzzle_sprite (1)
+  night_overlay (1)
+  ninepatch_achievesbg (1)
+  ninepatch_achievesbg3 (1)
+  ninepatch_charactersbg (1)
+  ninepatch_loader (1)
+  notacola (1)
+  npc_hp_bar (1)
+  npc_hp_bar_bg (1)
+  nukacola (1)
+  obst_barricade (1)
+  obst_base (1)
+  obst_block (1)
+  obst_fence (1)
+  obst_lavka (1)
+  obst_sandblock (1)
+  obst_trash_container (1)
+  options_menu (1)
+  orange (1)
+  orel_jacket (1)
+  orel_pants (1)
+  pad_controls (1)
+  pad_controls_char (1)
+  pad_icon_close (1)
+  pad_list (1)
+  pad_page_switch (1)
+  pad_stick (1)
+  pan (1)
+  panel_button (1)
+  papers (1)
+  paramedic_jacket (1)
+  paramedic_pants (1)
+  particles (1)
+  pepper_seeds_pack (1)
+  pickaxe (1)
+  pillar (1)
+  pipe_wrench (1)
+  pipsi (1)
+  pistol_bullet (2)
+  pitchfork (1)
+  plant_pepper (2)
+  plant_squash (1)
+  player_base (1)
+  player_breathe (1)
+  player_collision_base (1)
+  player_hands_asian (1)
+  player_hands_black (1)
+  player_hands_white (1)
+  player_skin_aika (1)
+  player_skin_bandit (1)
+  player_skin_biker (1)
+  player_skin_boxer (1)
+  player_skin_dead (1)
+  player_skin_def_1 (1)
+  player_skin_def_2 (1)
+  player_skin_def_3 (1)
+  player_skin_doc (1)
+  player_skin_ganzo (1)
+  player_skin_jasmine (1)
+  player_skin_kate (1)
+  player_skin_maniac (1)
+  player_skin_redneck (1)
+  player_skin_survivalist (1)
+  player_skin_veteran (1)
+  plugin10_t174 (1)
+  plugin11_t488 (1)
+  plugin14_t945 (1)
+  plugin15_t534 (1)
+  plugin16_t342 (1)
+  plugin16_t412 (1)
+  plugin16_t413 (1)
+  plugin16_t418 (1)
+  plugin16_t590 (1)
+  plugin16_t870 (1)
+  plugin17_t176 (1)
+  plugin17_t194 (1)
+  plugin17_t208 (1)
+  plugin17_t215 (1)
+  plugin17_t220 (1)
+  plugin17_t224 (1)
+  plugin17_t246 (1)
+  plugin17_t265 (1)
+  plugin17_t273 (1)
+  plugin17_t274 (1)
+  plugin17_t278 (1)
+  plugin17_t281 (1)
+  plugin17_t284 (1)
+  plugin17_t341 (1)
+  plugin17_t343 (1)
+  plugin17_t348 (1)
+  plugin17_t349 (1)
+  plugin17_t350 (1)
+  plugin17_t351 (1)
+  plugin17_t354 (1)
+  plugin17_t355 (1)
+  plugin17_t362 (1)
+  plugin17_t363 (1)
+  plugin17_t366 (1)
+  plugin17_t402 (1)
+  plugin17_t405 (1)
+  plugin17_t406 (1)
+  plugin17_t408 (1)
+  plugin17_t409 (1)
+  plugin17_t417 (1)
+  plugin17_t419 (1)
+  plugin17_t428 (1)
+  plugin17_t429 (1)
+  plugin17_t430 (1)
+  plugin17_t467 (1)
+  plugin17_t484 (1)
+  plugin17_t485 (1)
+  plugin17_t486 (1)
+  plugin17_t487 (1)
+  plugin17_t491 (1)
+  plugin17_t492 (1)
+  plugin17_t493 (1)
+  plugin17_t494 (1)
+  plugin17_t506 (1)
+  plugin17_t514 (1)
+  plugin17_t526 (1)
+  plugin17_t529 (1)
+  plugin17_t531 (1)
+  plugin17_t543 (1)
+  plugin17_t546 (1)
+  plugin17_t547 (1)
+  plugin17_t551 (1)
+  plugin17_t583 (1)
+  plugin17_t586 (1)
+  plugin17_t597 (1)
+  plugin17_t626 (1)
+  plugin17_t628 (1)
+  plugin17_t629 (1)
+  plugin17_t630 (1)
+  plugin17_t643 (1)
+  plugin17_t647 (1)
+  plugin17_t677 (1)
+  plugin17_t686 (1)
+  plugin17_t707 (1)
+  plugin17_t728 (1)
+  plugin17_t729 (1)
+  plugin17_t748 (1)
+  plugin17_t749 (1)
+  plugin17_t751 (1)
+  plugin17_t752 (1)
+  plugin17_t783 (1)
+  plugin17_t784 (1)
+  plugin17_t906 (1)
+  plugin17_t908 (1)
+  plugin17_t932 (1)
+  plugin17_t933 (1)
+  plugin19_t909 (1)
+  plugin19_t910 (1)
+  plugin19_t911 (1)
+  plugin19_t912 (1)
+  plugin19_t913 (1)
+  plugin19_t914 (1)
+  plugin19_t915 (1)
+  plugin19_t916 (1)
+  plugin19_t917 (1)
+  plugin19_t918 (1)
+  plugin19_t919 (1)
+  plugin19_t920 (1)
+  plugin19_t921 (1)
+  plugin19_t922 (1)
+  plugin19_t923 (1)
+  plugin19_t924 (1)
+  plugin19_t925 (1)
+  plugin19_t926 (1)
+  plugin19_t927 (1)
+  plugin19_t928 (1)
+  plugin19_t929 (1)
+  plugin19_t930 (1)
+  plugin19_t931 (1)
+  plugin19_t934 (1)
+  plugin19_t935 (1)
+  plugin19_t936 (1)
+  plugin19_t937 (1)
+  plugin19_t938 (1)
+  plugin19_t939 (1)
+  plugin19_t940 (1)
+  plugin19_t941 (1)
+  plugin19_t942 (1)
+  plugin19_t943 (1)
+  plugin19_t944 (1)
+  plugin19_t946 (1)
+  plugin1_t223 (1)
+  plugin2_t185 (1)
+  plugin2_t189 (1)
+  plugin2_t219 (1)
+  plugin2_t225 (1)
+  plugin2_t226 (1)
+  plugin2_t227 (1)
+  plugin2_t267 (1)
+  plugin2_t268 (1)
+  plugin2_t352 (1)
+  plugin2_t367 (1)
+  plugin2_t381 (1)
+  plugin2_t382 (1)
+  plugin2_t511 (1)
+  plugin2_t518 (1)
+  plugin2_t532 (1)
+  plugin2_t533 (1)
+  plugin2_t536 (1)
+  plugin2_t537 (1)
+  plugin2_t697 (1)
+  plugin3_t178 (1)
+  plugin4_t222 (1)
+  plugin5_t483 (1)
+  plugin6_t171 (1)
+  plugin7_t180 (1)
+  plugin8_t907 (1)
+  plugin9_t415 (1)
+  police_hat (1)
+  polygon_target_base (1)
+  polygon_target_body (1)
+  pubg_blue_zone_gui (1)
+  pubg_safe_zone_gui (1)
+  pubg_zone_represent (1)
+  quest_case (1)
+  quickdraw_grip (1)
+  r670_shotgun (1)
+  rabbit_dead (1)
+  rabbit_dead_done (1)
+  rabbit_eyes (1)
+  rabbit_skin (1)
+  rad_zone (1)
+  radio_item (1)
+  rags (1)
+  raider_jacket (1)
+  rain_fade (1)
+  rain_ground (1)
+  rain_particle (1)
+  raincoat_blue (1)
+  rare_colt_pistol (1)
+  raw_rabbit_steak (1)
+  raw_steak (1)
+  razgruz (1)
+  razgruz_big (3)
+  red_zone_core (1)
+  red_zone_explode (1)
+  red_zone_minimap (1)
+  reloading_icon (1)
+  reloading_spinner (1)
+  repeater_rifle (1)
+  rice (1)
+  rope (1)
+  rpk_rifle (1)
+  safe_zone_pubg (1)
+  safe_zone_pubg_blue (1)
+  saiga_shotgun (1)
+  saline_bag (1)
+  sawed_izh (1)
+  sawed_mosin (2)
+  school_backpack (1)
+  script_zone (1)
+  seed_btn (1)
+  seed_icon (1)
+  sewingkit (1)
+  shield_icon (1)
+  shirt_gray (1)
+  shirt_green (1)
+  shotgun_pellet (1)
+  shovel (1)
+  shroom (1)
+  silencer_east (1)
+  silencer_nato (1)
+  sks_rifle (1)
+  sledgehammer (1)
+  snow_ground (1)
+  spawn_loot_point (1)
+  spinning (1)
+  spite (1)
+  sport_jacket (1)
+  sporter_rifle (1)
+  sportpants (1)
+  sprite (3)
+  squash (1)
+  squash_seeds_pack (1)
+  stepper (1)
+  sub_menu (1)
+  sub_menu_title (1)
+  sv98_rifle (1)
+  svd_bullet (1)
+  svd_rifle (1)
+  sweater (1)
+  sword (1)
+  tactical_bacon (1)
+  taloon_backpack (1)
+  target_for_team_bot (2)
+  td_zone (1)
+  tent_checker (1)
+  test_bodyhit (3)
+  test_bullet_hit (1)
+  test_groundhit (1)
+  test_shell (1)
+  test_shell_12cal (1)
+  tetracycline (1)
+  tiledbg_loader (1)
+  tiledbgmenu_city_down (1)
+  tiledbgmenu_city_up (1)
+  tiledbgmenu_sky_sprite (1)
+  tilemap_bunker (1)
+  tilemap_bunker_collision (1)
+  tilemap_forest (1)
+  tilemap_sand (1)
+  tilemap_water (1)
+  timers_sprite (1)
+  tomato (1)
+  tomato_seeds_pack (1)
+  toolbox (1)
+  tree_block (1)
+  tree_leaves (1)
+  tree_leaves_2 (1)
+  tree_leaves_new2 (1)
+  tree_leaves_new3 (1)
+  tree_pine (1)
+  tree_pine2 (1)
+  tshirt (1)
+  updater_icon (1)
+  ushanka (1)
+  vest (1)
+  vest_press (1)
+  vitamins (1)
+  vss_rifle (1)
+  walk_marker (2)
+  warm_hat (1)
+  warmzone (1)
+  waterbottle (1)
+  waterpump (1)
+  welding_mask (1)
+  whiskey (1)
+  wolf_dead (1)
+  wolf_eyes (1)
+  wolf_skin (1)
+  wood_piles (1)
+  wood_sticks (1)
+  workpants (1)
+  zed_army_dead_skin1 (1)
+  zed_army_dead_skin2 (1)
+  zed_army_dead_skin3 (1)
+  zed_army_eyes (1)
+  zed_army_skin1 (1)
+  zed_army_skin2 (1)
+  zed_army_skin3 (1)
+  zed_bio_explode (1)
+  zed_bio_splash (1)
+  zed_bullet (1)
+  zed_buried_eyes (1)
+  zed_buried_hidden (1)
+  zed_buried_skin (1)
+  zed_buried_skin_dead (1)
+  zed_fast_eyes (1)
+  zed_fast_skin1 (1)
+  zed_fast_skin1_dead (1)
+  zed_fast_skin2 (1)
+  zed_fast_skin2_dead (1)
+  zed_fast_skin3 (1)
+  zed_fast_skin3_dead (1)
+  zed_normal_eyes (1)
+  zed_normal_skin1 (1)
+  zed_normal_skin1_dead (1)
+  zed_normal_skin2 (1)
+  zed_normal_skin2_dead (1)
+  zed_normal_skin3 (1)
+  zed_normal_skin3_dead (1)
+  zed_normal_skin4 (1)
+  zed_normal_skin4_dead (1)
+  zed_normal_skin5 (1)
+  zed_normal_skin5_dead (1)
+  zed_normal_skin6 (1)
+  zed_normal_skin6_dead (1)
+  zed_normal_skin7 (1)
+  zed_normal_skin7_dead (1)
+  zed_normal_skin8 (1)
+  zed_normal_skin8_dead (1)
+  zed_resp_point (1)
+  zed_screamer_eyes (1)
+  zed_screamer_skin (1)
+  zed_screamer_skin_dead (1)
+  zed_shooter_eyes (1)
+  zed_shooter_skin (1)
+  zed_shooter_skin2 (1)
+  zed_shooter_skin3 (1)
+  zed_shooter_skin_dead (1)
+  zed_shooter_skin_dead2 (1)
+  zed_shooter_skin_dead3 (1)
+  zed_tank_eyes (1)
+  zed_tank_skin (1)
+  zed_tank_skin_dead (1)
+  zed_td_spawner (1)
+
+=== CATEGORIZED PREFIXES ===
+player (25): char_select, char_update, minimap_player, player_base, player_breathe, player_collision_base, player_hands_asian, player_hands_black, player_hands_white, player_skin_aika, player_skin_bandit, player_skin_biker, player_skin_boxer, player_skin_dead, player_skin_def_1, player_skin_def_2, player_skin_def_3, player_skin_doc, player_skin_ganzo, player_skin_jasmine, player_skin_kate, player_skin_maniac, player_skin_redneck, player_skin_survivalist, player_skin_veteran
+zombie (55): ach_zedkiller, bunker_zed_spawner, zed_army_dead_skin1, zed_army_dead_skin2, zed_army_dead_skin3, zed_army_eyes, zed_army_skin1, zed_army_skin2, zed_army_skin3, zed_bio_explode, zed_bio_splash, zed_bullet, zed_buried_eyes, zed_buried_hidden, zed_buried_skin, zed_buried_skin_dead, zed_fast_eyes, zed_fast_skin1, zed_fast_skin1_dead, zed_fast_skin2, zed_fast_skin2_dead, zed_fast_skin3, zed_fast_skin3_dead, zed_normal_eyes, zed_normal_skin1, zed_normal_skin1_dead, zed_normal_skin2, zed_normal_skin2_dead, zed_normal_skin3, zed_normal_skin3_dead, zed_normal_skin4, zed_normal_skin4_dead, zed_normal_skin5, zed_normal_skin5_dead, zed_normal_skin6, zed_normal_skin6_dead, zed_normal_skin7, zed_normal_skin7_dead, zed_normal_skin8, zed_normal_skin8_dead, zed_resp_point, zed_screamer_eyes, zed_screamer_skin, zed_screamer_skin_dead, zed_shooter_eyes, zed_shooter_skin, zed_shooter_skin2, zed_shooter_skin3, zed_shooter_skin_dead, zed_shooter_skin_dead2, zed_shooter_skin_dead3, zed_tank_eyes, zed_tank_skin, zed_tank_skin_dead, zed_td_spawner
+animal (18): b_deer_stand, beartrap, beartrap_deployed, cowboy_hat, crow_skin, crowbar, deer_dead, deer_dead_done, deer_eyes, deer_skin, dog_dead, dog_eyes, dog_marker, dog_skin, gui_dog_control, wolf_dead, wolf_eyes, wolf_skin
+weapon (75): ach_bow, ach_pistols, ak74_rifle, akm_bullet, akm_rifle, aks74u_rifle, ammo_12cal, ammo_22lr, ammo_357, ammo_45acp, ammo_5x45, ammo_5x56, ammo_7x62, ammo_7x62x39, ammo_9mm, ammo_9x18, ammo_9x39, ammo_count_inv_bg, amphibia_bullet, arrow_bullet, arrow_bullet_c, aug_rifle, axe_red, b_gunshop, b_gunshop_int, balaklava, bm16_shotgun, bot_bandit_melee_marker, cloak_brown, cooked_rabbit_steak, cooked_steak, crossbow, fireaxe, fncal_rifle, fnx_pistol, glock_pistol, groza_rifle, gui_dpad_stick_fake, gui_melee, gui_meleefight_ring_ramka, gui_pistol, improvised_bow, knife_any, knife_army, knife_butcher, knife_hunter, l85_rifle, m4_bullet, m4_bullet_bot, m4_rifle, mac10_pistol, madsen_bullet, magnum_pistol, melee_swing_general, mosin_bullet, mosin_nagant, mp5_bullet, pickaxe, pistol_bullet, r670_shotgun, rare_colt_pistol, raw_rabbit_steak, raw_steak, repeater_rifle, rpk_rifle, saiga_shotgun, sawed_mosin, shotgun_pellet, sks_rifle, sporter_rifle, sv98_rifle, svd_bullet, svd_rifle, test_bullet_hit, vss_rifle
+item (11): bandage, edrink, flame_medium, hunter_backpack, improvised_backpack, mountain_backpack, paramedic_jacket, paramedic_pants, school_backpack, spawn_loot_point, taloon_backpack
+gui (85): bg_button_perks, btn_restart, gui_airdrop_btn, gui_airdrop_btn_filler, gui_airdrop_icon, gui_airdrop_icon_select, gui_bleeding, gui_blood_bar, gui_boost, gui_btn_attack, gui_btn_builder, gui_btn_car_backward, gui_btn_car_forward, gui_btn_car_leave, gui_btn_car_wheel_left, gui_btn_car_wheel_right, gui_btn_flare, gui_btn_interact, gui_btn_inventory, gui_btn_perks, gui_btn_perks_notify, gui_btn_reload, gui_btn_switch, gui_btn_talk, gui_btn_zoom, gui_car_bg, gui_car_condition, gui_car_disable_icon, gui_car_fuel, gui_card_cover, gui_dpad_field, gui_dpad_stick, gui_dpad_stick_shadow, gui_drag_starter, gui_dragger, gui_firearm, gui_food_bar, gui_heat, gui_heat_arrow, gui_heat_bar, gui_heat_text, gui_help, gui_hint_bar, gui_inv_card_backpack, gui_inv_card_vest, gui_inventory, gui_inventory_dropzone, gui_item_backpack, gui_item_helmet, gui_pad_btn, gui_panel, gui_perk_icon, gui_perk_icon_buy, gui_perk_icon_select, gui_perk_panel, gui_pickpile_panel, gui_pickpile_scroll, gui_pickpile_scroll_bg, gui_portrait_backpack, gui_portrait_bg, gui_portrait_helmet, gui_portrait_outerwear, gui_portrait_vest, gui_quest_panel, gui_rad_bar, gui_radiation, gui_radiation_text, gui_regeneration, gui_safezone, gui_sick, gui_slot_bg, gui_slot_hider_bp, gui_slot_hider_out, gui_starving, gui_target, gui_thirsty, gui_time_bg, gui_tutor_controls, gui_tutor_controls_char, gui_tutor_controls_hand, gui_tutor_tip_bg, gui_water_bar, menu_btn_wood, pad_icon_close, panel_button
+map (21): ground_enviroment_tilemap, ground_lvl1_tilemap, ground_lvl2_tilemap, ground_lvl3_tilemap, ground_lvl4_tilemap, light_nvg_color_tiled, map_element, minimap_dragger, minimap_hint, minimap_mark, minimap_tile, red_zone_minimap, tiledbg_loader, tiledbgmenu_city_down, tiledbgmenu_city_up, tiledbgmenu_sky_sprite, tilemap_bunker, tilemap_bunker_collision, tilemap_forest, tilemap_sand, tilemap_water
+vehicle (35): achieve_info_card, b_car_bus, b_car_bus_int, car_body_corpse, car_btr, car_hatch_grey, car_hatch_red, car_hatch_white, car_light, car_loot_point, car_police, car_police_vert, car_regular_blue, car_regular_blue_vert, car_regular_gray, car_regular_gray_vert, car_regular_green_vert, car_regular_red, car_regular_red_vert, car_resp_truck, car_resp_uaz, car_resp_volga, car_truck, car_uaz_anims, car_uaz_base, car_van_black, car_van_blue, car_van_red, car_volga_anims, car_volga_base, ee_bi_car, ee_car_destroyed, ee_fallcar, eff_car_smoke_particles, eff_uaz_piece
+building (35): ach_bunker, b_city_house_1, b_city_house_1_int, b_city_house_2, b_city_house_2_int, b_city_house_3, b_city_house_3_int, b_city_house_4, b_city_house_4_int, b_militay_tent, b_militay_tent_east, b_militay_tent_east_int, b_militay_tent_int, b_piano_house, b_piano_house_int, b_shed, b_shed_int, b_small_shed, b_small_shed_int, bunker_crates, bunker_door, bunker_entrance, bunker_exit, bunker_lootbox, civilian_tent, civilian_tent_deploy_down, civilian_tent_deploy_ruines, civilian_tent_deploy_up, door, ee_tent, eff_fence_piece, fence_horizontal, fence_vertical, obst_fence, tent_checker
+nature (17): berry_bush, ee_strange_tree, explolsion_ground, explolsion_water, friend_hp_background, rain_ground, snow_ground, test_groundhit, tree_block, tree_leaves, tree_leaves_2, tree_leaves_new2, tree_leaves_new3, tree_pine, tree_pine2, waterbottle, waterpump
+effect (17): b_fire_station, b_fire_station_int, blood_bag, blood_drop, bot_firearm_tour_point, campfire_off, ee_pubg_drop_smoke, ee_stalker_fireplace, eff_tire_dirt_particles, effect_env_fly, effect_env_perekat, fire_place_warm, fireplace, grenadeparticles, headshot_particles, particles, rain_particle
+other (502): ach_24, ach_beepboy, ach_blackbox, ach_boomstick, ach_bro, ach_builder, ach_camel, ach_city_counter, ach_darksoul, ach_deusvult, ach_farmer, ach_gluttony, ach_gta, ach_heli_counter, ach_hitman, ach_hunter, ach_lumberjack, ach_mtg, ach_mummy, ach_russianmafia, ach_shelter, ach_smb, ach_stillinservice, ach_survivegod, ach_terminator, ach_tourist, ach_untouchable, ach_vampire, achieve_rank, aim_line_1, airdrop_box, airdrop_drop, airdrop_parachute, alife_marker, amenu_bg, amphibia, apple, ashwood_stick, b_castle, b_castle_int, b_church, b_church_int, b_dot, b_dot_int, b_exit, b_garage_blue, b_garage_blue_int, b_garage_brown, b_garage_green, b_garage_green_int, b_gas_station, b_gas_station_fueling, b_gas_station_fueling_int, b_gas_station_int, b_hospital, b_hospital_int, b_hostel, b_hostel_int, b_hunter_shelter, b_hunter_shelter_int, b_military_barrack, b_military_barrack2, b_military_barrack2_int, b_military_barrack_int, b_military_shtab, b_military_shtab_int, b_police_station, b_police_station_int, b_red_brick, b_red_brick_int, b_school, b_school_int, b_shadows, b_supermarket, b_supermarket_int, b_village_brown, b_village_brown_int, b_village_green, b_village_green_int, b_village_red, b_village_red2, b_village_red2_int, b_village_red_int, b_village_yard, b_village_yard_int, b_village_yellow, b_village_yellow_int, banana, bandana, bandit_dead, bandit_skin, bandolier, barbedwire, barberwire_deployed, baseball_bat, baseball_cap, batteries, bell_pepper, beret_red, berries_blue, berries_red, berries_yellow, bg_rust, big_obstacle_base, bizon_smg, boat_arrive, bot_bandit_team_marker, bot_bandit_waypoint, bot_bandits_controller, bot_enemy_bandit, bot_enemy_puncher, bot_enemy_shooter, bot_enemy_teammate, bot_friend, bot_friend_point, bot_neutral_marker, bot_puncher_tour_point, bot_respawn_point, bot_team_controller, bot_team_waypoint, bot_tutor_1, bot_tutor_2, buddy_marker, build_ghost, build_ghost_obstacle, burplap_sack, camera, camera_aim, camera_menu, camera_waypoint, canned_beans, canned_tuna, canteen, choke_bor, claymore_deployed, claymore_item, cleaning_kit, cloud_shadow, composite_arrows, crosshair_acog, crosshair_long, crosshair_pso, crosshair_pu, crosshair_rds, dead_screen, down_jacket, dress, duct_tape, ee_bpla, ee_castle_tower, ee_kv2, ee_piles, ee_predator, ee_predator_trigger, ee_pubg_drop, ee_radar, ee_radiotower, ee_radiotower_part2, ee_ruins, ee_stalker_cross, ee_stalker_radio, ee_stones, ee_typhoon, eff_barricade_piece, eff_lavka_piece, eff_trash_piece, exp_hole, f1_grenade, f1_grenade_active, fade_sprite, fish_filet_big, fish_filet_small, fish_herring, fish_nest, fish_perch, fish_ruff, fish_salmon, fish_sprite, fishing_rod, flame_small, flare, flare_active, flare_hand, friend_hp_bar, fueltank, gasmask, gorka_helmet, gorka_jacket, gorka_pants, hacksaw, hammer_crash, hammercrash_point, handmade_arrows, headlamp, headshoticon, heatpack, heli_crash, helicrash_point, helm, helmet_army, helmet_hard, helmet_moto, helmet_moto_red, helmet_nvg, hesco_horizontal, hesco_vertical, hoodie_gray, hoodie_red, hunter_jacket, hunter_pants, improvised_bag, jeans, kvas, landmine, landmine_deployed, lang_selector, light_bot1, light_color, light_sprite, light_tower, loaderrunner, logo_welcome, madsen_mg, main_menu_achieves_back, main_menu_checkbox, main_menu_logo, main_menu_wpn_icon, mapgen, matches, menu_achieves_bg, menu_bg, menu_btn, mines, molotov_cocktail, molotov_flame, molotov_fly, morphine, mp5_smg, mre, muzzle_dust, muzzle_flash, muzzle_sprite, night_overlay, ninepatch_achievesbg, ninepatch_achievesbg3, ninepatch_charactersbg, ninepatch_loader, notacola, npc_hp_bar, npc_hp_bar_bg, nukacola, obst_barricade, obst_base, obst_block, obst_lavka, obst_sandblock, obst_trash_container, options_menu, orange, orel_jacket, orel_pants, pad_controls, pad_controls_char, pad_list, pad_page_switch, pad_stick, pan, papers, pepper_seeds_pack, pillar, pipe_wrench, pipsi, pitchfork, plant_pepper, plant_squash, plugin10_t174, plugin11_t488, plugin14_t945, plugin15_t534, plugin16_t342, plugin16_t412, plugin16_t413, plugin16_t418, plugin16_t590, plugin16_t870, plugin17_t176, plugin17_t194, plugin17_t208, plugin17_t215, plugin17_t220, plugin17_t224, plugin17_t246, plugin17_t265, plugin17_t273, plugin17_t274, plugin17_t278, plugin17_t281, plugin17_t284, plugin17_t341, plugin17_t343, plugin17_t348, plugin17_t349, plugin17_t350, plugin17_t351, plugin17_t354, plugin17_t355, plugin17_t362, plugin17_t363, plugin17_t366, plugin17_t402, plugin17_t405, plugin17_t406, plugin17_t408, plugin17_t409, plugin17_t417, plugin17_t419, plugin17_t428, plugin17_t429, plugin17_t430, plugin17_t467, plugin17_t484, plugin17_t485, plugin17_t486, plugin17_t487, plugin17_t491, plugin17_t492, plugin17_t493, plugin17_t494, plugin17_t506, plugin17_t514, plugin17_t526, plugin17_t529, plugin17_t531, plugin17_t543, plugin17_t546, plugin17_t547, plugin17_t551, plugin17_t583, plugin17_t586, plugin17_t597, plugin17_t626, plugin17_t628, plugin17_t629, plugin17_t630, plugin17_t643, plugin17_t647, plugin17_t677, plugin17_t686, plugin17_t707, plugin17_t728, plugin17_t729, plugin17_t748, plugin17_t749, plugin17_t751, plugin17_t752, plugin17_t783, plugin17_t784, plugin17_t906, plugin17_t908, plugin17_t932, plugin17_t933, plugin19_t909, plugin19_t910, plugin19_t911, plugin19_t912, plugin19_t913, plugin19_t914, plugin19_t915, plugin19_t916, plugin19_t917, plugin19_t918, plugin19_t919, plugin19_t920, plugin19_t921, plugin19_t922, plugin19_t923, plugin19_t924, plugin19_t925, plugin19_t926, plugin19_t927, plugin19_t928, plugin19_t929, plugin19_t930, plugin19_t931, plugin19_t934, plugin19_t935, plugin19_t936, plugin19_t937, plugin19_t938, plugin19_t939, plugin19_t940, plugin19_t941, plugin19_t942, plugin19_t943, plugin19_t944, plugin19_t946, plugin1_t223, plugin2_t185, plugin2_t189, plugin2_t219, plugin2_t225, plugin2_t226, plugin2_t227, plugin2_t267, plugin2_t268, plugin2_t352, plugin2_t367, plugin2_t381, plugin2_t382, plugin2_t511, plugin2_t518, plugin2_t532, plugin2_t533, plugin2_t536, plugin2_t537, plugin2_t697, plugin3_t178, plugin4_t222, plugin5_t483, plugin6_t171, plugin7_t180, plugin8_t907, plugin9_t415, police_hat, polygon_target_base, polygon_target_body, pubg_blue_zone_gui, pubg_safe_zone_gui, pubg_zone_represent, quest_case, quickdraw_grip, rabbit_dead, rabbit_dead_done, rabbit_eyes, rabbit_skin, rad_zone, radio_item, rags, raider_jacket, rain_fade, raincoat_blue, razgruz, razgruz_big, red_zone_core, red_zone_explode, reloading_icon, reloading_spinner, rice, rope, safe_zone_pubg, safe_zone_pubg_blue, saline_bag, sawed_izh, script_zone, seed_btn, seed_icon, sewingkit, shield_icon, shirt_gray, shirt_green, shovel, shroom, silencer_east, silencer_nato, sledgehammer, spinning, spite, sport_jacket, sportpants, sprite, squash, squash_seeds_pack, stepper, sub_menu, sub_menu_title, sweater, sword, tactical_bacon, target_for_team_bot, td_zone, test_bodyhit, test_shell, test_shell_12cal, tetracycline, timers_sprite, tomato, tomato_seeds_pack, toolbox, tshirt, updater_icon, ushanka, vest, vest_press, vitamins, walk_marker, warm_hat, warmzone, welding_mask, whiskey, wood_piles, wood_sticks, workpants
+
+=== STRINGS IN EVENT SHEETS (unique, filtered) ===
+727	player_weapons
+563	Pin
+493	Spawn_drop
+379	Pin2
+368	GUI_elements
+258	TilemapspotX
+255	Randomizer
+248	Bullet
+233	Buildings
+220	TilemapspotY
+210	HotspotX
+210	HotspotY
+199	Colors
+190	Call_sub_menu
+179	Update_Stats
+169	CurrentLevel
+162	player
+149	night
+145	Turret
+142	AltMove
+141	SEED_RUN
+141	Fade
+134	hotspot_mapgen_X
+130	hotspot_mapgen_Y
+130	Q_reward_id
+127	Items_update
+124	Difficulty
+115	AdjustHSL
+107	Trigger_spawn
+106	GUI
+104	Timer
+104	NPC_get_damage
+100	Day_mode
+99	Hide_sub_menu
+97	Use
+93	Player_skin_type
+91	Vehicle
+89	Check_ach_unlocks
+89	Check_space_inventory
+89	craft_ok
+80	GUI_controls
+80	Zeds
+80	Buildings_shadows
+80	menu_elements
+79	Mismatch
+66	Player_Hear_radius
+65	Sunset_Dawn
+65	Run
+64	Language
+63	Map
+61	menu_click
+60	Outline
+59	reload_pistol
+57	Veteran
+54	s_weapons
+51	Rain
+49	LOOT_respawn
+49	Buildings_base
+49	Eyes
+48	MainLook
+48	Pad_current_page
+47	Outerwear
+46	Rotate
+44	Backpack
+43	Regular
+43	Condition
+42	ShortLook
+40	Color_effect
+40	Map_size_Y
+40	Vest
+40	Pants
+40	Mag_reload
+39	Zed_dmg
+39	Drop_slot
+39	LineOfSight
+38	Menu_btn_margins
+38	secret_location_spawned
+38	Tutor_hint_moveblock
+38	GUI_Drag
+37	Detach_scope
+36	close_inventory
+36	Crafted
+35	Menu_hotspot_X
+35	Menu_hotspot_Y
+34	menu_clear
+33	GUI_hint
+33	Map_size_X
+33	static_cars
+33	GUI_slot_bufer_counter
+33	menu_section
+32	Tutor_hint_onscreen
+32	Q_status
+32	Pad_current_tab
+31	Inventory_opened
+31	Zed_per_base
+30	Novice
+30	Gun
+30	Q_target_sid
+29	Q_task_id
+29	Building_mode
+29	Combine
+29	Use2
+29	Player_get_hit
+28	clear_pause_menu
+28	Firearm
+28	Switch_to_firearm
+28	GUI_craft_possible
+27	SEED_TD
+27	inBunker
+27	Zed_resp
+26	Bleed
+26	tutor_inventory_guide_step
+26	Replace_fit_slot
+25	GUI_show_dpad
+25	Trees
+25	Reloading_time
+25	Detach_belt
+24	Melee
+24	EatingSoft_0
+24	Helmet
+23	Switch_to_melee
+22	Rust_layer
+22	saveandexit
+22	Drop_helmet
+22	Stats_time_lived
+22	Pistol
+21	helpmenu_on
+21	Update_ammo
+21	Check_ammo_inventory
+20	TD_wave_prepare
+20	Tutorial
+20	Timer_Hours
+20	Color
+20	Title
+20	Punch
+19	Clear_pad
+19	New_game_minimap_tip
+19	Loader_scroll_speed
+19	Row
+19	Drop_outerwear
+19	Hands
+19	Ak74_1
+18	Tutor_hint_blocked_gui
+18	perkmenu_on
+18	Burn
+18	fireplaceloop_
+18	camps_bot_spawn_on
+18	Death_log_reason
+18	Drop_melee
+18	player_helmets
+17	Player_temperature
+17	Slot
+17	Loader_sky_Y
+17	fireplace_loop
+17	System_language
+16	Markers
+16	SEED_stalker
+16	Level_menu
+16	player_hands
+16	Ak74_3
+16	Stats_Food_eaten
+16	Pick_player_item
+16	Switch_to_pistol
+15	close_perks_menu
+15	Pad_load_page
+15	GUI_control_type
+15	rains_level
+15	Drop_firearm
+15	Buildings_bg
+15	Detach_silencer
+15	player_clothing
+15	Stats_Zeds_killed
+14	TD_wave
+14	DragDrop
+14	SEED_morezeds
+14	Loader_logo_Y
+14	Quest_canceled
+14	Default_idle_anim_down
+14	Deadscreen
+14	inventory_reloader
+14	Walk
+13	Gui_counters
+13	level_loading
+13	Pad_on
+13	SEED_pubg
+13	SEED_playcasual
+13	Hit_effect
+13	Sounds_on
+13	Reloading_time_melee
+13	firestations
+13	Timer_ALL
+13	Show_unlock_char
+13	Stats_blood_lost
+13	GUI_show_tutorial_tip
+12	Loader_sky_X
+12	Loader_city_X
+12	Loader_sky_Height
+12	Loader_city_Height
+12	Spawn_drop_from_player
+12	Drop_backpack
+12	Zeds_killed
+12	Pad_switching
+11	SEED_gunnerzeds
+11	SEED_VIP
+11	SEED_Wildlife
+11	Karma
+11	night_loop
+11	day_loop
+11	Loader_city_Y
+11	firestation
+11	Drop_pants
+11	car_crash_1
+11	car_crash_2
+11	car_crash_3
+11	Survive_time
+11	Tutorial_map_finished
+11	Bunker
+11	Car
+11	Secret
+11	Check_craft
+11	respawn_radius_npc
+10	TD_wave_multiply
+10	GUI_drag
+10	GUI_overs
+10	SOUNDS
+10	CONTROLS
+10	Movement_stick
+10	Movement_tap
+10	Drop_vest
+10	Bandits_killed
+10	Deaths
+10	GUI_slot_bufer
+9	Clear_team_camps
+9	rain_loop
+9	Reloading_mag
+9	Generate_quest_item
+9	Boat
+9	Obstacle_enviroment
+9	Eject
+9	Bot_check_situation_team
+9	Bot_check_situation_bandit
+9	menu_achieves_open
+8	Bots_bandit_agro
+8	melee_bot_spawns_on
+8	ScrollTo
+8	TD_load_wave
+8	Zed_army_dmg
+8	perk_snowborn
+8	PlantX
+8	PlantY
+8	spawn1
+8	Day_survived
+8	hammerspawned
+8	Default_idle_anim_left
+8	Default_idle_anim_right
+8	Default_idle_anim_up
+8	Player_check_targets
+8	GUI_hide_dpad
+8	player_backpacks
+8	Stats_Bandits_killed
+8	SetColor
+8	Survivors
+8	Zed
+7	IOS_MOBILE
+7	Bots_team_agro
+7	friend_bot_spawns_on
+7	firearm_bot_spawn_on
+7	TD_drop_help
+7	TD_drop_weapons
+7	EP_counter
+7	Save_run_progress
+7	helispawned
+7	rain_roof
+7	night_force_texture
+7	player_pants
+7	Restart_game
+7	Recheck_inventory_cards
+7	Combine_ammo
+7	Condition2
+7	tutorCarTrunkOpened
+7	Aim
+7	Bot_check_situation_f
+7	fromLoader
+7	menu_draw_main
+7	Splash_loader_screen
+7	Local
+7	Local_ui
+7	Local_logs
+6	Adrenaline_window
+6	respawn_radius2
+6	Regeneration_current
+6	Showing_enemy
+6	Showing_enemy_puncher
+6	Default
+6	isPolygonSpawned
+6	Clear_bandit_camps
+6	Bot_team_check_situation
+6	TAP
+6	Loop_secrets
+6	Show_unlock_wpn
+6	Drop_pistol
+6	Stats_water_drinked
+6	player_vests
+6	Pick_inventory_item
+6	car_door_open
+6	tutor_bleeding_step
+6	Pad_last_tab
+6	Task
+6	Check_item_inventory
+6	Perkmenu_tab
+6	Scope_name_id
+6	Drop
+6	Replace_clear_slot
+6	Bot_drop
+6	Check
+6	bot_reloading
+6	Bot_check_situation
+6	Debug_panel
+6	loader_pic_setup
+6	Stopper
+5	Device_check
+5	Reload_locations
+5	create_map_location
+5	Thirsty_current
+5	Starving_current
+5	Tint
+5	PlayerAim
+5	Day_cold
+5	States
+5	gamesav_tutorial
+5	STICK
+5	hordes_spawns_on
+5	Bunker_generate
+5	Grayscale
+5	firearm
+5	SKS_close_0
+5	FNX_1
+5	FNX_2
+5	DrinkSoda_0
+5	Whiskey
+5	Options
+5	Tutorial_encounter
+5	Tutor_Boat_found
+5	Building_deploy_avalible
+5	Call_sub_menu_craft
+5	Flare
+5	Charge_pistol
+5	Cut_arrays
+5	Zed_fast_dmg
+5	Reload_rifle
+5	Timer_Minutes
+5	menu_draw_options
+5	Map_loading
+5	Player_skin
+5	Error_message
+4	IOS_TABLET
+4	Public enemy
+4	Zed_check
+4	Night_cold
+4	Rain_cold
+4	Difficulty_damage_reducer
+4	OFF
+4	Load_loot
+4	erase_map_location
+4	Reload_locations_start
+4	Tutorial_map
+4	Perks_menu
+4	Showing_friend
+4	Day_show_label
+4	fast_zeds_spawns_on
+4	Loop_secrets2
+4	GUI_map_tip_showed
+4	weapons
+4	car_engine_stop_uaz
+4	car_engine_stop_volga
+4	Dead_screen
+4	Bow_1
+4	Level_change
+4	Buildings_base_top
+4	Bow_reload
+4	car_door_close
+4	GameCenter_achieves_report
+4	Tutor_berries_found
+4	Tutor_Car_trunk_found
+4	Tutor_deer_found
+4	Tutor_Pump_found
+4	Tutor_rabbit_found
+4	Tutor_wolf_found
+4	Tutor_Zed_found
+4	from_tutorial
+4	Quest_spawn_reward_box
+4	Generate_quest_case
+4	Airdrop_recharge
+4	Silencer_name_id
+4	Show_unlock
+4	wolf
+4	wolf_attack
+4	wolf_attack_2
+4	wolf_attack_3
+4	fireaxe
+
+=== AUDIO FILES: 415 ===
+Unique base names: 208
+  action_refuel_0
+  action_repair_0
+  ak74_1
+  ak74_2
+  ak74_3
+  ak_silent_1
+  ak_silent_2
+  akm_1
+  akm_2
+  akm_3
+  akm_4
+  akm_5
+  ambient
+  amph_1
+  amph_2
+  attack_0
+  attack_1
+  attack_10
+  attack_11
+  attack_12
+  attack_13
+  attack_8
+  attack_9
+  bandage
+  bizon_shot_1
+  blizzard
+  body_1
+  body_2
+  bottle_break_0
+  bow_1
+  bow_reload
+  bunker_door
+  bushsearch
+  car_crash_1
+  car_crash_2
+  car_crash_3
+  car_crash_wood
+  car_door_close
+  car_door_open
+  car_engine_idle_uaz
+  car_engine_idle_volga
+  car_engine_start_uaz
+  car_engine_start_volga
+  car_engine_stop_uaz
+  car_engine_stop_volga
+  car_explode
+  chop
+  chop2
+  chop3
+  chop4
+  close_door
+  close_door_metal
+  colt_1
+  colt_2
+  concrete_run_1
+  concrete_run_2
+  concrete_run_3
+  concrete_run_4
+  crafting
+  crow_1
+  crow_2
+  crow_3
+  crow_4
+  crow_5
+  deerrun
+  drinksoda_0
+  drop1
+  drop2
+  eatingcrunchy_0
+  eatingsoft_0
+  eject
+  empty_click
+  f1_explode
+  fence_destroy_1
+  fence_destroy_2
+  fireplace_loop
+  flare_burn
+  flare_throw
+  fn_fal_single_1
+  fn_fal_single_2
+  fnx45_reload
+  fnx_1
+  fnx_2
+  forest_run_1
+  forest_run_2
+  forest_run_3
+  forest_run_4
+  geardrop1
+  geardrop2
+  gearpick
+  glock19_single_1
+  glock19_single_2
+  gren pin
+  groza_shot_1
+  groza_shot_2
+  guitar
+  hard_ground_1
+  hard_ground_2
+  izh_1
+  izh_2
+  izh_3
+  l85
+  m4_silent_1
+  m4_silent_2
+  m4_single_1
+  m4_single_2
+  mac10_1
+  mac10_2
+  madsen_shot
+  magnum_single_1
+  match_0
+  match_burn
+  md_achievment unlocked
+  md_canteen_fill
+  md_perk_1
+  md_perk_2
+  md_winter_amb
+  md_winter_night_amb
+  meat_cook
+  mosin
+  mosin_1
+  mosin_2
+  mosin_3
+  mp5k_single_0
+  mp5k_single_1
+  night_loop
+  nuko
+  open
+  open_door
+  open_door_metal
+  pad_open
+  pad_page
+  pb_shot_1
+  pb_shot_2
+  pick1
+  pick2
+  pick_pistol
+  pick_rifle
+  planting_seeds
+  pm_shot
+  punch_swipes_0
+  punch_swipes_1
+  rad_high_1
+  rad_high_2
+  rad_med_1
+  rad_med_2
+  rad_sml_1
+  rad_sml_2
+  rad_sml_3
+  radio_noise
+  rain_loop
+  rainroof
+  reload_pistol
+  reload_rifle
+  remington_1
+  remington_2
+  repeater
+  run_1
+  run_2
+  run_3
+  run_4
+  saiga12
+  sand_run_1
+  sand_run_2
+  sand_run_3
+  sand_run_4
+  sks_close_0
+  sks_close_1
+  sporter_22
+  spotted_0
+  spotted_1
+  spotted_2
+  spotted_3
+  spotted_4
+  spotted_5
+  spotted_6
+  steyraug_shot_0
+  steyraug_shot_1
+  sv98_shot_1
+  sv98_shot_2
+  svd_single_0
+  svd_single_1
+  taping
+  tear_fabric
+  tentpack
+  torch_on
+  trap_bear_0
+  treefall_02
+  treefall_03
+  tutor_death
+  ump45_single_1
+  ump45_single_2
+  vitamins
+  vss_shot_3
+  whiskey
+  wolf_attack
+  wolf_attack_2
+  wolf_attack_3
+  wolf_spot
+  wolf_spot_2
+  wood_1
+  wood_2
+  wood_3
+  wood_4
+  zed_tank_1
+  zed_tank_2
+  zed_tank_3
+  zed_tank_scream
+
+=== LOCALIZATION SAMPLE (l_eng_items.xml) ===
+Item locale keys: 0
+
+=== FAMILIES: 38 ===
+  family[0] members=106 first=909
+  family[1] members=28 first=910
+  family[2] members=85 first=911
+  family[3] members=98 first=912
+  family[4] members=9 first=913
+  family[5] members=32 first=914
+  family[6] members=11 first=915
+  family[7] members=17 first=916
+  family[8] members=2 first=917
+  family[9] members=203 first=918
+  family[10] members=13 first=919
+  family[11] members=18 first=920
+  family[12] members=7 first=921
+  family[13] members=31 first=922
+  family[14] members=19 first=923
+  family[15] members=8 first=924
+  family[16] members=10 first=925
+  family[17] members=11 first=926
+  family[18] members=37 first=927
+  family[19] members=37 first=928
+  family[20] members=7 first=929
+  family[21] members=14 first=930
+  family[22] members=7 first=931
+  family[23] members=2 first=932
+  family[24] members=4 first=933
+  family[25] members=13 first=934
+  family[26] members=18 first=935
+  family[27] members=16 first=936
+  family[28] members=16 first=937
+  family[29] members=21 first=938
+  family[30] members=14 first=939
+  family[31] members=4 first=940
+  family[32] members=19 first=941
+  family[33] members=3 first=942
+  family[34] members=16 first=943
+  family[35] members=4 first=944
+  family[36] members=5 first=945
+  family[37] members=3 first=946

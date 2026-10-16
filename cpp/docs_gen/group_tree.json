@@ -1,0 +1,716 @@
+{
+  "Game_events": [
+    {
+      "depth": 0,
+      "name": "Android"
+    },
+    {
+      "depth": 0,
+      "name": "Start events"
+    },
+    {
+      "depth": 1,
+      "name": "SEED RUNS"
+    },
+    {
+      "depth": 1,
+      "name": "pubg_zone"
+    },
+    {
+      "depth": 0,
+      "name": "Map generation"
+    },
+    {
+      "depth": 1,
+      "name": "Location loader"
+    },
+    {
+      "depth": 1,
+      "name": "Bunker_generate"
+    },
+    {
+      "depth": 0,
+      "name": "Characters & Unlocks"
+    },
+    {
+      "depth": 1,
+      "name": "char_4"
+    },
+    {
+      "depth": 1,
+      "name": "char_5"
+    },
+    {
+      "depth": 1,
+      "name": "char_6"
+    },
+    {
+      "depth": 1,
+      "name": "char_7"
+    },
+    {
+      "depth": 1,
+      "name": "char_8"
+    },
+    {
+      "depth": 1,
+      "name": "char_9"
+    },
+    {
+      "depth": 1,
+      "name": "char_10"
+    },
+    {
+      "depth": 1,
+      "name": "char_11"
+    },
+    {
+      "depth": 1,
+      "name": "char_12"
+    },
+    {
+      "depth": 1,
+      "name": "char_13"
+    },
+    {
+      "depth": 1,
+      "name": "char_14"
+    },
+    {
+      "depth": 1,
+      "name": "char_15"
+    },
+    {
+      "depth": 1,
+      "name": "weapons"
+    },
+    {
+      "depth": 0,
+      "name": "sav"
+    },
+    {
+      "depth": 0,
+      "name": "Player stats"
+    },
+    {
+      "depth": 1,
+      "name": "colchecker"
+    },
+    {
+      "depth": 0,
+      "name": "Animations"
+    },
+    {
+      "depth": 1,
+      "name": "Animation_using"
+    },
+    {
+      "depth": 1,
+      "name": "Hands Switch"
+    },
+    {
+      "depth": 0,
+      "name": "Interaction"
+    },
+    {
+      "depth": 1,
+      "name": "Button"
+    },
+    {
+      "depth": 1,
+      "name": "Aiming"
+    },
+    {
+      "depth": 2,
+      "name": "Aim_lines"
+    },
+    {
+      "depth": 2,
+      "name": "Zoom_test"
+    },
+    {
+      "depth": 1,
+      "name": "Firearm shooting"
+    },
+    {
+      "depth": 1,
+      "name": "Melee fight"
+    },
+    {
+      "depth": 2,
+      "name": "Melee_2_auto"
+    },
+    {
+      "depth": 1,
+      "name": "Level_change"
+    },
+    {
+      "depth": 1,
+      "name": "Throwing"
+    },
+    {
+      "depth": 1,
+      "name": "Using inventory items"
+    },
+    {
+      "depth": 1,
+      "name": "Picking player items"
+    },
+    {
+      "depth": 1,
+      "name": "Picking inventory items"
+    },
+    {
+      "depth": 1,
+      "name": "Droppin items"
+    },
+    {
+      "depth": 2,
+      "name": "inventory_items"
+    },
+    {
+      "depth": 1,
+      "name": "HeadTorch"
+    },
+    {
+      "depth": 1,
+      "name": "NVG"
+    },
+    {
+      "depth": 1,
+      "name": "Gardening"
+    },
+    {
+      "depth": 0,
+      "name": "Drivable vehicles"
+    },
+    {
+      "depth": 1,
+      "name": "Vehicle collisions"
+    },
+    {
+      "depth": 1,
+      "name": "Vehicles UI"
+    },
+    {
+      "depth": 0,
+      "name": "Deadscreen"
+    },
+    {
+      "depth": 1,
+      "name": "Achievements"
+    },
+    {
+      "depth": 0,
+      "name": "Tutorial_map"
+    },
+    {
+      "depth": 1,
+      "name": "Camera_roll"
+    },
+    {
+      "depth": 1,
+      "name": "UI_guide"
+    },
+    {
+      "depth": 1,
+      "name": "Inventory_guide"
+    },
+    {
+      "depth": 1,
+      "name": "Firearm_guide"
+    },
+    {
+      "depth": 1,
+      "name": "Perks_guide"
+    },
+    {
+      "depth": 1,
+      "name": "Bleeding_guide"
+    },
+    {
+      "depth": 1,
+      "name": "Death_guide"
+    },
+    {
+      "depth": 1,
+      "name": "DeltaDNA_tutor"
+    },
+    {
+      "depth": 0,
+      "name": "GUI"
+    },
+    {
+      "depth": 1,
+      "name": "Quests"
+    },
+    {
+      "depth": 1,
+      "name": "Touch_fade"
+    },
+    {
+      "depth": 1,
+      "name": "Airdrop"
+    },
+    {
+      "depth": 1,
+      "name": "Next_level_menu"
+    },
+    {
+      "depth": 1,
+      "name": "Tutorial_pad"
+    },
+    {
+      "depth": 1,
+      "name": "Perks and stats menu"
+    },
+    {
+      "depth": 1,
+      "name": "Building mode"
+    },
+    {
+      "depth": 1,
+      "name": "Options_menu"
+    },
+    {
+      "depth": 1,
+      "name": "Sub_menu"
+    },
+    {
+      "depth": 1,
+      "name": "Actions_logging"
+    },
+    {
+      "depth": 1,
+      "name": "Mobile_GUI"
+    },
+    {
+      "depth": 2,
+      "name": "Doors_auto"
+    },
+    {
+      "depth": 2,
+      "name": "Adaptive"
+    },
+    {
+      "depth": 2,
+      "name": "Merged pick and interact"
+    },
+    {
+      "depth": 3,
+      "name": "loot_checker2"
+    },
+    {
+      "depth": 2,
+      "name": "Tap_reload"
+    },
+    {
+      "depth": 3,
+      "name": "ALternate"
+    },
+    {
+      "depth": 2,
+      "name": "Movement_tap"
+    },
+    {
+      "depth": 1,
+      "name": "Gui_drag"
+    },
+    {
+      "depth": 2,
+      "name": "Drag_highlight"
+    },
+    {
+      "depth": 2,
+      "name": "gui_drag_control"
+    },
+    {
+      "depth": 1,
+      "name": "Pickpile"
+    },
+    {
+      "depth": 1,
+      "name": "Day_writer"
+    },
+    {
+      "depth": 1,
+      "name": "Achievement_hint"
+    },
+    {
+      "depth": 0,
+      "name": "NPCs"
+    },
+    {
+      "depth": 1,
+      "name": "Damage dealing"
+    },
+    {
+      "depth": 2,
+      "name": "Molotov_damage"
+    },
+    {
+      "depth": 2,
+      "name": "Beartrap&Mine"
+    },
+    {
+      "depth": 2,
+      "name": "Wolf_dmg_deal"
+    },
+    {
+      "depth": 2,
+      "name": "Zed_common_dmg_deal"
+    },
+    {
+      "depth": 2,
+      "name": "Zed_tank_dmg_deal"
+    },
+    {
+      "depth": 2,
+      "name": "Bullets_dmg_deal"
+    },
+    {
+      "depth": 2,
+      "name": "ZedBullets_dmg_deal"
+    },
+    {
+      "depth": 2,
+      "name": "Acid dmg"
+    },
+    {
+      "depth": 1,
+      "name": "Zombies"
+    },
+    {
+      "depth": 2,
+      "name": "Zeds_common"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Normal Puncher"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Buried Puncher"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Army Puncher"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Fast Puncher"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Army Shooters"
+    },
+    {
+      "depth": 2,
+      "name": "zed screamer"
+    },
+    {
+      "depth": 2,
+      "name": "Zed Tank"
+    },
+    {
+      "depth": 1,
+      "name": "Bots"
+    },
+    {
+      "depth": 2,
+      "name": "Bot_puncher_zindex"
+    },
+    {
+      "depth": 2,
+      "name": "Bot Manager"
+    },
+    {
+      "depth": 2,
+      "name": "Bots_team"
+    },
+    {
+      "depth": 3,
+      "name": "Teammate"
+    },
+    {
+      "depth": 4,
+      "name": "Bot Teammate behavior"
+    },
+    {
+      "depth": 4,
+      "name": "Bot team markers"
+    },
+    {
+      "depth": 3,
+      "name": "AgroTeam"
+    },
+    {
+      "depth": 2,
+      "name": "Bots_bandits"
+    },
+    {
+      "depth": 3,
+      "name": "Banditmate"
+    },
+    {
+      "depth": 4,
+      "name": "Bot Bandit behavior"
+    },
+    {
+      "depth": 4,
+      "name": "Bot bandit"
+    },
+    {
+      "depth": 2,
+      "name": "Bot Shooter behavior"
+    },
+    {
+      "depth": 2,
+      "name": "Bot_behavior_puncher"
+    },
+    {
+      "depth": 2,
+      "name": "Bot_Behavior3"
+    },
+    {
+      "depth": 1,
+      "name": "Animals"
+    },
+    {
+      "depth": 2,
+      "name": "Crow"
+    },
+    {
+      "depth": 2,
+      "name": "Wolf"
+    },
+    {
+      "depth": 2,
+      "name": "Deer"
+    },
+    {
+      "depth": 2,
+      "name": "Rabbit"
+    },
+    {
+      "depth": 2,
+      "name": "Dog"
+    },
+    {
+      "depth": 1,
+      "name": "Noice"
+    },
+    {
+      "depth": 1,
+      "name": "NPC_manager"
+    },
+    {
+      "depth": 0,
+      "name": "Spawn parameters"
+    },
+    {
+      "depth": 1,
+      "name": "LOOT Respawn"
+    },
+    {
+      "depth": 0,
+      "name": "Player damaging"
+    },
+    {
+      "depth": 0,
+      "name": "Bullets parameters"
+    },
+    {
+      "depth": 1,
+      "name": "Hitting_obstacles"
+    },
+    {
+      "depth": 1,
+      "name": "Range_destroy"
+    },
+    {
+      "depth": 1,
+      "name": "Range_less_power"
+    },
+    {
+      "depth": 0,
+      "name": "Time cyles and weather"
+    },
+    {
+      "depth": 1,
+      "name": "Day&Night"
+    },
+    {
+      "depth": 1,
+      "name": "Rain"
+    },
+    {
+      "depth": 0,
+      "name": "Light parameters"
+    },
+    {
+      "depth": 1,
+      "name": "Flare params"
+    },
+    {
+      "depth": 1,
+      "name": "Molotov params"
+    },
+    {
+      "depth": 1,
+      "name": "Grenade params"
+    },
+    {
+      "depth": 1,
+      "name": "Fireplace params"
+    },
+    {
+      "depth": 0,
+      "name": "Analytics"
+    },
+    {
+      "depth": 0,
+      "name": "Buildings and obstacles"
+    },
+    {
+      "depth": 1,
+      "name": "autozoom"
+    },
+    {
+      "depth": 2,
+      "name": "zoomout"
+    },
+    {
+      "depth": 1,
+      "name": "House_transparenting"
+    },
+    {
+      "depth": 1,
+      "name": "Obstacles_transparenting"
+    },
+    {
+      "depth": 1,
+      "name": "Big_Obstacles_transparenting"
+    },
+    {
+      "depth": 1,
+      "name": "Barberwire&Barricades"
+    },
+    {
+      "depth": 1,
+      "name": "npc_blinder"
+    },
+    {
+      "depth": 1,
+      "name": "Vehicle Layering"
+    },
+    {
+      "depth": 0,
+      "name": "Testing"
+    },
+    {
+      "depth": 1,
+      "name": "Envir_effects"
+    },
+    {
+      "depth": 0,
+      "name": "EXpierence"
+    },
+    {
+      "depth": 0,
+      "name": "Timeline"
+    },
+    {
+      "depth": 0,
+      "name": "a1"
+    },
+    {
+      "depth": 0,
+      "name": "Splash_loader_screen2"
+    },
+    {
+      "depth": 0,
+      "name": "saving"
+    }
+  ],
+  "Menu_Events": [
+    {
+      "depth": 0,
+      "name": "fromLoader"
+    },
+    {
+      "depth": 0,
+      "name": "Android stuff"
+    },
+    {
+      "depth": 0,
+      "name": "new_menu"
+    },
+    {
+      "depth": 1,
+      "name": "Menu_init"
+    },
+    {
+      "depth": 1,
+      "name": "Menu_draws"
+    },
+    {
+      "depth": 1,
+      "name": "Menu_auto_update"
+    },
+    {
+      "depth": 0,
+      "name": "character_menu"
+    },
+    {
+      "depth": 0,
+      "name": "Achievement_menu"
+    },
+    {
+      "depth": 0,
+      "name": "Weapon_unlocks"
+    },
+    {
+      "depth": 0,
+      "name": "Menu_debugs"
+    },
+    {
+      "depth": 0,
+      "name": "Animateds"
+    },
+    {
+      "depth": 1,
+      "name": "Zed Normal Puncher2"
+    },
+    {
+      "depth": 1,
+      "name": "Zed Army Puncher2"
+    },
+    {
+      "depth": 0,
+      "name": "Camera"
+    },
+    {
+      "depth": 0,
+      "name": "DeltaDNA"
+    },
+    {
+      "depth": 0,
+      "name": "Splash_loader_screen"
+    }
+  ],
+  "Login_events": [
+    {
+      "depth": 0,
+      "name": "Menu_auto_update2"
+    }
+  ],
+  "Loading_events": [],
+  "Everywere": [
+    {
+      "depth": 0,
+      "name": "iOS release"
+    }
+  ],
+  "Tutorial_events": []
+}

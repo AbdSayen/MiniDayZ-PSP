@@ -1,0 +1,805 @@
+{
+  "version": "1.4.1",
+  "items": [
+    {
+      "id": 1,
+      "name": "Canned beans"
+    },
+    {
+      "id": 2,
+      "name": "Canned tuna"
+    },
+    {
+      "id": 3,
+      "name": "Tactical bacon"
+    },
+    {
+      "id": 4,
+      "name": "Rice"
+    },
+    {
+      "id": 5,
+      "name": "Tomato"
+    },
+    {
+      "id": 6,
+      "name": "Apple"
+    },
+    {
+      "id": 7,
+      "name": "Banana"
+    },
+    {
+      "id": 8,
+      "name": "Pipsi"
+    },
+    {
+      "id": 9,
+      "name": "Spite"
+    },
+    {
+      "id": 10,
+      "name": "Kvas"
+    },
+    {
+      "id": 11,
+      "name": "5.56x45 ammo"
+    },
+    {
+      "id": 12,
+      "name": ".45 ACP ammo"
+    },
+    {
+      "id": 13,
+      "name": "7.62 ammo"
+    },
+    {
+      "id": 14,
+      "name": "7.62x39 ammo"
+    },
+    {
+      "id": 15,
+      "name": "5.45x39 ammo"
+    },
+    {
+      "id": 16,
+      "name": ".357 ammo"
+    },
+    {
+      "id": 17,
+      "name": "12cal ammo"
+    },
+    {
+      "id": 18,
+      "name": "Bandage"
+    },
+    {
+      "id": 19,
+      "name": "Blood bag"
+    },
+    {
+      "id": 20,
+      "name": "Flare"
+    },
+    {
+      "id": 21,
+      "name": "F1 grenade"
+    },
+    {
+      "id": 22,
+      "name": "Battery"
+    },
+    {
+      "id": 23,
+      "name": "Campfire kit"
+    },
+    {
+      "id": 24,
+      "name": "Matches"
+    },
+    {
+      "id": 25,
+      "name": "Whiskey"
+    },
+    {
+      "id": 26,
+      "name": "Rags"
+    },
+    {
+      "id": 27,
+      "name": "Cranberry"
+    },
+    {
+      "id": 28,
+      "name": "Saline bag"
+    },
+    {
+      "id": 29,
+      "name": "Vitamins"
+    },
+    {
+      "id": 30,
+      "name": "Nota-Cola"
+    },
+    {
+      "id": 31,
+      "name": "Zucchini"
+    },
+    {
+      "id": 32,
+      "name": "Bell pepper"
+    },
+    {
+      "id": 33,
+      "name": "Orange"
+    },
+    {
+      "id": 34,
+      "name": "Heatpack"
+    },
+    {
+      "id": 35,
+      "name": "Sewing kit"
+    },
+    {
+      "id": 36,
+      "name": "Cleaning kit"
+    },
+    {
+      "id": 37,
+      "name": "Ashwood stick"
+    },
+    {
+      "id": 38,
+      "name": "Wood sticks"
+    },
+    {
+      "id": 39,
+      "name": "Duct tape"
+    },
+    {
+      "id": 40,
+      "name": "Burlap sack"
+    },
+    {
+      "id": 41,
+      "name": "Rope"
+    },
+    {
+      "id": 42,
+      "name": "Hunter knife"
+    },
+    {
+      "id": 43,
+      "name": "Army knife"
+    },
+    {
+      "id": 44,
+      "name": "Butcher knife"
+    },
+    {
+      "id": 45,
+      "name": "Morphine"
+    },
+    {
+      "id": 46,
+      "name": "Tetracycline"
+    },
+    {
+      "id": 47,
+      "name": "Tomato seeds pack"
+    },
+    {
+      "id": 48,
+      "name": "Pepper seeds pack"
+    },
+    {
+      "id": 49,
+      "name": "Papers"
+    },
+    {
+      "id": 50,
+      "name": "Wood piles"
+    },
+    {
+      "id": 51,
+      "name": "Crafted arrows"
+    },
+    {
+      "id": 52,
+      "name": "Composite arrow"
+    },
+    {
+      "id": 53,
+      "name": "Gasoline"
+    },
+    {
+      "id": 54,
+      "name": "Water bottle"
+    },
+    {
+      "id": 55,
+      "name": "Canteen"
+    },
+    {
+      "id": 56,
+      "name": "Landmine"
+    },
+    {
+      "id": 57,
+      "name": "Bear trap"
+    },
+    {
+      "id": 58,
+      "name": ".22lr ammo"
+    },
+    {
+      "id": 59,
+      "name": "Car toolbox"
+    },
+    {
+      "id": 60,
+      "name": "Raw steak"
+    },
+    {
+      "id": 61,
+      "name": "Cooked steak"
+    },
+    {
+      "id": 62,
+      "name": "Nuko Cola"
+    },
+    {
+      "id": 68,
+      "name": "Zucchini Seeds"
+    },
+    {
+      "id": 69,
+      "name": "9mm ammo"
+    },
+    {
+      "id": 70,
+      "name": "Barbed wire"
+    },
+    {
+      "id": 71,
+      "name": "Rabbit meat"
+    },
+    {
+      "id": 72,
+      "name": "Cooked rabbit meat"
+    },
+    {
+      "id": 73,
+      "name": "Cloudberry"
+    },
+    {
+      "id": 74,
+      "name": "Bilberry"
+    },
+    {
+      "id": 75,
+      "name": "Radio"
+    },
+    {
+      "id": 76,
+      "name": "RDS scope"
+    },
+    {
+      "id": 77,
+      "name": "PU scope"
+    },
+    {
+      "id": 78,
+      "name": "PSO-1 scope"
+    },
+    {
+      "id": 79,
+      "name": "ACOG scope"
+    },
+    {
+      "id": 80,
+      "name": "Silencer 5.45"
+    },
+    {
+      "id": 81,
+      "name": "Silencer 5.56"
+    },
+    {
+      "id": 82,
+      "name": "Hacksaw"
+    },
+    {
+      "id": 83,
+      "name": "Bandolier"
+    },
+    {
+      "id": 151,
+      "name": "FNX pistol"
+    },
+    {
+      "id": 152,
+      "name": "Colt 1911"
+    },
+    {
+      "id": 153,
+      "name": "Magnum"
+    },
+    {
+      "id": 154,
+      "name": "IZH-43"
+    },
+    {
+      "id": 155,
+      "name": "Remington shotgun"
+    },
+    {
+      "id": 156,
+      "name": "Mosin Nagant"
+    },
+    {
+      "id": 157,
+      "name": "SKS"
+    },
+    {
+      "id": 158,
+      "name": "M4 carbine"
+    },
+    {
+      "id": 159,
+      "name": "AKM"
+    },
+    {
+      "id": 160,
+      "name": "AK-74"
+    },
+    {
+      "id": 161,
+      "name": "AKs-74u"
+    },
+    {
+      "id": 162,
+      "name": "L85"
+    },
+    {
+      "id": 163,
+      "name": "Improvised bow"
+    },
+    {
+      "id": 164,
+      "name": "Crossbow"
+    },
+    {
+      "id": 165,
+      "name": "Amphibia pistol"
+    },
+    {
+      "id": 166,
+      "name": "Sporter 22"
+    },
+    {
+      "id": 167,
+      "name": "Repeater"
+    },
+    {
+      "id": 168,
+      "name": "SVD"
+    },
+    {
+      "id": 169,
+      "name": "MP5k"
+    },
+    {
+      "id": 170,
+      "name": "Glock"
+    },
+    {
+      "id": 171,
+      "name": "Sawed-off Izh-43"
+    },
+    {
+      "id": 172,
+      "name": "Sawed-off Mosin"
+    },
+    {
+      "id": 173,
+      "name": "UMP-45"
+    },
+    {
+      "id": 174,
+      "name": "RPK"
+    },
+    {
+      "id": 175,
+      "name": "FN-CAL"
+    },
+    {
+      "id": 176,
+      "name": "Engraved Colt"
+    },
+    {
+      "id": 200,
+      "name": "Pipewrench"
+    },
+    {
+      "id": 201,
+      "name": "Shovel"
+    },
+    {
+      "id": 202,
+      "name": "Hatchet"
+    },
+    {
+      "id": 203,
+      "name": "Baseball bat"
+    },
+    {
+      "id": 204,
+      "name": "Fire axe"
+    },
+    {
+      "id": 205,
+      "name": "Crowbar"
+    },
+    {
+      "id": 206,
+      "name": "Pickaxe"
+    },
+    {
+      "id": 207,
+      "name": "Pitchfork"
+    },
+    {
+      "id": 208,
+      "name": "Sledgehammer"
+    },
+    {
+      "id": 209,
+      "name": "Sword"
+    },
+    {
+      "id": 210,
+      "name": "Pan"
+    },
+    {
+      "id": 250,
+      "name": "Gasmask"
+    },
+    {
+      "id": 251,
+      "name": "Army helmet"
+    },
+    {
+      "id": 252,
+      "name": "Moto helmet"
+    },
+    {
+      "id": 253,
+      "name": "Moto helmet"
+    },
+    {
+      "id": 254,
+      "name": "Warm hat"
+    },
+    {
+      "id": 255,
+      "name": "Beret"
+    },
+    {
+      "id": 256,
+      "name": "Cap"
+    },
+    {
+      "id": 257,
+      "name": "Balaclava"
+    },
+    {
+      "id": 258,
+      "name": "Ushanka"
+    },
+    {
+      "id": 259,
+      "name": "Hard hat"
+    },
+    {
+      "id": 260,
+      "name": "Headlamp"
+    },
+    {
+      "id": 261,
+      "name": "Cowboy hat"
+    },
+    {
+      "id": 262,
+      "name": "Welding mask"
+    },
+    {
+      "id": 263,
+      "name": "Gorka helmet"
+    },
+    {
+      "id": 264,
+      "name": "Police hat"
+    },
+    {
+      "id": 265,
+      "name": "NVG"
+    },
+    {
+      "id": 266,
+      "name": "Bandana"
+    },
+    {
+      "id": 267,
+      "name": "Helm"
+    },
+    {
+      "id": 300,
+      "name": "Jeans"
+    },
+    {
+      "id": 301,
+      "name": "Worker pants"
+    },
+    {
+      "id": 302,
+      "name": "Tracksuit pants"
+    },
+    {
+      "id": 303,
+      "name": "Gorka pants"
+    },
+    {
+      "id": 304,
+      "name": "Orel pants"
+    },
+    {
+      "id": 305,
+      "name": "Paramedic pants"
+    },
+    {
+      "id": 306,
+      "name": "Hunter pants"
+    },
+    {
+      "id": 350,
+      "name": "T-shirt"
+    },
+    {
+      "id": 351,
+      "name": "Shirt"
+    },
+    {
+      "id": 352,
+      "name": "Shirt"
+    },
+    {
+      "id": 353,
+      "name": "Raincoat"
+    },
+    {
+      "id": 354,
+      "name": "Jacket"
+    },
+    {
+      "id": 355,
+      "name": "Gorka jacket"
+    },
+    {
+      "id": 356,
+      "name": "Hoodie"
+    },
+    {
+      "id": 357,
+      "name": "Hoodie"
+    },
+    {
+      "id": 358,
+      "name": "Cloak"
+    },
+    {
+      "id": 359,
+      "name": "Paramedic jacket"
+    },
+    {
+      "id": 360,
+      "name": "Orel jacket"
+    },
+    {
+      "id": 361,
+      "name": "Tracksuit jacket"
+    },
+    {
+      "id": 362,
+      "name": "Dress"
+    },
+    {
+      "id": 363,
+      "name": "Down jacket"
+    },
+    {
+      "id": 364,
+      "name": "Hunter jacket"
+    },
+    {
+      "id": 365,
+      "name": "Sweater"
+    },
+    {
+      "id": 400,
+      "name": "Bulletproof vest"
+    },
+    {
+      "id": 401,
+      "name": "Press vest"
+    },
+    {
+      "id": 402,
+      "name": "Assault vest"
+    },
+    {
+      "id": 403,
+      "name": "High capacity vest"
+    },
+    {
+      "id": 404,
+      "name": "Kevlar vest"
+    },
+    {
+      "id": 450,
+      "name": "Taloon backpack"
+    },
+    {
+      "id": 451,
+      "name": "Hunting backpack"
+    },
+    {
+      "id": 452,
+      "name": "Mountain backpack"
+    },
+    {
+      "id": 453,
+      "name": "School backpack"
+    },
+    {
+      "id": 454,
+      "name": "Improvised bag"
+    },
+    {
+      "id": 455,
+      "name": "Improvised backpack"
+    },
+    {
+      "id": 456,
+      "name": "Civilian tent"
+    },
+    {
+      "id": 457,
+      "name": "Tortilla backpack"
+    },
+    {
+      "id": 63,
+      "name": "Energy drink"
+    },
+    {
+      "id": 85,
+      "name": "MRE ration"
+    },
+    {
+      "id": 86,
+      "name": "Spinning fishing rod"
+    },
+    {
+      "id": 87,
+      "name": "Basic Fishing rod"
+    },
+    {
+      "id": 88,
+      "name": "Protector Case"
+    },
+    {
+      "id": 89,
+      "name": "Magpull"
+    },
+    {
+      "id": 90,
+      "name": "Choke"
+    },
+    {
+      "id": 91,
+      "name": "Herring"
+    },
+    {
+      "id": 92,
+      "name": "Salmon"
+    },
+    {
+      "id": 93,
+      "name": "Ruffe"
+    },
+    {
+      "id": 94,
+      "name": "Perch"
+    },
+    {
+      "id": 95,
+      "name": "Small fish fillet"
+    },
+    {
+      "id": 96,
+      "name": "Big fish fillet"
+    },
+    {
+      "id": 97,
+      "name": "🍄"
+    },
+    {
+      "id": 177,
+      "name": "AUG"
+    },
+    {
+      "id": 178,
+      "name": "Saiga 12k"
+    },
+    {
+      "id": 179,
+      "name": "MAC-10"
+    },
+    {
+      "id": 180,
+      "name": "Mare's Leg"
+    },
+    {
+      "id": 98,
+      "name": "Longrange Scope"
+    },
+    {
+      "id": 99,
+      "name": "Claymore"
+    },
+    {
+      "id": 100,
+      "name": "Ammo 9x18"
+    },
+    {
+      "id": 101,
+      "name": "Ammo 9x39"
+    },
+    {
+      "id": 102,
+      "name": "Molotov"
+    },
+    {
+      "id": 181,
+      "name": "PM"
+    },
+    {
+      "id": 182,
+      "name": "PB"
+    },
+    {
+      "id": 183,
+      "name": "Bizon"
+    },
+    {
+      "id": 184,
+      "name": "Groza"
+    },
+    {
+      "id": 185,
+      "name": "VSS"
+    },
+    {
+      "id": 186,
+      "name": "SV-98"
+    },
+    {
+      "id": 187,
+      "name": "Madsen"
+    },
+    {
+      "id": 405,
+      "name": "Soviet vest"
+    }
+  ]
+}

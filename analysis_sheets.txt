@@ -1,0 +1,472 @@
+﻿=== FAMILIES ===
+count 38
+struct0 [909,52,53,54,448,125,33,74,455,60,72,75,133,47,108,77,71,98,110,93,452,451,94,403,115,39,61,113,99,78,90,129,92,120,40,41,42,62,105,49,63,50,454,446,104,103,109,83,637,69,45,123,132,56,119,44,43,112,100,101,796,91,102,139,456,51,458,140,106,70,67,66,122,79,88,449,116,124,114,118,126,96,64,48,182,55,457,134,453,447,86,131,111,121,770,95,450,84,117,73,65,89,130,76,97,87]
+0 909 len 106
+1 910 len 28
+2 911 len 85
+3 912 len 98
+4 913 len 9
+5 914 len 32
+6 915 len 11
+7 916 len 17
+8 917 len 2
+9 918 len 203
+10 919 len 13
+11 920 len 18
+12 921 len 7
+13 922 len 31
+14 923 len 19
+15 924 len 8
+16 925 len 10
+17 926 len 11
+18 927 len 37
+19 928 len 37
+20 929 len 7
+21 930 len 14
+22 931 len 7
+23 932 len 2
+24 933 len 4
+25 934 len 13
+26 935 len 18
+27 936 len 16
+28 937 len 16
+29 938 len 21
+30 939 len 14
+31 940 len 4
+32 941 len 19
+33 942 len 3
+34 943 len 16
+35 944 len 4
+36 945 len 5
+37 946 len 3
+\n=== LAYOUTS idx5 detail ===
+--- layout 0 ---
+0 GUI_layout 1 1024 2 768 3 type boolean 
+--- layout 1 ---
+0 Polygon 1 1500 2 1500 3 type boolean 
+--- layout 2 ---
+0 Map 1 17850 2 20000 3 type boolean 
+--- layout 3 ---
+0 Tutorial 1 8300 2 2000 3 type boolean 
+--- layout 4 ---
+0 Menu 1 2500 2 1500 3 type boolean 
+--- layout 5 ---
+0 Login 1 850 2 890 3 type boolean 
+--- layout 6 ---
+0 Loading 1 2000 2 1500 3 type boolean 
+\n=== EVENT SHEET NAMES ===
+0: attack_0.ogg
+1: attack_1.ogg
+2: spotted_0.ogg
+3: spotted_1.ogg
+4: chop.ogg
+5: chop2.ogg
+6: chop3.ogg
+7: chop4.ogg
+8: attack_0.m4a
+9: attack_1.m4a
+10: chop.m4a
+11: chop2.m4a
+12: chop3.m4a
+13: chop4.m4a
+14: spotted_0.m4a
+15: spotted_1.m4a
+16: attack_10.m4a
+17: attack_10.ogg
+18: attack_11.m4a
+19: attack_11.ogg
+20: attack_12.m4a
+21: attack_12.ogg
+22: attack_13.m4a
+23: attack_13.ogg
+24: attack_8.m4a
+25: attack_8.ogg
+26: attack_9.m4a
+27: attack_9.ogg
+28: spotted_2.m4a
+29: spotted_2.ogg
+30: spotted_3.m4a
+31: spotted_3.ogg
+32: spotted_4.m4a
+33: spotted_4.ogg
+34: spotted_5.m4a
+35: spotted_5.ogg
+36: spotted_6.m4a
+37: spotted_6.ogg
+38: ak74_1.m4a
+39: ak74_1.ogg
+40: ak74_2.m4a
+41: ak74_2.ogg
+42: ak74_3.m4a
+43: ak74_3.ogg
+44: akm_1.m4a
+45: akm_1.ogg
+46: akm_2.m4a
+47: akm_2.ogg
+48: akm_3.m4a
+49: akm_3.ogg
+50: akm_4.m4a
+51: akm_4.ogg
+52: akm_5.m4a
+53: akm_5.ogg
+54: amph_1.m4a
+55: amph_1.ogg
+56: amph_2.m4a
+57: amph_2.ogg
+58: bandage.m4a
+59: bandage.ogg
+60: body_1.m4a
+61: body_1.ogg
+62: body_2.m4a
+63: body_2.ogg
+64: bow_1.m4a
+65: bow_1.ogg
+66: bow_reload.m4a
+67: bow_reload.ogg
+68: bushsearch.m4a
+69: bushsearch.ogg
+70: close_door.m4a
+71: close_door.ogg
+72: close_door_metal.m4a
+73: close_door_metal.ogg
+74: colt_1.m4a
+75: colt_1.ogg
+76: colt_2.m4a
+77: colt_2.ogg
+78: concrete_run_1.m4a
+79: concrete_run_1.ogg
+80: concrete_run_2.m4a
+81: concrete_run_2.ogg
+82: concrete_run_3.m4a
+83: concrete_run_3.ogg
+84: concrete_run_4.m4a
+85: concrete_run_4.ogg
+86: crafting.m4a
+87: crafting.ogg
+88: crow_1.m4a
+89: crow_1.ogg
+90: crow_2.m4a
+91: crow_2.ogg
+92: crow_3.m4a
+93: crow_3.ogg
+94: crow_4.m4a
+95: crow_4.ogg
+96: crow_5.m4a
+97: crow_5.ogg
+98: deerrun.m4a
+99: deerrun.ogg
+100: drinksoda_0.m4a
+101: drinksoda_0.ogg
+102: drop1.m4a
+103: drop1.ogg
+104: drop2.m4a
+105: drop2.ogg
+106: eatingcrunchy_0.m4a
+107: eatingcrunchy_0.ogg
+108: eatingsoft_0.m4a
+109: eatingsoft_0.ogg
+110: eject.m4a
+111: eject.ogg
+112: empty_click.m4a
+113: empty_click.ogg
+114: f1_explode.m4a
+115: f1_explode.ogg
+116: flare_burn.m4a
+117: flare_burn.ogg
+118: flare_throw.m4a
+119: flare_throw.ogg
+120: fnx45_reload.m4a
+121: fnx45_reload.ogg
+122: fnx_1.m4a
+123: fnx_1.ogg
+124: fnx_2.m4a
+125: fnx_2.ogg
+126: forest_run_1.m4a
+127: forest_run_1.ogg
+128: forest_run_2.m4a
+129: forest_run_2.ogg
+130: forest_run_3.m4a
+131: forest_run_3.ogg
+132: forest_run_4.m4a
+133: forest_run_4.ogg
+134: geardrop1.m4a
+135: geardrop1.ogg
+136: geardrop2.m4a
+137: geardrop2.ogg
+138: gearpick.m4a
+139: gearpick.ogg
+140: glock19_single_1.m4a
+141: glock19_single_1.ogg
+142: glock19_single_2.m4a
+143: glock19_single_2.ogg
+144: gren pin.m4a
+145: gren pin.ogg
+146: hard_ground_1.m4a
+147: hard_ground_1.ogg
+148: hard_ground_2.m4a
+149: hard_ground_2.ogg
+150: izh_1.m4a
+151: izh_1.ogg
+152: izh_2.m4a
+153: izh_2.ogg
+154: izh_3.m4a
+155: izh_3.ogg
+156: l85.m4a
+157: l85.ogg
+158: m4_single_1.m4a
+159: m4_single_1.ogg
+160: m4_single_2.m4a
+161: m4_single_2.ogg
+162: magnum_single_1.m4a
+163: magnum_single_1.ogg
+164: match_burn.m4a
+165: match_burn.ogg
+166: md_achievment unlocked.m4a
+167: md_canteen_fill.m4a
+168: md_perk_1.m4a
+169: md_perk_2.m4a
+170: meat_cook.m4a
+171: mosin.m4a
+172: mosin_1.m4a
+173: mosin_2.m4a
+174: mosin_3.m4a
+175: mp5k_single_0.m4a
+176: mp5k_single_1.m4a
+177: nuko.m4a
+178: open.m4a
+179: open_door.m4a
+180: open_door_metal.m4a
+181: pad_open.m4a
+182: pad_page.m4a
+183: pick1.m4a
+184: pick2.m4a
+185: pick_pistol.m4a
+186: pick_rifle.m4a
+187: planting_seeds.m4a
+188: punch_swipes_0.m4a
+189: punch_swipes_1.m4a
+190: md_achievment unlocked.ogg
+191: md_canteen_fill.ogg
+192: md_perk_1.ogg
+193: md_perk_2.ogg
+194: meat_cook.ogg
+195: mosin_1.ogg
+196: mosin_2.ogg
+197: mosin_3.ogg
+198: mp5k_single_0.ogg
+199: mp5k_single_1.ogg
+200: nuko.ogg
+201: open.ogg
+202: open_door.ogg
+203: open_door_metal.ogg
+204: pad_open.ogg
+205: pad_page.ogg
+206: pick1.ogg
+207: pick2.ogg
+208: pick_pistol.ogg
+209: pick_rifle.ogg
+210: planting_seeds.ogg
+211: punch_swipes_0.ogg
+212: punch_swipes_1.ogg
+213: radio_noise.m4a
+214: radio_noise.ogg
+215: reload_pistol.m4a
+216: reload_pistol.ogg
+217: reload_rifle.m4a
+218: reload_rifle.ogg
+219: remington_1.m4a
+220: remington_1.ogg
+221: remington_2.m4a
+222: remington_2.ogg
+223: repeater.m4a
+224: repeater.ogg
+225: run_1.m4a
+226: run_1.ogg
+227: run_2.m4a
+228: run_2.ogg
+229: run_3.m4a
+230: run_3.ogg
+231: run_4.m4a
+232: run_4.ogg
+233: sand_run_1.m4a
+234: sand_run_1.ogg
+235: sand_run_2.m4a
+236: sand_run_2.ogg
+237: sand_run_3.m4a
+238: sand_run_3.ogg
+239: sand_run_4.m4a
+240: sand_run_4.ogg
+241: sks_close_0.m4a
+242: sks_close_0.ogg
+243: sks_close_1.m4a
+244: sks_close_1.ogg
+245: sporter_22.m4a
+246: sporter_22.ogg
+247: svd_single_0.m4a
+248: svd_single_0.ogg
+249: svd_single_1.m4a
+250: svd_single_1.ogg
+251: taping.m4a
+252: taping.ogg
+253: tear_fabric.m4a
+254: tear_fabric.ogg
+255: tentpack.m4a
+256: tentpack.ogg
+257: torch_on.m4a
+258: torch_on.ogg
+259: trap_bear_0.m4a
+260: trap_bear_0.ogg
+261: treefall_02.m4a
+262: treefall_02.ogg
+263: treefall_03.m4a
+264: treefall_03.ogg
+265: vitamins.m4a
+266: vitamins.ogg
+267: whiskey.m4a
+268: whiskey.ogg
+269: wood_1.m4a
+270: wood_1.ogg
+271: wood_2.m4a
+272: wood_2.ogg
+273: wood_3.m4a
+274: wood_3.ogg
+275: wood_4.m4a
+276: wood_4.ogg
+277: wolf_attack.m4a
+278: wolf_attack.ogg
+279: wolf_attack_2.m4a
+280: wolf_attack_2.ogg
+281: wolf_attack_3.m4a
+282: wolf_attack_3.ogg
+283: wolf_spot.m4a
+284: wolf_spot.ogg
+285: wolf_spot_2.m4a
+286: wolf_spot_2.ogg
+287: ump45_single_1.m4a
+288: ump45_single_1.ogg
+289: ump45_single_2.m4a
+290: ump45_single_2.ogg
+291: fn_fal_single_1.m4a
+292: fn_fal_single_1.ogg
+293: fn_fal_single_2.m4a
+294: fn_fal_single_2.ogg
+295: ak_silent_1.m4a
+296: ak_silent_1.ogg
+297: ak_silent_2.m4a
+298: ak_silent_2.ogg
+299: m4_silent_1.m4a
+300: m4_silent_1.ogg
+301: m4_silent_2.m4a
+302: m4_silent_2.ogg
+303: bunker_door.m4a
+304: bunker_door.ogg
+305: car_engine_idle_uaz.m4a
+306: car_engine_idle_uaz.ogg
+307: car_door_close.m4a
+308: car_door_close.ogg
+309: car_door_open.m4a
+310: car_door_open.ogg
+311: car_engine_start_uaz.m4a
+312: car_engine_start_uaz.ogg
+313: car_engine_stop_uaz.m4a
+314: car_engine_stop_uaz.ogg
+315: fence_destroy_1.m4a
+316: fence_destroy_1.ogg
+317: fence_destroy_2.m4a
+318: fence_destroy_2.ogg
+319: mac10_1.m4a
+320: mac10_1.ogg
+321: mac10_2.m4a
+322: mac10_2.ogg
+323: saiga12.m4a
+324: saiga12.ogg
+325: car_engine_idle_volga.m4a
+326: car_engine_idle_volga.ogg
+327: car_engine_start_volga.m4a
+328: car_engine_start_volga.ogg
+329: car_engine_stop_volga.m4a
+330: car_engine_stop_volga.ogg
+331: car_crash_1.m4a
+332: car_crash_1.ogg
+333: car_crash_2.m4a
+334: car_crash_2.ogg
+335: car_crash_3.m4a
+336: car_crash_3.ogg
+337: car_crash_wood.m4a
+338: car_crash_wood.ogg
+339: car_explode.m4a
+340: car_explode.ogg
+341: action_refuel_0.m4a
+342: action_refuel_0.ogg
+343: action_repair_0.m4a
+344: action_repair_0.ogg
+345: steyraug_shot_0.m4a
+346: steyraug_shot_0.ogg
+347: steyraug_shot_1.m4a
+348: steyraug_shot_1.ogg
+349: zed_tank_1.m4a
+350: zed_tank_1.ogg
+351: zed_tank_2.m4a
+352: zed_tank_2.ogg
+353: zed_tank_3.m4a
+354: zed_tank_3.ogg
+355: zed_tank_scream.m4a
+356: zed_tank_scream.ogg
+357: ambient.m4a
+358: ambient.ogg
+359: blizzard.m4a
+360: fireplace_loop.m4a
+361: fireplace_loop.ogg
+362: guitar.m4a
+363: guitar.ogg
+364: md_winter_amb.ogg
+365: md_winter_night_amb.m4a
+366: md_winter_night_amb.ogg
+367: night_loop.m4a
+368: rain_loop.m4a
+369: md_winter_amb.m4a
+370: rain_loop.ogg
+371: night_loop.ogg
+372: rainroof.m4a
+373: rainroof.ogg
+374: blizzard.ogg
+375: tutor_death.m4a
+376: tutor_death.ogg
+377: rad_high_1.m4a
+378: rad_high_1.ogg
+379: rad_high_2.m4a
+380: rad_high_2.ogg
+381: rad_med_1.m4a
+382: rad_med_1.ogg
+383: rad_med_2.m4a
+384: rad_med_2.ogg
+385: rad_sml_1.m4a
+386: rad_sml_1.ogg
+387: rad_sml_2.m4a
+388: rad_sml_2.ogg
+389: rad_sml_3.m4a
+390: rad_sml_3.ogg
+391: bizon_shot_1.m4a
+392: bizon_shot_1.ogg
+393: groza_shot_1.m4a
+394: groza_shot_1.ogg
+395: groza_shot_2.m4a
+396: groza_shot_2.ogg
+397: madsen_shot.m4a
+398: madsen_shot.ogg
+399: pb_shot_1.m4a
+400: pb_shot_1.ogg
+401: pb_shot_2.m4a
+402: pb_shot_2.ogg
+403: pm_shot.m4a
+404: pm_shot.ogg
+405: sv98_shot_1.m4a
+406: sv98_shot_1.ogg
+407: sv98_shot_2.m4a
+408: sv98_shot_2.ogg
+409: match_0.m4a
+410: match_0.ogg
+411: bottle_break_0.m4a
+412: bottle_break_0.ogg
+413: vss_shot_3.m4a
+414: vss_shot_3.ogg

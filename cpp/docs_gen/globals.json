@@ -1,0 +1,1338 @@
+{
+  "globals": [
+    {
+      "name": "TD_wave_number",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "TD_wave_prepare",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "TD_wave_multiply",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "TD_wave",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Ally_video",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Adrenaline_window",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Adrenaline",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "androidexit",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SCORE",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "gameversion",
+      "type": "number",
+      "init": 140
+    },
+    {
+      "name": "Airdrop_test_flag",
+      "type": "text",
+      "init": "D"
+    },
+    {
+      "name": "Airdrop_recharge",
+      "type": "number",
+      "init": 400
+    },
+    {
+      "name": "Difficulty_damage_reducer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Night_light_addition",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Resave_102",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "DeltaDNA_Mapopens",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "DeltaDNA_WolvesKills",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "DeltaDNA_FriendsMeet",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "DeltaDNA_BotsMeet",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "New_game_minimap_tip",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Player_skin_type",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "GUI_control_type",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "GUI_dpad_onscreen",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "from_tutorial",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutorial_map_finished",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "level_loading",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dontgo",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Sounds_on",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "Details",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Reloading_mag",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "saveandexit",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "check_item_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "CurrentLevel",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "userID",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "zed_horde_alive",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "gui_pickpile_maxpage",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "gui_pickpile_lastpage",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Building_mode",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Building_deploy_avalible",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "user_device_X",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "user_device_Y",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "user_device_X_mid",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "user_device_Y_mid",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "user_device",
+      "type": "text",
+      "init": "UNKNOWN"
+    },
+    {
+      "name": "Day_survived",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "camp_located",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "perkmenu_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Perkmenu_tab",
+      "type": "number",
+      "init": 2
+    },
+    {
+      "name": "perk_header",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_meleedef",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_meleeatk",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_farmer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_metabolism",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_hunter",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_sweethome",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_trunkster",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_regen",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_spotter",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_runner",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_snowborn",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_camel",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_eye",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_agronom",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_hamster",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perks_learnt_count",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "perk_cost",
+      "type": "number",
+      "init": 216
+    },
+    {
+      "name": "karma_points",
+      "type": "number",
+      "init": -11
+    },
+    {
+      "name": "expierence_points",
+      "type": "number",
+      "init": 16
+    },
+    {
+      "name": "pickpile_scroll_pos",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "manual_target_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Reloading_time",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Reloading_time_melee",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Current_zoom_lvl",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "run_touch_id",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "stick_touch_id",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "force_stick",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "stick_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "stick_pos_X",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "stick_pos_Y",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "respawn_radius_npc",
+      "type": "number",
+      "init": 2000
+    },
+    {
+      "name": "respawn_radius2",
+      "type": "number",
+      "init": 2000
+    },
+    {
+      "name": "Target_aim_uid",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Fight_mode",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "inventory_reloader",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Inventory_opened",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "deathtime",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "sav_stage1",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "sav_stage2",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "sav",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "fromsav",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Cancel_action",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutorial",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "player_using",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "lastaudio",
+      "type": "number",
+      "init": -1
+    },
+    {
+      "name": "Ach_boomstick_counter",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Debug_mode",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Action_menu_counter_loop",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Action_menu_counter",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Action_menu_chooser",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Action_menu_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "God_mode",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "GUI_slot_bufer_counter",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "GUI_slot_bufer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "GUI_craft_possible",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Help_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Player_temperature",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Weather_temperature",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Trunk_count",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Player_torch_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Zed_resp_buf",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dmg_randomizer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Timer_ALL",
+      "type": "number",
+      "init": 360
+    },
+    {
+      "name": "Timer_Hours",
+      "type": "number",
+      "init": 12
+    },
+    {
+      "name": "Timer_Hours_Z",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Timer_Minutes",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Timer_Minutes_Z",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Airdrop_Timer_ALL",
+      "type": "number",
+      "init": 360
+    },
+    {
+      "name": "Airdrop_Timer_Hours",
+      "type": "number",
+      "init": 12
+    },
+    {
+      "name": "Airdrop_Timer_Hours_Z",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Airdrop_Timer_Minutes",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Airdrop_Timer_Minutes_Z",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Rain_cold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Night_cold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Day_cold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Rain",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Day_mode",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "Day_Night_speed",
+      "type": "number",
+      "init": 720
+    },
+    {
+      "name": "Rain_speed",
+      "type": "number",
+      "init": 360
+    },
+    {
+      "name": "notebook_mode",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "LOOT_RESPAWN_TIME",
+      "type": "number",
+      "init": 1480
+    },
+    {
+      "name": "Stats_Zeds_killed",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_foodbox_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_waterbox_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_bandagebox_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_randombox_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_randombox_hp_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_boxestotal_dropped",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_time_lived",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_Bandits_killed",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_Food_eaten",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_water_drinked",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Stats_blood_lost",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Death_log_XY",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Death_log_backpack",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Death_log_outerwear",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Death_log_reason",
+      "type": "text",
+      "init": "None"
+    },
+    {
+      "name": "Death_log_stats",
+      "type": "text",
+      "init": ""
+    },
+    {
+      "name": "Menu_switching",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Bot_corpse_stay_time",
+      "type": "number",
+      "init": 90
+    },
+    {
+      "name": "Randomizer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "BOT_RESPAWN_TIME",
+      "type": "number",
+      "init": 10
+    },
+    {
+      "name": "Zed_fast_dmg",
+      "type": "number",
+      "init": 6
+    },
+    {
+      "name": "Zed_per_base",
+      "type": "number",
+      "init": 5
+    },
+    {
+      "name": "Wolf_dmg",
+      "type": "number",
+      "init": 10
+    },
+    {
+      "name": "Zed_dmg",
+      "type": "number",
+      "init": 9
+    },
+    {
+      "name": "Zed_army_dmg",
+      "type": "number",
+      "init": 13
+    },
+    {
+      "name": "ZED_RESPAWN_TIME",
+      "type": "number",
+      "init": 60
+    },
+    {
+      "name": "Player_Hear_radius",
+      "type": "number",
+      "init": 1000
+    },
+    {
+      "name": "Difficulty",
+      "type": "text",
+      "init": "Novice"
+    },
+    {
+      "name": "aiming",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "item_picking_from_ground",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "item_dropping_on_ground",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Default_idle_anim_up",
+      "type": "text",
+      "init": "idle_up"
+    },
+    {
+      "name": "Default_idle_anim_down",
+      "type": "text",
+      "init": "idle_down"
+    },
+    {
+      "name": "Default_idle_anim_left",
+      "type": "text",
+      "init": "idle_left"
+    },
+    {
+      "name": "Default_idle_anim_right",
+      "type": "text",
+      "init": "idle_right"
+    },
+    {
+      "name": "Starving_current",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Thirsty_current",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Regeneration_current",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Weathercold_current",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Veteran_starving",
+      "type": "number",
+      "init": 1.4
+    },
+    {
+      "name": "Veteran_thirsty",
+      "type": "number",
+      "init": 1.4
+    },
+    {
+      "name": "Veteran_weathercold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Veteran_regeneration",
+      "type": "number",
+      "init": 1.5
+    },
+    {
+      "name": "Regular_starving",
+      "type": "number",
+      "init": 1.1
+    },
+    {
+      "name": "Regular_thirsty",
+      "type": "number",
+      "init": 1.1
+    },
+    {
+      "name": "Regular_weathercold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Regular_regeneration",
+      "type": "number",
+      "init": 1.75
+    },
+    {
+      "name": "Novice_starving",
+      "type": "number",
+      "init": 0.75
+    },
+    {
+      "name": "Novice_thirsty",
+      "type": "number",
+      "init": 0.75
+    },
+    {
+      "name": "Novice_weathercold",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Novice_regeneration",
+      "type": "number",
+      "init": 2
+    },
+    {
+      "name": "Pad_last_page",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "Pad_last_tab",
+      "type": "number",
+      "init": 4
+    },
+    {
+      "name": "Pad_current_page",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "Pad_current_tab",
+      "type": "number",
+      "init": 4
+    },
+    {
+      "name": "Pad_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Pad_switching",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "bot_inc",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "helpmenu_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "secret_location",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "secret_location_revealed",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "secret_location_spawned",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "villages",
+      "type": "number",
+      "init": 9
+    },
+    {
+      "name": "cities",
+      "type": "number",
+      "init": 5
+    },
+    {
+      "name": "militaries",
+      "type": "number",
+      "init": 3
+    },
+    {
+      "name": "gas_stations",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "hospitals",
+      "type": "number",
+      "init": 2
+    },
+    {
+      "name": "firestations",
+      "type": "number",
+      "init": 2
+    },
+    {
+      "name": "levelchanging",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "check_X",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "check_Y",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "spotted2",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "spotted",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Map_size_X",
+      "type": "number",
+      "init": 16
+    },
+    {
+      "name": "Map_size_Y",
+      "type": "number",
+      "init": 16
+    },
+    {
+      "name": "Tutor_hint_blocked_gui",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Loot_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_first_tip",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_perks_guide",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Boat_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Movement_guide",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_first_fight",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Zed_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_wolf_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_firearm_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Pump_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_Car_trunk_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_berries_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_deer_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_rabbit_found",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_hint_moveblock",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Tutor_hint_onscreen",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "tutor_timer",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "tutor_inventory_guide_step",
+      "type": "number",
+      "init": -1
+    },
+    {
+      "name": "tutor_perk_guide_step",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "tutor_ui_guide_step",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "tutor_bleeding_step",
+      "type": "number",
+      "init": -1
+    },
+    {
+      "name": "tutor_death",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dispersion_default",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dispersion_angle",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dispersion_angle_max",
+      "type": "number",
+      "init": 25
+    },
+    {
+      "name": "dispersion_cooldown_step",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "dispersion_pershot",
+      "type": "number",
+      "init": 5
+    },
+    {
+      "name": "dispersion_run_penalty",
+      "type": "number",
+      "init": 10
+    },
+    {
+      "name": "dispersion_bonus",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "isPolygonSpawned",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "inBunker",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "isAim",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Q_status",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Q_task_id",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Q_target_sid",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "Q_reward_id",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_RUN",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_stalker",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_Wildlife",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_morezeds",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_gunnerzeds",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_VIP",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_pubg",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_playcasual",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "SEED_TD",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "pubg_distance",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "pubg_distance_range",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "rad_phone_armor",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "rad_phone",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "dispvalue",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "melee_bot_spawns_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "fast_zeds_spawns_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "hordes_spawns_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "friend_bot_spawns_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "hunter_bot_spawns_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "camps_bot_spawn_on",
+      "type": "number",
+      "init": 1
+    },
+    {
+      "name": "firearm_bot_spawn_on",
+      "type": "number",
+      "init": 0
+    },
+    {
+      "name": "rains_level",
+      "type": "number",
+      "init": 0
+    }
+  ],
+  "includes": [
+    "Everywere"
+  ],
+  "kindCounts": {
+    "0": 33,
+    "1": 265,
+    "2": 1
+  },
+  "otherCount": 33
+}

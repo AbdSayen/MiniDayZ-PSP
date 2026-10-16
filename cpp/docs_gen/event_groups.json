@@ -1,0 +1,3697 @@
+{
+  "groups": [
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "TD_wave_number",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "TD_wave_prepare",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "TD_wave_multiply",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "TD_wave",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Ally_video",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Adrenaline_window",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Adrenaline",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "androidexit",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SCORE",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "gameversion",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_test_flag",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_recharge",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Difficulty_damage_reducer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Night_light_addition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Resave_102",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "DeltaDNA_Mapopens",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "DeltaDNA_WolvesKills",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "DeltaDNA_FriendsMeet",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "DeltaDNA_BotsMeet",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "New_game_minimap_tip",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Player_skin_type",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "GUI_control_type",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "GUI_dpad_onscreen",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "from_tutorial",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutorial_map_finished",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "level_loading",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dontgo",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Sounds_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Details",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Reloading_mag",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "saveandexit",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "check_item_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "CurrentLevel",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "userID",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "zed_horde_alive",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "gui_pickpile_maxpage",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "gui_pickpile_lastpage",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Building_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Building_deploy_avalible",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "user_device_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "user_device_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "user_device_X_mid",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "user_device_Y_mid",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "user_device",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Day_survived",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "camp_located",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perkmenu_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Perkmenu_tab",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_header",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_meleedef",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_meleeatk",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_farmer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_metabolism",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_hunter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_sweethome",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_trunkster",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_regen",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_spotter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_runner",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_snowborn",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_camel",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_eye",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_agronom",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_hamster",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perks_learnt_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "perk_cost",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "karma_points",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "expierence_points",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "pickpile_scroll_pos",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "manual_target_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Reloading_time",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Reloading_time_melee",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Current_zoom_lvl",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "run_touch_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "stick_touch_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "force_stick",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "stick_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "stick_pos_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "stick_pos_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "respawn_radius_npc",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "respawn_radius2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Target_aim_uid",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Fight_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "inventory_reloader",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Inventory_opened",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "deathtime",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "sav_stage1",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "sav_stage2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "sav",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "fromsav",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Cancel_action",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutorial",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "player_using",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "lastaudio",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Ach_boomstick_counter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Debug_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Action_menu_counter_loop",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Action_menu_counter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Action_menu_chooser",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Action_menu_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "God_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "GUI_slot_bufer_counter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "GUI_slot_bufer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "GUI_craft_possible",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Help_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Player_temperature",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Weather_temperature",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Trunk_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Player_torch_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Zed_resp_buf",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dmg_randomizer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Timer_ALL",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Timer_Hours",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Timer_Hours_Z",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Timer_Minutes",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Timer_Minutes_Z",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_Timer_ALL",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_Timer_Hours",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_Timer_Hours_Z",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_Timer_Minutes",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Airdrop_Timer_Minutes_Z",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Rain_cold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Night_cold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Day_cold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Rain",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Day_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Day_Night_speed",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Rain_speed",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "notebook_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "LOOT_RESPAWN_TIME",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_Zeds_killed",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_foodbox_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_waterbox_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_bandagebox_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_randombox_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_randombox_hp_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_boxestotal_dropped",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_time_lived",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_Bandits_killed",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_Food_eaten",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_water_drinked",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Stats_blood_lost",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Death_log_XY",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Death_log_backpack",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Death_log_outerwear",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Death_log_reason",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Death_log_stats",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Menu_switching",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Bot_corpse_stay_time",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Randomizer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "BOT_RESPAWN_TIME",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Zed_fast_dmg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Zed_per_base",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Wolf_dmg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Zed_dmg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Zed_army_dmg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "ZED_RESPAWN_TIME",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Player_Hear_radius",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Difficulty",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "aiming",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "item_picking_from_ground",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "item_dropping_on_ground",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Default_idle_anim_up",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Default_idle_anim_down",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Default_idle_anim_left",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Default_idle_anim_right",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Starving_current",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Thirsty_current",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Regeneration_current",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Weathercold_current",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Veteran_starving",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Veteran_thirsty",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Veteran_weathercold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Veteran_regeneration",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Regular_starving",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Regular_thirsty",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Regular_weathercold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Regular_regeneration",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Novice_starving",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Novice_thirsty",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Novice_weathercold",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Novice_regeneration",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_last_page",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_last_tab",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_current_page",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_current_tab",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Pad_switching",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "bot_inc",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "helpmenu_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "secret_location",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "secret_location_revealed",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "secret_location_spawned",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "villages",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "cities",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "militaries",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "gas_stations",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "hospitals",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "firestations",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "levelchanging",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "check_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "check_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "spotted2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "spotted",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Map_size_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Map_size_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_hint_blocked_gui",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Loot_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_first_tip",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_perks_guide",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Boat_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Movement_guide",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_first_fight",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Zed_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_wolf_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_firearm_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Pump_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_Car_trunk_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_berries_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_deer_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_rabbit_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_hint_moveblock",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Tutor_hint_onscreen",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_timer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_inventory_guide_step",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_perk_guide_step",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_ui_guide_step",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_bleeding_step",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "tutor_death",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_default",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_angle",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_angle_max",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_cooldown_step",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_pershot",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_run_penalty",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispersion_bonus",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "isPolygonSpawned",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "inBunker",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "isAim",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Q_status",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Q_task_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Q_target_sid",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "Q_reward_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_RUN",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_stalker",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_Wildlife",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_morezeds",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_gunnerzeds",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_VIP",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_pubg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_playcasual",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "SEED_TD",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "pubg_distance",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "pubg_distance_range",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "rad_phone_armor",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "rad_phone",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "rad_dist",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "eteran",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "hotspot_mapgen_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "hotspot_mapgen_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "loopzounter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "PlantX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "PlantY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "hotspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "hotspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "TilemapspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "TilemapspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "post_points",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "post_points",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_R",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "River_ready",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Bridges",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Bridges_2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_X",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "river_R",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "River_ready",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Bridges",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Bridges_2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Row",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "anotherX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "anotherX2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Loop_secrets",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Loop_secrets2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "anotherX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Row",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "anotherX2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "helispawned",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "hammerspawned",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "loopzounter",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "PlantX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "PlantY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "hotspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "hotspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "TilemapspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "TilemapspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "post_points",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "y",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "x",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "main_tile",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "minimap_positionX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "minimap_positionY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "HotspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "HotspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "generated",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "randy",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "achieved",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "achieved",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "string",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "string2",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "dispvalue",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Melee_mode",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "loc",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "loc",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "smth_found",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Variable1",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Bunker",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Car",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Secret",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "Boat",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "randy",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "localtimer",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 5,
+      "name": "randy",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "gui_scale2",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "gui_scale3",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "fontsize",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "timeleft",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "HotspotX",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "HotspotY",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "Silencer_name_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "Scope_name_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "Belt_name_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 7,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 6,
+      "name": "stack",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "item_for_remove_id",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "slot",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Crafted",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Crafted",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Crafted",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "Condition2",
+      "active": 1
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "required_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "required_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "charge_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "charge_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "craft_ok",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "charge_count",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "water_left",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 8,
+      "name": "player_water_left",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "avalible_interaction",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "slots_filled",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "pickpile_index",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "full_panels",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 3,
+      "name": "dmg",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 4,
+      "name": "randy",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "def_percent",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 2,
+      "name": "range",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "randy",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "melee_bot_spawns_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "fast_zeds_spawns_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "hordes_spawns_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "friend_bot_spawns_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "hunter_bot_spawns_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "camps_bot_spawn_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "firearm_bot_spawn_on",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 0,
+      "name": "rains_level",
+      "active": 0
+    },
+    {
+      "sheet": "Game_events",
+      "depth": 1,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Platform",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "aug_unlock",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "aug_unlock_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "saiga12_unlock",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "saiga12_unlock_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "mac10_unlock",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "mac10_unlock_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "vss_unlock",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "vss_unlock_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "sv98_unlock",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "sv98_unlock_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_4",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_4_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_5",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_5_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_6",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_6_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_7",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_8",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_9",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_9_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_10",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_10_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_11",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_12",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_13",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_13_progress_step1",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_13_progress_step2",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_14",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_14_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_15",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "char_unlock_15_progress",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "testbanner",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Text_color",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "user_phone_model",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Language",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "to_checked",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "sav_checked",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "sav_checked_tutor",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "ach_checked",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "savedif",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "savemap",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "sessionID",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "curka",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "menu_achieves_open",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Map_loading",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "authorised",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Map",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "fromgame",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "MyUsername",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "menu_section",
+      "active": 1
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Menu_hotspot_X",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Menu_hotspot_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Menu_btn_margins",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Dragging_ach",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Dragging_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Dragging_Y2",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Dragging_Diff",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Local_ui_loaded",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Local_log_loaded",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "Local_items_loaded",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 3,
+      "name": "char_select_gap",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 2,
+      "name": "gui_scale",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 1,
+      "name": "btn_pos_y_margin",
+      "active": 0
+    },
+    {
+      "sheet": "Menu_Events",
+      "depth": 0,
+      "name": "seedid",
+      "active": 1
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "good_login",
+      "active": 0
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "switching",
+      "active": 0
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "token_refresh",
+      "active": 1
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "token_user",
+      "active": 1
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "logging_in",
+      "active": 0
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "login_remember",
+      "active": 0
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "MP_error_occur",
+      "active": 0
+    },
+    {
+      "sheet": "Login_events",
+      "depth": 0,
+      "name": "MP_error_text",
+      "active": 1
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "System_language",
+      "active": 1
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_sky_X",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_sky_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_sky_Height",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_city_X",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_city_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_logo_Y",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_city_Height",
+      "active": 0
+    },
+    {
+      "sheet": "Loading_events",
+      "depth": 0,
+      "name": "Loader_scroll_speed",
+      "active": 0
+    },
+    {
+      "sheet": "Everywere",
+      "depth": 0,
+      "name": "suspended",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorBerriesPicked",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorCarTrunkOpened",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorFirearmPassed",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorSkipped",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorTreeChopped",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorZedFighted",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorPerkBought",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorBleedingStopped",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorDieCount",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorMoveChoosen",
+      "active": 0
+    },
+    {
+      "sheet": "Tutorial_events",
+      "depth": 0,
+      "name": "tutorMovementType",
+      "active": 1
+    }
+  ],
+  "functionNames": [
+    "AltMove",
+    "BOT_RESPAWN_TIME",
+    "Bleed",
+    "Bleeding_guide",
+    "Bow_reload",
+    "Bunker",
+    "Bunker_erase",
+    "Bunker_generate",
+    "Bunker_spawn_zeds",
+    "Call_sub_menu_craft",
+    "Car_respawn_uaz",
+    "Car_respawn_volga",
+    "Casual_Respawn_player",
+    "Check_ammo_inventory",
+    "Check_craft",
+    "Check_item_inventory",
+    "Check_loot",
+    "Check_space_inventory",
+    "Craft arrows",
+    "Craft_1",
+    "Craft_21",
+    "Craft_22",
+    "Craft_3",
+    "Craft_31",
+    "Craft_32",
+    "Craft_33",
+    "Craft_34",
+    "Craft_4",
+    "Craft_5",
+    "Craft_fishing_rod",
+    "Crafted",
+    "Damage dealing",
+    "Death_guide",
+    "Death_log_XY",
+    "Death_log_backpack",
+    "Death_log_outerwear",
+    "Death_log_reason",
+    "Death_log_stats",
+    "Deaths",
+    "Difficulty_damage_reducer",
+    "Drivable vehicles",
+    "GUI_craft_possible",
+    "GUI_draw_vehicle",
+    "GUI_erase_vehicle",
+    "Global_respawn",
+    "Global_respawn_TD",
+    "Hunger",
+    "Inventory_guide",
+    "Inventory_opened",
+    "LOOT Respawn",
+    "LOOT_RESPAWN_TIME",
+    "LOOT_respawn",
+    "Load_loot",
+    "Mag_reload",
+    "Molotov_damage",
+    "Movement_stick",
+    "Movement_tap",
+    "NPC_get_damage",
+    "Novice_thirsty",
+    "Novice_weathercold",
+    "Pick_inventory_item",
+    "Picking inventory items",
+    "Quest_spawn_reward_box",
+    "Recheck_inventory_cards",
+    "Regular_thirsty",
+    "Regular_weathercold",
+    "Reload_locations",
+    "Reload_locations_aftersave",
+    "Reload_locations_start",
+    "Reload_rifle",
+    "Reloading_mag",
+    "Reloading_time",
+    "Reloading_time_melee",
+    "Remove_bandit_bots",
+    "Remove_bot_firearm",
+    "Remove_bot_friend",
+    "Remove_bot_puncher",
+    "Remove_team_bots",
+    "Save_loot",
+    "Spawn parameters",
+    "Spawn_bandit_camp",
+    "Spawn_drop",
+    "Spawn_drop_from_player",
+    "Spawn_firearm_bot",
+    "Spawn_friend_bot",
+    "Spawn_puncher_bot",
+    "Spawn_team_camp",
+    "Spawn_truck",
+    "Spawn_uaz",
+    "Spawn_volga",
+    "Stats_blood_lost",
+    "TD_drop_weapons",
+    "Tap_reload",
+    "Thirst",
+    "Thirsty_current",
+    "Time cyles and weather",
+    "Trigger_spawn",
+    "Tutor_Loot_found",
+    "Tutor_Movement_guide",
+    "Tutor_hint_moveblock",
+    "Uaz_respawn",
+    "Using inventory items",
+    "Vehicle",
+    "Vehicle Layering",
+    "Vehicle collisions",
+    "Vehicles UI",
+    "Veteran_thirsty",
+    "Veteran_weathercold",
+    "Volga_respawn",
+    "Weapon_unlocks",
+    "Weather_temperature",
+    "Weathercold_current",
+    "ZED_RESPAWN_TIME",
+    "Zed_check_bunker",
+    "Zombies",
+    "ach_move_text",
+    "attack",
+    "attack_0",
+    "attack_1",
+    "attack_10",
+    "attack_11",
+    "attack_12",
+    "attack_13",
+    "attack_8",
+    "attack_down",
+    "attack_left",
+    "attack_right",
+    "attack_up",
+    "bot_reloading",
+    "bot_reloading_bandit",
+    "bunker_door",
+    "camps_bot_spawn_on",
+    "close_inventory",
+    "craft_ok",
+    "deathtime",
+    "fast_zeds_spawns_on",
+    "firearm_bot_spawn_on",
+    "fn_fal_single_1",
+    "fn_fal_single_2",
+    "friend_bot_spawns_on",
+    "generate_bunker_entrance",
+    "hammerspawned",
+    "helispawned",
+    "hordes_spawns_on",
+    "hunter_bot_spawns_on",
+    "inBunker",
+    "inventory_items",
+    "inventory_reloader",
+    "isPolygonSpawned",
+    "item_for_remove_id",
+    "loot_checker2",
+    "melee_bot_spawns_on",
+    "molotov_reload",
+    "player_weapons",
+    "reload_pistol",
+    "reload_rifle",
+    "respawn_radius2",
+    "respawn_radius_npc",
+    "s_weapons",
+    "s_weapons2",
+    "secret_location_spawned",
+    "spawn",
+    "spawn1",
+    "spawn2",
+    "spawn3",
+    "tutorBleedingStopped",
+    "tutorMoveChoosen",
+    "tutorMovementType",
+    "tutor_bleeding_step",
+    "tutor_death",
+    "tutor_inventory_guide_step",
+    "weapons",
+    "wolf_attack",
+    "wolf_attack_2",
+    "wolf_attack_3"
+  ]
+}

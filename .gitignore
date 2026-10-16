@@ -1,0 +1,11 @@
+cpp/build/
+*.o
+*.a
+*.exe
+*.pbp
+EBOOT.PBP
+.DS_Store
+Thumbs.db
+*.user
+CMakeCache.txt
+CMakeFiles/
