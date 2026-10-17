@@ -55,7 +55,6 @@ int test_save() {
   traps.traps[0].sprung = 0;
 
   mdaz::WorldExtras extras;
-  extras.limp_t = 33.f;
   extras.airdrop_t = 120.f;
   extras.airdrop_x = 700.f;
   extras.airdrop_y = 800.f;
@@ -180,12 +179,12 @@ int test_save() {
     ++fail;
   } else std::printf("OK   v9 placed traps\n");
 
-  if (extras2.limp_t != 33.f || extras2.airdrop_t != 120.f ||
+  if (extras2.airdrop_t != 120.f ||
       extras2.airdrop_x != 700.f || extras2.airdrop_y != 800.f) {
-    std::printf("FAIL v10 limp/airdrop limp=%.1f air=%.1f pos=%.0f,%.0f\n",
-                extras2.limp_t, extras2.airdrop_t, extras2.airdrop_x, extras2.airdrop_y);
+    std::printf("FAIL v10 airdrop air=%.1f pos=%.0f,%.0f\n",
+                extras2.airdrop_t, extras2.airdrop_x, extras2.airdrop_y);
     ++fail;
-  } else std::printf("OK   v10 limp+airdrop\n");
+  } else std::printf("OK   v10 airdrop\n");
 
   if (fires2.count != 1 || fires2.fires[0].life != 99.f || fires2.fires[0].x != 9.f ||
       extras2.tent_warmth_t != 240.f) {

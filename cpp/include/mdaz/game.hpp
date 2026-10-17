@@ -14,6 +14,8 @@
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
 #include "mdaz/quest.hpp"
+#include "mdaz/layout_sprites.hpp"
+#include "mdaz/world_tilemaps.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/timers.hpp"
 #include "mdaz/types.hpp"
@@ -65,7 +67,6 @@ public:
   int mag_rounds() const { return mag_rounds_; }
   int mag_capacity_equipped() const;
   float adrenaline_t() const { return adrenaline_t_; }
-  float limp_t() const { return limp_t_; }
   float indoor_t() const { return indoor_t_; }
   float tent_warmth_t() const { return tent_warmth_t_; }
   float wetness() const { return wetness_; }
@@ -75,7 +76,6 @@ public:
   bool near_choppable_tree() const;
   bool crouching() const { return crouching_; }
   bool near_vehicle() const;
-  bool near_shore() const;
   Vec2 last_airdrop_pos() const { return last_airdrop_pos_; }
   const Vehicle* driven_vehicle() const { return vehicles_.driven(); }
   int ammo_for_equipped() const;
@@ -108,6 +108,9 @@ private:
   MapGenerator mapgen_;
   BulletSystem bullets_;
   BunkerMap bunker_;
+  WorldTilemaps world_tiles_;
+  WorldTilemaps menu_tiles_;
+  LayoutSprites menu_sprites_;
   DispersionState dispersion_;
   Rng rng_;
   float state_timer_;
@@ -123,7 +126,6 @@ private:
   float wetness_;        // 0..100 clothes wetness (rain up / fire dry)
   float gasmask_filter_; // 0..100 filter life while wearing gasmask
   float adrenaline_t_;   // morphine sprint boost remaining seconds
-  float limp_t_;         // broken-leg stub: slows move while >0
   float melee_break_mul_; // duct tape reinforce reduces melee break chance
   bool has_headlamp_;    // worn/owned headlamp enables torch toggle without kit
   bool gun_jammed_;      // clear with V reload
@@ -169,16 +171,6 @@ private:
   static const int kMaxTrees = 96;
   Vec2 trees_[kMaxTrees];
   int tree_count_;
-  // Chopped trees grow back after delay
-  struct TreeStump {
-    Vec2 pos;
-    float grow_t;
-    bool active;
-  };
-  TreeStump tree_stumps_[kMaxTrees];
-  int tree_stump_count_;
-  void update_tree_stumps(float dt);
-  void queue_tree_regen(Vec2 pos);
   static const int kMaxBloodDrips = 48;
   struct BloodDrip { Vec2 pos; float life; };
   BloodDrip blood_drips_[kMaxBloodDrips];

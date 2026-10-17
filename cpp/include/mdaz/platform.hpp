@@ -68,6 +68,8 @@ public:
                                  int /*sx*/, int /*sy*/, int /*sw*/, int /*sh*/,
                                  float /*angle_deg*/ = 0.f, float /*alpha*/ = 1.f) {}
   virtual void end_frame() = 0;
+  // Saves the current back buffer as BMP; call before end_frame().
+  virtual bool save_screenshot(const char* /*path*/) { return false; }
   virtual bool read_file(const char* path, char** out_data, std::size_t* out_size) = 0;
   virtual bool write_file(const char* path, const void* data, std::size_t size) = 0;
   virtual int screen_w() const { return kPspWidth; }

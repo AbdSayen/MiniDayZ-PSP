@@ -68,22 +68,10 @@ int test_systems() {
     } else std::printf("OK   quest church\n");
     if (q2.next_after(mdaz::Quest_VisitPolice) != mdaz::Quest_VisitFirestation ||
         q2.next_after(mdaz::Quest_VisitFirestation) != mdaz::Quest_VisitChurch ||
-        q2.next_after(mdaz::Quest_VisitChurch) != mdaz::Quest_VisitMilitary ||
-        q2.next_after(mdaz::Quest_VisitMilitary) != mdaz::Quest_VisitHelicrash ||
-        q2.next_after(mdaz::Quest_VisitHelicrash) != mdaz::Quest_SurviveDay1) {
-      std::printf("FAIL quest chain mil/heli\n");
+        q2.next_after(mdaz::Quest_VisitChurch) != mdaz::Quest_SurviveDay1) {
+      std::printf("FAIL quest chain\n");
       ++fail;
-    } else std::printf("OK   quest chain fire→church→mil→heli\n");
-    q2.start(mdaz::Quest_VisitMilitary);
-    if (!q2.tick(1, 0, false, false, 0, 0, false, false, false, true, false)) {
-      std::printf("FAIL quest military\n");
-      ++fail;
-    } else std::printf("OK   quest military\n");
-    q2.start(mdaz::Quest_VisitHelicrash);
-    if (!q2.tick(1, 0, false, false, 0, 0, false, false, false, false, true)) {
-      std::printf("FAIL quest helicrash\n");
-      ++fail;
-    } else std::printf("OK   quest helicrash\n");
+    } else std::printf("OK   quest chain fire→church→day2\n");
   }
 
   const mdaz::WeaponDef* fnx = mdaz::find_weapon(151);

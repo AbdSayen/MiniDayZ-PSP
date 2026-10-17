@@ -113,8 +113,6 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     platform.draw_rect(gx0, gy0, gw0 * (game.gasmask_filter() / 100.f), 3.f,
                        0.35f, 0.7f, 0.35f, 0.95f);
   }
-  if (game.limp_t() > 0.f)
-    platform.draw_text(gx(8.f), gh(132.f), "LIMP", 0.85f, 0.55f, 0.35f);
   if (game.adrenaline_t() > 0.f)
     platform.draw_text(gx(50.f), gh(132.f), "ADR", 0.5f, 0.9f, 0.55f);
 
@@ -246,7 +244,7 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       else if (bdy < 0.f) dir = (bdx > 0.f) ? "NE" : "NW";
       else dir = (bdx > 0.f) ? "SE" : "SW";
       std::snprintf(buf, sizeof(buf), "%s %s", location_label(best_t), dir);
-      platform.draw_text(gx(200.f), gy(90.f), buf, 0.65f, 0.7f, 0.5f);
+      platform.draw_text(gx(36.f), gy(150.f), buf, 0.65f, 0.7f, 0.5f);
     }
   }
 
@@ -257,11 +255,8 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     if (game.near_campfire()) tip = "R COOK";
     else if (game.near_choppable_tree() &&
              (eqid == 202 || eqid == 204 || eqid == 206)) tip = "E CHOP";
-    else if (eqid == 201) tip = "E DIG CACHE";
+    else if (eqid == 201) tip = "E DIG";
     else if (game.near_vehicle() && !game.driving()) tip = "E MOUNT / G STASH";
-    else if (game.near_shore() && game.player().survival.water < 92.f) tip = "E DRINK";
-    else if (game.limp_t() > 0.f) tip = "LIMP — SPLINT/SEW";
-    else if (game.player().torch_on && game.wetness() > 50.f) tip = "TORCH WET";
     else if (game.crouching()) tip = "CROUCH";
     if (tip) platform.draw_text(gx(200.f), gy(700.f), tip, 0.65f, 0.75f, 0.55f);
   }
@@ -362,11 +357,9 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
 
   // Inventory panel (Tab) — original icons + name/count
   if (game.show_bag()) {
-    if (spr(platform, "gui_panel-sheet0"))
-      platform.draw_sprite_frame("gui_panel-sheet0", 280, 36, 190, 200,
-                                 1, 1, 60, 20, 0.f, 0.94f);
-    else
-      platform.draw_rect(280, 36, 190, 200, 0.05f, 0.05f, 0.05f, 0.88f);
+    // gui_panel is a 60×20 vital-bar frame; stretching it to a list box smears it, so use a flat box.
+    platform.draw_rect(279, 35, 192, 202, 0.55f, 0.5f, 0.38f, 0.9f);
+    platform.draw_rect(280, 36, 190, 200, 0.06f, 0.06f, 0.05f, 0.9f);
     platform.draw_text(288, 42, "BAG", 0.9f, 0.85f, 0.7f);
     int row = 0;
     for (int i = 0; i < game.inventory().slot_count() && row < 11; ++i) {

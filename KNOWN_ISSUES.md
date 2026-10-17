@@ -36,11 +36,34 @@ Last updated: 2026-10-17 (desktop playable; PSP EBOOT still unverified)
 | Starter inventory | Lean survival kit by difficulty (food/water/knife/rags/matches/clothes; Novice +hatchet+bag). Exact C2 seed table unextracted; debug mega-kit removed 2026-10-17. |
 | Plus / Reloaded | Out of scope (baseline 1.4.1). |
 
+## Not confirmed in original (possible invented mechanics)
+
+Audit 2026-10-17 (`node tools/audit_port.js` + keyword search in `original_docs/data.js`): no evidence in the C2 export for the following. They violate "не реализуй отсутствующие в оригинале механики" unless proven — candidates for removal.
+
+| Feature | Evidence |
+|---------|----------|
+| Craft_heatpack / Craft_flare / Craft_baseball_bat | 0 hits in data.js; real Craft_* ids are Craft_1/3/4/5/21/22/31/32/33 + arrows |
+| Craft_3 / Craft_21 / Craft_22 recipe contents | Ids exist, but ingredient UIDs (308–311) not resolved — recipes are guesses |
+| Tree stump regrowth | 0 hits (regrow/stump) |
+| Overencumber slowdown | 0 hits (encumb/weight) |
+| Drinking from shore | 0 hits (drink_water/pond/well) |
+| Limp / leg fracture | 0 hits (limp/fracture/legs) |
+| Radio shortens airdrop by 45 s | not found in Airdrop_* events |
+| Night aggro ×1.25 (zeds/animals), wolves fear fire | 0 hits (fear); not in Zombies/NPCs groups |
+| Rain extinguishes torch | not found |
+| Shovel caches | not found |
+| Typed zed-corpse loot | not found in Spawn_drop |
+| Quest steps Military / Helicrash | C2 quests use Q_task_id/Q_target_sid — order not extracted |
+
 ## Presentation gaps (priority 5)
 
 | Issue | Detail |
 |-------|--------|
-| Overworld tiles | Uses `ground_lvl1–4` / forest / sand / water atlases with biome hash — not original RLE tilemap state. |
+| Overworld tiles | Base grass = `ground_lvl1` fill tile; the 8 tilemap instances placed in the Map layout (ground / sand / forest / water) are drawn from `cpp/data/world_tilemaps.txt` (decoded RLE via `tools/extract_world_tilemaps.js`). The interior of the map is mostly bare grass because C2 `Map_generation` (which stamps the template tilemaps at runtime) is not ported. |
+| Menu | Background is the original Menu layout (tilemaps + 149 sprites from `tools/extract_layout_sprites.js`), slow camera pan, `menu_btn_wood` buttons. Pan speed/path is a guess, not taken from C2 events. |
+| Font | 5×7 bitmap font drawn with rects, not the original `bitmap_font` sheet. |
+| Minimap | Dark square with markers; original minimap rendering not ported. |
+| Buildings | POI sprites drawn at native data.js frame size × world scale 0.55; placement comes from our mapgen, not C2 layout positions. |
 | Clothing layers | Skin swap by worn tier + gasmask badge; not full per-piece clothing spritesheets on body. |
 | Exact HUD layout | Scaled GUI crops from original sheets; some panels approximate. |
 

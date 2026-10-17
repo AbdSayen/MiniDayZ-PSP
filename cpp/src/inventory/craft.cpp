@@ -31,7 +31,7 @@ const CraftRecipe kRecipes[] = {
   { "Cook_ruffe", 96, 1, 93, 1, 0, 0, true, 0, false }, // Ruffe → big fillet
   { "Cook_herring", 95, 1, 91, 1, 0, 0, true, 0, false }, // Herring → small fillet
   { "Cook_salmon", 96, 1, 92, 1, 0, 0, true, 0, false }, // Salmon → big fillet
-  // Improvised splint: sticks + rags → bandage (also clears limp in try_craft)
+  // Improvised splint: sticks + rags → bandage
   { "Craft_improvised_splint", 18, 1, 38, 2, 26, 1, false, 0, false },
   // Torch from ashwood + rags (tinder)
   { "Craft_torch_tinder", 23, 1, 37, 1, 26, 1, false, 0, false },
@@ -48,13 +48,6 @@ const CraftRecipe kRecipes[] = {
   { "Craft_rags_bandolier", 83, 1, 26, 6, 41, 1, false, 0, false }, // rags+rope → bandolier
   { "Craft_rags_bandana", 266, 1, 26, 2, 0, 0, false, 0, false }, // 2 rags → bandana
   { "Craft_burlap_from_rags", 40, 1, 26, 3, 41, 1, false, 0, false }, // rags+rope → burlap sack
-  { "Craft_heatpack", 34, 1, 26, 2, 24, 1, false, 0, false }, // 2 rags + matches → heatpack
-  { "Craft_flare", 20, 1, 26, 1, 24, 1, false, 0, false }, // rag + matches → flare
-  { "Craft_baseball_bat", 203, 1, 38, 4, 41, 1, false, 0, false }, // 4 sticks + rope → bat
-  // C2 Craft_21/22/3 fire-kit variants (object UIDs ignored; item IDs from event nums)
-  { "Craft_21_firekit", 23, 1, 38, 2, 49, 1, false, 0, true }, // sticks+papers+knife → kit
-  { "Craft_22_firekit", 23, 1, 50, 1, 49, 1, false, 0, false }, // pile+papers (+rags optional path)
-  { "Craft_3_matches", 24, 2, 49, 1, 26, 1, false, 0, false }, // papers+rags → 2 matches
   { "Cook_steak_pan", 61, 1, 60, 1, 0, 0, true, 210, false }, // pan as unconsumed tool
 };
 

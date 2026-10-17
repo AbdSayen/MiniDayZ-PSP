@@ -33,9 +33,7 @@ public:
   void clear();
   Animal* spawn(AnimalType t, Vec2 p);
   // Returns melee damage dealt to player this frame (wolves/dogs).
-  // has_fire: campfire near player repels wolves/dogs. is_night: night hunt boost.
-  float update(float dt, Vec2 player_pos, bool player_bleeding = false,
-               Vec2 fire_pos = Vec2(), bool has_fire = false, bool is_night = false);
+  float update(float dt, Vec2 player_pos, bool player_bleeding = false);
   int count() const { return count_; }
   int alive_count() const;
   int alive_of_type(AnimalType t) const;

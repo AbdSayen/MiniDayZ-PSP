@@ -203,8 +203,8 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   pack_crops(crops, out);
   pack_traps(traps, out);
   pack_fires(fires, out);
+  out.reserved_v10 = 0.f;
   if (extras) {
-    out.limp_t = extras->limp_t;
     out.airdrop_t = extras->airdrop_t;
     out.airdrop_x = extras->airdrop_x;
     out.airdrop_y = extras->airdrop_y;
@@ -213,7 +213,6 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.bunker_looted = extras->bunker_looted;
     out.melee_break_mul = extras->melee_break_mul > 0.f ? extras->melee_break_mul : 1.f;
   } else {
-    out.limp_t = 0.f;
     out.airdrop_t = 360.f;
     out.airdrop_x = out.airdrop_y = 0.f;
     out.tent_warmth_t = 0.f;
@@ -298,12 +297,10 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   unpack_fires(in, fires);
   if (extras) {
     if (in.version >= 10) {
-      extras->limp_t = in.limp_t;
       extras->airdrop_t = in.airdrop_t;
       extras->airdrop_x = in.airdrop_x;
       extras->airdrop_y = in.airdrop_y;
     } else {
-      extras->limp_t = 0.f;
       extras->airdrop_t = 360.f;
       extras->airdrop_x = extras->airdrop_y = 0.f;
     }

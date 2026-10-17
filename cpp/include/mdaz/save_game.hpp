@@ -96,8 +96,8 @@ struct SaveBlob {
   // v9 extras — placed traps
   int trap_count;
   SavedTrap traps[TrapSaveView::kMax];
-  // v10 extras — limp + airdrop timer/pos
-  float limp_t;
+  // v10 extras — airdrop timer/pos; first float kept for v10–v13 layout, always 0
+  float reserved_v10;
   float airdrop_t;
   float airdrop_x, airdrop_y;
   // v11 extras — campfires + tent warmth
@@ -112,7 +112,6 @@ struct SaveBlob {
 };
 
 struct WorldExtras {
-  float limp_t;
   float airdrop_t;
   float airdrop_x, airdrop_y;
   float tent_warmth_t;
@@ -120,7 +119,7 @@ struct WorldExtras {
   int bunker_looted;
   float melee_break_mul;
   WorldExtras()
-    : limp_t(0.f), airdrop_t(360.f), airdrop_x(0.f), airdrop_y(0.f),
+    : airdrop_t(360.f), airdrop_x(0.f), airdrop_y(0.f),
       tent_warmth_t(0.f), adrenaline_t(0.f), bunker_looted(0), melee_break_mul(1.f) {}
 };
 
