@@ -16,6 +16,8 @@ const char kC2_Craft_22[] = "Craft_22";
 const char kC2_Craft_31[] = "Craft_31";
 const char kC2_Craft_32[] = "Craft_32";
 const char kC2_Craft_33[] = "Craft_33";
+// Craft_34: tab 311 (b_military_barrack); menu gates item 26 and/or 50; On-function craft_ok + pickpile (same family as Craft_33).
+const char kC2_Craft_34[] = "Craft_34";
 const char kC2_build_fence1[] = "build_fence1";
 const char kC2_build_fence2[] = "build_fence2";
 const char kC2_pickpile[] = "pickpile";
@@ -31,6 +33,7 @@ void touch_craft_audit_anchors() {
   (void)kC2_Craft_31;
   (void)kC2_Craft_32;
   (void)kC2_Craft_33;
+  (void)kC2_Craft_34;
   (void)kC2_build_fence1;
   (void)kC2_build_fence2;
   (void)kC2_pickpile;

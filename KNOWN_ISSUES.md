@@ -17,7 +17,6 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 | Item numeric stats | Eat/drink/heal only from `item_activate` IV literals (`item_activate_iv_sverka.json`). Unknown food/drink/medical with no IV restore **refuse use** (no invented +15/+10). **Morphine (45) blocked**. Cook-only raws (60/71/91–94) and mushroom (97) cannot be eaten. |
 | Infection acquire | **Partial:** tetracycline clears IV34; vitamins suppress DoT. `Player_get_hit` does **not** set IV34 in export — invented on-hit infection roll **removed**. Full C2 disease-acquire tree still open. |
 | Gun jam / melee break | **Removed:** no jam/misfire/break weapon strings in `data.js`. `gun_jammed_` / `melee_break_mul_` kept for save compat only (always clear / unused). |
-| Gun jam / melee break | **Removed:** no jam/misfire/break weapon strings in `data.js`. `gun_jammed_` / `melee_break_mul_` kept for save compat only (always clear / unused). |
 | Wetness meter | **Removed (gameplay):** no Wet/soak/drench strings in export. `wetness_` forced 0 (save field retained). Rain/cold still via `Day_mode`/`Rain` survival path. |
 | Firearm base damage | **Sverka:** Fist **10**/range **45**, FNX (151) bullet IV0 **23** via `Game_events` spawn chain (`tools/_scan_bullet_spawn_iv0.js` → `weapon_bullet_iv0_sverka.json`), sword **15**, hit variance ±25%, bleed start `random(3)>=1.5`. All other firearms use **`kGunDmgPlaceholder` (25)** in `weapons.cpp` — not sverka. Do not promote `extract_gun_iv0_deep.js` candidates without the IV1←172 + IV0 literal path. |
 | Mag capacities | Approximate; not fully extracted from C2 reload events. |
@@ -30,11 +29,10 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 | Reload / ammo | **Sverka:** `Mag_reload` sets `Reloading_mag`, pistol path uses `reload_pistol` when `player_weapons` IV93==0, rifle uses `Reload_rifle`; `Reloading_time=1` on many pistol paths; `+19` ticks added in `Mag_reload_body.json`. Port: R/V → `try_mag_reload`, `consume_ammo_for_reload` (bag then IV19→17→11→9 cascade), pistol 1s reload. **Partial:** clothing IV93 containers — 4 sub-slots/region, gates from worn piece; per-garment cargo volume (Array **536** col **301** / IV10 UI in `Items_update`) — table not in export, not wired. Exact per-weapon IV0 reload ticks still open. |
 | Bunker zeds | **Partial C2:** `Zed_check_bunker` → `spawn_bunker_zeds(need)`; **21** `bunker_zed_spawner` XY from export (`bunker_zed_spawners.json`, `%` layout **approx**) then random walkable fallback. |
 | Bunker entrance | `ensure_bunker_entrance` when **CurrentLevel≥1** (new game uses level 1); C2 `items_on_ground` instance / full spawn sheet not decoded. |
-| Quests | Chain zeds→…→church→military→helicrash→day2 — not full C2 tutorial tree. |
+| Quests | **Partial C2:** tasks **1–3** with **`generate_quest_item_rewards`** / pin / karma (`quest.cpp`, `test_systems`). Task **2** uses **`spawn_bandit_camp`** at quest anchor (not obj245 markers). Ambient **`Bot_bandits_check_situation`** + IV0 filter on **`Spawn_team_camp`** markers ported; quest **`Remove_bandit_bots`** distance branch still partial; full C2 quest GUI strings not decoded. |
 | Farming | Seeds plant → grow **20s** (item_activate sverka) → E harvest; rain/night modifiers; plots in MDAZ **v8**. Not full C2 garden plots. |
 | Placed traps | Bear/barbed/fence/mine/claymore persist in MDAZ **v9**. |
 | Campfires / tent | Active fires + tent warmth timer persist in MDAZ **v11**; adrenaline in **v12**. |
-| Tree chop | Fell trees leave stumps that regrow ~90–150s. |
 | Airdrop timer | Uses `Airdrop_Timer_ALL`=360 (was recharge 400); radio ETA HUD shows estimate. |
 | Vehicle stash | 4 slots via G near vehicle; persisted in MDAZ **v7**. |
 | Drivable cars | **Partial C2:** UAZ/Volga/Truck spawn; fuel max **100**, gas **+40**; crash hp **15/30**; UAZ/Volga **600s+1s** respawn (**verified** in `Drivable vehicles_decoded.txt`). IV284 **−8/0.1s** tick, **boat** fuel, **truck** respawn **blocked** in `data.js` export (`vehicle_fuel_truck_decode.txt`). **GUI_draw_vehicle** partial: `gui_car_bg`, vertical **bar_fuel** / **bar_hp** (IV284/294), nofuel/disable icons, car button sprites; hidden when not driving (**GUI_erase_vehicle** / States). **Sverka (partial):** mount flow mirrors **AltMove** + **Pin** (t184/t946) from `Drivable vehicles` decode; **`kDriveSpeedApprox=160`** — custom AltMove/Vehicle behavior JS missing from export, so px/s not decodable. Full **Vehicles UI** / dpad, truck respawn, boat fuel tick **not** verified. |
@@ -51,24 +49,17 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 | Starter inventory | Lean survival kit by difficulty in `game.cpp`. `starter_inventory_decode.json`: Start events hints only (ids 1–4 counts), no Spawn_drop seed table — **blocked**. |
 | Plus / Reloaded | Out of scope (baseline 1.4.1). |
 
-## Not confirmed in original (possible invented mechanics)
+## Removed: not found in original (2026-10-17)
 
-Audit 2026-10-17 (`node tools/audit_port.js` + keyword search in `original_docs/data.js`): no evidence in the C2 export for the following. They violate "не реализуй отсутствующие в оригинале механики" unless proven — candidates for removal.
+Audit (`node tools/audit_port.js` + keyword search in `original_docs/data.js`) found no evidence for these, so they were **removed** from code and tests: Craft_heatpack / Craft_flare / Craft_baseball_bat; guessed Craft_3 / Craft_21 / Craft_22 recipes (ingredient UIDs 308–311 unresolved); tree stump regrowth; overencumber slowdown; drinking from shore; limp / leg fracture; radio shortening airdrop by 45 s; night aggro / night animal spawn boost; wolves fleeing campfires; rain extinguishing torch; shovel caches; typed zed-corpse loot; bear-trap infection; Military / Helicrash quest steps.
 
-| Feature | Evidence |
-|---------|----------|
-| Craft_heatpack / Craft_flare / Craft_baseball_bat | 0 hits in data.js; real Craft_* ids are Craft_1/3/4/5/21/22/31/32/33 + arrows |
-| Craft_3 / Craft_21 / Craft_22 recipe contents | Ids exist, but ingredient UIDs (308–311) not resolved — recipes are guesses |
-| Tree stump regrowth | 0 hits (regrow/stump) |
-| Overencumber slowdown | 0 hits (encumb/weight) |
-| Drinking from shore | 0 hits (drink_water/pond/well) |
-| Limp / leg fracture | 0 hits (limp/fracture/legs) |
-| Radio shortens airdrop by 45 s | not found in Airdrop_* events |
-| Night aggro ×1.25 (zeds/animals), wolves fear fire | 0 hits (fear); not in Zombies/NPCs groups |
-| Rain extinguishes torch | not found |
-| Shovel caches | not found |
-| Typed zed-corpse loot | not found in Spawn_drop |
-| Quest steps Military / Helicrash | C2 quests use Q_task_id/Q_target_sid — order not extracted |
+Save format: MDAZ v10–v13 keep the old `limp_t` float as `reserved_v10` (written as 0, ignored on load) so existing saves still load. A saved Military/Helicrash quest id is dropped on load.
+
+Still unverified against C2 (not yet removed): many `craft.cpp` recipes without a matching `"Craft_*"` name in `data.js` (e.g. rags→bandage, cooks, molotov); wetness soak rates; full C2 quest GUI strings (task logic + rewards/pin/karma are ported).
+
+**Removed 2026-10-17 (no `"Craft_*"` in C2):** raincoat/bandolier/bandana/burlap-sack/fence-pile/firekit inventory recipes; guessed rain sprint slow + rain infection roll; military POI + placed barbed-wire move slow; auto heatpack; crow corpse scavenging + crow stick drop.
+
+**Sverka from `item_activate` decode:** Whiskey IV14+20 / IV16+40 (temperature); Energy drink IV14+20 + 10s max-speed boost (135/125 vs 110/100); Heatpack manual IV16+25; Flare IV26=1 → torch equip only (no zed-pull/campfire). See `cpp/docs_gen/consumable_item_activate_sverka.json`.
 
 ## Presentation gaps (priority 5)
 

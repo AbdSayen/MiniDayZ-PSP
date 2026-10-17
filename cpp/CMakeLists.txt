@@ -138,6 +138,10 @@ if(MDAZ_BUILD_TESTS)
     tests/test_weapon_unlocks.cpp
     tests/test_spawn_global.cpp
     tests/test_spawn_params.cpp
+    tests/test_c2_session_globals.cpp
+    tests/test_tutorial.cpp
+    tests/test_map_fidelity.cpp
+    tests/test_player_visual.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

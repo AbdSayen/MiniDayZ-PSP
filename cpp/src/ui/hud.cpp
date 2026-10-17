@@ -6,7 +6,6 @@
 #include "mdaz/inventory.hpp"
 #include "mdaz/inventory_ui.hpp"
 #include "mdaz/item_sprites.hpp"
-
 #include "mdaz/map_labels.hpp"
 #include "mdaz/mapgen.hpp"
 #include "mdaz/platform.hpp"

@@ -12,6 +12,10 @@ int test_weather();
 int test_weapon_unlocks();
 int test_spawn_global();
 int test_spawn_params();
+int test_c2_session_globals();
+int test_tutorial();
+int test_map_fidelity();
+int test_player_visual();
 
 int main() {
   int failed = 0;
@@ -27,6 +31,10 @@ int main() {
   failed += test_weapon_unlocks();
   failed += test_spawn_global();
   failed += test_spawn_params();
+  failed += test_c2_session_globals();
+  failed += test_tutorial();
+  failed += test_map_fidelity();
+  failed += test_player_visual();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

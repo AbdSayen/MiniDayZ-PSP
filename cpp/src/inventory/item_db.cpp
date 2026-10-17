@@ -72,85 +72,158 @@ void ItemDatabase::classify(ItemDef& d) {
     d.category = ItemCat_Misc;
   }
 
-  // Candidate restores from extract_consumable_stats / item_id_effects (not full sverka).
-  // known_stats=true only when a clear IV13/14/15 literal was seen for that item.
-  if (d.id == 25) { // Whiskey — IV14≈20/25 water-like restores in events
-    d.category = ItemCat_Drink;
-    d.water_restore = 20.f;
-    d.food_restore = 5.f; // mild caloric bump from alcohol events
-    d.known_stats = true;
-  } else if (d.id == 28) { // Saline bag
-    d.category = ItemCat_Medical;
-    d.heal_amount = 25.f;
-    d.known_stats = true;
-  } else if (d.id == 19) { // Blood bag
-    d.category = ItemCat_Medical;
-    d.heal_amount = 45.f;
-    d.known_stats = true;
-  } else if (d.id == 18) { // Bandage
-    d.category = ItemCat_Medical;
-    d.known_stats = true;
-  } else if (d.id == 45) { // Morphine
-    d.category = ItemCat_Medical;
-    d.heal_amount = 5.f;
-    d.known_stats = true;
-  } else if (d.id == 34) { // Heatpack
-    d.category = ItemCat_Misc;
-    d.known_stats = true;
-  } else if (d.id == 30) { // Nota-Cola
-    d.category = ItemCat_Drink;
-    d.water_restore = 30.f;
-  } else if (d.id == 29) { // Vitamins — mild infection clear chance + heal
-    d.category = ItemCat_Medical;
-    d.heal_amount = 5.f;
-    d.known_stats = true;
-  } else if (d.id == 46) { // Tetracycline — clears infection
-    d.category = ItemCat_Medical;
-    d.known_stats = true;
-  } else if (d.id == 20) { // Flare
-    d.category = ItemCat_Misc;
-  } else if (d.id == 265) { // NVG
-    d.category = ItemCat_Misc;
-  }
-
-  // Common food/drink placeholders (not sverka — better than generic 20)
-  if (d.id == 1) { d.category = ItemCat_Food; d.food_restore = 35.f; }      // Canned beans
-  else if (d.id == 2) { // Canned spaghetti — item_id_effects IV13+30 IV14+5
+  // Consumable restores: sverka from item_activate (see cpp/docs_gen/item_activate_iv_sverka.json).
+  // known_stats=true only when item_activate has literal IV13/14/15/16 Add/Set on player obj172.
+  if (d.id == 1) {
     d.category = ItemCat_Food;
     d.food_restore = 30.f;
     d.water_restore = 5.f;
     d.known_stats = true;
-  } else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; } // Tactical bacon
-  else if (d.id == 4) { // Rice — item_id_effects IV14+22
+  } else if (d.id == 2) {
     d.category = ItemCat_Food;
-    d.water_restore = 22.f;
+    d.food_restore = 20.f;
     d.known_stats = true;
-  } else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; } // Tomato
-  else if (d.id == 6) { // Apple — item_id_effects IV13+7 IV14+8
+  } else if (d.id == 3) {
     d.category = ItemCat_Food;
-    d.food_restore = 7.f;
-    d.water_restore = 8.f;
+    d.food_restore = 35.f;
     d.known_stats = true;
-  } else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Banana
-  else if (d.id == 8) { // Pipsi — item_id_effects IV14+20 (dominant drink restore)
+  } else if (d.id == 4) {
+    d.category = ItemCat_Food;
+    d.food_restore = 65.f;
+    d.known_stats = true;
+  } else if (d.id == 5 || d.id == 6 || d.id == 7) {
+    d.category = ItemCat_Food;
+    d.food_restore = 15.f;
+    d.water_restore = 5.f;
+    d.known_stats = true;
+  } else if (d.id == 8 || d.id == 9 || d.id == 30) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 30.f;
+    d.known_stats = true;
+  } else if (d.id == 10) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 50.f;
+    d.known_stats = true;
+  } else if (d.id == 18) {
+    d.category = ItemCat_Medical;
+    d.known_stats = true; // stops bleed — no IV13/14/15 literal
+  } else if (d.id == 19) {
+    d.category = ItemCat_Medical;
+    d.heal_amount = 50.f;
+    d.known_stats = true;
+  } else if (d.id == 20) {
+    d.category = ItemCat_Misc;
+    d.known_stats = true; // IV26 torch — consumable_item_activate_sverka.json
+  } else if (d.id == 25) {
     d.category = ItemCat_Drink;
     d.water_restore = 20.f;
     d.known_stats = true;
-  } else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Spite
-  else if (d.id == 10) { // Kvas — item_id_effects IV13+10 IV14+10
-    d.category = ItemCat_Drink;
-    d.water_restore = 10.f;
-    d.food_restore = 10.f;
+  } else if (d.id == 27) {
+    d.category = ItemCat_Food;
+    d.food_restore = 15.f;
+    d.water_restore = 15.f;
     d.known_stats = true;
+  } else if (d.id == 28) {
+    d.category = ItemCat_Medical;
+    d.heal_amount = 25.f;
+    d.known_stats = true;
+  } else if (d.id == 29) {
+    d.category = ItemCat_Medical;
+    d.known_stats = true; // IV32 buff 60s — item_activate_medicals_sverka.json
+  } else if (d.id == 31) {
+    d.category = ItemCat_Food;
+    d.food_restore = 20.f;
+    d.water_restore = 20.f;
+    d.known_stats = true;
+  } else if (d.id == 32) {
+    d.category = ItemCat_Food;
+    d.food_restore = 20.f;
+    d.water_restore = 5.f;
+    d.known_stats = true;
+  } else if (d.id == 33) {
+    d.category = ItemCat_Food;
+    d.food_restore = 15.f;
+    d.water_restore = 15.f;
+    d.known_stats = true;
+  } else if (d.id == 34) {
+    d.category = ItemCat_Misc;
+    d.known_stats = true;
+  } else if (d.id == 45) {
+    d.category = ItemCat_Medical;
+    // No item_activate CompareParam 45 in C2 export (blocked)
+  } else if (d.id == 46) {
+    d.category = ItemCat_Medical;
+    d.known_stats = true; // clears infection IV34
+  } else if (d.id == 54) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 12.5f;
+    d.known_stats = true;
+  } else if (d.id == 55) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 25.f;
+    d.known_stats = true;
+  } else if (d.id == 60 || d.id == 71 || d.id == 91 || d.id == 92 || d.id == 93 || d.id == 94) {
+    d.category = ItemCat_Food; // cook-only / no eat IV in item_activate
+  } else if (d.id == 61) {
+    d.category = ItemCat_Food;
+    d.food_restore = 50.f;
+    d.water_restore = 10.f;
+    d.heal_amount = 15.f;
+    d.known_stats = true;
+  } else if (d.id == 62) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 100.f;
+    d.known_stats = true;
+  } else if (d.id == 63) {
+    d.category = ItemCat_Drink;
+    d.water_restore = 20.f;
+    d.known_stats = true;
+  } else if (d.id == 72) {
+    d.category = ItemCat_Food;
+    d.food_restore = 35.f;
+    d.water_restore = 10.f;
+    d.heal_amount = 30.f;
+    d.known_stats = true;
+  } else if (d.id == 73) {
+    d.category = ItemCat_Food;
+    d.food_restore = 10.f;
+    d.water_restore = 10.f;
+    d.known_stats = true;
+  } else if (d.id == 74) {
+    d.category = ItemCat_Food;
+    d.food_restore = 10.f;
+    d.water_restore = 20.f;
+    d.known_stats = true;
+  } else if (d.id == 85) {
+    d.category = ItemCat_Food;
+    d.food_restore = 40.f;
+    d.water_restore = 40.f;
+    d.known_stats = true;
+  } else if (d.id == 95 || d.id == 96) {
+    d.category = ItemCat_Food;
+    d.food_restore = 50.f;
+    d.water_restore = 10.f;
+    d.heal_amount = 15.f;
+    d.known_stats = true;
+  } else if (d.id == 35) {
+    d.category = ItemCat_Misc;
+    d.known_stats = true;
+  } else if (d.id == 36) {
+    d.category = ItemCat_Misc;
+    d.known_stats = true;
+  } else if (d.id == 265) {
+    d.category = ItemCat_Misc;
+  } else if (d.id == 97) {
+    d.category = ItemCat_Food; // easter egg — not a food restore
+  } else if (d.id == 21) {
+    d.category = ItemCat_Misc;
+  } else if (d.id == 102) {
+    d.category = ItemCat_Misc;
+  } else if (d.id == 456) {
+    d.category = ItemCat_Misc;
+  } else if (d.id == 250) {
+    d.category = ItemCat_Clothing;
   }
-  else if (d.id == 54) { d.category = ItemCat_Drink; d.water_restore = 40.f; } // Water bottle
-  else if (d.id == 55) { d.category = ItemCat_Drink; d.water_restore = 50.f; } // Canteen
-  else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE ration
-  else if (d.id == 97) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Mushroom — risky
-  else if (d.id == 21) { d.category = ItemCat_Misc; } // F1 grenade
-  else if (d.id == 102) { d.category = ItemCat_Misc; } // Molotov
-  else if (d.id == 456) { d.category = ItemCat_Misc; } // Tent
-  else if (d.id == 250) { d.category = ItemCat_Clothing; } // Gasmask
 }
 
 static const char* find_key(const char* p, const char* key) {

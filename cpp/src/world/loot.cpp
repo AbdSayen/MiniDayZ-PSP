@@ -156,14 +156,73 @@ LootPile* LootSystem::spawn_item(Vec2 pos, ItemId id, int n) {
   p.item_count = 0;
   p.active = true;
   p.is_airdrop = false;
+  p.quest_reward_case = false;
+  p.kind = LootKind_Generic;
+  p.respawn_t = 0.f;
+  p.respawn_sec = 0;
   push_item(p, id, n > 0 ? n : 1);
   return &p;
 }
 
+LootPile* LootSystem::spawn_quest_reward(Vec2 pos, ItemId id, int n) {
+  LootPile* p = spawn_item(pos, id, n);
+  if (p) p->quest_reward_case = true;
+  return p;
+}
+
 LootPile* LootSystem::spawn_drop_from_player(Vec2 player_pos, ItemId id, int count) {
   if (id <= 0 || count <= 0) return 0;
-  // Spawn_drop_from_player passes player X/Y; many Spawn_drop paths use Y+15 offset.
   return spawn_item(Vec2(player_pos.x, player_pos.y + 15.f), id, count);
+}
+
+void LootSystem::schedule_respawn(LootPile& p) {
+  p.active = false;
+  p.item_count = 0;
+  p.respawn_sec = next_loot_stagger_sec(p.respawn_sec);
+  p.respawn_t = static_cast<float>(p.respawn_sec);
+}
+
+void LootSystem::tick_respawn(float dt, Rng& rng) {
+  for (int i = 0; i < count_; ++i) {
+    LootPile& p = piles_[i];
+    if (p.active || p.respawn_t <= 0.f) continue;
+    p.respawn_t -= dt;
+    if (p.respawn_t > 0.f) continue;
+    const Vec2 pos = p.pos;
+    const LootPileKind kind = p.kind;
+    const bool air = p.is_airdrop;
+    const unsigned char stagger = p.respawn_sec;
+    LootPile* fresh = 0;
+    switch (kind) {
+    case LootKind_Military: fresh = spawn_military(pos, rng); break;
+    case LootKind_Hospital: fresh = spawn_hospital(pos, rng); break;
+    case LootKind_Gas: fresh = spawn_gas_station(pos, rng); break;
+    case LootKind_Helicrash: fresh = spawn_helicrash(pos, rng); break;
+    case LootKind_Police: fresh = spawn_police(pos, rng); break;
+    case LootKind_Fire: fresh = spawn_firestation(pos, rng); break;
+    case LootKind_Church: fresh = spawn_church(pos, rng); break;
+    case LootKind_Secret: fresh = spawn_secret(pos, rng); break;
+    case LootKind_Airdrop: fresh = spawn_airdrop(pos, rng); break;
+    case LootKind_Civilian: fresh = spawn_civilian(pos, rng); break;
+    default: fresh = spawn_random(pos, rng); break;
+    }
+    if (!fresh) {
+      p.respawn_t = kLootRespawnStaggerSec[0];
+      continue;
+    }
+    if (fresh != &p) {
+      p = *fresh;
+      p.pos = pos;
+      p.kind = kind;
+      p.is_airdrop = air;
+      p.respawn_sec = stagger;
+      fresh->active = false;
+      fresh->item_count = 0;
+      fresh->respawn_t = 0.f;
+    } else {
+      p.respawn_t = 0.f;
+    }
+  }
 }
 
 LootPile* LootSystem::spawn_airdrop(Vec2 pos, Rng& rng, const WeaponUnlockState* unlocks) {
@@ -241,10 +300,18 @@ LootPile* LootSystem::spawn_gas_station(Vec2 pos, Rng& rng) {
 
 LootPile* LootSystem::spawn_civilian(Vec2 pos, Rng& rng) {
   static const ItemId kCiv[] = {
-    1, 2, 5, 8, 10, 18, 26, 30, 42, 54, 203, 300, 350, 24, 50, 353, 354, 40
+    1, 2, 5, 6, 7, 8, 9, 10, 18, 25, 26, 30, 31, 33, 35, 36, 42, 54, 55, 201, 203, 210,
+    300, 301, 350, 351, 24, 50, 353, 354, 356, 365, 40,
+    47, 48, 68, 82 // shovel / hacksaw + seed packs for farmer/cook loop
   };
-  return spawn_table(pos, rng, kCiv,
-                     static_cast<int>(sizeof(kCiv) / sizeof(kCiv[0])), 1, 3);
+  LootPile* p = spawn_table(pos, rng, kCiv,
+                            static_cast<int>(sizeof(kCiv) / sizeof(kCiv[0])), 1, 3);
+  if (p) p->kind = LootKind_Civilian;
+  if (p && rng.next_float() < 0.25f) {
+    static const ItemId kSeed[] = { 47, 48, 68 };
+    push_item(*p, kSeed[rng.next_int(0, 2)], 1);
+  }
+  return p;
 }
 
 LootPile* LootSystem::spawn_military(Vec2 pos, Rng& rng, const WeaponUnlockState* unlocks) {
