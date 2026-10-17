@@ -1,38 +1,43 @@
 # Porting Status
 
-Last updated: 2026-10-16 (autonomous session)  
-Baseline: Mini DAYZ **1.4.1** (`original_docs/`)
+Last updated: 2026-10-17 (autonomous session)  
+Baseline: Mini DAYZ **1.4.1** (`original_docs/`)  
+Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runtime.js`.
 
 | Subsystem | Status | Notes |
 |-----------|--------|-------|
-| Source / architecture | Протестирована | Construct 2 export |
+| Source / architecture | Протестирована | Construct 2 export mapped; see `PORTING_PLAN.md` |
 | Balance globals | **Сверена с оригиналом** | `balance_globals.hpp` |
 | Survival tick (States) | **Сверена с оригиналом** | Every 5s / bleed 1s / cold on difficulty |
-| Item catalog (200) | Протестирована | |
-| Item consumable numbers | Исследована | Meds + whiskey/veg/meat/fish restores; many still placeholders |
+| Item catalog (200) | Протестирована | JSON + icons for all 200 IDs |
+| Item consumable numbers | Исследована | Partial known_stats; drink IDs fixed (54/55 water/canteen; 10=Kvas) |
+| Item ground/hotbar icons | Реализуется | `item_sprites.cpp` full ID map |
 | Map fog / visited | Реализуется | 16×16 sector visited + minimap fog |
-| Weapon base damage | Исследована | Fist **10**/range **45**; FNX IV0 candidate **23**; sword **15** |
-| Bullet hit variance | **Сверена с оригиналом** | ±25% (`roll_bullet_damage`) |
+| Weapon defs (catalog) | Реализуется | IDs 151–187 + melee; most dmg **placeholder** |
+| Weapon base damage | Исследована | Fist **10**/45; FNX **23**; sword **15** sverka |
+| Bullet hit variance | **Сверена с оригиналом** | ±25% |
 | Fist melee range | **Сверена с оригиналом** | 45 |
-| Combat zed/wolf dmg | **Сверена с оригиналом** | 9/6/13/10 |
-| Player_get_hit bleed | **Сверена с оригиналом** | `random(3) >= 1.5` ≈ 50%; Bleed timer 60s |
-| Dispersion | **Сверена с оригиналом** | Persistent `DispersionState` on Game |
+| Combat zed/wolf dmg | **Сверена с оригиналом** | Regular 9/6/13/10; Novice 6/4/9/6; Veteran 10/8/15/10 |
+| Player_get_hit bleed | **Сверена с оригиналом** | ≈50%; Bleed 60s |
+| Dispersion | **Сверена с оригиналом** | Persistent state |
 | Timers loot/zed/airdrop | **Сверена с оригиналом** (constants) | |
-| Loot piles | Реализуется | Hospital/gas/civ/military POI tables; airdrop |
-| Zombie AI types | Реализуется | Buried/screamer/army/tank; mil tanks; secret screamers |
-| Animals | Реализуется | Pack howl; night denser wolves; deer stampede; meat drops |
-| Bandits / bots | Реализуется | Melee + gun; flee <30% HP; BOT_RESPAWN_TIME wired |
-| Vehicles | Реализуется | Car/boat/bike; fuel; paddle from sticks; headlights |
-| Quests | Реализуется | Chain: kill10→hosp→bunker→bandits→fish→day2 |
-| Map generation | Реализуется | POI 16×16 + roads/trees/water band + bunker enter |
-| Bunker loader | Протестирована | 225×74; enter/exit + loot/zeds dens |
-| Craft | Реализуется | Bow/arrows/bag/splint/rope/torch/molotov/cook/firekit |
-| Save | Протестирована | MDAZ v6 filter/fish; v2–v5 load OK |
-| Audio | Реализуется | Procedural SDL (gun/hit/howl/airdrop/cough/rain/craft) |
-| Campfire | Реализуется | Place kit (T), warmth, cook requires fire |
-| Desktop SDL host | Протестирована | Vendored SDL2 2.30.9; 480×272 logical @ 2× |
-| Platform / PSP | Заблокирована внешним ограничением | PSPSDK EBOOT not verified |
-| Full parity | Реализуется | |
+| Loot piles | Реализуется | Typed POI (incl. fire/church) + weighted Spawn_drop + airdrop |
+| Zombie AI types | Реализуется | Buried/screamer/army/tank/… |
+| Animals | Реализуется | Howl/stampede/crow/deer SFX |
+| Bandits / bots | Реализуется | Melee+gun; markers |
+| Vehicles | Реализуется | Car/boat/bike + 4-slot trunk stash (G) |
+| Quests | Реализуется | Chain …church→military→helicrash→day2; HUD panel |
+| Map generation | Реализуется | POI sectors; atlas ground (not C2 RLE map) |
+| Bunker loader | Протестирована | RLE 225×74; tile atlas draw |
+| Craft | Реализуется | Core + Craft_21/22/3 firekit paths; incomplete vs full C2 |
+| Save | Протестирована | MDAZ v13 (+bunker_looted/melee mul) |
+| Audio | Реализуется | Original OGG tags + procedural fallback |
+| Sprites / VFX | Реализуется | C2 sheet crops; muzzle/shell/blood/fish/grenade |
+| HUD / menu | Реализуется | GUI crops; bag icons; night_overlay; amenu_bg |
+| Campfire | Реализуется | Place/warmth/cook |
+| Desktop SDL host | Протестирована | SDL2 2.30.9; 480×272 |
+| Platform / PSP | Заблокирована внешним ограничением | Makefile present; EBOOT **not** verified |
+| Full parity | Реализуется | Mechanics first; presentation improving |
 
 ## How to run (desktop)
 

@@ -12,6 +12,7 @@ int test_combat() {
   std::printf("--- test_combat ---\n");
   int fail = 0;
 
+  mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Regular);
   if (mdaz::zed_melee_damage(mdaz::Zed_Normal) != 9.f) {
     std::printf("FAIL normal zed dmg\n");
     ++fail;
@@ -21,6 +22,20 @@ int test_combat() {
     std::printf("FAIL wolf dmg\n");
     ++fail;
   } else std::printf("OK   wolf dmg=10\n");
+
+  mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Novice);
+  if (mdaz::zed_melee_damage(mdaz::Zed_Normal) != 6.f ||
+      mdaz::npc_wolf_damage() != 6.f) {
+    std::printf("FAIL novice npc dmg table\n");
+    ++fail;
+  } else std::printf("OK   novice npc dmg 6/6\n");
+  mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Veteran);
+  if (mdaz::zed_melee_damage(mdaz::Zed_Normal) != 10.f ||
+      mdaz::zed_melee_damage(mdaz::Zed_Army) != 15.f) {
+    std::printf("FAIL veteran npc dmg table\n");
+    ++fail;
+  } else std::printf("OK   veteran npc dmg 10/15\n");
+  mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Regular);
 
   mdaz::DispersionState disp;
   disp.reset_from_globals();

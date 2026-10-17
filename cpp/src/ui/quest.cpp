@@ -22,6 +22,10 @@ void QuestState::start(QuestId q) {
   case Quest_KillBandits3: target = 3; break;
   case Quest_CatchFish2: target = 2; break;
   case Quest_VisitPolice: target = 1; break;
+  case Quest_VisitFirestation: target = 1; break;
+  case Quest_VisitChurch: target = 1; break;
+  case Quest_VisitMilitary: target = 1; break;
+  case Quest_VisitHelicrash: target = 1; break;
   default: target = 0; break;
   }
 }
@@ -33,13 +37,19 @@ QuestId QuestState::next_after(QuestId done) const {
   case Quest_FindBunker: return Quest_KillBandits3;
   case Quest_KillBandits3: return Quest_CatchFish2;
   case Quest_CatchFish2: return Quest_VisitPolice;
-  case Quest_VisitPolice: return Quest_SurviveDay1;
+  case Quest_VisitPolice: return Quest_VisitFirestation;
+  case Quest_VisitFirestation: return Quest_VisitChurch;
+  case Quest_VisitChurch: return Quest_VisitMilitary;
+  case Quest_VisitMilitary: return Quest_VisitHelicrash;
+  case Quest_VisitHelicrash: return Quest_SurviveDay1;
   default: return Quest_None;
   }
 }
 
 bool QuestState::tick(int days, int zeds_killed, bool near_bunker, bool near_hospital,
-                      int bandits_killed, int fish_caught, bool near_police) {
+                      int bandits_killed, int fish_caught, bool near_police,
+                      bool near_firestation, bool near_church,
+                      bool near_military, bool near_helicrash) {
   if (active == Quest_None) return false;
   bool done = false;
   switch (active) {
@@ -74,6 +84,22 @@ bool QuestState::tick(int days, int zeds_killed, bool near_bunker, bool near_hos
     progress = near_police ? 1 : 0;
     done = near_police;
     break;
+  case Quest_VisitFirestation:
+    progress = near_firestation ? 1 : 0;
+    done = near_firestation;
+    break;
+  case Quest_VisitChurch:
+    progress = near_church ? 1 : 0;
+    done = near_church;
+    break;
+  case Quest_VisitMilitary:
+    progress = near_military ? 1 : 0;
+    done = near_military;
+    break;
+  case Quest_VisitHelicrash:
+    progress = near_helicrash ? 1 : 0;
+    done = near_helicrash;
+    break;
   default:
     break;
   }
@@ -94,6 +120,10 @@ const char* QuestState::label() const {
   case Quest_KillBandits3: return "KILL 3 BANDITS";
   case Quest_CatchFish2: return "CATCH 2 FISH";
   case Quest_VisitPolice: return "FIND POLICE STATION";
+  case Quest_VisitFirestation: return "FIND FIRE STATION";
+  case Quest_VisitChurch: return "FIND CHURCH";
+  case Quest_VisitMilitary: return "FIND MILITARY BASE";
+  case Quest_VisitHelicrash: return "FIND HELICRASH";
   default: return "";
   }
 }

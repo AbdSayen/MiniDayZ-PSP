@@ -31,7 +31,7 @@ public:
   Zombie* spawn(ZedType t, Vec2 p);
   void update(float dt, Vec2 player_pos, float& damage_to_player, bool player_running = false,
               bool player_crouch = false, bool player_bleeding = false,
-              bool player_coughing = false);
+              bool player_coughing = false, bool is_night = false);
   int alive_count() const;
   bool scream_active() const { return scream_active_; }
   Vec2 scream_pos() const { return scream_pos_; }

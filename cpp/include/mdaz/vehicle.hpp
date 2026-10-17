@@ -19,9 +19,16 @@ struct Vehicle {
   float fuel;
   float hp;
   bool active;
+  // Trunk / basket stash (car/boat/bike)
+  static const int kStashSlots = 4;
+  ItemId stash_ids[kStashSlots];
+  int stash_counts[kStashSlots];
 
   Vehicle();
   void reset();
+  bool stash_add(ItemId id, int count);
+  bool stash_take(ItemId& out_id, int& out_count); // first non-empty
+  int stash_used() const;
 };
 
 class VehicleSystem {

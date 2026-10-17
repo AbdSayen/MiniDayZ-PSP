@@ -3,17 +3,18 @@
 #include "mdaz/timers.hpp"
 
 #include <cstdio>
+#include <cstring>
 
 int test_craft() {
   std::printf("--- test_craft / timers ---\n");
   int fail = 0;
 
   mdaz::WorldTimers t;
-  if (t.zed_respawn != 60.f || t.loot_respawn != 1480.f || t.airdrop != 400.f) {
+  if (t.zed_respawn != 60.f || t.loot_respawn != 1480.f || t.airdrop != 360.f) {
     std::printf("FAIL timer inits zed=%g loot=%g air=%g\n", t.zed_respawn, t.loot_respawn, t.airdrop);
     ++fail;
   } else {
-    std::printf("OK   timer globals 60 / 1480 / 400\n");
+    std::printf("OK   timer globals 60 / 1480 / 360\n");
   }
 
   mdaz::ItemDatabase db;
@@ -153,6 +154,133 @@ int test_craft() {
       std::printf("FAIL craft papers+sticks->matches\n");
       ++fail;
     } else std::printf("OK   craft papers->matches\n");
+  }
+
+  // C2 Craft_fishing_rod: ashwood + rope → basic fishing rod
+  {
+    mdaz::ItemDatabase db4;
+    db4.load_from_json_string(
+      "{\"items\":[{\"id\":37,\"name\":\"Ashwood stick\"},{\"id\":41,\"name\":\"Rope\"},"
+      "{\"id\":87,\"name\":\"Basic Fishing rod\"}]}");
+    mdaz::Inventory inv8;
+    inv8.add_item(37, 1, db4);
+    inv8.add_item(41, 1, db4);
+    const mdaz::CraftRecipe* rod = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->result_id == 87 && c->ing_a == 37 && c->ing_b == 41) { rod = c; break; }
+    }
+    if (!rod || !mdaz::craft_do(inv8, *rod, db4)) {
+      std::printf("FAIL craft ashwood+rope->fishing rod\n");
+      ++fail;
+    } else std::printf("OK   craft ashwood+rope->rod\n");
+  }
+
+  // 2 rags → bandana
+  {
+    mdaz::ItemDatabase dbB;
+    dbB.load_from_json_string(
+      "{\"items\":[{\"id\":26,\"name\":\"Rags\"},{\"id\":266,\"name\":\"Bandana\"}]}");
+    mdaz::Inventory invB;
+    invB.add_item(26, 2, dbB);
+    const mdaz::CraftRecipe* ban = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->result_id == 266 && c->ing_a == 26) { ban = c; break; }
+    }
+    if (!ban || !mdaz::craft_do(invB, *ban, dbB)) {
+      std::printf("FAIL craft rags->bandana\n");
+      ++fail;
+    } else std::printf("OK   craft rags->bandana\n");
+  }
+
+  // Salmon → big fillet cook
+  {
+    mdaz::ItemDatabase db5;
+    db5.load_from_json_string(
+      "{\"items\":[{\"id\":92,\"name\":\"Salmon\"},{\"id\":96,\"name\":\"Big fish fillet\"}]}");
+    mdaz::Inventory inv9;
+    inv9.add_item(92, 1, db5);
+    const mdaz::CraftRecipe* cook = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->result_id == 96 && c->ing_a == 92 && c->requires_fire) { cook = c; break; }
+    }
+    if (!cook || !mdaz::craft_do(inv9, *cook, db5)) {
+      std::printf("FAIL cook salmon->fillet\n");
+      ++fail;
+    } else std::printf("OK   cook salmon->big fillet\n");
+  }
+
+  // 2 rags + matches → heatpack
+  {
+    mdaz::ItemDatabase dbH;
+    dbH.load_from_json_string(
+      "{\"items\":[{\"id\":26,\"name\":\"Rags\"},{\"id\":24,\"name\":\"Matches\"},"
+      "{\"id\":34,\"name\":\"Heatpack\"}]}");
+    mdaz::Inventory invH;
+    invH.add_item(26, 2, dbH);
+    invH.add_item(24, 1, dbH);
+    const mdaz::CraftRecipe* hp = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->result_id == 34 && c->ing_a == 26) { hp = c; break; }
+    }
+    if (!hp || !mdaz::craft_do(invH, *hp, dbH)) {
+      std::printf("FAIL craft rags+matches->heatpack\n");
+      ++fail;
+    } else std::printf("OK   craft heatpack\n");
+  }
+
+  // 4 sticks + rope → baseball bat
+  {
+    mdaz::ItemDatabase dbBat;
+    dbBat.load_from_json_string(
+      "{\"items\":[{\"id\":38,\"name\":\"Wood sticks\"},{\"id\":41,\"name\":\"Rope\"},"
+      "{\"id\":203,\"name\":\"Baseball bat\"}]}");
+    mdaz::Inventory invBat;
+    invBat.add_item(38, 4, dbBat);
+    invBat.add_item(41, 1, dbBat);
+    const mdaz::CraftRecipe* bat = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->result_id == 203) { bat = c; break; }
+    }
+    if (!bat || !mdaz::craft_do(invBat, *bat, dbBat)) {
+      std::printf("FAIL craft sticks+rope->bat\n");
+      ++fail;
+    } else std::printf("OK   craft baseball bat\n");
+  }
+
+  // Craft_21: sticks+papers+knife → firekit
+  {
+    mdaz::ItemDatabase db21;
+    db21.load_from_json_string(
+      "{\"items\":[{\"id\":38,\"name\":\"Wood sticks\"},{\"id\":49,\"name\":\"Papers\"},"
+      "{\"id\":42,\"name\":\"Hunter knife\"},{\"id\":23,\"name\":\"Campfire kit\"}]}");
+    mdaz::Inventory inv21;
+    inv21.add_item(38, 2, db21);
+    inv21.add_item(49, 1, db21);
+    inv21.add_item(42, 1, db21);
+    const mdaz::CraftRecipe* r21 = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && c->name && std::strstr(c->name, "Craft_21")) { r21 = c; break; }
+    }
+    if (!r21 || !mdaz::craft_do(inv21, *r21, db21)) {
+      std::printf("FAIL craft_21 firekit\n");
+      ++fail;
+    } else {
+      bool knife_kept = false, kit = false;
+      for (int i = 0; i < inv21.slot_count(); ++i) {
+        if (inv21.slot(i).id == 42) knife_kept = true;
+        if (inv21.slot(i).id == 23) kit = true;
+      }
+      if (!knife_kept || !kit) {
+        std::printf("FAIL craft_21 knife/kit\n");
+        ++fail;
+      } else std::printf("OK   craft_21 firekit\n");
+    }
   }
 
   return fail ? 1 : 0;

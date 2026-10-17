@@ -21,6 +21,48 @@ void Vehicle::reset() {
   fuel = 100.f;
   hp = 100.f;
   active = false;
+  for (int i = 0; i < kStashSlots; ++i) {
+    stash_ids[i] = 0;
+    stash_counts[i] = 0;
+  }
+}
+
+bool Vehicle::stash_add(ItemId id, int count) {
+  if (id <= 0 || count <= 0) return false;
+  for (int i = 0; i < kStashSlots; ++i) {
+    if (stash_ids[i] == id && stash_counts[i] > 0) {
+      stash_counts[i] += count;
+      return true;
+    }
+  }
+  for (int i = 0; i < kStashSlots; ++i) {
+    if (stash_ids[i] == 0 || stash_counts[i] <= 0) {
+      stash_ids[i] = id;
+      stash_counts[i] = count;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Vehicle::stash_take(ItemId& out_id, int& out_count) {
+  for (int i = 0; i < kStashSlots; ++i) {
+    if (stash_ids[i] > 0 && stash_counts[i] > 0) {
+      out_id = stash_ids[i];
+      out_count = stash_counts[i];
+      stash_ids[i] = 0;
+      stash_counts[i] = 0;
+      return true;
+    }
+  }
+  return false;
+}
+
+int Vehicle::stash_used() const {
+  int n = 0;
+  for (int i = 0; i < kStashSlots; ++i)
+    if (stash_ids[i] > 0 && stash_counts[i] > 0) ++n;
+  return n;
 }
 
 VehicleSystem::VehicleSystem()

@@ -4,12 +4,21 @@
 
 namespace mdaz {
 
+namespace {
+inline float airdrop_period() {
+  // Airdrop_Timer_ALL = 360 is the in-game cycle; Airdrop_recharge = 400 init fallback
+  return static_cast<float>(balance::Airdrop_Timer_ALL > 0
+                                ? balance::Airdrop_Timer_ALL
+                                : balance::Airdrop_recharge);
+}
+} // namespace
+
 // Respawn / recharge timers from Game_events globals (init values verified).
 struct WorldTimers {
   float zed_respawn;   // ZED_RESPAWN_TIME = 60
   float bot_respawn;   // BOT_RESPAWN_TIME = 10
   float loot_respawn;  // LOOT_RESPAWN_TIME = 1480
-  float airdrop;       // Airdrop_recharge = 400
+  float airdrop;       // Airdrop_Timer_ALL = 360 (preferred)
   float animal_respawn; // scaffold — between bot and loot cadence
 
   WorldTimers() { reset(); }
@@ -18,7 +27,7 @@ struct WorldTimers {
     zed_respawn = static_cast<float>(balance::ZED_RESPAWN_TIME);
     bot_respawn = static_cast<float>(balance::BOT_RESPAWN_TIME);
     loot_respawn = static_cast<float>(balance::LOOT_RESPAWN_TIME);
-    airdrop = static_cast<float>(balance::Airdrop_recharge);
+    airdrop = airdrop_period();
     animal_respawn = 90.f;
   }
 
@@ -42,7 +51,7 @@ struct WorldTimers {
   }
   bool consume_airdrop() {
     if (airdrop > 0.f) return false;
-    airdrop = static_cast<float>(balance::Airdrop_recharge);
+    airdrop = airdrop_period();
     return true;
   }
   bool consume_bot_respawn() {

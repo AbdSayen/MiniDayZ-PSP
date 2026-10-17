@@ -30,6 +30,7 @@ OBJS = \
   ../../src/save/save_game.o \
   ../../src/ui/hud.o \
   ../../src/ui/quest.o \
+  ../../src/ui/item_sprites.o \
   main_psp.o \
   platform_psp.o
 

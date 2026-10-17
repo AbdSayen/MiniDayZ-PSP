@@ -1,5 +1,8 @@
 # Building Mini DAYZ C++
 
+Last verified desktop build: **2026-10-17** (MinGW + vendored SDL2).  
+PSP EBOOT: **not verified** on this machine — see `KNOWN_ISSUES.md`.
+
 ## Prerequisites (desktop host — verified path on this project)
 
 - CMake ≥ 3.16
@@ -34,7 +37,7 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | Z / Space | Attack / confirm |
 | E | Loot / bunker / mount / chop tree (axe) / fish / building search / forage |
 | C | Use item (food/med/NVG/flare/morphine/energy) / wear armor·bag |
-| R | Craft (bow/arrows/bag/molotov…) / cook near fire |
+| R | Craft (bow/arrows/bag/molotov/heatpack/flare/bat…) / cook near fire |
 | F | Throw F1 / molotov / stick |
 | C + Battery | Refill torch/NVG charge |
 | C + Tent | Place shelter (long warmth) |
@@ -50,7 +53,8 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | Q / X / mousewheel | Cycle hotbar |
 | Tab | Hold: inventory list |
 | 1–8 | Equip hotbar slot |
-| F5 / F9 | Save / load (`save.mdaz` v6) |
+| F5 / F9 | Save / load (`save.mdaz` v13 — +bunker/melee mul) |
+| E near shore | Drink (hands dirty / bottle·canteen refill) |
 | P | Pause |
 | Enter | New game from menu |
 | 1/2/3 (menu) | Novice / Regular / Veteran |

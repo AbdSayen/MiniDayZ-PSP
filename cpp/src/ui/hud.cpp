@@ -1,4 +1,5 @@
 #include "mdaz/hud.hpp"
+#include "mdaz/balance_globals.hpp"
 #include "mdaz/game.hpp"
 #include "mdaz/item_sprites.hpp"
 #include "mdaz/map_labels.hpp"
@@ -196,6 +197,22 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     platform.draw_text(gx(36.f), gy(112.f), qbuf, 0.9f, 0.85f, 0.5f);
   }
 
+  // Radio airdrop ETA (Airdrop_Timer_Hours = 12 shown as game-hours estimate)
+  if (game.radio_t() > 0.f) {
+    const float eta_s = game.airdrop_eta();
+    const float hours = eta_s / static_cast<float>(balance::Day_Night_speed) *
+                        static_cast<float>(balance::Airdrop_Timer_Hours);
+    char rbuf[64];
+    if (eta_s <= 0.f)
+      std::snprintf(rbuf, sizeof(rbuf), "RADIO: AIRDROP SOON");
+    else
+      std::snprintf(rbuf, sizeof(rbuf), "RADIO: DROP ~%.1fh (%.0fs)",
+                    hours > 0.05f ? hours : eta_s / 60.f, eta_s);
+    platform.draw_text(140.f, 248.f, rbuf, 0.55f, 0.85f, 0.95f);
+  }
+  if (game.airdrop_alert() > 0.f)
+    platform.draw_text(160.f, 8.f, "AIRDROP INBOUND", 0.95f, 0.75f, 0.25f);
+
   // Compact compass
   if (!game.in_bunker()) {
     float best = 1e12f;
@@ -205,7 +222,8 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       const MapLocation& L = game.mapgen().location(i);
       if (L.type != Loc_BunkerEntrance && L.type != Loc_Hospital &&
           L.type != Loc_Military && L.type != Loc_GasStation &&
-          L.type != Loc_Police) continue;
+          L.type != Loc_Police && L.type != Loc_Firestation &&
+          L.type != Loc_Church && L.type != Loc_Secret) continue;
       const float dx = L.pos.x - pl.pos.x;
       const float dy = L.pos.y - pl.pos.y;
       const float d2 = dx * dx + dy * dy;
@@ -239,8 +257,11 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     if (game.near_campfire()) tip = "R COOK";
     else if (game.near_choppable_tree() &&
              (eqid == 202 || eqid == 204 || eqid == 206)) tip = "E CHOP";
-    else if (eqid == 201) tip = "E DIG";
-    else if (game.near_vehicle() && !game.driving()) tip = "E MOUNT";
+    else if (eqid == 201) tip = "E DIG CACHE";
+    else if (game.near_vehicle() && !game.driving()) tip = "E MOUNT / G STASH";
+    else if (game.near_shore() && game.player().survival.water < 92.f) tip = "E DRINK";
+    else if (game.limp_t() > 0.f) tip = "LIMP — SPLINT/SEW";
+    else if (game.player().torch_on && game.wetness() > 50.f) tip = "TORCH WET";
     else if (game.crouching()) tip = "CROUCH";
     if (tip) platform.draw_text(gx(200.f), gy(700.f), tip, 0.65f, 0.75f, 0.55f);
   }

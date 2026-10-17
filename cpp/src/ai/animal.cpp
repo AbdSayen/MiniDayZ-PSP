@@ -1,12 +1,12 @@
 #include "mdaz/animal.hpp"
-#include "mdaz/balance_globals.hpp"
+#include "mdaz/combat.hpp"
 
 #include <cmath>
 
 namespace mdaz {
 
 float wolf_melee_damage() {
-  return static_cast<float>(balance::Wolf_dmg); // 10
+  return npc_wolf_damage();
 }
 
 Animal::Animal()
@@ -67,7 +67,8 @@ int AnimalSystem::alive_of_type(AnimalType t) const {
   return n;
 }
 
-float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding) {
+float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
+                           Vec2 fire_pos, bool has_fire, bool is_night) {
   float dmg = 0.f;
   // Pack howl: if any wolf is close, pull distant packmates in
   bool pack_alert = false;
@@ -89,10 +90,23 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding) {
     const float dist = std::sqrt(dx * dx + dy * dy);
 
     if (a.type == Animal_Wolf || a.type == Animal_Dog) {
+      // Campfire scare — back off from flames
+      if (has_fire) {
+        const float fdx = a.pos.x - fire_pos.x;
+        const float fdy = a.pos.y - fire_pos.y;
+        const float fd = std::sqrt(fdx * fdx + fdy * fdy);
+        if (fd < 95.f && fd > 1.f) {
+          a.pos.x += (fdx / fd) * a.speed * 1.1f * dt;
+          a.pos.y += (fdy / fd) * a.speed * 1.1f * dt;
+          continue;
+        }
+      }
       float range = pack_alert ? 520.f : 400.f;
       if (player_bleeding) range += 140.f; // blood scent
+      if (is_night) range += 80.f;
       float spd = a.speed * (pack_alert ? 1.15f : 1.f);
       if (player_bleeding) spd *= 1.1f;
+      if (is_night) spd *= 1.12f;
       if (dist > 1.f && dist < range) {
         a.pos.x += (dx / dist) * spd * dt;
         a.pos.y += (dy / dist) * spd * dt;

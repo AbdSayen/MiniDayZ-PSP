@@ -17,7 +17,7 @@ struct LootPile {
   bool is_airdrop;
 };
 
-static const int kMaxLootPiles = 64;
+static const int kMaxLootPiles = 96;
 
 class LootSystem {
 public:
@@ -33,6 +33,9 @@ public:
   LootPile* spawn_secret(Vec2 pos, Rng& rng);
   LootPile* spawn_helicrash(Vec2 pos, Rng& rng);
   LootPile* spawn_police(Vec2 pos, Rng& rng);
+  LootPile* spawn_firestation(Vec2 pos, Rng& rng);
+  LootPile* spawn_church(Vec2 pos, Rng& rng);
+  LootPile* spawn_bunker(Vec2 pos, Rng& rng);
   LootPile* spawn_item(Vec2 pos, ItemId id, int count);
   LootPile* spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int table_len, int min_n, int max_n);
   int count() const { return count_; }

@@ -77,7 +77,7 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
                            bool is_running, bool is_night, bool is_raining,
                            bool perk_camel, bool perk_hamster, bool perk_regen,
                            bool perk_metabolism, float clothing_insulation) {
-  (void)is_running;
+  (void)is_running; // sprint metabolism not extracted as sverka yet
   (void)weather_temp;
 
   // Bleed timer: States Every 1s while bleeding (IV22)
@@ -151,8 +151,10 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
 
   if (infected) {
     blood -= 0.045f * dt; // infection DoT
-    temperature -= 0.8f * dt; // fever chill toward freeze
-    if (temperature < 0.f) temperature = 0.f;
+    // Fever: push temperature toward ~82 (heat stress), not freeze
+    if (temperature < 82.f) temperature += 1.2f * dt;
+    else temperature -= 0.3f * dt; // oscillate near fever peak
+    temperature = clampf(temperature, 0.f, 100.f);
     set_reason(*this, "Infection");
   }
   blood = clampf(blood, 0.f, 100.f);

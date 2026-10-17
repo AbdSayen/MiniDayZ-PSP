@@ -34,21 +34,65 @@ float apply_difficulty_damage_reducer(float damage, float reducer) {
   return out > 0.f ? out : 0.f;
 }
 
+namespace {
+// Mutable NPC dmg — Regular defaults = balance_globals; overridden per difficulty
+// from C2 States difficulty branches (weapon_hints / var_assignments).
+float g_zed_dmg = static_cast<float>(balance::Zed_dmg);         // 9
+float g_zed_fast_dmg = static_cast<float>(balance::Zed_fast_dmg); // 6
+float g_zed_army_dmg = static_cast<float>(balance::Zed_army_dmg); // 13
+float g_wolf_dmg = static_cast<float>(balance::Wolf_dmg);       // 10
+float g_bandit_melee = 12.f;  // unarmed bot bayonet/fist stub
+float g_bandit_gun_melee = 10.f;
+} // namespace
+
+void set_npc_damage_for_difficulty(Difficulty d) {
+  // Extracted SetVariable triples near difficulty: Novice 6/9/6, Regular 9/13/10,
+  // Veteran 10/15/10 (Wolf mid-path showed 8 once — prefer globals 10 for Regular).
+  if (d == Difficulty_Novice) {
+    g_zed_dmg = 6.f;
+    g_zed_fast_dmg = 4.f;
+    g_zed_army_dmg = 9.f;
+    g_wolf_dmg = 6.f;
+    g_bandit_melee = 9.f;
+    g_bandit_gun_melee = 8.f;
+  } else if (d == Difficulty_Veteran) {
+    g_zed_dmg = 10.f;
+    g_zed_fast_dmg = 8.f;
+    g_zed_army_dmg = 15.f;
+    g_wolf_dmg = 10.f;
+    g_bandit_melee = 14.f;
+    g_bandit_gun_melee = 12.f;
+  } else {
+    g_zed_dmg = static_cast<float>(balance::Zed_dmg);
+    g_zed_fast_dmg = static_cast<float>(balance::Zed_fast_dmg);
+    g_zed_army_dmg = static_cast<float>(balance::Zed_army_dmg);
+    g_wolf_dmg = static_cast<float>(balance::Wolf_dmg);
+    g_bandit_melee = 12.f;
+    g_bandit_gun_melee = 10.f;
+  }
+}
+
+float npc_wolf_damage() { return g_wolf_dmg; }
+
+float npc_bandit_melee_damage(bool has_gun) {
+  return has_gun ? g_bandit_gun_melee : g_bandit_melee;
+}
+
 float zed_melee_damage(ZedType type) {
   switch (type) {
   case Zed_Fast:
-    return static_cast<float>(balance::Zed_fast_dmg); // 6
+    return g_zed_fast_dmg;
   case Zed_Army:
   case Zed_ArmyShooter:
-    return static_cast<float>(balance::Zed_army_dmg); // 13
+    return g_zed_army_dmg;
   case Zed_Tank:
     // Zed_tank_dmg_deal group exists; exact multiplier still extracting — use army as floor
-    return static_cast<float>(balance::Zed_army_dmg) * 1.5f;
+    return g_zed_army_dmg * 1.5f;
   case Zed_Screamer:
   case Zed_Buried:
   case Zed_Normal:
   default:
-    return static_cast<float>(balance::Zed_dmg); // 9
+    return g_zed_dmg;
   }
 }
 
@@ -80,6 +124,13 @@ void DispersionState::on_shot(bool running) {
 
 void DispersionState::update(float dt) {
   angle -= cooldown_step * dt;
+  if (angle < 0.f) angle = 0.f;
+}
+
+void DispersionState::update_settled(float dt, bool braced) {
+  // Crouch / stand-still settles aim faster (dispersion_bonus global unused=0)
+  float step = cooldown_step * (braced ? 2.2f : 1.f);
+  angle -= step * dt;
   if (angle < 0.f) angle = 0.f;
 }
 

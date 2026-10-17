@@ -1,41 +1,54 @@
 # Known Issues & Limitations
 
-Last updated: 2026-10-16 (desktop playable; PSP EBOOT still unverified)
+Last updated: 2026-10-17 (desktop playable; PSP EBOOT still unverified)
 
 ## External / environment
 
 | Issue | Impact | Status |
 |-------|--------|--------|
-| No Construct `.capx` source — only HTML5 export | Some editor-only data unavailable | Permanent for this repo |
-| SDL2 previously missing | Desktop host now uses vendored `cpp/third_party/SDL2-2.30.9` | Working on this PC |
+| No Construct `.capx` — only HTML5 export | Some editor-only data unavailable | Permanent for this repo |
 | PSPSDK not verified on this PC | No successful EBOOT yet | **Do not claim PSP support** |
 | Online login / DeltaDNA / ads in original | Not ported | Intentionally stubbed offline |
 
-## Incomplete extractions logic
+## Incomplete / approximate logic
 
 | Issue | Detail |
 |-------|--------|
-| Item numeric stats | Names/IDs from XML only. Food/water restore values in C++ are **placeholders** until extracted from C2 event actions / arrays. Marked `known_stats=false`. |
-| Survival tick | **Sverka:** States `Every 5s` drains food/water by `*_current`; bleed `Every 1s` (−0.5 / −0.25 w/ metabolism). Cold Day/Night/Rain set on difficulty select. Worn clothing insulation (warm pieces), fire/tent/bunker/indoor bonuses wired; full C2 gear curves TBD. |
-| HUD `0.72` | Bar width scale in Update_Stats — **not** a cold formula. |
-| Day/Night / Rain mapping | Globals `Day_Night_speed=720`, `Rain_speed=360` are used, but Construct timeline units ≠ seconds; phase advancement is approximate. |
-| Weathercold globals init=0 | Extracted initial values are 0; runtime assignment in events not yet reverse-engineered. |
-| Map generation | Full C2 `Map generation` / `Location loader` not ported — sector grid + collision stub only. |
-| Bunker | RLE loader fixed (was empty due to JSON string parse bug); wall collision heuristic on tile IDs; dens/loot stub. |
-| Firearms per-weapon base dmg | Partial: Fist **10**/range **45**, FNX IV0 candidate **23**, sword **15**. Other guns still placeholders. **Hit variance is sverka:** `roll_bullet_damage` = round(base×U(0.75,1.25)). Bleed start **sverka:** `random(3)>=1.5`. |
-| Vehicles, perks, quests | Car/boat/bike drive + fuel/paddle/headlights/runover; quest chain kill→hospital→bunker→bandits→fish→police→day2. Perks unlock via play (snowborn/camel/hamster/regen/runner/metabolism/hunter/farmer). Full C2 groups incomplete. |
-| Crafting recipes | Partial: bow/arrows/bag/pack/molotov/cook(+ruffe)/firekit/splint/torch/rope/fence — full `Craft_*` C2 groups not ported. |
-| Airdrop / loot respawn | Timers + richer airdrop tables wired; exact Spawn_drop parity incomplete. |
-| Audio / sprite rendering | Procedural SDL cues (gun/hit/howl/airdrop). Core overworld uses original `images/*-sheetN.png` (player/zeds/animals/buildings/vehicles/trees); full HUD atlas / clothing layers / tilemap parity still partial. |
-| Traps | Bear trap + barbed wire + wood fence + claymore placeable stubs (not full C2 trap events). |
-| Exact starter inventory | Expanded playable kit (medical, NVG, flare, craft mats, traps) — not original spawn table. |
-| Crouch | Ctrl crouch quieter vs zeds (aggro mul 0.55) — not full C2 stealth group. |
-| Plus / Reloaded content | Out of scope (baseline is 1.4.1). |
+| Item numeric stats | Many food/water/heal values are placeholders (`known_stats=false`). Whiskey and some cooked meats marked known where IV literals were clear. |
+| Firearm base damage | **Sverka:** Fist **10**/range **45**, FNX IV0 **23**, sword **15**, hit variance ±25%, bleed start `random(3)>=1.5`. Other guns in `weapons.cpp` are **PLACEHOLDER** (heuristic / DayZ-like stubs). Deep IV0 scan (`tools/extract_gun_iv0_deep.js`) is noisy — do not promote candidates to sverka without event-path proof. |
+| Mag capacities | Approximate; not fully extracted from C2 reload events. |
+| Survival / weather timebase | `Day_Night_speed` / `Rain_speed` globals used; Construct timeline units ≠ wall-clock seconds — phase advance approximate. |
+| Map generation | Sector POI grid + roads/trees/water band — **not** full C2 `Map generation` / Location loader tilemaps. No real RLE `ground_lvl*` world data yet (visual tiling is procedural from atlases). |
+| Bunker | RLE load + walkable dens; typed bunker/mil/hosp loot + multi-type zeds — still not full C2 bunker event tree. |
+| Crafting | Partial recipe set (bow/arrows/bag/molotov/cook/fire/splint/rod rope+duct/fence/burlap/spinning…). Full `Craft_*` groups incomplete. |
+| Quests | Chain zeds→…→church→military→helicrash→day2 — not full C2 tutorial tree. |
+| Farming | Seeds plant → grow (~35–50s) → E harvest; rain/night modifiers; plots in MDAZ **v8**. Not full C2 garden plots. |
+| Placed traps | Bear/barbed/fence/mine/claymore persist in MDAZ **v9**. |
+| Campfires / tent | Active fires + tent warmth timer persist in MDAZ **v11**; adrenaline in **v12**. |
+| Tree chop | Fell trees leave stumps that regrow ~90–150s. |
+| Airdrop timer | Uses `Airdrop_Timer_ALL`=360 (was recharge 400); radio ETA HUD shows estimate. |
+| Vehicle stash | 4 slots via G near vehicle; persisted in MDAZ **v7**. |
+| Zed / animal HP | Melee dmg sverka by difficulty; HP/speed values still stubs pending object IV extract. |
+| Difficulty NPC dmg | Novice/Regular/Veteran tables for Zed/Army/Wolf from C2 States assigns; Zed_fast Novice/Veteran interpolated (4/8). |
+| POI loot tables | Typed tables (mil/hosp/gas/heli/police/fire/church/secret) + weighted Spawn_drop — not full C2 Check_loot trees. |
+| AI | Zed/animal/bandit behaviors functional but incomplete vs C2 event trees. |
+| Audio | Original OGG tags mapped for common cues; not every C2 audio tag. |
+| Starter inventory | Lean survival kit by difficulty (food/water/knife/rags/matches/clothes; Novice +hatchet+bag). Exact C2 seed table unextracted; debug mega-kit removed 2026-10-17. |
+| Plus / Reloaded | Out of scope (baseline 1.4.1). |
+
+## Presentation gaps (priority 5)
+
+| Issue | Detail |
+|-------|--------|
+| Overworld tiles | Uses `ground_lvl1–4` / forest / sand / water atlases with biome hash — not original RLE tilemap state. |
+| Clothing layers | Skin swap by worn tier + gasmask badge; not full per-piece clothing spritesheets on body. |
+| Exact HUD layout | Scaled GUI crops from original sheets; some panels approximate. |
 
 ## Build notes
 
-- Tests cover extracted balance constants, survival multipliers, inventory, combat damage globals, save roundtrip.
-- Successful compilations and tests are recorded in `PORTING_STATUS.md` iteration log when run.
+- Desktop: MinGW + vendored SDL2 — see `BUILDING.md`.
+- Tests: `mdaz_tests.exe` (survival, combat constants, craft, bunker, save, systems).
+- Successful runs must be recorded in `PORTING_STATUS.md` when claimed.
 
 ## Legal
 

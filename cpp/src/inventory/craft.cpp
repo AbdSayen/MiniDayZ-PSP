@@ -18,6 +18,8 @@ const CraftRecipe kRecipes[] = {
   { "Craft_ashwood_bow", 163, 1, 37, 1, 41, 1, false, 0, false },
   { "Craft_firekit", 23, 1, 50, 1, 24, 1, false, 0, false },
   { "Craft_fishing_rod", 87, 1, 37, 1, 39, 1, false, 0, false }, // ashwood + duct tape
+  { "Craft_fishing_rod_rope", 87, 1, 37, 1, 41, 1, false, 0, false }, // C2 Craft_fishing_rod: ashwood + rope
+  { "Craft_spinning_rod", 86, 1, 87, 1, 39, 1, false, 0, false }, // basic rod + duct → spinning
   { "Craft_molotov", 102, 1, 25, 1, 26, 1, false, 0, false },
   { "Craft_composite_arrow", 52, 1, 51, 1, 37, 1, false, 0, false },
   // Improvised bag: burlap sack + rope; backpack: bag + 3 sticks
@@ -27,6 +29,8 @@ const CraftRecipe kRecipes[] = {
   { "Cook_rabbit", 72, 1, 71, 1, 0, 0, true, 0, false },
   { "Cook_perch", 95, 1, 94, 1, 0, 0, true, 0, false },
   { "Cook_ruffe", 96, 1, 93, 1, 0, 0, true, 0, false }, // Ruffe → big fillet
+  { "Cook_herring", 95, 1, 91, 1, 0, 0, true, 0, false }, // Herring → small fillet
+  { "Cook_salmon", 96, 1, 92, 1, 0, 0, true, 0, false }, // Salmon → big fillet
   // Improvised splint: sticks + rags → bandage (also clears limp in try_craft)
   { "Craft_improvised_splint", 18, 1, 38, 2, 26, 1, false, 0, false },
   // Torch from ashwood + rags (tinder)
@@ -37,6 +41,21 @@ const CraftRecipe kRecipes[] = {
   { "Craft_papers_matches", 24, 1, 49, 1, 38, 2, false, 0, false },
   // Woodpile at fire → charcoal substitute: woodpile → heatpack-like burn (camp kit fuel)
   { "Craft_pile_firekit", 23, 1, 50, 2, 49, 1, false, 0, false }, // 2 piles + papers → kit
+  // Extra Craft_* hints (item IDs from Game_events; quantities conservative)
+  { "Craft_burlap_raincoat", 353, 1, 40, 2, 39, 1, false, 0, false }, // 2 sacks + duct → raincoat stub
+  { "Craft_sticks_fence", 50, 1, 38, 6, 0, 0, false, 0, false }, // 6 sticks → woodpile (fence fuel)
+  { "Craft_fence_rags", 50, 1, 38, 4, 26, 2, false, 0, false }, // Craft_34-ish: sticks+rags → pile
+  { "Craft_rags_bandolier", 83, 1, 26, 6, 41, 1, false, 0, false }, // rags+rope → bandolier
+  { "Craft_rags_bandana", 266, 1, 26, 2, 0, 0, false, 0, false }, // 2 rags → bandana
+  { "Craft_burlap_from_rags", 40, 1, 26, 3, 41, 1, false, 0, false }, // rags+rope → burlap sack
+  { "Craft_heatpack", 34, 1, 26, 2, 24, 1, false, 0, false }, // 2 rags + matches → heatpack
+  { "Craft_flare", 20, 1, 26, 1, 24, 1, false, 0, false }, // rag + matches → flare
+  { "Craft_baseball_bat", 203, 1, 38, 4, 41, 1, false, 0, false }, // 4 sticks + rope → bat
+  // C2 Craft_21/22/3 fire-kit variants (object UIDs ignored; item IDs from event nums)
+  { "Craft_21_firekit", 23, 1, 38, 2, 49, 1, false, 0, true }, // sticks+papers+knife → kit
+  { "Craft_22_firekit", 23, 1, 50, 1, 49, 1, false, 0, false }, // pile+papers (+rags optional path)
+  { "Craft_3_matches", 24, 2, 49, 1, 26, 1, false, 0, false }, // papers+rags → 2 matches
+  { "Cook_steak_pan", 61, 1, 60, 1, 0, 0, true, 210, false }, // pan as unconsumed tool
 };
 
 const int kCount = static_cast<int>(sizeof(kRecipes) / sizeof(kRecipes[0]));

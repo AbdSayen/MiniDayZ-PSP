@@ -1,5 +1,6 @@
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/combat.hpp"
+#include "mdaz/types.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -16,11 +17,18 @@ static int expect_eq(const char* name, double got, double want) {
 int test_balance() {
   std::printf("--- test_balance (sverka with extracted 1.4.1 globals) ---\n");
   int f = 0;
+  mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Regular);
   f += expect_eq("gameversion", mdaz::balance::gameversion, 140);
   f += expect_eq("Zed_dmg", mdaz::balance::Zed_dmg, 9);
   f += expect_eq("Zed_fast_dmg", mdaz::balance::Zed_fast_dmg, 6);
   f += expect_eq("Zed_army_dmg", mdaz::balance::Zed_army_dmg, 13);
   f += expect_eq("Wolf_dmg", mdaz::balance::Wolf_dmg, 10);
+  f += expect_eq("Zed_per_base", mdaz::balance::Zed_per_base, 5);
+  f += expect_eq("Bot_corpse_stay_time", mdaz::balance::Bot_corpse_stay_time, 90);
+  f += expect_eq("BOT_RESPAWN_TIME", mdaz::balance::BOT_RESPAWN_TIME, 10);
+  f += expect_eq("Player_Hear_radius", mdaz::balance::Player_Hear_radius, 1000);
+  f += expect_eq("Airdrop_Timer_ALL", mdaz::balance::Airdrop_Timer_ALL, 360);
+  f += expect_eq("Airdrop_recharge", mdaz::balance::Airdrop_recharge, 400);
   f += expect_eq("Novice_starving", mdaz::balance::Novice_starving, 0.75);
   f += expect_eq("Regular_starving", mdaz::balance::Regular_starving, 1.1);
   f += expect_eq("Veteran_starving", mdaz::balance::Veteran_starving, 1.4);

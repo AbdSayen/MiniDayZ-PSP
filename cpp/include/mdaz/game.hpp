@@ -24,6 +24,10 @@
 
 namespace mdaz {
 
+struct CropSaveView;
+struct TrapSaveView;
+struct FireSaveView;
+
 class Game {
 public:
   Game();
@@ -71,6 +75,7 @@ public:
   bool near_choppable_tree() const;
   bool crouching() const { return crouching_; }
   bool near_vehicle() const;
+  bool near_shore() const;
   Vec2 last_airdrop_pos() const { return last_airdrop_pos_; }
   const Vehicle* driven_vehicle() const { return vehicles_.driven(); }
   int ammo_for_equipped() const;
@@ -145,11 +150,35 @@ private:
   };
   PlaceTrap traps_[kMaxTraps];
   int trap_count_;
+
+  // Delayed crop plots (seed → grow → harvest)
+  static const int kMaxCrops = 16;
+  struct CropPlot {
+    Vec2 pos;
+    ItemId crop_id;   // result item when ready
+    float grow_t;     // seconds remaining until ready
+    bool ready;
+    bool active;
+  };
+  CropPlot crops_[kMaxCrops];
+  int crop_count_;
+  void update_crops(float dt);
+  bool try_plant_seed(ItemId seed_id);
   float howl_cd_;
   float cough_cd_;
   static const int kMaxTrees = 96;
   Vec2 trees_[kMaxTrees];
   int tree_count_;
+  // Chopped trees grow back after delay
+  struct TreeStump {
+    Vec2 pos;
+    float grow_t;
+    bool active;
+  };
+  TreeStump tree_stumps_[kMaxTrees];
+  int tree_stump_count_;
+  void update_tree_stumps(float dt);
+  void queue_tree_regen(Vec2 pos);
   static const int kMaxBloodDrips = 48;
   struct BloodDrip { Vec2 pos; float life; };
   BloodDrip blood_drips_[kMaxBloodDrips];
@@ -207,6 +236,12 @@ private:
   void spawn_poi_loot();
   void update_army_shooters(float dt);
   void update_bandit_guns(float dt);
+  void pack_crops_view(CropSaveView& out) const;
+  void apply_crops_view(const CropSaveView& in);
+  void pack_traps_view(TrapSaveView& out) const;
+  void apply_traps_view(const TrapSaveView& in);
+  void pack_fires_view(FireSaveView& out) const;
+  void apply_fires_view(const FireSaveView& in);
 };
 
 } // namespace mdaz

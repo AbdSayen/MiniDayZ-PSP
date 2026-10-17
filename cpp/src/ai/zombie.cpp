@@ -120,7 +120,8 @@ Zombie* ZombieSystem::spawn(ZedType t, Vec2 p) {
 }
 
 void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player, bool player_running,
-                          bool player_crouch, bool player_bleeding, bool player_coughing) {
+                          bool player_crouch, bool player_bleeding, bool player_coughing,
+                          bool is_night) {
   damage_to_player = 0.f;
   scream_active_ = false;
   float aggro_mul = 1.f;
@@ -128,6 +129,7 @@ void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player, bo
   else if (player_crouch) aggro_mul = 0.55f;
   if (player_bleeding) aggro_mul *= 1.35f; // blood scent pulls infected
   if (player_coughing) aggro_mul *= 1.2f;  // cough noise
+  if (is_night) aggro_mul *= 1.25f;        // night hunters
 
   // Screamer alert: if a screamer is within its aggro of the player, pull nearby zeds in.
   Vec2 scream_pos;

@@ -43,7 +43,10 @@ void ItemDatabase::classify(ItemDef& d) {
   } else if (n.find("pants") != std::string::npos || n.find("jacket") != std::string::npos ||
              n.find("shirt") != std::string::npos || n.find("Hoodie") != std::string::npos ||
              n.find("vest") != std::string::npos || n.find("helmet") != std::string::npos ||
-             n.find("hat") != std::string::npos || n.find("Jeans") != std::string::npos) {
+             n.find("hat") != std::string::npos || n.find("Jeans") != std::string::npos ||
+             n.find("Bandana") != std::string::npos || n.find("Helm") != std::string::npos ||
+             n.find("Cloak") != std::string::npos || n.find("Dress") != std::string::npos ||
+             n.find("Sweater") != std::string::npos) {
     d.category = ItemCat_Clothing;
   } else if (n.find("Pipsi") != std::string::npos || n.find("Spite") != std::string::npos ||
              n.find("Kvas") != std::string::npos || n.find("Cola") != std::string::npos ||
@@ -102,6 +105,9 @@ void ItemDatabase::classify(ItemDef& d) {
     d.category = ItemCat_Medical;
     d.heal_amount = 5.f;
     d.known_stats = true;
+  } else if (d.id == 46) { // Tetracycline — clears infection
+    d.category = ItemCat_Medical;
+    d.known_stats = true;
   } else if (d.id == 20) { // Flare
     d.category = ItemCat_Misc;
   } else if (d.id == 265) { // NVG
@@ -111,14 +117,17 @@ void ItemDatabase::classify(ItemDef& d) {
   // Common food/drink placeholders (not sverka — better than generic 20)
   if (d.id == 1) { d.category = ItemCat_Food; d.food_restore = 35.f; }      // Canned beans
   else if (d.id == 2) { d.category = ItemCat_Food; d.food_restore = 30.f; } // Canned spaghetti
-  else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; }
-  else if (d.id == 4) { d.category = ItemCat_Food; d.food_restore = 25.f; }
-  else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; }
-  else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 40.f; } // MRE-ish
+  else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; } // Tactical bacon
+  else if (d.id == 4) { d.category = ItemCat_Food; d.food_restore = 25.f; } // Rice
+  else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; } // Tomato
+  else if (d.id == 6) { d.category = ItemCat_Food; d.food_restore = 15.f; d.water_restore = 4.f; } // Apple
+  else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Banana
   else if (d.id == 8) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Pipsi
-  else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; }
-  else if (d.id == 10) { d.category = ItemCat_Drink; d.water_restore = 35.f; } // Water bottle
-  else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE
+  else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Spite
+  else if (d.id == 10) { d.category = ItemCat_Drink; d.water_restore = 28.f; d.food_restore = 4.f; } // Kvas
+  else if (d.id == 54) { d.category = ItemCat_Drink; d.water_restore = 40.f; } // Water bottle
+  else if (d.id == 55) { d.category = ItemCat_Drink; d.water_restore = 50.f; } // Canteen
+  else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE ration
   else if (d.id == 97) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Mushroom — risky
   else if (d.id == 21) { d.category = ItemCat_Misc; } // F1 grenade
   else if (d.id == 102) { d.category = ItemCat_Misc; } // Molotov

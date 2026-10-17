@@ -12,6 +12,10 @@ enum QuestId {
   Quest_KillBandits3,
   Quest_CatchFish2,
   Quest_VisitPolice,
+  Quest_VisitFirestation,
+  Quest_VisitChurch,
+  Quest_VisitMilitary,
+  Quest_VisitHelicrash,
   Quest_Count
 };
 
@@ -26,7 +30,9 @@ struct QuestState {
   void start(QuestId q);
   // Call from game loop with current stats; returns true if just completed.
   bool tick(int days, int zeds_killed, bool near_bunker, bool near_hospital = false,
-            int bandits_killed = 0, int fish_caught = 0, bool near_police = false);
+            int bandits_killed = 0, int fish_caught = 0, bool near_police = false,
+            bool near_firestation = false, bool near_church = false,
+            bool near_military = false, bool near_helicrash = false);
   // Next quest after completing current (chain).
   QuestId next_after(QuestId done) const;
   const char* label() const;

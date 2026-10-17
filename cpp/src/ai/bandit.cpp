@@ -1,4 +1,5 @@
 #include "mdaz/bandit.hpp"
+#include "mdaz/combat.hpp"
 
 #include <cmath>
 
@@ -60,7 +61,7 @@ float BanditSystem::update(float dt, Vec2 player_pos) {
     // Melee bandits always; gun bandits bayonet when very close
     if (!fleeing && dist < 28.f && b.attack_cooldown <= 0.f) {
       if (!b.has_gun || dist < 22.f) {
-        dmg += b.has_gun ? 10.f : 12.f;
+        dmg += npc_bandit_melee_damage(b.has_gun);
         b.attack_cooldown = b.has_gun ? 1.2f : 1.0f;
       }
     }

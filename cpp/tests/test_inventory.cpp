@@ -144,5 +144,20 @@ int test_inventory() {
     }
   }
 
+  {
+    mdaz::ItemDatabase casedb;
+    casedb.load_from_json_string(
+      "{\"items\":[{\"id\":88,\"name\":\"Protector Case\"}]}");
+    mdaz::Inventory cinv;
+    const int base = cinv.capacity();
+    cinv.add_item(88, 1, casedb);
+    if (cinv.capacity() != base + 3) {
+      std::printf("FAIL protector case cap %d want %d\n", cinv.capacity(), base + 3);
+      ++fail;
+    } else {
+      std::printf("OK   protector case +3 capacity\n");
+    }
+  }
+
   return fail ? 1 : 0;
 }

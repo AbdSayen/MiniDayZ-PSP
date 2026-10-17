@@ -28,18 +28,22 @@ int Inventory::capacity() const {
     else if (id == 457) { if (cap < 22) cap = 22; }  // Tortilla
   };
   bool has_bandolier = false;
+  bool has_case = false;
   for (int i = 0; i < worn_count_; ++i) {
     apply_bag(worn_[i]);
     if (worn_[i] == 83) has_bandolier = true;
+    if (worn_[i] == 88) has_case = true; // Protector Case
   }
   // Bags in inventory also expand carry (wear optional stub)
   for (int i = 0; i < kInventorySlots; ++i) {
     if (!slots_[i].empty()) {
       apply_bag(slots_[i].id);
       if (slots_[i].id == 83) has_bandolier = true;
+      if (slots_[i].id == 88) has_case = true;
     }
   }
   if (has_bandolier) cap += 2; // ammo belts free a couple pockets
+  if (has_case) cap += 3;      // Protector Case organized pockets
   if (cap > kInventorySlots) cap = kInventorySlots;
   return cap;
 }
@@ -112,7 +116,8 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
     float restore = def->food_restore > 0.f ? def->food_restore : 15.f;
     const bool raw = def->name.find("Raw") != std::string::npos ||
                      def->name == "Perch" || def->name == "Rabbit meat" ||
-                     def->name == "Ruffe" || def->id == 97;
+                     def->name == "Ruffe" || def->name == "Herring" ||
+                     def->name == "Salmon" || def->id == 97;
     if (raw && def->id != 97) restore *= 0.5f;
     survival.food += restore;
     if (survival.food > 100.f) survival.food = 100.f;
@@ -212,12 +217,20 @@ float Inventory::clothing_insulation() const {
     const ItemId id = worn_[i];
     float piece = 1.2f;
     if (id == 254 || id == 258) piece = 2.2f;      // Warm hat / Ushanka
+    else if (id == 264) piece = 1.4f;                   // Police hat
+    else if (id == 266) piece = 0.9f;                   // Bandana
+    else if (id == 267) piece = 1.6f;                   // Helm
     else if (id == 363 || id == 364) piece = 2.8f; // Down / Hunter jacket
     else if (id == 355 || id == 303) piece = 2.4f; // Gorka jacket / pants
     else if (id == 353) piece = 1.8f;              // Raincoat (wind block)
-    else if (id == 354 || id == 365 || id == 356 || id == 357) piece = 2.0f; // Jacket/sweater/hoodie
-    else if (id == 306 || id == 300 || id == 301) piece = 1.5f; // pants
+    else if (id == 354 || id == 365 || id == 356 || id == 357 ||
+             id == 358 || id == 359 || id == 360 || id == 361 || id == 362)
+      piece = 2.0f; // Jacket/sweater/hoodie/coat family
+    else if (id == 306 || id == 300 || id == 301 || id == 302 || id == 304 || id == 305)
+      piece = 1.5f; // pants / cargo
+    else if (id == 350 || id == 351 || id == 352) piece = 1.1f; // t-shirts / thin tops
     else if (id == 250) piece = 0.8f;              // Gasmask (little warmth)
+    else if (id == 251 || id == 263) piece = 1.0f; // helmets — little warmth
     v += piece;
   }
   if (v > 12.f) v = 12.f;
