@@ -150,12 +150,17 @@ void unpack_fires(const SaveBlob& in, FireSaveView* fires) {
 
 void pack_loot(const LootSaveView* loot, SaveBlob& out) {
   out.loot_count = 0;
+  out.loot_ext_count = 0;
   out.loot_respawn_t = 0.f;
   if (!loot) return;
   const int n = loot->count < LootSaveView::kMax ? loot->count : LootSaveView::kMax;
   for (int i = 0; i < n; ++i) {
     if (loot->piles[i].item_count <= 0) continue;
-    out.loot_piles[out.loot_count++] = loot->piles[i];
+    if (out.loot_count < LootSaveView::kLegacyMax) {
+      out.loot_piles[out.loot_count++] = loot->piles[i];
+    } else if (out.loot_ext_count < LootSaveView::kExtMax) {
+      out.loot_ext_piles[out.loot_ext_count++] = loot->piles[i];
+    }
   }
 }
 
@@ -163,10 +168,20 @@ void unpack_loot(const SaveBlob& in, LootSaveView* loot) {
   if (!loot) return;
   loot->count = 0;
   if (in.version < 14) return;
-  const int n = in.loot_count < LootSaveView::kMax ? in.loot_count : LootSaveView::kMax;
-  for (int i = 0; i < n; ++i) {
+  const int n0 = in.loot_count < LootSaveView::kLegacyMax ? in.loot_count : LootSaveView::kLegacyMax;
+  for (int i = 0; i < n0; ++i) {
     if (in.loot_piles[i].item_count <= 0) continue;
+    if (loot->count >= LootSaveView::kMax) break;
     loot->piles[loot->count++] = in.loot_piles[i];
+  }
+  if (in.version >= 18) {
+    const int ne =
+        in.loot_ext_count < LootSaveView::kExtMax ? in.loot_ext_count : LootSaveView::kExtMax;
+    for (int i = 0; i < ne; ++i) {
+      if (in.loot_ext_piles[i].item_count <= 0) continue;
+      if (loot->count >= LootSaveView::kMax) break;
+      loot->piles[loot->count++] = in.loot_ext_piles[i];
+    }
   }
 }
 
@@ -210,6 +225,14 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.worn_ids[i] = inv.worn_at(i);
     out.worn_iv6[i] = inv.worn_iv6(i);
   }
+  for (int ri = 0; ri < ClothingRegion_Count; ++ri) {
+    const ClothingRegion reg = static_cast<ClothingRegion>(ri);
+    for (int si = 0; si < kClothingContainerSlots; ++si) {
+      const int idx = ri * kClothingContainerSlots + si;
+      out.cloth_ids[idx] = inv.clothing().slot(reg, si).id;
+      out.cloth_counts[idx] = inv.clothing().slot(reg, si).count;
+    }
+  }
   out.day_phase = weather.day_phase;
   out.rain = weather.rain;
   out.infected = player.survival.infected ? 1 : 0;
@@ -240,6 +263,17 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.bunker_looted = extras->bunker_looted;
     out.melee_break_mul = extras->melee_break_mul > 0.f ? extras->melee_break_mul : 1.f;
     out.loot_respawn_t = extras->loot_respawn_t;
+    out.wpn_aug_progress = extras->weapon_unlocks.aug_progress;
+    out.wpn_mac10_progress = extras->weapon_unlocks.mac10_progress;
+    out.wpn_sv98_progress = extras->weapon_unlocks.sv98_progress;
+    out.wpn_saiga12_progress = extras->weapon_unlocks.saiga12_progress;
+    out.wpn_vss_progress = extras->weapon_unlocks.vss_progress;
+    out.wpn_unlock_flags = 0;
+    if (extras->weapon_unlocks.aug_unlocked) out.wpn_unlock_flags |= 1;
+    if (extras->weapon_unlocks.mac10_unlocked) out.wpn_unlock_flags |= 2;
+    if (extras->weapon_unlocks.sv98_unlocked) out.wpn_unlock_flags |= 4;
+    if (extras->weapon_unlocks.saiga12_unlocked) out.wpn_unlock_flags |= 8;
+    if (extras->weapon_unlocks.vss_unlocked) out.wpn_unlock_flags |= 16;
   } else {
     out.airdrop_t = 360.f;
     out.airdrop_x = out.airdrop_y = 0.f;
@@ -290,6 +324,19 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
     inv.restore_worn_iv6(in.worn_ids, in.worn_iv6, in.worn_count);
   else
     inv.restore_worn(in.worn_ids, in.worn_count);
+  if (in.version >= 17) {
+    for (int ri = 0; ri < ClothingRegion_Count; ++ri) {
+      const ClothingRegion reg = static_cast<ClothingRegion>(ri);
+      ItemId ids[kClothingContainerSlots];
+      int counts[kClothingContainerSlots];
+      for (int si = 0; si < kClothingContainerSlots; ++si) {
+        const int idx = ri * kClothingContainerSlots + si;
+        ids[si] = in.cloth_ids[idx];
+        counts[si] = in.cloth_counts[idx];
+      }
+      inv.clothing().restore_region(reg, ids, counts, kClothingContainerSlots);
+    }
+  }
   weather.day_phase = in.day_phase;
   weather.rain = in.rain;
   weather.sync_from_day_phase();
@@ -352,6 +399,20 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
       extras->loot_respawn_t = in.loot_respawn_t;
     } else {
       extras->loot_respawn_t = 0.f;
+    }
+    if (in.version >= 16) {
+      extras->weapon_unlocks.aug_progress = in.wpn_aug_progress;
+      extras->weapon_unlocks.mac10_progress = in.wpn_mac10_progress;
+      extras->weapon_unlocks.sv98_progress = in.wpn_sv98_progress;
+      extras->weapon_unlocks.saiga12_progress = in.wpn_saiga12_progress;
+      extras->weapon_unlocks.vss_progress = in.wpn_vss_progress;
+      extras->weapon_unlocks.aug_unlocked = (in.wpn_unlock_flags & 1) != 0;
+      extras->weapon_unlocks.mac10_unlocked = (in.wpn_unlock_flags & 2) != 0;
+      extras->weapon_unlocks.sv98_unlocked = (in.wpn_unlock_flags & 4) != 0;
+      extras->weapon_unlocks.saiga12_unlocked = (in.wpn_unlock_flags & 8) != 0;
+      extras->weapon_unlocks.vss_unlocked = (in.wpn_unlock_flags & 16) != 0;
+    } else {
+      extras->weapon_unlocks.reset();
     }
   }
   return true;

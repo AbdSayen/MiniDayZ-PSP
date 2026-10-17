@@ -42,6 +42,10 @@ public:
   static const char* dir_suffix(float facing_deg);
   // Build "run_down" etc. into out (cap bytes).
   static void make_name(char* out, int cap, const char* prefix, float facing_deg);
+  // C2 zed/wolf SetAnim attack_up / attack_down / …
+  static void make_attack_name(char* out, int cap, float facing_deg) {
+    make_name(out, cap, "attack", facing_deg);
+  }
 
 private:
   CharAnim anims_[kMaxAnims];

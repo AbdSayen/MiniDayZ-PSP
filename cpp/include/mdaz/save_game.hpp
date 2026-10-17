@@ -6,6 +6,7 @@
 #include "mdaz/types.hpp"
 #include "mdaz/vehicle.hpp"
 #include "mdaz/weather.hpp"
+#include "mdaz/weapon_unlocks.hpp"
 
 namespace mdaz {
 
@@ -65,7 +66,10 @@ struct SavedLootPile {
 };
 
 struct LootSaveView {
-  static const int kMax = 32;
+  // Runtime loot system allows kMaxLootPiles (96); v14–v17 saves stored 32 in-blob.
+  static const int kMax = 96;
+  static const int kLegacyMax = 32;
+  static const int kExtMax = 64; // kLegacyMax + kExtMax == kMax
   int count;
   SavedLootPile piles[kMax];
   LootSaveView() : count(0) {}
@@ -131,6 +135,19 @@ struct SaveBlob {
   float loot_respawn_t;
   // v15 — worn clothing IV6 durability
   float worn_iv6[6];
+  // v16 — weapon unlock progress (Bullets_dmg_deal / Bleed; no unlock UI)
+  int wpn_aug_progress;
+  int wpn_mac10_progress;
+  int wpn_sv98_progress;
+  int wpn_saiga12_progress;
+  int wpn_vss_progress;
+  unsigned char wpn_unlock_flags; // bit0 aug,1 mac10,2 sv98,3 saiga12,4 vss
+  // v17 — C2 IV93 clothing containers (4 regions × 4 slots)
+  ItemId cloth_ids[ClothingRegion_Count * kClothingContainerSlots];
+  int cloth_counts[ClothingRegion_Count * kClothingContainerSlots];
+  // v18 — ground loot piles 32..95 (v14–v17 kept first 32 in loot_piles only)
+  int loot_ext_count;
+  SavedLootPile loot_ext_piles[LootSaveView::kExtMax];
 };
 
 struct WorldExtras {
@@ -141,6 +158,7 @@ struct WorldExtras {
   int bunker_looted;
   float melee_break_mul;
   float loot_respawn_t;
+  WeaponUnlockState weapon_unlocks;
   WorldExtras()
     : airdrop_t(360.f), airdrop_x(0.f), airdrop_y(0.f),
       tent_warmth_t(0.f), adrenaline_t(0.f), bunker_looted(0), melee_break_mul(1.f),
@@ -150,7 +168,7 @@ struct WorldExtras {
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 15;
+  static const int kVersion = 18;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,

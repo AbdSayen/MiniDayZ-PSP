@@ -1,0 +1,3 @@
+tutorMoveChoosen — C2 global; set to 1 on movement tutorial menu_click commit
+(data.js Options / movement picker after STICK|TAP choice).
+C++: c2_note_tutor_movement_chosen(); audit in quest.cpp + tutorial.cpp.

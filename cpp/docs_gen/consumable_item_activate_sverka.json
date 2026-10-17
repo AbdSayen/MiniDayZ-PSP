@@ -1,0 +1,72 @@
+{
+  "source": "cpp/docs_gen/functions/item_activate_decoded.txt",
+  "full_table": "cpp/docs_gen/item_activate_iv_sverka.json",
+  "parser": "tools/parse_item_activate_sverka.js",
+  "entries": {
+    "25_Whiskey": {
+      "iv14_water": 20,
+      "iv16_temperature": 40,
+      "iv49_sub": 50,
+      "port": "use_consumable water+temperature; no adrenaline timer"
+    },
+    "34_Heatpack": {
+      "iv16_temperature": 25,
+      "use_wait_s": 3,
+      "port": "manual use only (inventory use_consumable +25 temp); auto-use removed"
+    },
+    "63_Energy_drink": {
+      "iv14_water": 20,
+      "max_speed_boost_s": 10,
+      "max_speed_run": 135,
+      "max_speed_walk": 125,
+      "baseline_run": 110,
+      "baseline_walk": 100,
+      "port": "energy_sprint_t_=10; move mul 135/110"
+    },
+    "20_Flare": {
+      "iv26_torch_mode": 1,
+      "port": "consume flare; torch_on=true (no zed beacon/campfire guess)"
+    },
+    "19_Blood_bag": {
+      "iv15_blood": 50,
+      "iv49_sub": 75,
+      "iv21_using_s": 6,
+      "port": "use_consumable heal_amount 50; Game item_use_lock_t_=6"
+    },
+    "28_Saline_bag": {
+      "iv15_blood": 25,
+      "iv49_sub": 25,
+      "iv21_using_s": 6,
+      "port": "use_consumable heal_amount 25; Game item_use_lock_t_=6"
+    },
+    "29_Vitamins": {
+      "iv32_buff_s": 60,
+      "iv21_using_s": 2,
+      "port": "Game vitamins_buff_t_=60 suppresses infection DoT; no IV13/14/15"
+    },
+    "46_Tetracycline": {
+      "iv34_infection_clear": true,
+      "iv21_using_s": 3,
+      "port": "use_consumable clears infected; requires IV34=1; Game lock 3s"
+    },
+    "45_Morphine": {
+      "blocked": true,
+      "reason": "Zero CompareParam [[0,0],[8,0],45] in data.js item_activate; sprite [[0,45]] only under id36 cleaning-kit branch",
+      "port": "C key click only — no stat changes"
+    }
+  },
+  "medical_parser": "tools/parse_item_activate_medicals.js → item_activate_medicals_sverka.json",
+  "weapon_iv0_scan": "tools/scan_weapon_iv0_paths.js → weapon_iv0_path_scan.json",
+  "craft_removed_not_in_c2": [
+    "Craft_burlap_raincoat",
+    "Craft_rags_bandolier",
+    "Craft_rags_bandana",
+    "Craft_burlap_from_rags",
+    "Craft_sticks_fence",
+    "Craft_fence_rags",
+    "Craft_pile_firekit",
+    "Craft_firekit",
+    "Craft_fishing_rod_rope"
+  ],
+  "craft_verified_names_in_data_js": ["Craft_1", "Craft_4", "Craft_5", "Craft_fishing_rod", "Craft_31", "Craft_32"]
+}

@@ -1,0 +1,449 @@
+# Death_guide group (largest sheet hit)
+len 115583
+
+## Deadscreen / tutor_death subtrees (74)
+ctx=root | Tutorial_map | Tutorial_map_finished | Tutorial_encounter | Tutorial | Tutor_berries_found | Tutor_Car_trunk_found | Tutor_deer_found | Tutor_first_fight | Tutor_Pump_found | Tutor_rabbit_found | Tutor_wolf_found | Tutor_Zed_found | Tutor_Loot_found | Tutor_Boat_found | Tutor_Movement_guide | Tutor_first_tip | Tutor_perks_guide | user_device_X | tutortext | Camera_roll | camera_roll | GUI_Drag | close_inventory | close_perks_menu | Clear_pad | GUI_hide_dpad | Turret | AltMove | Zeds | Pin | Bullet | Tutor_hint_moveblock | tutor_timer | GUI_show_dpad | Tutor_hint_blocked_gui | Sunset_Dawn | user_device_Y | two | fadein | Fade | Outline | camera_roll_back | items_on_ground | Buildings | Building_mode | helpmenu_on | 1 | Tutor_firearm_found | menu_click | Tutor_hint_onscreen | GUI_show_tutorial_tip | Tutorial_script_final | fadeout | one | Deadscreen | user_device_X_mid | user_device_Y_mid | GUI_hint | tutor_inventory_guide_step | Inventory_opened | Tap | gui_tutor_drag | tutor_ui_guide_step | MainLook | ShortLook | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | tutor_perk_guide_step | tutor_bleeding_step | tutor_death | UI_guide | CONTROLS | STICK | Movement_stick | Movement_tap | Stick_anim | gui_tutor_anim_tap | gui_tutor_anim_stick | GUI_control_type | TAP | Tap_anim | Stick | tutorMoveChoosen | run_left | run_right | Inventory_guide | drag_and_drop | hand_slot | GUI_controls | Firearm_guide | tutorFirearmPassed | Perks_guide | Bleeding_guide | Death_guide | Update_Stats | attack | level_loading | fade | sky | Loader_sky_X | Loader_city_X | Loader_sky_Y | Loader_city_Y | Loader_logo_Y | Loader_sky_Height | Loader_city_Height | GUI | skybullet | Loader_scroll_speed | Reload_locations_start | zed_resp | Buildings_base | w1 | w2 | Buildings_shadows | red2 | brown3 | white | brown2 | brown1 | Spawn_drop | Day_cold | Trees | gui_scale | Content-Type | application/json | deltadna_tutorial | {"eventName":"tutorialFinished","userID":" | userID | ","sessionID":" | sessionID | ","eventParams":{"platform": " | user_device | ","tutorialBerriesPicked":  | tutorBerriesPicked | ,"tutorialCarTrunkOpened":  | tutorCarTrunkOpened | ,"tutorialDieCount":  | tutorDieCount | ,"tutorialFirearmPassed":  | ,"tutorialMovementType": " | tutorMovementType | ","tutorialSkipped":  | tutorSkipped | ,"tutorialTreeChopped":  | tutorTreeChopped | ,"tutorialZedFighted":  | tutorZedFighted | ,"tutoriaPerkBought":  | tutorPerkBought | ,"tutrorialBleedingStopped":  | tutorBleedingStopped | }} | POST | Gui_counters | GUI_drag | GUI_elements | Rust_layer | GUI_overs | animation_redraw | run | stay | aim | Ak74_1 | m4 | tutor | saveandexit | Markers | test | metric | from_tutorial | Restart_game | DeltaDNA_tutor | Variable1
+ctx=root/7 | Tutorial_map_finished | Tutorial_encounter | Tutorial | Tutor_berries_found | Tutor_Car_trunk_found | Tutor_deer_found | Tutor_first_fight | Tutor_Pump_found | Tutor_rabbit_found | Tutor_wolf_found | Tutor_Zed_found | Tutor_Loot_found | Tutor_Boat_found | Tutor_Movement_guide | Tutor_first_tip | Tutor_perks_guide | user_device_X | tutortext | Camera_roll | camera_roll | GUI_Drag | close_inventory | close_perks_menu | Clear_pad | GUI_hide_dpad | Turret | AltMove | Zeds | Pin | Bullet | Tutor_hint_moveblock | tutor_timer | GUI_show_dpad | Tutor_hint_blocked_gui | Sunset_Dawn | user_device_Y | two | fadein | Fade | Outline | camera_roll_back | items_on_ground | Buildings | Building_mode | helpmenu_on | 1 | Tutor_firearm_found | menu_click | Tutor_hint_onscreen | GUI_show_tutorial_tip | Tutorial_script_final | fadeout | one | Deadscreen | user_device_X_mid | user_device_Y_mid | GUI_hint | tutor_inventory_guide_step | Inventory_opened | Tap | gui_tutor_drag | tutor_ui_guide_step | MainLook | ShortLook | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | tutor_perk_guide_step | tutor_bleeding_step | tutor_death | UI_guide | CONTROLS | STICK | Movement_stick | Movement_tap | Stick_anim | gui_tutor_anim_tap | gui_tutor_anim_stick | GUI_control_type | TAP | Tap_anim | Stick | tutorMoveChoosen | run_left | run_right | Inventory_guide | drag_and_drop | hand_slot | GUI_controls | Firearm_guide | tutorFirearmPassed | Perks_guide | Bleeding_guide | Death_guide | Update_Stats | attack | level_loading | fade | sky | Loader_sky_X | Loader_city_X | Loader_sky_Y | Loader_city_Y | Loader_logo_Y | Loader_sky_Height | Loader_city_Height | GUI | skybullet | Loader_scroll_speed | Reload_locations_start | zed_resp | Buildings_base | w1 | w2 | Buildings_shadows | red2 | brown3 | white | brown2 | brown1 | Spawn_drop | Day_cold | Trees | gui_scale | Content-Type | application/json | deltadna_tutorial | {"eventName":"tutorialFinished","userID":" | userID | ","sessionID":" | sessionID | ","eventParams":{"platform": " | user_device | ","tutorialBerriesPicked":  | tutorBerriesPicked | ,"tutorialCarTrunkOpened":  | tutorCarTrunkOpened | ,"tutorialDieCount":  | tutorDieCount | ,"tutorialFirearmPassed":  | ,"tutorialMovementType": " | tutorMovementType | ","tutorialSkipped":  | tutorSkipped | ,"tutorialTreeChopped":  | tutorTreeChopped | ,"tutorialZedFighted":  | tutorZedFighted | ,"tutoriaPerkBought":  | tutorPerkBought | ,"tutrorialBleedingStopped":  | tutorBleedingStopped | }} | POST | Gui_counters | GUI_drag | GUI_elements | Rust_layer | GUI_overs | animation_redraw | run | stay | aim | Ak74_1 | m4 | tutor | saveandexit | Markers | test | metric | from_tutorial | Restart_game | DeltaDNA_tutor | Variable1
+ctx=root/7/5 | GUI_show_tutorial_tip | GUI_hide_dpad | fadeout | Sunset_Dawn | tutortext | user_device_Y | two | one | Pin | user_device_X | fadein | Fade | AltMove | Tutor_hint_onscreen | Tutor_hint_blocked_gui | Deadscreen | user_device_X_mid | user_device_Y_mid | GUI_hint | tutor_inventory_guide_step | Inventory_opened | Tap | gui_tutor_drag | tutor_ui_guide_step | MainLook | ShortLook | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | tutor_perk_guide_step | tutor_bleeding_step | tutor_death
+ctx=root/7/5/7 | AltMove | Tutor_hint_onscreen | Tutor_hint_blocked_gui | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | Inventory_opened | Tap | gui_tutor_drag | tutor_ui_guide_step | Pin | Fade | MainLook | ShortLook | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | tutor_perk_guide_step | tutortext | tutor_bleeding_step | Sunset_Dawn | two | tutor_death
+ctx=root/7/5/7/3 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/3/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/3/6/0 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/3/6/0/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/3/6/0/5/1 | Deadscreen
+ctx=root/7/5/7/3/6/0/5/1/1 | Deadscreen
+ctx=root/7/5/7/4 | Inventory_opened | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/4/7 | Inventory_opened | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/4/7/0 | Inventory_opened | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/4/7/0/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/4/7/0/6/1 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/4/7/0/6/1/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/4/7/0/6/1/5/1 | Deadscreen
+ctx=root/7/5/7/4/7/0/6/1/5/1/1 | Deadscreen
+ctx=root/7/5/7/9 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | MainLook | ShortLook
+ctx=root/7/5/7/9/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step
+ctx=root/7/5/7/9/6/0 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/9/6/0/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/9/6/0/5/1 | Deadscreen
+ctx=root/7/5/7/9/6/0/5/1/1 | Deadscreen
+ctx=root/7/5/7/10 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | MainLook | ShortLook
+ctx=root/7/5/7/10/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | MainLook | ShortLook
+ctx=root/7/5/7/10/6/0 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/10/6/0/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/10/6/0/5/1 | Deadscreen
+ctx=root/7/5/7/10/6/0/5/1/1 | Deadscreen
+ctx=root/7/5/7/11 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | MainLook | ShortLook
+ctx=root/7/5/7/11/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_inventory_guide_step | MainLook | ShortLook
+ctx=root/7/5/7/11/6/0 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/11/6/0/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/11/6/0/5/1 | Deadscreen
+ctx=root/7/5/7/11/6/0/5/1/1 | Deadscreen
+ctx=root/7/5/7/12 | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_perk_guide_step
+ctx=root/7/5/7/12/6 | Perks_menu | White | expierence_points | 100 | MD_Perk_1 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_perk_guide_step
+ctx=root/7/5/7/12/6/10 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/12/6/10/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/12/6/10/5/1 | Deadscreen
+ctx=root/7/5/7/12/6/10/5/1/1 | Deadscreen
+ctx=root/7/5/7/14 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_bleeding_step
+ctx=root/7/5/7/14/7 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_bleeding_step
+ctx=root/7/5/7/14/7/0 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_bleeding_step
+ctx=root/7/5/7/14/7/0/6 | Deadscreen | user_device_X_mid | user_device_Y_mid | user_device_X | user_device_Y | GUI_hint | tutor_bleeding_step
+ctx=root/7/5/7/14/7/0/6/0 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/14/7/0/6/0/5 | Deadscreen | user_device_X_mid | user_device_Y_mid
+ctx=root/7/5/7/14/7/0/6/0/5/1 | Deadscreen
+ctx=root/7/5/7/14/7/0/6/0/5/1/1 | Deadscreen
+ctx=root/7/5/7/15 | Sunset_Dawn | GUI_hint | user_device_Y | two | Pin | user_device_X | tutor_death
+ctx=root/7/5/7/15/7 | Sunset_Dawn | GUI_hint | user_device_Y | two | Pin | user_device_X | tutor_death
+ctx=root/7/5/7/15/7/0 | Sunset_Dawn | GUI_hint | user_device_Y | two | Pin | user_device_X | tutor_death
+ctx=root/7/5/7/15/7/0/6 | Sunset_Dawn | GUI_hint | user_device_Y | two | Pin | user_device_X | tutor_death
+ctx=root/7/5/7/15/7/0/6/13 | tutor_death
+ctx=root/7/5/7/15/7/0/6/13/5 | tutor_death
+ctx=root/7/5/7/15/7/0/6/13/5/0 | tutor_death
+ctx=root/7/11 | Death_guide | tutor_death | Tutor_hint_onscreen | Update_Stats | Tutor_hint_blocked_gui | menu_click | Inventory_opened | GUI_show_dpad
+ctx=root/7/11/7 | tutor_death | Tutor_hint_onscreen | Update_Stats | Tutor_hint_blocked_gui | menu_click | Inventory_opened | GUI_show_dpad
+ctx=root/7/11/7/0 | tutor_death | Tutor_hint_onscreen | Update_Stats | Tutor_hint_blocked_gui | menu_click | Inventory_opened | GUI_show_dpad
+ctx=root/7/11/7/0/5 | tutor_death | Tutor_hint_onscreen
+ctx=root/7/11/7/0/5/1 | tutor_death
+ctx=root/7/11/7/0/5/1/9 | tutor_death
+ctx=root/7/11/7/0/5/1/9/0 | tutor_death
+ctx=root/7/11/7/0/6 | Update_Stats | Tutor_hint_onscreen | tutor_death | Tutor_hint_blocked_gui | menu_click
+ctx=root/7/11/7/0/6/8 | tutor_death
+ctx=root/7/11/7/0/6/8/5 | tutor_death
+ctx=root/7/11/7/0/6/8/5/0 | tutor_death
+ctx=root/7/18 | Tutorial_script_final | Content-Type | application/json | deltadna_tutorial | {"eventName":"tutorialFinished","userID":" | userID | ","sessionID":" | sessionID | ","eventParams":{"platform": " | user_device | ","tutorialBerriesPicked":  | tutorBerriesPicked | ,"tutorialCarTrunkOpened":  | tutorCarTrunkOpened | ,"tutorialDieCount":  | tutorDieCount | ,"tutorialFirearmPassed":  | tutorFirearmPassed | ,"tutorialMovementType": " | tutorMovementType | ","tutorialSkipped":  | tutorSkipped | ,"tutorialTreeChopped":  | tutorTreeChopped | ,"tutorialZedFighted":  | tutorZedFighted | ,"tutoriaPerkBought":  | tutorPerkBought | ,"tutrorialBleedingStopped":  | tutorBleedingStopped | }} | POST | Clear_pad | close_perks_menu | close_inventory | Tutor_hint_onscreen | Tutor_hint_blocked_gui | AltMove | GUI | GUI_controls | Gui_counters | GUI_drag | GUI_elements | Rust_layer | GUI_overs | GUI_hint | animation_redraw | Bullet | run | stay | Sunset_Dawn | Pin | Fade | aim | user_device_X | user_device_Y | Ak74_1 | m4 | tutor_death | tutor | Tutorial_map_finished | 1 | saveandexit | gui_scale | Markers | user_device_X_mid | test | user_device_Y_mid | metric | fade | fadein | Loader_sky_Y | Loader_city_Y | Loader_sky_Height | Loader_city_Height | Loader_city_X | Loader_sky_X | skybullet | Loader_scroll_speed | from_tutorial | Restart_game
+ctx=root/7/18/6 | Content-Type | application/json | deltadna_tutorial | {"eventName":"tutorialFinished","userID":" | userID | ","sessionID":" | sessionID | ","eventParams":{"platform": " | user_device | ","tutorialBerriesPicked":  | tutorBerriesPicked | ,"tutorialCarTrunkOpened":  | tutorCarTrunkOpened | ,"tutorialDieCount":  | tutorDieCount | ,"tutorialFirearmPassed":  | tutorFirearmPassed | ,"tutorialMovementType": " | tutorMovementType | ","tutorialSkipped":  | tutorSkipped | ,"tutorialTreeChopped":  | tutorTreeChopped | ,"tutorialZedFighted":  | tutorZedFighted | ,"tutoriaPerkBought":  | tutorPerkBought | ,"tutrorialBleedingStopped":  | tutorBleedingStopped | }} | POST | Clear_pad | close_perks_menu | close_inventory | Tutor_hint_onscreen | Tutor_hint_blocked_gui | AltMove | GUI | GUI_controls | Gui_counters | GUI_drag | GUI_elements | Rust_layer | GUI_overs | GUI_hint | animation_redraw | Bullet | run | stay | Sunset_Dawn | Pin | Fade | aim | user_device_X | user_device_Y | Ak74_1 | m4 | tutor_death | tutor
+ctx=root/7/18/6/78 | tutor_death | tutor
+ctx=root/7/18/6/78/5 | tutor_death | tutor
+ctx=root/7/18/6/78/5/0 | tutor_death
+ctx=root/7/18/6/78/5/0/1 | tutor_death
+
+## On function Death_guide
+[
+  0,
+  [
+    true,
+    "Death_guide"
+  ],
+  false,
+  null,
+  948023293910869,
+  [
+    [
+      -1,
+      38,
+      null,
+      0,
+      false,
+      false,
+      false,
+      948023293910869,
+      false,
+      [
+        [
+          1,
+          [
+            2,
+            "Death_guide"
+          ]
+        ]
+      ]
+    ]
+  ],
+  [],
+  [
+    [
+      0,
+      null,
+      false,
+      null,
+      117057253937777,
+      [
+        [
+          488,
+          215,
+          null,
+          1,
+          false,
+          false,
+          false,
+          615435316881992,
+          false,
+          [
+            [
+              4,
+              665
+            ]
+          ]
+        ],
+        [
+          -1,
+          46,
+          null,
+          0,
+          false,
+          false,
+          false,
+          913360527145519,
+          false,
+          [
+            [
+              11,
+              "tutor_death"
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              7,
+              [
+                0,
+                5
+              ]
+            ]
+          ]
+        ],
+        [
+          -1,
+          46,
+          null,
+          0,
+          false,
+          false,
+          false,
+          957886989484650,
+          false,
+          [
+            [
+              11,
+              "Tutor_hint_onscreen"
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              7,
+              [
+                0,
+                1
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        [
+          -1,
+          163,
+          null,
+          943488616688129,
+          false,
+          [
+            [
+              0,
+              [
+                0,
+                1
+              ]
+            ]
+          ]
+        ],
+        [
+          333,
+          53,
+          null,
+          952808527242734,
+          false
+        ],
+        [
+          647,
+          115,
+          null,
+          300975195023925,
+          false
+        ],
+        [
+          665,
+          53,
+          null,
+          927144704919945,
+          false
+        ],
+        [
+          172,
+          88,
+          null,
+          651133602691167,
+          false,
+          [
+            [
+              10,
+              15
+            ],
+            [
+              7,
+              [
+                0,
+                100
+              ]
+            ]
+          ]
+        ],
+        [
+          2,
+          84,
+          null,
+          249052619782339,
+          false,
+          [
+            [
+              0,
+              [
+                0,
+                72
+              ]
+            ]
+          ]
+        ],
+        [
+          180,
+          69,
+          null,
+          914507312095301,
+          false,
+          [
+            [
+              1,
+              [
+                2,
+                "Update_Stats"
+              ]
+            ],
+            [
+              13
+            ]
+          ]
+        ],
+        [
+          -1,
+          41,
+          null,
+          766733678742061,
+          false,
+          [
+            [
+              11,
+              "Tutor_hint_onscreen"
+            ],
+            [
+              7,
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        ],
+        [
+          -1,
+          41,
+          null,
+          142952153887019,
+          false,
+          [
+            [
+              11,
+              "tutor_death"
+            ],
+            [
+              7,
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        ],
+        [
+          -1,
+          41,
+          null,
+          761311276907662,
+          false,
+          [
+            [
+              11,
+              "Tutor_hint_blocked_gui"
+            ],
+            [
+              7,
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        ],
+        [
+          178,
+          81,
+          null,
+          135609376835273,
+          false,
+          [
+            [
+              3,
+              0
+            ],
+            [
+              1,
+              [
+                2,
+                "menu_click"
+              ]
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              0,
+              [
+                0,
+                -10
+              ]
+            ],
+            [
+              1,
+              [
+                2,
+                ""
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        [
+          0,
+          null,
+          false,
+          null,
+          171544983362571,
+          [
+            [
+              -1,
+              46,
+              null,
+              0,
+              false,
+              false,
+              false,
+              298143807013356,
+              false,
+              [
+                [
+                  11,
+                  "Inventory_opened"
+                ],
+                [
+                  8,
+                  0
+                ],
+                [
+                  7,
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            [
+              180,
+              69,
+              null,
+              390207238764001,
+              false,
+              [
+                [
+                  1,
+                  [
+                    2,
+                    "GUI_show_dpad"
+                  ]
+                ],
+                [
+                  13
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+]

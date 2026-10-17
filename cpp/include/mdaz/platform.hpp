@@ -30,8 +30,13 @@ struct InputState {
   bool craft_pressed;      // B — toggle craft recipe list (Call_sub_menu_craft)
   bool throw_pressed;      // F — throw stick / improvised projectile
   bool bag; // hold Tab to show inventory list
+  bool bag_pressed;
   int slot_digit; // 1..9 pressed this frame, else 0
   int equip_delta; // -1 / +1 from Q/X or mouse wheel
+  float mouse_x;
+  float mouse_y;
+  bool mouse_left;
+  bool mouse_left_pressed;
 
   InputState()
     : move_x(0), move_y(0),
@@ -43,8 +48,10 @@ struct InputState {
       confirm(false), confirm_pressed(false),
       cancel(false), save_pressed(false), load_pressed(false),
       torch_pressed(false), drop_pressed(false), mag_reload_pressed(false),
-      craft_pressed(false), throw_pressed(false), bag(false), slot_digit(0),
-      equip_delta(0) {}
+      craft_pressed(false), throw_pressed(false), bag(false), bag_pressed(false),
+      slot_digit(0),
+      equip_delta(0),
+      mouse_x(0.f), mouse_y(0.f), mouse_left(false), mouse_left_pressed(false) {}
 };
 
 class IPlatform {

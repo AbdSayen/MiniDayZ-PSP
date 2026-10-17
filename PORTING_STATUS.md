@@ -1,6 +1,6 @@
 # Porting Status
 
-Last updated: 2026-10-17 (autonomous session)  
+Last updated: 2026-10-17 (fn_fal / zed attack SFX / C2 audit anchors)  
 Baseline: Mini DAYZ **1.4.1** (`original_docs/`)  
 Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runtime.js`.
 
@@ -10,11 +10,11 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Balance globals | **Сверена с оригиналом** | `balance_globals.hpp` |
 | Survival tick (States) | **Сверена с оригиналом** | Every 5s / bleed 1s / cold on difficulty |
 | Item catalog (200) | Протестирована | JSON + icons for all 200 IDs |
-| Item consumable numbers | Исследована | Partial known_stats; drink IDs fixed (54/55 water/canteen; 10=Kvas) |
+| Item consumable numbers | **Сверена с оригиналом** (partial) | `item_activate_iv_sverka.json` + `consumable_item_activate_sverka.json` (medicals 19/28/29/46); morphine **45 blocked** (no C2 param) |
 | Item ground/hotbar icons | Реализуется | `item_sprites.cpp` full ID map |
 | Map fog / visited | Реализуется | 16×16 sector visited + minimap fog |
 | Weapon defs (catalog) | Реализуется | IDs 151–187 + melee; most dmg **placeholder** |
-| Weapon base damage | Исследована | Fist **10**/45; FNX **23**; sword **15** sverka |
+| Weapon base damage | Исследована | Fist **10**/45; **only FNX (151) IV0=23** sverka (`weapon_bullet_iv0_sverka.json`); other guns **kGunDmgPlaceholder** |
 | Bullet hit variance | **Сверена с оригиналом** | ±25% |
 | Fist melee range | **Сверена с оригиналом** | 45 |
 | Combat zed/wolf dmg | **Сверена с оригиналом** | Regular 9/6/13/10; wolf **→player** uses **Zed_dmg** (Wolf_dmg_deal); wolf range **50**, cd **3s**, attack SFX trio |
@@ -23,17 +23,18 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Player_get_hit bleed | **Сверена с оригиналом** | ≈50%; Bleed 60s |
 | Dispersion | **Сверена с оригиналом** | Persistent state |
 | Timers loot/zed/airdrop | **Сверена с оригиналом** (constants) | |
+| Day/night + rain | **Сверена с оригиналом** (partial) | Timer_ALL +1 / 1.5s, wrap 1440, Day_mode hrs 6–23, Rain_speed toggle |
 | Loot piles | Реализуется | Typed POI (incl. fire/church) + weighted Spawn_drop + airdrop |
 | Zombie AI types | Реализуется | Buried/screamer/army/tank/… |
 | Animals | Реализуется | Howl/stampede/crow/deer SFX |
-| Bandits / bots | Реализуется | Melee+gun; markers |
+| Bandits / bots | Реализуется | Melee+gun; **`bot_reloading`** IV9/IV14/IV10; **`spawn_bandit_camp`**; **`Spawn_friend_bot`** ally; **`Spawn_team_camp`** / **Clear_team_camps** |
 | Vehicles | Реализуется | UAZ/Volga/Truck + boat/bike; C2 fuel/respawn/crash; **GUI_draw_vehicle** HUD (bg/fuel/hp bars, controls); mount/drive |
 | Quests | Реализуется | Chain …church→military→helicrash→day2; HUD panel |
 | Map generation | Реализуется | POI counts from globals; dirt/water stamps; **multi-building POI tables** from C2 layout tags (`poi_layout.cpp`); roads Array / full tilegen still incomplete |
 | Bunker loader | Протестирована | RLE 225×74; tile atlas draw |
 | Craft | Реализуется | Core + Craft_21/22/3 firekit paths; incomplete vs full C2 |
 | Save | Протестирована | MDAZ v15 (+worn IV6); v14 loot piles |
-| Audio | Реализуется | Original OGG tags + procedural fallback |
+| Audio | Реализуется | C2 media tags (fn_fal_single_*, m4_single_*, attack_8–13 zed hits) + procedural fallback |
 | Sprites / VFX | Реализуется | C2 sheet crops; muzzle/shell/blood/fish/grenade |
 | HUD / menu | Реализуется | GUI crops; bag icons; night_overlay; amenu_bg |
 | Campfire | Реализуется | Place/warmth/cook |
@@ -65,6 +66,8 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 
 | Date | Work |
 |------|------|
+| 2026-10-17 | **Verified** fn_fal_single_1/2 (FN-CAL id 175) + Firearm shooting SFX map; zed attack_8 screamer + attack_0–13 pool; s_weapons layer anchors; Damage dealing / Deaths decode; `weapon_fire_sfx_tag` |
+| 2026-10-17 | `Weapon_unlocks` progress + v16 save; `molotov_reload` 15s throw gate; `Spawn_drop_from_player` on G drop; docs_gen `molotov_reload_body.json` / `Spawn_drop_from_player_body.json` / `Craft arrows_body.json` |
 | 2026-10-16 | Initial C++ scaffold + docs |
 | 2026-10-16 | ACE-decoded `States`/`Update_Stats`; rewrote survival; loot; mapgen; zed types |
 | 2026-10-16 | Bullet variance + Fist range 45; SDL desktop host |

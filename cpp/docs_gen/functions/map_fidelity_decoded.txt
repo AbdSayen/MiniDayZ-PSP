@@ -1,0 +1,29 @@
+generate_location (partial export JSON)
+  locals: loopzounter, PlantX, PlantY, hotspotX, hotspotY
+  calls generate_mapgen_toelements on obj507 then plants via obj518 SetTile on tilemap_forest
+  72 SetTile offsets extracted → cpp/data/generate_location_forest_stamps.json
+
+generate_mapgen_toelements — VERIFIED (data.js On function, 2026-10-17)
+  Root: CallFunction name generate_mapgen_toelements.
+  ForEach obj507 (map POI marker): CallFunction generate_location with param obj507 IV151.
+  Does not embed prop sprite tables in the function root; POI typing is on obj507 IV0
+  (see generate_array_tomap_fn_decoded.txt).
+
+create_map_element — PARTIAL (data.js sample in cpp/docs_gen/mapgen_props_decode.txt)
+  Trigger: tilemap obj518 tile at zed_resp layer matches; sets obj501 (map_element) IV1..6
+  from tile id, reads IV151 from obj501, recurses CallFunction create_map_element.
+  Prop/plant names are not literal strings in this slice — placement is tile-id driven on
+  obj518 layer "zed_resp". IV10 table → create_map_element_decode.hpp; map_element-sheet0 draw at POI forest stamp tile-0. IV10→frame / zed_resp grid blocked.
+
+bunker_zed_spawner (obj791)
+  VERIFIED: Bunker_spawn_zeds_body.json ForEach 791 IV0 → Bunker_spawn_zeds(X,Y)
+  21 unique Create XY from Zed_check_bunker.json → cpp/data/bunker_zed_spawners.json
+  C++ uses local XY = export % (225*8, 74*8) — APPROX until HotspotX/Y layout decode
+
+Spawn_bandit_camp
+  VERIFIED: IV3=0 IV4=0 and IV0 in {9,11,17,14,21} and PickDistance 700–3000 → IV5=1
+  Port: team_camp_iv0_allows_bandit_camp + spawn at camp anchor
+
+Bot_bandits_check_situation
+  VERIFIED: team IV127==0 → CallFunction Spawn_bandit_camp
+  Port: bot_bandits_check_situation every 40s when quest task != 2

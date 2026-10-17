@@ -1,0 +1,3 @@
+tutorMovementType — C2 save/analytics string field (DeltaDNA JSON export alongside
+tutorialFirearmPassed, tutorialSkipped). Values reflect TAP vs STICK branch.
+C++: C2SessionGlobals::tutorMovementType; quest.cpp audit anchor.

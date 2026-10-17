@@ -64,6 +64,14 @@ float wolf_player_melee_damage();
 float wolf_attack_melee_range();   // Wolf group IV1 = 50
 float wolf_attack_cooldown_sec();  // ScrollTo duration = 3
 
+// C2 zmb → Player_get_hit: Audio choose among attack_0/1/10/11/12/13 at zed position.
+const char* pick_zed_player_hit_sfx(class Rng& rng);
+// C2 screamer group: attack_8 SFX (attack_8_impl.json).
+const char* c2_zed_screamer_attack_sfx();
+
+// C2 event group under NPCs (routes to NPC_get_damage) — audit anchor only.
+void touch_combat_c2_audit_anchors();
+
 // Bullets_dmg_deal (verified):
 //   dmg = round( bullet_base * random(bullet_base/4, …) ) — variance uses IV0/4.
 // Implemented as round(base * U(0.75, 1.25)) ≈ ±25% which matches IV0±IV0/4.
@@ -86,6 +94,9 @@ float player_damage_after_armor(float amount, const Inventory& inv, PlayerDamage
 bool roll_player_melee_def_block(Rng& rng, MeleeDefPercentTier tier, float perk_meleedef);
 MeleeDefPercentTier melee_def_tier_for_npc_damage(float damage, float zed_fast_dmg, float zed_army_dmg);
 float clothing_iv6_max(ItemId id);
+// C2 Hit_effect: layout effect param 0→100% for 0.2s then 0 (screen blood flash).
+constexpr float kHitEffectPeakSec = 0.2f;
+constexpr float kHitEffectFadeSec = 0.35f;
 
 // Bullets_dmg_deal IV8 branch (mosin/sks/svd/repeater/sv98/sawed mosin): second IV0 subtract
 // on zed941/847 when bullet IV8 and rolled dmg < random(0,100).

@@ -37,6 +37,8 @@ public:
   void stamp_from_mapgen(const MapGenerator& gen);
   // Single POI dirt stamp when Reload_locations calls create_map_location (tile 15).
   void stamp_location_footprint(const MapLocation& L);
+  // C2 generate_location → obj518 SetTile on tilemap_forest (decoded stamp table).
+  void stamp_location_forest(const MapLocation& L);
   bool ensure_ground_overlay();
 
   int tile_at(const char* image, float wx, float wy) const;

@@ -1,0 +1,10 @@
+Movement_stick — no On-function root in Mini DAYZ 1.4.1 data.js export.
+Invoked only via Call function (action 74) from CONTROLS / Options_menu:
+
+  CONTROLS compare TAP:
+    Call Movement_stick(0), Call Movement_tap(1)
+  CONTROLS compare STICK:
+    Call Movement_stick(1), Call Movement_tap(0)
+
+Related globals: stick_touch_id, force_stick, run_touch_id (paired with Movement_tap).
+C++: c2_invoke_movement_stick() in tutorial.cpp; desktop defaults STICK via c2_init_desktop_controls().

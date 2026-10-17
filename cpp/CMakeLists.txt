@@ -13,10 +13,15 @@ set(MDAZ_CORE_SOURCES
   src/core/game.cpp
   src/core/time.cpp
   src/core/rng.cpp
+  src/core/c2_session_globals.cpp
   src/player/player.cpp
   src/player/survival.cpp
+  src/player/player_drop.cpp
+  src/player/player_worn_visual.cpp
   src/world/world.cpp
   src/world/bunker.cpp
+  src/world/spawn_global.cpp
+  src/world/spawn_params.cpp
   src/world/loot.cpp
   src/world/mapgen.cpp
   src/world/poi_layout.cpp
@@ -27,11 +32,15 @@ set(MDAZ_CORE_SOURCES
   src/world/char_anims.cpp
   src/inventory/item_db.cpp
   src/inventory/inventory.cpp
+  src/inventory/inventory_helpers.cpp
+  src/inventory/inventory_ui.cpp
   src/inventory/inventory_armor.cpp
   src/inventory/ammo.cpp
+  src/inventory/clothing_containers.cpp
   src/inventory/craft.cpp
   src/combat/combat.cpp
   src/combat/weapons.cpp
+  src/combat/weapon_unlocks.cpp
   src/combat/bullet.cpp
   src/ai/zombie.cpp
   src/ai/animal.cpp
@@ -39,7 +48,10 @@ set(MDAZ_CORE_SOURCES
   src/weather/weather.cpp
   src/save/save_game.cpp
   src/ui/hud.cpp
+  src/ui/menu_camera.cpp
+  src/ui/tutorial.cpp
   src/ui/item_sprites.cpp
+  src/ui/ui_strings.cpp
   src/ui/quest.cpp
   src/platform/platform_null.cpp
 )
@@ -118,10 +130,14 @@ if(MDAZ_BUILD_TESTS)
     tests/test_inventory.cpp
     tests/test_combat.cpp
     tests/test_balance.cpp
+    tests/test_weather.cpp
     tests/test_save.cpp
     tests/test_bunker.cpp
     tests/test_craft.cpp
     tests/test_systems.cpp
+    tests/test_weapon_unlocks.cpp
+    tests/test_spawn_global.cpp
+    tests/test_spawn_params.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

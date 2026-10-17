@@ -85,5 +85,17 @@ int test_survival() {
     std::printf("OK   perk_hamster food drain reduced\n");
   }
 
+  // item_activate id29: IV32 — infection DoT suppressed while vitamins buff active
+  s.reset_full();
+  s.infected = true;
+  const float b_inf = s.blood;
+  s.update(10.f, nov, 50.f, false, false, false, false, false, false, false, 0.f, true);
+  if (s.blood >= b_inf - 0.01f) {
+    std::printf("OK   vitamins buff suppresses infection DoT\n");
+  } else {
+    std::printf("FAIL vitamins buff blood %g -> %g\n", b_inf, s.blood);
+    ++fail;
+  }
+
   return fail ? 1 : 0;
 }

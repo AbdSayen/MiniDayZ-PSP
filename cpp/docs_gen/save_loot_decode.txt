@@ -1,0 +1,23 @@
+# Save_loot function body decode
+len 10892
+
+obj172 IV indices in CSV concat: 2, 5, 8, 10, 12, 13, 14, 15, 16, 18, 20, 22, 34, 42
+
+strings:
+,
+,0,0,0,
+0,
+0,0,
+0,0,0,
+0,0,0,0,
+0,0,0,0,0,0,
+0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+Difficulty
+GUI
+Save_loot
+Timer_ALL
+
+# Load_loot CSV field indices (token positions): 

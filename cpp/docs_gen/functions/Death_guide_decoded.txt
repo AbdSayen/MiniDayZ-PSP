@@ -1,0 +1,38 @@
+Mini DAYZ 1.4.1 — Death_guide (from original_docs/data.js, 2026-10-17)
+
+SCOPE
+  Death_guide is a sub-tree of the Tutorial_map event group (115583-byte sheet hit).
+  It is NOT the main-menu death stats flow (Death_log_* globals are separate).
+
+ON FUNCTION Death_guide (1281 bytes — cpp/docs_gen/functions/Death_guide_body.json)
+  Trigger: CallFunction Death_guide (group includes Tutorial_map + sandbox tutorial steps).
+  Actions (verified order):
+    1. Pick obj665 (tutor bot), play tutor_death SFX (obj665 action 53 / audio table).
+    2. Set global tutor_death = 5; Tutor_hint_onscreen = 1.
+    3. Wait 1s (system action 163).
+    4. Show GUI objects 647 + 333; set player obj172 IV15 = 100; move player to layer 72.
+    5. CallFunction Update_Stats.
+    6. Reset Tutor_hint_onscreen, tutor_death, Tutor_hint_blocked_gui to 0; menu_click.
+
+TUTORIAL FAKE-DEATH PANEL (tutor_death == 5 branch in same group)
+  Spawns layout object Deadscreen at user_device_X_mid / user_device_Y_mid.
+  obj647 (gui_tutor_tip) pinned to obj665; dictionary string id 466 on obj647:
+    l_eng_ui.xml #466: "Your blood level dropped to zero. Lucky for you it is only a
+    tutorial and you will be healed now. Go on."
+  Also animates obj333 (Deadscreen container) toward user_device +500 offset; opacity 50.
+  Sets tutor_death = 5 (compare branch guard).
+
+NON-TUTORIAL RUN DEATH
+  No Death_guide CallFunction in main Map death path in decoded export.
+  Global deathtime defaults to 0 (globals.json); only one event references the name.
+  Layout: dead_screen sprite (gui_layout layer 53); bot_tutor_1/2 exist as assets but
+  no decoded timed text panel for sandbox deaths beyond tutor tip sprites.
+
+MDAZ PORT (verified subset)
+  AppState_Dead: dead_screen sprite, Death_log_reason line, stats, tutor_death.ogg as "death".
+  After balance::deathtime + 1.2s: gui_tutor_tip_bg + bot_tutor_1 (fallback bot_tutor_2).
+  UI string 542 "You are dead" (l_eng_ui.xml) drawn under banner — not in Death_guide tree.
+
+BLOCKED
+  Full Tutorial_map Death_guide GUI_hint / tutortext Pin pipeline (obj665/647/536) without
+  tutorial mode state machine; sandbox bot_tutor copy not tied to a decoded string id.

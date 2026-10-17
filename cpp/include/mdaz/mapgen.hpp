@@ -4,6 +4,9 @@
 
 namespace mdaz {
 
+class Rng;
+struct C2SessionGlobals;
+
 // Location types inferred from Map generation / create_map_element strings.
 enum LocationType {
   Loc_Village = 0,
@@ -60,6 +63,13 @@ struct PoiPartView {
 int poi_part_count(LocationType t, int variant);
 PoiPartView poi_part(LocationType t, int variant, int part_index);
 
+// C2 create_map_location: SetTile footprint uses ±300 layout units (data.js literals -300, 300).
+constexpr float kC2PoiPairSpacing = 300.f;
+constexpr float kC2PoiPairHalfSpacing = kC2PoiPairSpacing * 0.5f;
+
+// C2 item_activate seed plant: Timer behavior StartTimer duration 20s, tag "grow".
+constexpr float kC2CropGrowSeconds = 20.f;
+
 // C2 generate_array_roads_1/_2 sector markers (Array uid 150, Map_size 16×16).
 // 15 = POI marker; 12/13/14 = road cells consumed by generate_array_tomap → dirt tile 15.
 class MapGenerator {
@@ -67,6 +77,8 @@ public:
   MapGenerator();
   void clear();
   void generate_new_game(int seed);
+  // C2 generate_bunker_entrance when CurrentLevel >= 1.
+  void ensure_bunker_entrance(Rng& rng, int current_level);
   // Stamp POI footprints into World collision grid (approximate building blockers).
   void apply_collision(class World& world) const;
   void apply_collision_for(int index, class World& world) const;
@@ -81,7 +93,11 @@ public:
   bool is_road_sector(int sector_x, int sector_y) const;
   int road_sector_count() const { return road_count_; }
 
+  // Optional C2 global scratch (hotspotX / anotherX / Loop_secrets) during generate.
+  void set_c2_scratch(C2SessionGlobals* g) { c2_scratch_ = g; }
+
 private:
+  C2SessionGlobals* c2_scratch_;
   MapLocation locs_[kMaxLocations];
   int count_;
   RiverParams river_;

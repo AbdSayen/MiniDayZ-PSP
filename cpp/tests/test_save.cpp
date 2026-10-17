@@ -99,7 +99,7 @@ int test_save() {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 15) {
+  if (blob.version != 18) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -243,6 +243,47 @@ int test_save() {
                 inv2.worn_count() ? inv2.worn_iv6(0) : -1.f, saved_iv6);
     ++fail;
   } else std::printf("OK   v15 worn IV6 roundtrip\n");
+
+  // v18: piles 33+ live in loot_ext_piles (legacy v14 slot holds first 32).
+  {
+    mdaz::LootSaveView many;
+    many.count = 35;
+    for (int i = 0; i < 35; ++i) {
+      many.piles[i].x = 100.f + static_cast<float>(i);
+      many.piles[i].y = 200.f;
+      many.piles[i].item_count = 1;
+      many.piles[i].items[0] = 18;
+      many.piles[i].counts[0] = 1;
+    }
+    mdaz::SaveBlob blob18;
+    if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, 3, blob18, visited,
+                                           mdaz::kMapSectorsX * mdaz::kMapSectorsY,
+                                           66.f, 2, 4, 11, 55.f, 72.f, 3, &vs, &crops,
+                                           &traps, &extras, &fires, &many)) {
+      std::printf("FAIL v18 loot write\n");
+      ++fail;
+    } else if (blob18.loot_count != 32 || blob18.loot_ext_count != 3) {
+      std::printf("FAIL v18 loot split legacy=%d ext=%d\n",
+                  blob18.loot_count, blob18.loot_ext_count);
+      ++fail;
+    } else {
+      mdaz::LootSaveView many2;
+      mdaz::Player p3;
+      mdaz::Inventory inv3;
+      mdaz::WeatherState w3;
+      if (!mdaz::SaveSystem::read_from_buffer(blob18, p3, inv3, w3, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, 0, 0, 0, 0, &many2)) {
+        std::printf("FAIL v18 loot read\n");
+        ++fail;
+      } else if (many2.count != 35 || many2.piles[32].x != 132.f) {
+        std::printf("FAIL v18 loot roundtrip count=%d x32=%.0f\n",
+                    many2.count, many2.count > 32 ? many2.piles[32].x : -1.f);
+        ++fail;
+      } else {
+        std::printf("OK   v18 extended loot piles (96 max)\n");
+      }
+    }
+  }
 
   return fail ? 1 : 0;
 }

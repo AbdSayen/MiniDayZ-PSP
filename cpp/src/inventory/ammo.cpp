@@ -26,4 +26,15 @@ int consume_ammo_from_bag(Inventory& inv, ItemId ammo_id, int need) {
   return taken;
 }
 
+int count_ammo_for_reload(const Inventory& inv, ItemId ammo_id) {
+  return count_ammo_in_bag(inv, ammo_id) + inv.clothing().count_ammo(ammo_id);
+}
+
+int consume_ammo_for_reload(Inventory& inv, ItemId ammo_id, int need) {
+  if (ammo_id <= 0 || need <= 0) return 0;
+  int taken = consume_ammo_from_bag(inv, ammo_id, need);
+  if (taken < need) taken += inv.clothing().consume_ammo(ammo_id, need - taken);
+  return taken;
+}
+
 } // namespace mdaz

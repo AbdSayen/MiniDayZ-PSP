@@ -1,0 +1,1565 @@
+{
+  "1": {
+    "name": "Canned beans",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 30
+      },
+      "IV14": {
+        "op": "add",
+        "value": 5
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "2": {
+    "name": "Canned tuna",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 20
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "3": {
+    "name": "Tactical bacon",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 35
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "4": {
+    "name": "Rice",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 65
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "5": {
+    "name": "Tomato",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 15
+      },
+      "IV14": {
+        "op": "add",
+        "value": 5
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "6": {
+    "name": "Apple",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 15
+      },
+      "IV14": {
+        "op": "add",
+        "value": 5
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "7": {
+    "name": "Banana",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 15
+      },
+      "IV14": {
+        "op": "add",
+        "value": 5
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "8": {
+    "name": "Pipsi",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 30
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "9": {
+    "name": "Spite",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 30
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "10": {
+    "name": "Kvas",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 50
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "11": {
+    "name": "5.56x45 ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "12": {
+    "name": ".45 ACP ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "13": {
+    "name": "7.62 ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "14": {
+    "name": "7.62x39 ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "15": {
+    "name": "5.45x39 ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "16": {
+    "name": ".357 ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "17": {
+    "name": "12cal ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "18": {
+    "name": "Bandage",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV22": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV22_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "19": {
+    "name": "Blood bag",
+    "waits": [
+      6
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 50
+      },
+      "IV49": {
+        "op": "sub",
+        "value": 75
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "20": {
+    "name": "Flare",
+    "waits": [],
+    "iv": {
+      "IV26": {
+        "op": "set",
+        "value": 1
+      }
+    },
+    "flags": {
+      "IV26": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "21": {
+    "name": "F1 grenade",
+    "waits": [],
+    "iv": {
+      "IV26": {
+        "op": "set",
+        "value": 2
+      }
+    },
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "22": {
+    "name": "Battery",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "23": {
+    "name": "Campfire kit",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "24": {
+    "name": "Matches",
+    "waits": [
+      3,
+      1
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "25": {
+    "name": "Whiskey",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV16": {
+        "op": "add",
+        "value": 40
+      },
+      "IV14": {
+        "op": "add",
+        "value": 20
+      },
+      "IV49": {
+        "op": "sub",
+        "value": 50
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "26": {
+    "name": "Rags",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV22": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV22_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "27": {
+    "name": "Cranberry",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 15
+      },
+      "IV13": {
+        "op": "add",
+        "value": 15
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "28": {
+    "name": "Saline bag",
+    "waits": [
+      6
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 25
+      },
+      "IV49": {
+        "op": "sub",
+        "value": 25
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "29": {
+    "name": "Vitamins",
+    "waits": [
+      2,
+      60
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV32": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV32": true,
+      "IV32_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "30": {
+    "name": "Nota-Cola",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 30
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "31": {
+    "name": "Zucchini",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 20
+      },
+      "IV14": {
+        "op": "add",
+        "value": 20
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "32": {
+    "name": "Bell pepper",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 5
+      },
+      "IV13": {
+        "op": "add",
+        "value": 20
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "33": {
+    "name": "Orange",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 15
+      },
+      "IV13": {
+        "op": "add",
+        "value": 15
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "34": {
+    "name": "Heatpack",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV16": {
+        "op": "add",
+        "value": 25
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "36": {
+    "name": "Cleaning kit",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": {
+      "add": 25
+    },
+    "notes": []
+  },
+  "42": {
+    "name": "Hunter knife",
+    "waits": [
+      3,
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "43": {
+    "name": "Army knife",
+    "waits": [
+      3,
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "44": {
+    "name": "Butcher knife",
+    "waits": [
+      3,
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "46": {
+    "name": "Tetracycline",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV34": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV34_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "47": {
+    "name": "Tomato seeds pack",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "48": {
+    "name": "Pepper seeds pack",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "51": {
+    "name": "Crafted arrows",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "52": {
+    "name": "Composite arrow",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "53": {
+    "name": "Gasoline",
+    "waits": [
+      6
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "54": {
+    "name": "Water bottle",
+    "waits": [
+      2,
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 12.5
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "55": {
+    "name": "Canteen",
+    "waits": [
+      2,
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 25
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "56": {
+    "name": "Landmine",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "57": {
+    "name": "Bear trap",
+    "waits": [
+      1,
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "58": {
+    "name": ".22lr ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "59": {
+    "name": "Car toolbox",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "60": {
+    "name": "Raw steak",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "61": {
+    "name": "Cooked steak",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 15
+      },
+      "IV13": {
+        "op": "add",
+        "value": 50
+      },
+      "IV14": {
+        "op": "add",
+        "value": 10
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "62": {
+    "name": "Nuko Cola",
+    "waits": [
+      2,
+      5,
+      55
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "set",
+        "value": 100
+      },
+      "IV32": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV32": true,
+      "IV32_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "63": {
+    "name": "Energy drink",
+    "waits": [
+      2,
+      10
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 20
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "68": {
+    "name": "Zucchini Seeds",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "69": {
+    "name": "9mm ammo",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "70": {
+    "name": "Barbed wire",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "71": {
+    "name": "Rabbit meat",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "72": {
+    "name": "Cooked rabbit meat",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 30
+      },
+      "IV13": {
+        "op": "add",
+        "value": 35
+      },
+      "IV14": {
+        "op": "add",
+        "value": 10
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "73": {
+    "name": "Cloudberry",
+    "waits": [
+      2,
+      30
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 10
+      },
+      "IV13": {
+        "op": "add",
+        "value": 10
+      },
+      "IV32": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true,
+      "IV32": true,
+      "IV32_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "74": {
+    "name": "Bilberry",
+    "waits": [
+      2
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV14": {
+        "op": "add",
+        "value": 20
+      },
+      "IV13": {
+        "op": "add",
+        "value": 10
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "75": {
+    "name": "Radio",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "76": {
+    "name": "RDS scope",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "77": {
+    "name": "PU scope",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "78": {
+    "name": "PSO-1 scope",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "79": {
+    "name": "ACOG scope",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "80": {
+    "name": "Silencer 5.45",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "81": {
+    "name": "Silencer 5.56",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "82": {
+    "name": "Hacksaw",
+    "waits": [
+      2,
+      2,
+      2
+    ],
+    "iv": {
+      "IV2": {
+        "op": "set",
+        "value": -1
+      },
+      "IV1": {
+        "op": "set",
+        "value": 0
+      },
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV1_clear": true,
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "83": {
+    "name": "Bandolier",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "85": {
+    "name": "MRE ration",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV13": {
+        "op": "add",
+        "value": 40
+      },
+      "IV14": {
+        "op": "add",
+        "value": 40
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "86": {
+    "name": "Spinning fishing rod",
+    "waits": [
+      4,
+      4
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "87": {
+    "name": "Basic Fishing rod",
+    "waits": [
+      4,
+      4
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "88": {
+    "name": "Protector Case",
+    "waits": [
+      1
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "89": {
+    "name": "Magpull",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "90": {
+    "name": "Choke",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "91": {
+    "name": "Herring",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "92": {
+    "name": "Salmon",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "93": {
+    "name": "Ruffe",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "94": {
+    "name": "Perch",
+    "waits": [
+      5
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "95": {
+    "name": "Small fish fillet",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 15
+      },
+      "IV13": {
+        "op": "add",
+        "value": 50
+      },
+      "IV14": {
+        "op": "add",
+        "value": 10
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "96": {
+    "name": "Big fish fillet",
+    "waits": [
+      3
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      },
+      "IV15": {
+        "op": "add",
+        "value": 15
+      },
+      "IV13": {
+        "op": "add",
+        "value": 50
+      },
+      "IV14": {
+        "op": "add",
+        "value": 10
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "97": {
+    "name": "🍄",
+    "waits": [
+      1
+    ],
+    "iv": {
+      "IV21": {
+        "op": "set",
+        "value": 0
+      }
+    },
+    "flags": {
+      "IV21": true,
+      "IV21_clear": true
+    },
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "98": {
+    "name": "Longrange Scope",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "99": {
+    "name": "Claymore",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "100": {
+    "name": "Ammo 9x18",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "101": {
+    "name": "Ammo 9x39",
+    "waits": [],
+    "iv": {},
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  },
+  "102": {
+    "name": "Molotov",
+    "waits": [],
+    "iv": {
+      "IV26": {
+        "op": "set",
+        "value": 3
+      }
+    },
+    "flags": {},
+    "weapon_iv6": null,
+    "notes": []
+  }
+}

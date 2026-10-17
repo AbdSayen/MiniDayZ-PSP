@@ -1,0 +1,10 @@
+# Player bullet hit zones — Bullets_dmg_deal IV2 1/2/3 vs obj172/obj941
+
+## Blocked — head/body/legs damage multipliers
+Bullets_dmg_deal_decoded.txt: IV2 1/2/3 branches gate kill-cam / IV8 armor-pierce follow-up
+on obj941/847 with the same rolled bullet damage (IV0±25% formula). No separate mul per zone.
+
+NPC_get_damage kind 3 → obj941 IV0 subtract uses one damage param regardless of bullet IV2.
+
+## Action
+No combat.cpp change (would invent head/body/legs multipliers).

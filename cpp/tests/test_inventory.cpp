@@ -1,5 +1,6 @@
 #include "mdaz/ammo.hpp"
 #include "mdaz/inventory.hpp"
+#include "mdaz/inventory_ui.hpp"
 #include "mdaz/item_db.hpp"
 
 #include <cstdio>
@@ -91,7 +92,8 @@ int test_inventory() {
       "{\"id\":19,\"name\":\"Blood bag\"},"
       "{\"id\":28,\"name\":\"Saline bag\"},"
       "{\"id\":45,\"name\":\"Morphine\"},"
-      "{\"id\":29,\"name\":\"Vitamins\"}"
+      "{\"id\":29,\"name\":\"Vitamins\"},"
+      "{\"id\":46,\"name\":\"Tetracycline\"}"
       "]}";
     if (!med.load_from_json_string(mjson)) {
       std::printf("FAIL medical db\n");
@@ -117,15 +119,24 @@ int test_inventory() {
       } else {
         std::printf("OK   saline heal\n");
       }
-      ms.bleeding = 2.f;
       minv.add_item(45, 1, med);
       int mor = -1;
       for (int i = 0; i < minv.slot_count(); ++i) if (minv.slot(i).id == 45) mor = i;
-      if (mor < 0 || !minv.use_consumable(mor, ms, med) || ms.bleeding != 0.f) {
-        std::printf("FAIL morphine\n");
+      if (mor < 0 || minv.use_consumable(mor, ms, med)) {
+        std::printf("FAIL morphine (no C2 item_activate — use should fail)\n");
         ++fail;
       } else {
-        std::printf("OK   morphine stops bleed\n");
+        std::printf("OK   morphine blocked without item_activate\n");
+      }
+      ms.infected = true;
+      minv.add_item(46, 1, med);
+      int ab = -1;
+      for (int i = 0; i < minv.slot_count(); ++i) if (minv.slot(i).id == 46) ab = i;
+      if (ab < 0 || !minv.use_consumable(ab, ms, med) || ms.infected) {
+        std::printf("FAIL tetracycline\n");
+        ++fail;
+      } else {
+        std::printf("OK   tetracycline clears infection\n");
       }
     }
   }
@@ -194,6 +205,114 @@ int test_inventory() {
       ++fail;
     } else {
       std::printf("OK   ammo count/consume\n");
+    }
+  }
+
+  {
+    mdaz::ItemDatabase cdb;
+    cdb.load_from_json_string(
+      "{\"items\":[{\"id\":12,\"name\":\".45 ACP ammo\",\"stack_max\":20},"
+      "{\"id\":303,\"name\":\"Cargo pants\",\"category\":\"clothing\"}]}");
+    mdaz::Inventory cinv;
+    cinv.add_item(303, 1, cdb);
+    cinv.wear_clothing(0, cdb);
+    cinv.sync_clothing_gates(cdb);
+    if (!cinv.clothing().region_available(mdaz::ClothingRegion_Pants)) {
+      std::printf("FAIL clothing pants gate\n");
+      ++fail;
+    } else if (!cinv.clothing().add(mdaz::ClothingRegion_Pants, 12, 10, cdb)) {
+      std::printf("FAIL clothing add ammo\n");
+      ++fail;
+    } else if (mdaz::consume_ammo_for_reload(cinv, 12, 3) != 3 ||
+               cinv.clothing().count_ammo(12) != 7) {
+      std::printf("FAIL clothing ammo consume\n");
+      ++fail;
+    } else {
+      std::printf("OK   Check_ammo_pants / clothing reload\n");
+    }
+    mdaz::Inventory full;
+    full.add_item(303, 1, cdb);
+    full.wear_clothing(0, cdb);
+    full.sync_clothing_gates(cdb);
+    for (int i = 0; i < full.capacity(); ++i) full.add_item(1, 1, cdb);
+    for (int i = 0; i < mdaz::kClothingContainerSlots; ++i)
+      (void)full.clothing().add(mdaz::ClothingRegion_Pants, 12, 30, cdb);
+    mdaz::ItemDatabase bagdb;
+    bagdb.load_from_json_string("{\"items\":[{\"id\":1,\"name\":\"X\",\"stack_max\":1}]}");
+    if (mdaz::pick_inventory_item(full, bagdb, 12, 1) != mdaz::PickInv_NoSpace) {
+      std::printf("FAIL pick with no clothing space\n");
+      ++fail;
+    } else if (mdaz::pick_inventory_item(full, bagdb, 12, 1) != mdaz::PickInv_NoSpace) {
+      std::printf("FAIL pick still no space\n");
+      ++fail;
+    } else {
+      std::printf("OK   Check_space_pants full cascade\n");
+    }
+    mdaz::Inventory cascade;
+    cascade.add_item(303, 1, cdb);
+    cascade.wear_clothing(0, cdb);
+    cascade.sync_clothing_gates(cdb);
+    for (int i = 0; i < cascade.capacity(); ++i) cascade.add_item(1, 1, cdb);
+    if (mdaz::pick_inventory_item(cascade, bagdb, 12, 3) != mdaz::PickInv_Ok ||
+        cascade.clothing().count_ammo(12) != 3) {
+      std::printf("FAIL pick into clothing cascade\n");
+      ++fail;
+    } else {
+      std::printf("OK   Check_space_pants pickup cascade\n");
+    }
+  }
+
+  {
+    mdaz::ItemDatabase pdb;
+    pdb.load_from_json_string("{\"items\":[{\"id\":4,\"name\":\"Test item\"}]}");
+    mdaz::Inventory pinv;
+    if (mdaz::pick_inventory_item(pinv, pdb, 4, 2) != mdaz::PickInv_Ok ||
+        mdaz::count_item_in_inventory(pinv, 4) != 2) {
+      std::printf("FAIL pick_inventory_item\n");
+      ++fail;
+    } else if (!mdaz::check_item_inventory(pinv, 4) || !mdaz::check_item_exists(pinv, 4)) {
+      std::printf("FAIL check_item_inventory\n");
+      ++fail;
+    } else {
+      std::printf("OK   pick_inventory_item / Check_item_inventory\n");
+    }
+    mdaz::InventoryUiState ui;
+    ui.open();
+    if (!ui.opened) {
+      std::printf("FAIL inventory open\n");
+      ++fail;
+    }
+    ui.close_inventory();
+    if (ui.opened) {
+      std::printf("FAIL close_inventory\n");
+      ++fail;
+    } else {
+      std::printf("OK   close_inventory / Inventory_opened\n");
+    }
+  }
+
+  {
+    mdaz::ItemDatabase pdb;
+    pdb.load_from_json_string(
+      "{\"items\":[{\"id\":12,\"name\":\"Ammo\",\"stack_max\":30,\"category\":\"ammo\"},"
+      "{\"id\":303,\"name\":\"Cargo pants\",\"category\":\"clothing\"}]}");
+    mdaz::Inventory inv;
+    inv.add_item(303, 1, pdb);
+    inv.wear_clothing(0, pdb);
+    inv.sync_clothing_gates(pdb);
+    (void)inv.clothing().add(mdaz::ClothingRegion_Pants, 12, 5, pdb);
+    if (mdaz::pick_player_item(inv, pdb, mdaz::ClothingRegion_Pants, 0) != mdaz::PickPlayer_Ok ||
+        mdaz::count_item_in_inventory(inv, 12) != 5 ||
+        !inv.clothing().slot(mdaz::ClothingRegion_Pants, 0).empty()) {
+      std::printf("FAIL pick_player_item to bag\n");
+      ++fail;
+    } else {
+      std::printf("OK   Pick_player_item clothing→bag\n");
+    }
+    if (mdaz::pick_player_item(inv, pdb, mdaz::ClothingRegion_Pants, 0) !=
+        mdaz::PickPlayer_Empty) {
+      std::printf("FAIL pick_player_item empty slot\n");
+      ++fail;
     }
   }
 

@@ -1,0 +1,4 @@
+ach_move_text — achievement UI function (not On-function root in export).
+Called from Achievements sheet: Call ach_move_text with param 13 after Pin to player;
+shows movement-tutorial achievement copy on achieves dictionary layer.
+C++ audit anchor: hud.cpp kC2_ach_move_text (desktop skips achievements overlay).

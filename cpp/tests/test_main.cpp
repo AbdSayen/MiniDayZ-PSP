@@ -8,10 +8,15 @@ int test_save();
 int test_bunker();
 int test_craft();
 int test_systems();
+int test_weather();
+int test_weapon_unlocks();
+int test_spawn_global();
+int test_spawn_params();
 
 int main() {
   int failed = 0;
   failed += test_balance();
+  failed += test_weather();
   failed += test_survival();
   failed += test_inventory();
   failed += test_combat();
@@ -19,6 +24,9 @@ int main() {
   failed += test_bunker();
   failed += test_craft();
   failed += test_systems();
+  failed += test_weapon_unlocks();
+  failed += test_spawn_global();
+  failed += test_spawn_params();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

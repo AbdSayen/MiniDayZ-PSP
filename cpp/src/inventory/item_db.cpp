@@ -116,15 +116,34 @@ void ItemDatabase::classify(ItemDef& d) {
 
   // Common food/drink placeholders (not sverka — better than generic 20)
   if (d.id == 1) { d.category = ItemCat_Food; d.food_restore = 35.f; }      // Canned beans
-  else if (d.id == 2) { d.category = ItemCat_Food; d.food_restore = 30.f; } // Canned spaghetti
-  else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; } // Tactical bacon
-  else if (d.id == 4) { d.category = ItemCat_Food; d.food_restore = 25.f; } // Rice
-  else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; } // Tomato
-  else if (d.id == 6) { d.category = ItemCat_Food; d.food_restore = 15.f; d.water_restore = 4.f; } // Apple
-  else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Banana
-  else if (d.id == 8) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Pipsi
-  else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Spite
-  else if (d.id == 10) { d.category = ItemCat_Drink; d.water_restore = 28.f; d.food_restore = 4.f; } // Kvas
+  else if (d.id == 2) { // Canned spaghetti — item_id_effects IV13+30 IV14+5
+    d.category = ItemCat_Food;
+    d.food_restore = 30.f;
+    d.water_restore = 5.f;
+    d.known_stats = true;
+  } else if (d.id == 3) { d.category = ItemCat_Food; d.food_restore = 28.f; } // Tactical bacon
+  else if (d.id == 4) { // Rice — item_id_effects IV14+22
+    d.category = ItemCat_Food;
+    d.water_restore = 22.f;
+    d.known_stats = true;
+  } else if (d.id == 5) { d.category = ItemCat_Food; d.food_restore = 22.f; } // Tomato
+  else if (d.id == 6) { // Apple — item_id_effects IV13+7 IV14+8
+    d.category = ItemCat_Food;
+    d.food_restore = 7.f;
+    d.water_restore = 8.f;
+    d.known_stats = true;
+  } else if (d.id == 7) { d.category = ItemCat_Food; d.food_restore = 18.f; } // Banana
+  else if (d.id == 8) { // Pipsi — item_id_effects IV14+20 (dominant drink restore)
+    d.category = ItemCat_Drink;
+    d.water_restore = 20.f;
+    d.known_stats = true;
+  } else if (d.id == 9) { d.category = ItemCat_Drink; d.water_restore = 25.f; } // Spite
+  else if (d.id == 10) { // Kvas — item_id_effects IV13+10 IV14+10
+    d.category = ItemCat_Drink;
+    d.water_restore = 10.f;
+    d.food_restore = 10.f;
+    d.known_stats = true;
+  }
   else if (d.id == 54) { d.category = ItemCat_Drink; d.water_restore = 40.f; } // Water bottle
   else if (d.id == 55) { d.category = ItemCat_Drink; d.water_restore = 50.f; } // Canteen
   else if (d.id == 85) { d.category = ItemCat_Food; d.food_restore = 55.f; } // MRE ration

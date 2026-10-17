@@ -1,0 +1,18 @@
+# Drivable vehicles — fuel tick & truck respawn
+
+## Verified (already in C++ vehicle.cpp / Drivable vehicles_decoded.txt)
+- Car destroyed → Timer 600s Uaz_respawn / Volga_respawn → 1s → Car_respawn_uaz / Car_respawn_volga
+- Spawn_uaz / Spawn_volga / Spawn_truck dispatch from Reload_locations
+- IV284 / IV294 referenced for GUI bar_fuel / bar_hp (p19 a86 Vehicle)
+
+## Blocked — fuel tick
+No SubInstanceVar/Every 0.1s −8 on IV284 event subtree found in data.js export.
+vehicle_balance kFuelTickSec / kFuelSubtractPerTick remain approximate stubs.
+
+## Blocked — boat fuel
+Boat (obj724) appears in hard_ground collision only; no IV284 drain path decoded.
+Boat stub drain in vehicle.cpp unchanged.
+
+## Blocked — truck world respawn
+No Car_respawn_truck / Truck_respawn timer in export (only Uaz_respawn + Volga_respawn).
+vehicle_has_world_respawn() correctly excludes Vehicle_Truck.

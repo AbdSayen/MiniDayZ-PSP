@@ -1,5 +1,6 @@
 #include "mdaz/world_tilemaps.hpp"
 
+#include "mdaz/map_decode_tables.hpp"
 #include "mdaz/mapgen.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/types.hpp"
@@ -157,6 +158,16 @@ bool WorldTilemaps::ensure_ground_overlay() {
                    kTile, kTile, 5, -1);
 }
 
+void WorldTilemaps::stamp_location_forest(const MapLocation& L) {
+  // C2 generate_location: SetTile on tilemap_forest relative to POI hotspotX/Y.
+  for (int i = 0; i < kForestStampCount; ++i) {
+    const ForestStamp& st = kForestStamps[i];
+    if (st.tile < 0) continue;
+    stamp_tile("tilemap_forest", L.pos.x + static_cast<float>(st.dx),
+                 L.pos.y + static_cast<float>(st.dy), st.tile, 150, 150, 3);
+  }
+}
+
 void WorldTilemaps::stamp_location_footprint(const MapLocation& L) {
   if (!ensure_ground_overlay()) return;
   auto fill_ground = [&](float wx, float wy, int cols, int rows, int tile) {
@@ -196,6 +207,7 @@ void WorldTilemaps::stamp_from_mapgen(const MapGenerator& gen) {
     const MapLocation& L = gen.location(i);
     if (!L.active) continue;
     stamp_location_footprint(L);
+    stamp_location_forest(L);
   }
 
   // C2 generate_array_roads_1/_2 sector markers (12/13/14) → runtime dirt tile 15.

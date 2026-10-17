@@ -5,12 +5,15 @@
 #include "mdaz/bandit.hpp"
 #include "mdaz/bullet.hpp"
 #include "mdaz/bunker.hpp"
+#include "mdaz/c2_session_globals.hpp"
 #include "mdaz/campfire.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/inventory.hpp"
+#include "mdaz/inventory_ui.hpp"
 #include "mdaz/item_db.hpp"
 #include "mdaz/loot.hpp"
 #include "mdaz/mapgen.hpp"
+#include "mdaz/menu_camera.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
 #include "mdaz/quest.hpp"
@@ -19,10 +22,12 @@
 #include "mdaz/world_tilemaps.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/save_game.hpp"
+#include "mdaz/spawn_params.hpp"
 #include "mdaz/timers.hpp"
 #include "mdaz/types.hpp"
 #include "mdaz/vehicle.hpp"
 #include "mdaz/weather.hpp"
+#include "mdaz/weapon_unlocks.hpp"
 #include "mdaz/world.hpp"
 #include "mdaz/zombie.hpp"
 
@@ -57,6 +62,8 @@ public:
   bool in_bunker() const { return in_bunker_; }
   bool driving() const { return vehicles_.player_driving(); }
   bool show_bag() const { return show_bag_; }
+  bool inventory_opened() const { return inventory_ui_.opened; }
+  const InventoryUiState& inventory_ui_state() const { return inventory_ui_; }
   bool show_craft_menu() const { return show_craft_menu_; }
   int craft_menu_index() const { return craft_menu_index_; }
   bool near_campfire() const { return campfires_.near_fire(player_.pos); }
@@ -85,6 +92,9 @@ public:
   int ammo_for_equipped() const;
   Difficulty menu_difficulty() const { return menu_difficulty_; }
   bool sector_visited(int sx, int sy) const;
+  const C2SessionGlobals& c2_session() const { return c2_; }
+  float weapon_unlock_toast_t() const { return wpn_unlock_toast_t_; }
+  ItemId weapon_unlock_toast_weapon() const { return wpn_unlock_toast_id_; }
 
   Player& player_mut() { return player_; }
   Inventory& inventory_mut() { return inventory_; }
@@ -104,6 +114,8 @@ private:
   ZombieSystem zombies_;
   AnimalSystem animals_;
   BanditSystem bandits_;
+  TeamCampSystem team_camps_;
+  ZedRespawnChannels zed_resp_;
   VehicleSystem vehicles_;
   CampfireSystem campfires_;
   QuestState quest_;
@@ -115,6 +127,7 @@ private:
   WorldTilemaps world_tiles_;
   WorldTilemaps menu_tiles_;
   LayoutSprites menu_sprites_;
+  MenuCamera menu_cam_;
   CharAnims char_anims_;
   DispersionState dispersion_;
   Rng rng_;
@@ -123,6 +136,7 @@ private:
   float reload_cd_;
   float player_anim_t_;   // locomotion clock
   float melee_anim_t_;    // >0 while playing axe/melee swing
+  float fire_anim_t_;     // brief pistol/twohand pose after shooting
   float use_anim_t_;      // >0 while playing using_item
   float airdrop_alert_;
   float radio_t_; // seconds to show radio HUD after use
@@ -133,7 +147,10 @@ private:
   float footstep_t_;     // cadence timer for run/walk SFX
   float wetness_;        // 0..100 clothes wetness (rain up / fire dry)
   float gasmask_filter_; // 0..100 filter life while wearing gasmask
-  float adrenaline_t_;   // morphine sprint boost remaining seconds
+  float adrenaline_t_;   // legacy placeholder — no C2 item_activate for morphine (45)
+  float energy_sprint_t_; // C2 item_activate id63: EightDir max speed boost ~10s
+  float vitamins_buff_t_; // C2 item_activate id29: IV32=1 for 60s
+  float item_use_lock_t_; // C2 item_activate IV21 using-item wait (blocks actions)
   float melee_break_mul_; // duct tape reinforce reduces melee break chance
   bool has_headlamp_;    // worn/owned headlamp enables torch toggle without kit
   bool gun_jammed_;      // clear with V reload
@@ -142,7 +159,9 @@ private:
   int equipped_slot_;
   bool in_bunker_;
   bool bunker_looted_;
+  float bunker_reopen_t_; // C2 Bunker_erase → Reopen after 1800s
   bool show_bag_;
+  InventoryUiState inventory_ui_;
   bool show_craft_menu_;
   int craft_menu_index_;
   Difficulty menu_difficulty_;
@@ -156,7 +175,7 @@ private:
   struct PlaceTrap {
     Vec2 pos;
     float life;     // seconds remaining
-    int kind;       // 0=bear, 1=barbed, 2=fence, 3=claymore, 4=landmine
+    int kind;       // 0=bear, 1=barbed, 2/5/6/7=fence (Craft_32/31), 3=claymore, 4=landmine
     bool active;
     bool sprung;    // bear trap already triggered
   };
@@ -181,6 +200,10 @@ private:
   static const int kMaxTrees = 96;
   Vec2 trees_[kMaxTrees];
   int tree_count_;
+  // generate_location forest stamps (tile 0 cells) + map_element-sheet0 when exported sprite exists.
+  static const int kMaxMapProps = 64;
+  Vec2 map_props_[kMaxMapProps];
+  int map_prop_count_;
   static const int kMaxBloodDrips = 48;
   struct BloodDrip { Vec2 pos; float life; };
   BloodDrip blood_drips_[kMaxBloodDrips];
@@ -190,12 +213,19 @@ private:
   float fuel_warn_cd_;
   float rain_sfx_cd_;
   float lightning_t_; // brief white flash after thunder
+  float hit_effect_t_; // C2 Hit_effect layout flash after Player_get_hit
   float thunder_cd_;
   float cough_alert_t_; // brief window after cough that pulls zeds
   float wind_sfx_cd_;
   float flare_t_;
   Vec2 flare_pos_;
   float molotov_dmg_cd_;
+  float molotov_reload_t_; // C2 molotov_reload timer 15s → player_weapons IV34
+  float vss_bleed_unlock_cd_;
+  WeaponUnlockState wpn_unlocks_;
+  float wpn_unlock_toast_t_;
+  ItemId wpn_unlock_toast_id_;
+  C2SessionGlobals c2_;
 
   // Visual FX / corpses (presentation parity with C2)
   enum FxKind { Fx_Muzzle = 0, Fx_Hit, Fx_Explode, Fx_Shell, Fx_Blood, Fx_Fish };
@@ -237,20 +267,28 @@ private:
   void try_craft_menu_recipe();
   void try_place_campfire();
   bool try_place_trap(int kind);
+  // build_fence1 (Craft_32): 5×38; build_fence2 (Craft_31): 5×38 + 1×50
+  bool try_build_fence(int variant);
+  void try_cancel_quest();
+  void on_quest_completed(int task_before);
   void update_traps(float dt);
   void try_drop_equipped();
   void try_mag_reload();
   void sync_mag_for_equipped();
   void try_throw_projectile();
   void try_bunker_enter_exit();
-  void spawn_bunker_zeds();
+  void spawn_bunker_zeds(int max_new);
+  void zed_check_bunker();
+  void close_inventory();
+  void sync_bag_overlay_from_ui();
   void resolve_bullet_hits();
   void explode_at(Vec2 pos, float damage, bool leave_fire = false);
   void tick_molotov_burn(float dt);
   void on_animal_killed(Animal& a);
-  void on_zed_killed(Zombie& z);
-  void hurt_zombie(Zombie& z, float amount);
-  void hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8);
+  void on_zed_killed(Zombie& z, ItemId killer_weapon = 0);
+  void notify_weapon_unlock(ItemId unlocked_loot_id);
+  void hurt_zombie(Zombie& z, float amount, ItemId killer_weapon = 0);
+  void hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8, ItemId killer_weapon = 0);
   void hurt_animal(Animal& a, float amount);
   void hurt_bandit(Bandit& b, float amount);
   void apply_incoming_damage(float amount, bool can_bleed,
@@ -267,6 +305,10 @@ private:
   int bandits_alive_near(Vec2 pos, float radius) const;
   Vec2 location_reload_anchor_;
   bool quest_bandits_spawned_;
+  bool secret_spawn3_done_;
+  int hammerspawned_; // C2 global cap 5
+  int helispawned_;   // C2 instance cap 3 (helicrash POI budget)
+  void maybe_add_hammer_loot(LootPile* pile);
   void update_army_shooters(float dt);
   void update_bandit_guns(float dt);
   void pack_crops_view(CropSaveView& out) const;

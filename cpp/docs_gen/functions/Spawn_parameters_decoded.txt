@@ -1,0 +1,4 @@
+Spawn parameters — C2 event GROUP label (not a function body).
+Root group in Spawn_parameters.json; children: LOOT Respawn (Check_loot, Global_respawn,
+Trigger_spawn), Spawn_drop item pools.
+C++ audit: spawn_params.cpp kC2_Spawn_parameters; gameplay in spawn_params.cpp / spawn_global.cpp.

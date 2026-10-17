@@ -1,4 +1,6 @@
 #include "mdaz/bandit.hpp"
+
+#include <cstring>
 #include "mdaz/bullet.hpp"
 #include "mdaz/campfire.hpp"
 #include "mdaz/combat.hpp"
@@ -99,8 +101,14 @@ int test_systems() {
     std::printf("OK   Reload_locations runtime near=%d far_off=%d\n", near, far_inactive);
 
   mdaz::QuestState q;
+  if (mdaz::quest_reward_item_id(3) != 18 || mdaz::quest_reward_item_id(99) != 0) {
+    std::printf("FAIL quest_reward_item_id table\n");
+    ++fail;
+  } else
+    std::printf("OK   Quest_spawn_reward_box id map (e.g. 3->18)\n");
+
   q.generate_quest_item(qr);
-  if (q.q_task_id != 1 || q.q_target_sid <= 0) {
+  if (q.q_task_id != 1 || q.q_target_sid <= 0 || q.q_reward_id <= 0) {
     std::printf("FAIL Generate_quest_item task/target\n");
     ++fail;
   } else if (q.tick(inv, db)) {
@@ -111,8 +119,16 @@ int test_systems() {
     if (!q.tick(inv, db)) {
       std::printf("FAIL quest fetch item\n");
       ++fail;
-    } else
-      std::printf("OK   C2 quest task1 fetch sid %d\n", q.q_target_sid);
+    } else if (!q.awaiting_reward()) {
+      std::printf("FAIL quest awaiting_reward after tick\n");
+      ++fail;
+    } else {
+      const int rolled = q.q_reward_id;
+      mdaz::LootSystem loot;
+      q.spawn_reward_box(loot, mdaz::Vec2(0, 0));
+      q.finish_reward();
+      std::printf("OK   C2 quest task1 fetch sid %d reward roll %d\n", q.q_target_sid, rolled);
+    }
   }
   q.generate_quest_case();
   if (q.q_task_id != 3 || q.q_target_sid != 88) {
@@ -125,9 +141,75 @@ int test_systems() {
     else
       std::printf("OK   quest task3 case sid 88\n");
   }
+  {
+    mdaz::BanditSystem bs;
+    mdaz::spawn_bandit_camp(bs, mdaz::Vec2(500.f, 500.f), qr);
+    int gun = 0, mel = 0;
+    for (const mdaz::Bandit* b = bs.begin(); b != bs.end(); ++b) {
+      if (!b->alive) continue;
+      if (b->has_gun) ++gun;
+      else ++mel;
+    }
+    if (bs.alive_count() != 4 || gun != 2 || mel != 2) {
+      std::printf("FAIL spawn_bandit_camp want 4 (2 gun 2 mel) got %d (%d/%d)\n", bs.alive_count(),
+                  gun, mel);
+      ++fail;
+    } else
+      std::printf("OK   Spawn_bandit_camp 2 firearm + 2 puncher\n");
+    for (const mdaz::Bandit* b = bs.begin(); b != bs.end(); ++b) {
+      if (!b->alive || !b->has_gun) continue;
+      if (b->mag_rounds != mdaz::bot_mag_capacity_for_weapon_iv14(b->weapon_iv14)) {
+        std::printf("FAIL bot IV9 mag want %d got %d iv14=%d\n",
+                    mdaz::bot_mag_capacity_for_weapon_iv14(b->weapon_iv14), b->mag_rounds,
+                    b->weapon_iv14);
+        ++fail;
+        break;
+      }
+    }
+    {
+      mdaz::Rng sfx_rng;
+      if (std::strcmp(mdaz::bot_bandit_fire_sfx(1, 8, sfx_rng), "akm_5") != 0) {
+        std::printf("FAIL bot IV11=8 fire sfx\n");
+        ++fail;
+      } else if (std::strcmp(mdaz::bot_bandit_fire_sfx(2, 4, sfx_rng), "SKS_close_0") != 0) {
+        std::printf("FAIL bot IV11=4 fire sfx\n");
+        ++fail;
+      } else if (mdaz::bot_bandit_iv11_for_iv14(10) != 7) {
+        std::printf("FAIL bot IV14=10 -> IV11 7\n");
+        ++fail;
+      } else {
+        std::printf("OK   bot bandit827 fire SFX map\n");
+      }
+    }
+    if (!fail) {
+      mdaz::Bandit gun_test;
+      gun_test.setup(mdaz::Vec2(0, 0), 99, true, false, 11);
+      gun_test.mag_rounds = 0;
+      gun_test.reloading = true;
+      gun_test.reload_timer = mdaz::bot_reload_duration_sec(11);
+      if (gun_test.reload_timer != 2.5f) {
+        std::printf("FAIL bot reload IV14=11 want 2.5s\n");
+        ++fail;
+      } else {
+        mdaz::bot_tick_mag_reload(gun_test, 3.f);
+        if (!gun_test.reloading && gun_test.mag_rounds == 6)
+          std::printf("OK   bot_reloading IV14 mag + wait\n");
+        else {
+          std::printf("FAIL bot_tick_mag_reload\n");
+          ++fail;
+        }
+      }
+    }
+  }
   q.reset();
+  q.generate_quest_item(qr);
+  if (!q.cancel() || q.karma != static_cast<int>(mdaz::balance::karma_points)) {
+    std::printf("FAIL quest cancel karma\n");
+    ++fail;
+  } else
+    std::printf("OK   Quest_canceled Karma karma_points\n");
   q.generate_quest_bandits(qr, mg);
-  if (q.q_task_id != 2) {
+  if (q.q_task_id != 2 || !q.map_pin) {
     std::printf("FAIL Generate_quest_bandits\n");
     ++fail;
   } else if (!q.tick(inv, db, 1)) {
@@ -251,6 +333,62 @@ int test_systems() {
     } else {
       std::printf("OK   generate_array_roads sectors=%d\n", roads.road_sector_count());
     }
+  }
+
+  {
+    mdaz::LootSystem ls;
+    mdaz::Rng lr(42);
+    mdaz::LootPile* p = ls.spawn_civilian(mdaz::Vec2(100.f, 100.f), lr);
+    if (!p) {
+      std::printf("FAIL LOOT_respawn spawn pile\n");
+      ++fail;
+    } else {
+      ls.schedule_respawn(*p);
+      if (p->active || p->respawn_t != 3.f) {
+        std::printf("FAIL LOOT_respawn stagger want 3s inactive got t=%g active=%d\n",
+                    p->respawn_t, p->active ? 1 : 0);
+        ++fail;
+      } else {
+        ls.tick_respawn(3.1f, lr);
+        if (!p->active || p->item_count < 1) {
+          std::printf("FAIL LOOT_respawn refill after 3s\n");
+          ++fail;
+        } else
+          std::printf("OK   LOOT_respawn 3s pile refill\n");
+      }
+    }
+  }
+
+  {
+    mdaz::BanditSystem qb;
+    mdaz::Rng qr(9);
+    mdaz::spawn_bandit_camp(qb, mdaz::Vec2(200.f, 200.f), qr);
+    mdaz::remove_bandit_bots(qb, mdaz::Vec2(200.f, 200.f), 450.f);
+    if (qb.alive_count() != 0) {
+      std::printf("FAIL Remove_bandit_bots near anchor got %d alive\n", qb.alive_count());
+      ++fail;
+    } else
+      std::printf("OK   Remove_bandit_bots quest camp\n");
+  }
+
+  {
+    mdaz::MapGenerator mg2;
+    mdaz::Rng br(12);
+    mg2.generate_new_game(12);
+    mg2.ensure_bunker_entrance(br, 0);
+    bool has0 = false;
+    for (int i = 0; i < mg2.location_count(); ++i)
+      if (mg2.location(i).type == mdaz::Loc_BunkerEntrance) has0 = true;
+    mg2.ensure_bunker_entrance(br, 1);
+    bool has1 = false;
+    for (int i = 0; i < mg2.location_count(); ++i)
+      if (mg2.location(i).type == mdaz::Loc_BunkerEntrance) has1 = true;
+    if (has0 || !has1) {
+      std::printf("FAIL generate_bunker_entrance level gate has0=%d has1=%d\n",
+                  has0 ? 1 : 0, has1 ? 1 : 0);
+      ++fail;
+    } else
+      std::printf("OK   generate_bunker_entrance CurrentLevel>=1\n");
   }
 
   return fail ? 1 : 0;

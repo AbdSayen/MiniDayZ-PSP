@@ -9,13 +9,25 @@ namespace vehicle_balance {
 constexpr float kFuelMax = 100.f;       // Spawn_uaz / Car_respawn set IV to 100
 constexpr float kHpMax = 100.f;
 constexpr float kRefuelAdd = 40.f;      // Using inventory: action 172,159 +40, cap 100
-constexpr float kFuelTickSec = 0.1f;    // Drivable vehicles Every 0.1s
-constexpr float kFuelSubtractPerTick = 8.f; // subtract 8 from IV284 each tick
+// IV284 fuel drain interval/amount: not present as explicit events in data.js export
+// (Drivable vehicles group references IV284 for bar_fuel only). Stub until decode exists.
+constexpr float kFuelTickSec = 0.1f;
+constexpr float kFuelSubtractPerTick = 8.f;
 constexpr float kRespawnDelaySec = 600.f;   // Timer → Uaz_respawn / Volga_respawn
 constexpr float kRespawnCallDelaySec = 1.f; // Uaz_respawn → Car_respawn_uaz
 constexpr float kCrashBuildingHp = 15.f;    // Vehicle collisions [[10,1],[7,[0,15]]]
 constexpr float kCrashHardHp = 30.f;        // car_crash_* [[10,1],[7,[0,30]]]
 constexpr float kLowFuelWarn = 20.f;        // GUI nofuel branch (bar threshold; approximate)
+// Drivable vehicles: player_base t184 AltMove + Pin to car (t946). Custom AltMove/Vehicle
+// behavior JS is not in the HTML5 export — max speed not decodable from data.js.
+constexpr float kDriveSpeedApprox = 160.f;  // layout-units/s stub (was bare 160 in vehicle.cpp)
+// C2 Vehicle Layering / Vehicles UI group Z keys (Buildings car vs player).
+constexpr int kC2VehicleLayerZ = 197;
+constexpr int kC2PlayerLayerZ = 914;
+constexpr int kC2GuiVehicleLayerZ = 928;
+
+inline float vehicle_y_sort_key(Vec2 pos) { return pos.y; }
+
 } // namespace vehicle_balance
 
 enum VehicleType {

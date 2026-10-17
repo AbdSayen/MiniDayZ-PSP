@@ -1,0 +1,29 @@
+Mini DAYZ 1.4.1 — Save_loot / Load_loot / checkpile (data.js)
+
+Save_loot (CallFunction body ~10892 bytes — Save_loot_body.json)
+  Writes GUI plugin obj485 CSV via action 236 (append string).
+  Header tokens: "0,0," + global Difficulty + ","
+  Per active ground pile (obj909 ForEach, active instances):
+    Concat obj172 IVs into CSV: 15, 13, 14, 16, 22, 34 (and loop fields 2,5,8,10,12,18,20,42).
+  Trailer: Timer_ALL global + ",0,0,0," padding rows (fixed-width save slots in CSV).
+  No hard cap of 32 piles in C2 — iterates all obj909 instances.
+
+Load_loot (Load_loot_body.json)
+  Reads obj485 CSV string; split by ",".
+  Token index → restore:
+    6 → obj172 IV13, 7 → IV14, 8 → IV16, 9 → (spawn param),
+    10 → IV22, 11 → IV34, 12 → item id → CallFunction Spawn_drop.
+  Loop while token at index 12 is non-zero (compare type 4).
+
+checkpile
+  Inventory helper CallFunction from Items_update / Check_space_* / craft pickpile UI.
+  Not part of Save_loot CSV; validates wood-pile (item 50) stick extraction counts.
+  MDAZ: audit string in craft.cpp; pile stick yields use equip woodpile + try_place_trap.
+
+MDAZ v14–v17
+  Binary SavedLootPile: x,y, up to 8 item ids/counts, is_airdrop flag; max 32 piles in blob
+  (struct layout — fields after loot_piles must not shift).
+
+MDAZ v18
+  loot_piles[32] unchanged; loot_ext_piles[64] + loot_ext_count for piles 32..95 (matches
+  runtime kMaxLootPiles=96). checkpile / full GUI CSV not ported.

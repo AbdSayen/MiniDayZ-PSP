@@ -8,6 +8,17 @@ namespace mdaz {
 
 Inventory::Inventory() { clear(); }
 
+void Inventory::sync_clothing_gates(const ItemDatabase& db) {
+  for (int i = 0; i < ClothingRegion_Count; ++i)
+    clothing_.set_region_gate(static_cast<ClothingRegion>(i), 0);
+  for (int wi = 0; wi < worn_count_; ++wi) {
+    const ItemId wid = worn_[wi].id;
+    const ItemDef* def = db.find(wid);
+    const ClothingRegion r = clothing_region_for_worn_item(wid, def);
+    if (r >= 0 && r < ClothingRegion_Count) clothing_.set_region_gate(r, 1);
+  }
+}
+
 void Inventory::clear() {
   for (int i = 0; i < kInventorySlots; ++i) {
     slots_[i].id = 0;
@@ -15,6 +26,7 @@ void Inventory::clear() {
   }
   worn_count_ = 0;
   for (int i = 0; i < kMaxWorn; ++i) worn_[i] = WornSlot();
+  clothing_.clear();
 }
 
 InvSlot& Inventory::slot(int i) { return slots_[i]; }
@@ -182,9 +194,9 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
       survival.food += def->food_restore;
       if (survival.food > 100.f) survival.food = 100.f;
     }
-    // Whiskey: brief warmth (alcohol)
+    // Whiskey — C2 item_activate id25: AddInstanceVar IV16 +40 (temperature)
     if (def->id == 25) {
-      survival.temperature += 12.f;
+      survival.temperature += 40.f;
       if (survival.temperature > 100.f) survival.temperature = 100.f;
     }
   } else if (def->name.find("Heatpack") != std::string::npos) {
@@ -199,14 +211,11 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
     } else if (def->name.find("Tetracycline") != std::string::npos) {
       survival.infected = false;
     } else if (def->name.find("Vitamins") != std::string::npos) {
-      survival.blood += def->heal_amount > 0.f ? def->heal_amount : 5.f;
-      if (survival.blood > 100.f) survival.blood = 100.f;
-      // Mild infection clear — vitamins are not full antibiotics
-      if (survival.infected && rng && rng->next_float() < 0.35f) survival.infected = false;
+      // C2: no IV13/14/15 on use — IV32 timer handled in Game (item_activate id29)
+      return false;
     } else if (def->name.find("Morphine") != std::string::npos) {
-      survival.blood += 5.f;
-      if (survival.blood > 100.f) survival.blood = 100.f;
-      if (survival.bleeding > 0.f) survival.bleeding = 0.f;
+      // No CompareParam 45 in C2 item_activate export — see item_activate_medicals_sverka.json
+      return false;
     } else if (def->heal_amount > 0.f) {
       // Blood bag / saline use heal_amount from item_db
       survival.blood += def->heal_amount;

@@ -1,0 +1,759 @@
+{
+  "1": {
+    "name": "Canned beans",
+    "iv13": 30,
+    "iv14": 5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "2": {
+    "name": "Canned tuna",
+    "iv13": 20,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "3": {
+    "name": "Tactical bacon",
+    "iv13": 35,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "4": {
+    "name": "Rice",
+    "iv13": 65,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "5": {
+    "name": "Tomato",
+    "iv13": 15,
+    "iv14": 5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "6": {
+    "name": "Apple",
+    "iv13": 15,
+    "iv14": 5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "7": {
+    "name": "Banana",
+    "iv13": 15,
+    "iv14": 5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "8": {
+    "name": "Pipsi",
+    "iv13": null,
+    "iv14": 30,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "9": {
+    "name": "Spite",
+    "iv13": null,
+    "iv14": 30,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "10": {
+    "name": "Kvas",
+    "iv13": null,
+    "iv14": 50,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "11": {
+    "name": "5.56x45 ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "12": {
+    "name": ".45 ACP ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "13": {
+    "name": "7.62 ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "14": {
+    "name": "7.62x39 ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "15": {
+    "name": "5.45x39 ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "16": {
+    "name": ".357 ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "17": {
+    "name": "12cal ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "18": {
+    "name": "Bandage",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "19": {
+    "name": "Blood bag",
+    "iv13": null,
+    "iv14": null,
+    "iv15": 50,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "20": {
+    "name": "Flare",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "21": {
+    "name": "F1 grenade",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "22": {
+    "name": "Battery",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "23": {
+    "name": "Campfire kit",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "24": {
+    "name": "Matches",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "25": {
+    "name": "Whiskey",
+    "iv13": null,
+    "iv14": 20,
+    "iv15": null,
+    "iv16": 40,
+    "notes": []
+  },
+  "26": {
+    "name": "Rags",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "27": {
+    "name": "Cranberry",
+    "iv13": 15,
+    "iv14": 15,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "28": {
+    "name": "Saline bag",
+    "iv13": null,
+    "iv14": null,
+    "iv15": 25,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "29": {
+    "name": "Vitamins",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "30": {
+    "name": "Nota-Cola",
+    "iv13": null,
+    "iv14": 30,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "31": {
+    "name": "Zucchini",
+    "iv13": 20,
+    "iv14": 20,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "32": {
+    "name": "Bell pepper",
+    "iv13": 20,
+    "iv14": 5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "33": {
+    "name": "Orange",
+    "iv13": 15,
+    "iv14": 15,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "34": {
+    "name": "Heatpack",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 25,
+    "notes": []
+  },
+  "36": {
+    "name": "Cleaning kit",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv6": 25
+  },
+  "42": {
+    "name": "Hunter knife",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "43": {
+    "name": "Army knife",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "44": {
+    "name": "Butcher knife",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "46": {
+    "name": "Tetracycline",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "47": {
+    "name": "Tomato seeds pack",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "48": {
+    "name": "Pepper seeds pack",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "51": {
+    "name": "Crafted arrows",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "52": {
+    "name": "Composite arrow",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "53": {
+    "name": "Gasoline",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv3": 50
+  },
+  "54": {
+    "name": "Water bottle",
+    "iv13": null,
+    "iv14": 12.5,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "55": {
+    "name": "Canteen",
+    "iv13": null,
+    "iv14": 25,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "56": {
+    "name": "Landmine",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "57": {
+    "name": "Bear trap",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "58": {
+    "name": ".22lr ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "59": {
+    "name": "Car toolbox",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "60": {
+    "name": "Raw steak",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "61": {
+    "name": "Cooked steak",
+    "iv13": 50,
+    "iv14": 10,
+    "iv15": 15,
+    "iv16": null,
+    "notes": []
+  },
+  "62": {
+    "name": "Nuko Cola",
+    "iv13": null,
+    "iv14": 100,
+    "iv15": null,
+    "iv16": null,
+    "notes": [
+      "SetInstanceVar IV14=100"
+    ]
+  },
+  "63": {
+    "name": "Energy drink",
+    "iv13": null,
+    "iv14": 20,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "68": {
+    "name": "Zucchini Seeds",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": [],
+    "iv2": 1
+  },
+  "69": {
+    "name": "9mm ammo",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "70": {
+    "name": "Barbed wire",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "71": {
+    "name": "Rabbit meat",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "72": {
+    "name": "Cooked rabbit meat",
+    "iv13": 35,
+    "iv14": 10,
+    "iv15": 30,
+    "iv16": null,
+    "notes": []
+  },
+  "73": {
+    "name": "Cloudberry",
+    "iv13": 10,
+    "iv14": 10,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "74": {
+    "name": "Bilberry",
+    "iv13": 10,
+    "iv14": 20,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "75": {
+    "name": "Radio",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "76": {
+    "name": "RDS scope",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 1,
+    "notes": [
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1",
+      "SetInstanceVar IV16=1"
+    ]
+  },
+  "77": {
+    "name": "PU scope",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 2,
+    "notes": [
+      "SetInstanceVar IV16=2",
+      "SetInstanceVar IV16=2"
+    ]
+  },
+  "78": {
+    "name": "PSO-1 scope",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 3,
+    "notes": [
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3",
+      "SetInstanceVar IV16=3"
+    ]
+  },
+  "79": {
+    "name": "ACOG scope",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 4,
+    "notes": [
+      "SetInstanceVar IV16=4",
+      "SetInstanceVar IV16=4",
+      "SetInstanceVar IV16=4",
+      "SetInstanceVar IV16=4",
+      "SetInstanceVar IV16=4"
+    ]
+  },
+  "80": {
+    "name": "Silencer 5.45",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "81": {
+    "name": "Silencer 5.56",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "82": {
+    "name": "Hacksaw",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "83": {
+    "name": "Bandolier",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "85": {
+    "name": "MRE ration",
+    "iv13": 40,
+    "iv14": 40,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "86": {
+    "name": "Spinning fishing rod",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "87": {
+    "name": "Basic Fishing rod",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "88": {
+    "name": "Protector Case",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "89": {
+    "name": "Magpull",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "90": {
+    "name": "Choke",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "91": {
+    "name": "Herring",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "92": {
+    "name": "Salmon",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "93": {
+    "name": "Ruffe",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "94": {
+    "name": "Perch",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "95": {
+    "name": "Small fish fillet",
+    "iv13": 50,
+    "iv14": 10,
+    "iv15": 15,
+    "iv16": null,
+    "notes": []
+  },
+  "96": {
+    "name": "Big fish fillet",
+    "iv13": 50,
+    "iv14": 10,
+    "iv15": 15,
+    "iv16": null,
+    "notes": []
+  },
+  "97": {
+    "name": "🍄",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "98": {
+    "name": "Longrange Scope",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": 5,
+    "notes": [
+      "SetInstanceVar IV16=5",
+      "SetInstanceVar IV16=5",
+      "SetInstanceVar IV16=5",
+      "SetInstanceVar IV16=5"
+    ]
+  },
+  "99": {
+    "name": "Claymore",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "100": {
+    "name": "Ammo 9x18",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "101": {
+    "name": "Ammo 9x39",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  },
+  "102": {
+    "name": "Molotov",
+    "iv13": null,
+    "iv14": null,
+    "iv15": null,
+    "iv16": null,
+    "notes": []
+  }
+}

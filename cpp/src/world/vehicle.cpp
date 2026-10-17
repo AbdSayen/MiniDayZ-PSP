@@ -18,8 +18,12 @@ const char kC2_Drivable_vehicles[] = "Drivable vehicles";
 const char kC2_Vehicle_collisions[] = "Vehicle collisions";
 const char kC2_GUI_draw_vehicle[] = "GUI_draw_vehicle";
 const char kC2_GUI_erase_vehicle[] = "GUI_erase_vehicle";
+const char kC2_Vehicle_Layering[] = "Vehicle Layering";
+const char kC2_Vehicles_UI[] = "Vehicles UI";
 const char kC2_Vehicle_iv_fuel[] = "Vehicle"; // IV284 fuel (family t946)
 const char kC2_Vehicle_iv_hp[] = "Vehicle";   // IV294 condition / bar_hp
+const char kC2_AltMove[] = "AltMove";
+const char kC2_Pin[] = "Pin";
 
 void touch_audit_anchors() {
   (void)kC2_Spawn_uaz;
@@ -33,8 +37,12 @@ void touch_audit_anchors() {
   (void)kC2_Vehicle_collisions;
   (void)kC2_GUI_draw_vehicle;
   (void)kC2_GUI_erase_vehicle;
+  (void)kC2_Vehicle_Layering;
+  (void)kC2_Vehicles_UI;
   (void)kC2_Vehicle_iv_fuel;
   (void)kC2_Vehicle_iv_hp;
+  (void)kC2_AltMove;
+  (void)kC2_Pin;
 }
 
 bool near_water_band(Vec2 p, float margin = 420.f) {
@@ -43,9 +51,10 @@ bool near_water_band(Vec2 p, float margin = 420.f) {
 }
 
 float drivable_move_speed(VehicleType t) {
-  // AltMove / Pin car speed not extracted from C2 (layout px/s). Stub scale only.
+  // C2: car_door_open → AltMove SetEnabled + Pin car (946) to player (172). Custom behavior
+  // code is absent from c2runtime.js — use named approximate constant until extract exists.
   (void)t;
-  return 160.f;
+  return vehicle_balance::kDriveSpeedApprox;
 }
 } // namespace
 

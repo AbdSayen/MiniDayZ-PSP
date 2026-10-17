@@ -14,9 +14,8 @@ struct PoiPart {
   float block_r;
 };
 
-// Offsets: C2 `create_map_location` uses ±300 world-unit spacing in SetTile windows
-// (see cpp/docs_gen/var_assignments.json → create_map_location nums -300,300).
-static const float kPairSpacing = 300.f;
+// Offsets: verified ±300 in create_map_location SetTile windows (mdaz::kC2PoiPairSpacing).
+static const float kPairSpacing = kC2PoiPairSpacing;
 
 static float half_spacing() { return kPairSpacing * 0.5f; }
 

@@ -1,0 +1,13 @@
+Source: original_docs/data.js — fn_fal_single_1_impl.json (extract_event_contains.js)
+
+Verified (C2 Audio act 178,111):
+  IF player_weapons (909) CompareInstanceVar IV17 == 0
+  DO Play choose("fn_fal_single_1","fn_fal_single_2") at player_weapons (tag "m4" = positional tag)
+  DO Set muzzle frames on player_weapons layers 519/520
+  DO CallFunction "noice" (Player_Hear_radius noise stamp)
+
+C++ port:
+  ItemId 175 (FN-CAL / C2 sprite name "fncal") → weapon_fire_sfx_tag() picks fn_fal_single_1|2
+  audio_sdl.cpp loads original media/fn_fal_single_*.ogg
+
+Not SetAnim — player firearm anims remain char_anims twohand_/pistol_ paths.

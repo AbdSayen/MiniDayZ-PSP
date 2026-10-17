@@ -29,7 +29,7 @@ struct Player {
   void reset_new_game(Difficulty d);
   void apply_input(float move_x, float move_y, bool want_run, float dt);
   void update_survival(float dt, float weather_temp, bool is_night, bool is_raining,
-                       float clothing_insulation = 0.f);
+                       float clothing_insulation = 0.f, bool vitamins_buff = false);
   Aabb bounds() const;
 
   bool perk_camel;

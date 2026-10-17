@@ -1,0 +1,220 @@
+{
+  "generated": "2026-10-17T13:07:38.050Z",
+  "paths": {
+    "game_events_910_88_iv0": {},
+    "iv1_172_151_window_iv0": {
+      "151": [
+        45,
+        60
+      ]
+    },
+    "player_weapons_tag_windows": {
+      "151": {
+        "tag": "fnx",
+        "iv0_candidates": [
+          23,
+          25,
+          40
+        ]
+      },
+      "152": {
+        "tag": "colt",
+        "iv0_candidates": []
+      },
+      "153": {
+        "tag": "magnum",
+        "iv0_candidates": []
+      },
+      "154": {
+        "tag": "izh",
+        "iv0_candidates": []
+      },
+      "155": {
+        "tag": "remington",
+        "iv0_candidates": []
+      },
+      "156": {
+        "tag": "mosin",
+        "iv0_candidates": []
+      },
+      "157": {
+        "tag": "sks",
+        "iv0_candidates": []
+      },
+      "158": {
+        "tag": "m4",
+        "iv0_candidates": [
+          18,
+          20,
+          22,
+          23,
+          45
+        ]
+      },
+      "159": {
+        "tag": "akm",
+        "iv0_candidates": []
+      },
+      "160": {
+        "tag": "ak74",
+        "iv0_candidates": []
+      },
+      "161": {
+        "tag": "aks74u",
+        "iv0_candidates": []
+      },
+      "162": {
+        "tag": "l85",
+        "iv0_candidates": []
+      },
+      "163": {
+        "tag": "bow",
+        "iv0_candidates": []
+      },
+      "164": {
+        "tag": "crossbow",
+        "iv0_candidates": []
+      },
+      "165": {
+        "tag": "amphibia",
+        "iv0_candidates": []
+      },
+      "166": {
+        "tag": "sporter",
+        "iv0_candidates": []
+      },
+      "167": {
+        "tag": "repeater",
+        "iv0_candidates": [
+          23
+        ]
+      },
+      "168": {
+        "tag": "svd",
+        "iv0_candidates": []
+      },
+      "169": {
+        "tag": "mp5",
+        "iv0_candidates": []
+      },
+      "170": {
+        "tag": "glock",
+        "iv0_candidates": []
+      },
+      "173": {
+        "tag": "ump45",
+        "iv0_candidates": []
+      },
+      "174": {
+        "tag": "rpk",
+        "iv0_candidates": []
+      },
+      "175": {
+        "tag": "fncal",
+        "iv0_candidates": []
+      },
+      "177": {
+        "tag": "aug",
+        "iv0_candidates": [
+          5
+        ]
+      },
+      "178": {
+        "tag": "saiga",
+        "iv0_candidates": []
+      },
+      "179": {
+        "tag": "mac10",
+        "iv0_candidates": [
+          5
+        ]
+      },
+      "181": {
+        "tag": "pm",
+        "iv0_candidates": []
+      },
+      "182": {
+        "tag": "pb",
+        "iv0_candidates": []
+      },
+      "183": {
+        "tag": "bizon",
+        "iv0_candidates": []
+      },
+      "184": {
+        "tag": "groza",
+        "iv0_candidates": []
+      },
+      "185": {
+        "tag": "vss",
+        "iv0_candidates": [
+          5
+        ]
+      },
+      "186": {
+        "tag": "sv98",
+        "iv0_candidates": [
+          5
+        ]
+      },
+      "187": {
+        "tag": "madsen",
+        "iv0_candidates": []
+      }
+    },
+    "new_bullet_iv1_weapon_branches": {
+      "151": [
+        19,
+        20,
+        21,
+        23,
+        25,
+        30,
+        33,
+        35,
+        40,
+        44,
+        48,
+        50,
+        60,
+        75
+      ]
+    },
+    "player_weapons_909_iv0_compare": {},
+    "bullets_parameters_group_iv0_literals": [
+      10
+    ]
+  },
+  "sverka_candidates": {},
+  "notes": [
+    "909 IV0 CompareInstanceVar counts are weapon-type tags (strings in export), not damage literals.",
+    "Bullets_parameters slice: IV0 literals are travel/decay, not per-weapon base damage."
+  ],
+  "rejected_ambiguous": {
+    "167": {
+      "iv0": 23,
+      "tag": "repeater",
+      "reason": "single IV0 in tag window without IV1←172 pairing — not promoted"
+    },
+    "177": {
+      "iv0": 5,
+      "tag": "aug",
+      "reason": "single IV0 in tag window without IV1←172 pairing — not promoted"
+    },
+    "179": {
+      "iv0": 5,
+      "tag": "mac10",
+      "reason": "single IV0 in tag window without IV1←172 pairing — not promoted"
+    },
+    "185": {
+      "iv0": 5,
+      "tag": "vss",
+      "reason": "single IV0 in tag window without IV1←172 pairing — not promoted"
+    },
+    "186": {
+      "iv0": 5,
+      "tag": "sv98",
+      "reason": "single IV0 in tag window without IV1←172 pairing — not promoted"
+    }
+  }
+}

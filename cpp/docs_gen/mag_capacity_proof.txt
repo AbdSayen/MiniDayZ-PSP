@@ -1,0 +1,1 @@
+# mag_capacity_proof — player_weapons IV17 compare literals co-located with weapon id

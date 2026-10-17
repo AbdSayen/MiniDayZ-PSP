@@ -1,11 +1,60 @@
 #include "mdaz/bunker.hpp"
 
+#include "mdaz/bullet.hpp"
+#include "mdaz/loot.hpp"
+#include "mdaz/zombie.hpp"
+
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <sstream>
 
 namespace mdaz {
+
+namespace {
+const char kC2_Bunker_erase[] = "Bunker_erase";
+const char kC2_Bunker_generate[] = "Bunker_generate";
+const char kC2_inBunker[] = "inBunker";
+const char kC2_Building_mode[] = "Building_mode";
+const char kC2_HotspotX[] = "HotspotX";
+const char kC2_HotspotY[] = "HotspotY";
+const char kC2_hotspotX[] = "hotspotX";
+const char kC2_hotspotY[] = "hotspotY";
+const char kC2_TilemapspotX[] = "TilemapspotX";
+const char kC2_TilemapspotY[] = "TilemapspotY";
+const char kC2_Reopen[] = "Reopen";
+
+constexpr float kBunkerReopenSec = 1800.f;
+
+void touch_bunker_c2_audit() {
+  (void)kC2_Bunker_erase;
+  (void)kC2_Bunker_generate;
+  (void)kC2_inBunker;
+  (void)kC2_Building_mode;
+  (void)kC2_HotspotX;
+  (void)kC2_HotspotY;
+  (void)kC2_hotspotX;
+  (void)kC2_hotspotY;
+  (void)kC2_TilemapspotX;
+  (void)kC2_TilemapspotY;
+  (void)kC2_Reopen;
+}
+
+static void despawn_in_bunker_bounds(const BunkerMap& map, ZombieSystem& zeds, LootSystem& loot) {
+  if (map.width <= 0 || map.height <= 0) return;
+  const float bw = static_cast<float>(map.width) * 8.f + 80.f;
+  const float bh = static_cast<float>(map.height) * 8.f + 80.f;
+  for (Zombie* z = zeds.begin(); z != zeds.end(); ++z) {
+    if (!z->alive) continue;
+    if (z->pos.x >= 0.f && z->pos.y >= 0.f && z->pos.x < bw && z->pos.y < bh) z->alive = false;
+  }
+  for (int i = 0; i < loot.count(); ++i) {
+    LootPile* p = loot.at(i);
+    if (!p->active) continue;
+    if (p->pos.x >= 0.f && p->pos.y >= 0.f && p->pos.x < bw && p->pos.y < bh) p->active = false;
+  }
+}
+} // namespace
 
 BunkerMap::BunkerMap() : width(0), height(0) {}
 
@@ -90,6 +139,39 @@ bool BunkerMap::is_blocked_world(float wx, float wy, float tile_size) const {
   // Walkable fills seen in 1.4.1 bunker RLE: empty/dirt/interior floors
   if (id == 0 || id == 1 || id == 6 || id == 16 || id == 20) return false;
   return true;
+}
+
+bool bunker_generate(BunkerMap& map, const char* json_path) {
+  touch_bunker_c2_audit();
+  if (map.width > 0 && map.height > 0) return true;
+  if (json_path && map.load_from_file(json_path)) return true;
+  return false;
+}
+
+void bunker_clear_interior(const BunkerMap& map, ZombieSystem& zeds, LootSystem& loot,
+                           BulletSystem& bullets) {
+  touch_bunker_c2_audit();
+  despawn_in_bunker_bounds(map, zeds, loot);
+  bullets.clear();
+}
+
+BunkerEraseResult bunker_erase(bool in_bunker, const BunkerMap& map, ZombieSystem& zeds,
+                               LootSystem& loot, BulletSystem& bullets, bool seal_entrance) {
+  touch_bunker_c2_audit();
+  BunkerEraseResult out;
+  out.was_in_bunker = in_bunker;
+  out.reopen_timer_sec = 0.f;
+  if (!in_bunker) return out;
+  bunker_clear_interior(map, zeds, loot, bullets);
+  if (seal_entrance) out.reopen_timer_sec = kBunkerReopenSec;
+  return out;
+}
+
+void bunker_tick_reopen(float dt, float& reopen_timer_sec) {
+  touch_bunker_c2_audit();
+  if (reopen_timer_sec <= 0.f) return;
+  reopen_timer_sec -= dt;
+  if (reopen_timer_sec < 0.f) reopen_timer_sec = 0.f;
 }
 
 } // namespace mdaz

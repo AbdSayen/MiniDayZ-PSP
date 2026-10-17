@@ -1,0 +1,11 @@
+attack_8 (attack_8_impl.json):
+  Wait 2.5s + screamer visible → Play "attack_8" at screamer (SFX only).
+
+attack_10/11/12 (attack_10_impl.json, with attack_0/1/13):
+  On zmb melee → Audio choose(attack_0, attack_1, attack_10, attack_11, attack_12, attack_13)
+  then CallFunction Player_get_hit(zed_normal, Zed_dmg*2) + Update_Stats.
+
+C++ port:
+  pick_zed_player_hit_sfx() on zed_dmg > 0; c2_zed_screamer_attack_sfx() when screamer alerts.
+
+These are SFX ids, not char_anims SetAnim names (zeds use attack_* prefix in char_anims for swing).

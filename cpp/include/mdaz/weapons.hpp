@@ -6,7 +6,7 @@
 namespace mdaz {
 
 // Weapon item IDs from original l_eng_items.xml (1.4.1).
-// Damage/ROF values: PLACEHOLDER until extracted from C2 — do not treat as sverka.
+// Firearm base damage: sverka only where documented (weapon_bullet_iv0_sverka.json); else kGunDmgPlaceholder.
 struct WeaponDef {
   ItemId item_id;
   const char* name;
@@ -28,5 +28,12 @@ float weapon_reload_duration_sec(const WeaponDef* w);
 // Bow (163): Mag_reload param 2 + Bow_reload anim; clamp reload ≈2–3s in C2.
 bool weapon_uses_bow_nock(const WeaponDef* w);
 float weapon_bow_nock_sec(const WeaponDef* w);
+
+// C2 Firearm shooting: Audio choose tags (original_docs/media/*.ogg).
+const char* weapon_fire_sfx_tag(ItemId weapon_id, class Rng& rng);
+
+// C2 player_weapons sprite layers (reload_rifle / molotov_reload visibility toggles).
+// s_weapons / s_weapons2 PNG sheets are not in original_docs/images — overlay uses char_anims hands.
+void touch_weapon_c2_audit_anchors();
 
 } // namespace mdaz

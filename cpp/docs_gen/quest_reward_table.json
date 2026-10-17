@@ -1,0 +1,169 @@
+{
+  "_source": "original_docs/data.js Q_reward_id branches (Spawn_drop [[0,sid]])",
+  "rewards": [
+    {
+      "q_reward_id": 1,
+      "item_id": 4
+    },
+    {
+      "q_reward_id": 2,
+      "item_id": 10
+    },
+    {
+      "q_reward_id": 3,
+      "item_id": 18
+    },
+    {
+      "q_reward_id": 4,
+      "item_id": 34
+    },
+    {
+      "q_reward_id": 5,
+      "item_id": 11
+    },
+    {
+      "q_reward_id": 6,
+      "item_id": 12
+    },
+    {
+      "q_reward_id": 7,
+      "item_id": 13
+    },
+    {
+      "q_reward_id": 8,
+      "item_id": 14
+    },
+    {
+      "q_reward_id": 9,
+      "item_id": 15
+    },
+    {
+      "q_reward_id": 10,
+      "item_id": 16
+    },
+    {
+      "q_reward_id": 11,
+      "item_id": 17
+    },
+    {
+      "q_reward_id": 12,
+      "item_id": 58
+    },
+    {
+      "q_reward_id": 13,
+      "item_id": 69
+    },
+    {
+      "q_reward_id": 14,
+      "item_id": 35
+    },
+    {
+      "q_reward_id": 15,
+      "item_id": 36
+    },
+    {
+      "q_reward_id": 16,
+      "item_id": 53
+    },
+    {
+      "q_reward_id": 17,
+      "item_id": 19
+    },
+    {
+      "q_reward_id": 18,
+      "item_id": 85
+    },
+    {
+      "q_reward_id": 19,
+      "item_id": 86
+    },
+    {
+      "q_reward_id": 20,
+      "item_id": 75
+    },
+    {
+      "q_reward_id": 22,
+      "item_id": 456
+    },
+    {
+      "q_reward_id": 23,
+      "item_id": 265
+    },
+    {
+      "q_reward_id": 24,
+      "item_id": 368
+    },
+    {
+      "q_reward_id": 25,
+      "item_id": 369
+    },
+    {
+      "q_reward_id": 26,
+      "item_id": 370
+    },
+    {
+      "q_reward_id": 27,
+      "item_id": 452
+    },
+    {
+      "q_reward_id": 28,
+      "item_id": 403
+    },
+    {
+      "q_reward_id": 29,
+      "item_id": 204
+    },
+    {
+      "q_reward_id": 30,
+      "item_id": 376
+    },
+    {
+      "q_reward_id": 31,
+      "item_id": 63
+    },
+    {
+      "q_reward_id": 32,
+      "item_id": 23
+    },
+    {
+      "q_reward_id": 33,
+      "item_id": 29
+    },
+    {
+      "q_reward_id": 34,
+      "item_id": 46
+    },
+    {
+      "q_reward_id": 35,
+      "item_id": 56
+    },
+    {
+      "q_reward_id": 36,
+      "item_id": 56
+    },
+    {
+      "q_reward_id": 37,
+      "item_id": 181
+    },
+    {
+      "q_reward_id": 38,
+      "item_id": 171
+    },
+    {
+      "q_reward_id": 39,
+      "item_id": 166
+    },
+    {
+      "q_reward_id": 40,
+      "item_id": 153
+    },
+    {
+      "q_reward_id": 41,
+      "item_id": 157
+    },
+    {
+      "q_reward_id": 42,
+      "item_id": 161
+    }
+  ]
+}

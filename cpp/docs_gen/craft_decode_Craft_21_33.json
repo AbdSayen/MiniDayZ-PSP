@@ -1,0 +1,71 @@
+{
+  "_source": "original_docs/data.js Game_events + On-function bodies (tools/extract_function_body.js, tools/_decode_craft_min_blocks.js)",
+  "_uid_map": "cpp/docs_gen/craft_uid_map.json — [[0,N]] with [20,536,119] are object-type indices, not item IDs",
+  "Craft_21": {
+    "role": "Fence/obstacle craft tab (object index 310 = obst_fence) + On-function handler on world object Crafted",
+    "ui_enable_blocks": {
+      "hdr_310_only": "Sub-menu entry anchor (len ~115)",
+      "knife_only": "Inventory compare 42/43/44 (len ~446)",
+      "knife_and_sticks": "Compare 38 + any knife 42/43/44 (len ~564)"
+    },
+    "on_function": {
+      "trigger": "Crafted object, action string Craft_21, param on iv 283",
+      "behaviors": [
+        "Multiplex on Crafted instance iv (10,11,12,13,15,16): consume 1 from slot via [21,6,...,slot] then spawn via helper [21,172,...,count] — counts 2,8,10,12,18,20 are stick yields, not l_eng item IDs",
+        "pickpile + checkpile: wood-pile scroll UI (gui_pickpile_*) to take sticks from item 50",
+        "Check_space_inventory gate before craft_ok/Crafted feedback"
+      ],
+      "spawn_drop_item_ids": "none verified (no [6,71,...[[4,itemId]] Spawn_drop in dedicated handler; len ~8915)"
+    },
+    "port_status": "blocked — pickpile UI + Crafted workstation multiplex; no single inventory Spawn_drop recipe"
+  },
+  "Craft_22": {
+    "role": "Same obst_fence tab (310) as Craft_21; alternate Crafted / pickpile handler (iv param 283 = 2 vs 1 for Craft_21)",
+    "ui_enable_blocks": {
+      "sticks_only": "Compare item 38 (len ~295)",
+      "knife_and_sticks": "38 + knives 42/43/44 (len ~560)"
+    },
+    "on_function": {
+      "strings": "Crafted, pickpile, checkpile, Check_space_inventory (len ~8921)",
+      "spawn_drop_item_ids": "none verified"
+    },
+    "port_status": "blocked — same family as Craft_21; related inventory approximations already separate (Craft_pile_sticks, Craft_sticks_fence) without Craft_22 name"
+  },
+  "Craft_31": {
+    "role": "Military/buildings craft tab (311 = b_military_barrack) + fence build mode type 2",
+    "ui_enable_blocks": {
+      "hdr_311_334": "Tab + loaderrunner UI anchor 334 (len ~176)",
+      "woodpile": "Compare 50 (len ~356)",
+      "sticks_and_pile": "38 + 50 (len ~474)"
+    },
+    "on_function": {
+      "strings": "craft_ok, build_fence2 (via Call_sub_menu_craft chain), pickpile, checkpile, Building_mode, client_log",
+      "world": "Places fence segments (object 537 tint 64/255); consumes from Crafted slots — not inventory Spawn_drop"
+    },
+    "port_status": "blocked — world build_fence2; desktop uses try_place_trap(2) from equipped woodpile separately"
+  },
+  "Craft_32": {
+    "role": "Same buildings tab 311 + build_fence1",
+    "ui_enable_blocks": {
+      "sticks_only": "38 (len ~356)",
+      "sticks_and_pile": "38 + 50 (len ~473)"
+    },
+    "on_function": {
+      "strings": "craft_ok, pickpile, checkpile (len ~11730); build_fence1 in craft menu sheet",
+      "world": "build_fence1 placement (mirror of Craft_31 fence type 1)"
+    },
+    "port_status": "blocked — world fence placement"
+  },
+  "Craft_33": {
+    "role": "Buildings tab 311 (no 334 loader — simpler submenu than 31/32)",
+    "ui_enable_blocks": {
+      "woodpile_only": "50 (len ~293)",
+      "rags_and_pile": "26 + 50 (len ~411)"
+    },
+    "on_function": {
+      "strings": "craft_ok, pickpile, checkpile (len ~11724)",
+      "spawn_drop_item_ids": "none verified"
+    },
+    "port_status": "blocked — pickpile / craft_ok on Crafted; menu rags+pile is not a verified Spawn_drop into inventory"
+  }
+}

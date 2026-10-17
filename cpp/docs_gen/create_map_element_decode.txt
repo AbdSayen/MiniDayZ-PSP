@@ -1,0 +1,27 @@
+# create_map_element / obj501 (original_docs/data.js)
+
+## Verified — zed_resp tile id → obj501 IV10
+Source: cpp/docs_gen/mapgen_props_decode.txt create_map_element sample event.
+
+| zed_resp tile | IV10 |
+|---------------|------|
+| 0 | 1 |
+| 1 | 2 |
+| 2 | 3 |
+| 3 | 3 |
+| 5 | 6 |
+| 6 | 6 |
+
+C++: cpp/include/mdaz/create_map_element_decode.hpp
+
+## Verified — sprite
+t501 animation Default → images/map_element-sheet0.png (single frame).
+
+## Partial — runtime placement
+Full create_map_element reads obj518 zed_resp tilemap per POI and recurses via obj501 IV151.
+zed_resp tile grid is not exported to C++; port scatters map_element-sheet0 at generate_location
+forest stamp offsets where stamp tile==0 (non-pine), only when the sprite is loaded.
+
+## Blocked
+IV10 → distinct prop sprites (no multi-frame / spawn table in export).
+obj501 IV1..IV6 full mapping beyond IV10 sample.

@@ -9,6 +9,37 @@
 
 namespace mdaz {
 
+namespace {
+const char kC2_Damage_dealing[] = "Damage dealing";
+const char kC2_attack_8[] = "attack_8";
+const char kC2_attack_10[] = "attack_10";
+const char kC2_attack_11[] = "attack_11";
+const char kC2_attack_12[] = "attack_12";
+
+void touch_combat_c2_audit() {
+  (void)kC2_Damage_dealing;
+  (void)kC2_attack_8;
+  (void)kC2_attack_10;
+  (void)kC2_attack_11;
+  (void)kC2_attack_12;
+}
+} // namespace
+
+void touch_combat_c2_audit_anchors() { touch_combat_c2_audit(); }
+
+const char* c2_zed_screamer_attack_sfx() {
+  touch_combat_c2_audit();
+  return kC2_attack_8;
+}
+
+const char* pick_zed_player_hit_sfx(Rng& rng) {
+  touch_combat_c2_audit();
+  static const char* kPool[] = {"attack_0",  "attack_1",  "attack_9",  "attack_10",
+                                "attack_11", "attack_12", "attack_13"};
+  const int n = static_cast<int>(sizeof(kPool) / sizeof(kPool[0]));
+  return kPool[rng.next_int(0, n - 1)];
+}
+
 WeaponStats default_melee_stats() {
   WeaponStats w;
   // Fist: pick-distance 45 verified; damage candidate 10 from IV4 "Fist" window

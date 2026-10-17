@@ -1,0 +1,25 @@
+# camera_roll_menu (Menu layout backdrop pan)
+
+Source: `original_docs/data.js` → **Menu_Events** / **Camera** group; extracted block `cpp/docs_gen/functions/camera_roll_menu_impl.json`.
+
+## Verified (C2 event bytecode)
+
+| Constant / behavior | Value |
+|---------------------|-------|
+| Layout size | **2500 × 1500** (`Menu` layout in data.js) |
+| Distance test | Layout distance(cam, pin) **> 100** → call **`camera_roll_menu`** again (reposition pin) |
+| Stopper behavior speed | **3** (on camera object) |
+| Pin object layer | **`Buildings`** (Pin marker), destroyed/recreated in branches |
+| Pin X/Y expression | `user_device_X_mid` + offset from `user_device_X` (ref **394**); `user_device_Y_mid` + offset from `user_device_Y` (ref **152**) |
+
+## Port (`menu_camera.cpp`)
+
+| Piece | Status |
+|-------|--------|
+| Chase pin when distance > 100 | **approx** — pin re-roll within layout bounds (no touch → no device mid vars) |
+| Move speed 45 layout u/s | **approx** — scaled from Stopper **3** |
+| Recenter distance 100 | **verified** |
+
+## Blocked
+
+- Exact pin placement without `user_device_X/Y` / `Menu_hotspot_X/Y` runtime globals on desktop.

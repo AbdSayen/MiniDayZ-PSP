@@ -1,0 +1,5 @@
+tutorBleedingStopped — C2 global (event_groups functionNames entry), not an On function.
+Set to 1 when bleeding stops via bandage/med (Mag_reload / reload_pistol event trees share
+Bleed timer path): Set tutorBleedingStopped=1, char_unlock_5_progress, StartTimer Bleed.
+Suppresses repeat Bleeding_guide overlay after first stop.
+C++: c2_note_tutor_bleeding_stopped() on bandage/morphine bleed clear (game.cpp).

@@ -1,5 +1,6 @@
 #include "mdaz/mapgen.hpp"
 #include "mdaz/balance_globals.hpp"
+#include "mdaz/c2_session_globals.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/world.hpp"
 
@@ -25,14 +26,34 @@ const char kC2_erase_map_location[] = "erase_map_location";
 const char kC2_respawn_radius2[] = "respawn_radius2";
 const char kC2_generate_array_roads_1[] = "generate_array_roads_1";
 const char kC2_generate_array_roads_2[] = "generate_array_roads_2";
+const char kC2_generate_bunker_entrance[] = "generate_bunker_entrance";
+const char kC2_generate_helicrashes[] = "generate_helicrashes";
+const char kC2_helispawned[] = "helispawned";
+const char kC2_hammerspawned[] = "hammerspawned";
 
 enum SectorCell : unsigned char {
   Sector_Empty = 0,
+  Sector_Village = 6,  // generate_array_locations Array 150 (road scan trigger)
+  Sector_City = 9,
+  Sector_Military = 11,
   Sector_RoadHoriz = 13, // generate_array_roads_1 SetAt
   Sector_RoadVert = 12,  // generate_array_roads_2 SetAt (0 → 12)
   Sector_RoadCross = 14, // generate_array_roads_2 SetAt (13 → 14)
   Sector_PoiMarker = 15,
 };
+
+unsigned char sector_cell_for_poi(LocationType t) {
+  switch (t) {
+  case Loc_Village:
+    return Sector_Village;
+  case Loc_City:
+    return Sector_City;
+  case Loc_Military:
+    return Sector_Military;
+  default:
+    return Sector_PoiMarker;
+  }
+}
 
 bool sector_triggers_road_scan(unsigned char v) {
   return v == 9 || v == 6 || v == 11 || v == Sector_PoiMarker;
@@ -41,9 +62,18 @@ bool sector_triggers_road_scan(unsigned char v) {
 bool sector_is_road_marker(unsigned char v) {
   return v == Sector_RoadHoriz || v == Sector_RoadVert || v == Sector_RoadCross;
 }
+
+// C2 generate_bunker_entrance (Map_generation): ensure bunker entrance POI exists on map load.
+bool generate_bunker_entrance(MapGenerator& map) {
+  (void)kC2_generate_bunker_entrance;
+  for (int i = 0; i < map.location_count(); ++i) {
+    if (map.location(i).type == Loc_BunkerEntrance) return true;
+  }
+  return false;
+}
 } // namespace
 
-MapGenerator::MapGenerator() : count_(0), road_count_(0) {
+MapGenerator::MapGenerator() : count_(0), road_count_(0), c2_scratch_(0) {
   river_.valid = false;
   river_.sector_x = 0;
   river_.sector_y = 0;
@@ -89,6 +119,10 @@ void MapGenerator::add(LocationType t, int sx, int sy) {
   L.pos.y = (static_cast<float>(sy) + 0.5f) * (kMapLayoutH / kMapSectorsY);
   L.active = false;
   L.loot_seeded = false;
+  if (c2_scratch_) {
+    mapgen_note_location_hotspot(*c2_scratch_, sx, sy, L.pos.x, L.pos.y);
+    if (t == Loc_Secret) c2_scratch_->Loop_secrets += 1.0;
+  }
 }
 
 float MapGenerator::dist_to(const MapLocation& L, Vec2 p) {
@@ -116,7 +150,11 @@ void MapGenerator::generate_new_game(int seed) {
   const int n_gas = static_cast<int>(balance::gas_stations);
   const int n_hospitals = static_cast<int>(balance::hospitals);
   const int n_fire = static_cast<int>(balance::firestations);
-  const int n_helis = 2 + rng.next_int(0, 2);
+  // C2 helispawned IV max 3
+  const int n_helis = 2 + rng.next_int(0, 1);
+  (void)kC2_generate_helicrashes;
+  (void)kC2_helispawned;
+  (void)kC2_hammerspawned;
 
   auto place = [&](LocationType t, int n, int margin) {
     int placed = 0;
@@ -138,10 +176,22 @@ void MapGenerator::generate_new_game(int seed) {
   place(Loc_Helicrash, n_helis, 0);
   place(Loc_Police, 1 + rng.next_int(0, 1), 1);
   place(Loc_Church, 1, 1);
-  place(Loc_BunkerEntrance, 1, 3);
   place(Loc_Secret, 1, 0);
   init_river(seed);
   apply_generate_array_roads();
+}
+
+void MapGenerator::ensure_bunker_entrance(Rng& rng, int current_level) {
+  (void)kC2_generate_bunker_entrance;
+  if (current_level < 1) return;
+  if (generate_bunker_entrance(*this)) return;
+  int guard = 0;
+  while (guard++ < 250) {
+    const int before = count_;
+    add(Loc_BunkerEntrance, rng.next_int(3, kMapSectorsX - 1 - 3),
+        rng.next_int(3, kMapSectorsY - 1 - 3));
+    if (count_ > before) break;
+  }
 }
 
 void MapGenerator::apply_generate_array_roads() {
@@ -155,7 +205,7 @@ void MapGenerator::apply_generate_array_roads() {
     const MapLocation& L = locs_[i];
     if (L.sector_x >= 0 && L.sector_x < kSectorGrid && L.sector_y >= 0 &&
         L.sector_y < kSectorGrid)
-      sector_grid_[L.sector_y][L.sector_x] = Sector_PoiMarker;
+      sector_grid_[L.sector_y][L.sector_x] = sector_cell_for_poi(L.type);
   }
 
   const int map_w = static_cast<int>(balance::Map_size_X);
@@ -163,44 +213,49 @@ void MapGenerator::apply_generate_array_roads() {
 
   // generate_array_roads_1: scan rows, pair POI markers (15), mark corridor 13.
   for (int row = 0; row < map_h; ++row) {
-    int another_x = -1;
-    int another_x2 = -1;
+    int anotherX = -1;
+    int anotherX2 = -1;
     for (int col = 0; col < map_w; ++col) {
       const unsigned char v = sector_grid_[row][col];
       if (!sector_triggers_road_scan(v)) continue;
       if (v == Sector_PoiMarker) {
-        if (another_x < 0) another_x = col;
-        else another_x2 = col;
+        if (anotherX < 0) anotherX = col;
+        else anotherX2 = col;
       }
     }
-    if (another_x >= 0 && another_x2 > another_x) {
-      for (int c = another_x + 1; c < another_x2; ++c) {
+    if (anotherX >= 0 && anotherX2 > anotherX) {
+      if (c2_scratch_) mapgen_note_road_pair(*c2_scratch_, anotherX, anotherX2, Sector_RoadHoriz);
+      for (int c = anotherX + 1; c < anotherX2; ++c) {
         if (sector_grid_[row][c] == Sector_Empty) sector_grid_[row][c] = Sector_RoadHoriz;
       }
-      if (sector_grid_[row][another_x] == Sector_Empty)
-        sector_grid_[row][another_x] = Sector_RoadHoriz;
+      if (sector_grid_[row][anotherX] == Sector_Empty)
+        sector_grid_[row][anotherX] = Sector_RoadHoriz;
     }
   }
 
   // generate_array_roads_2: scan columns; 0→12, existing 13→14 (intersections).
   for (int col = 0; col < map_w; ++col) {
-    int another_x = -1;
-    int another_x2 = -1;
+    int anotherX = -1;
+    int anotherX2 = -1;
     for (int row = 0; row < map_h; ++row) {
       const unsigned char v = sector_grid_[row][col];
       if (!sector_triggers_road_scan(v)) continue;
       if (v == Sector_PoiMarker) {
-        if (another_x < 0) another_x = row;
-        else another_x2 = row;
+        if (anotherX < 0) anotherX = row;
+        else anotherX2 = row;
       }
     }
-    if (another_x >= 0 && another_x2 > another_x) {
-      for (int r = another_x + 1; r < another_x2; ++r) {
+    if (anotherX >= 0 && anotherX2 > anotherX) {
+      if (c2_scratch_) {
+        c2_scratch_->Loop_secrets2 += 1.0;
+        mapgen_note_road_pair(*c2_scratch_, anotherX, anotherX2, Sector_RoadVert);
+      }
+      for (int r = anotherX + 1; r < anotherX2; ++r) {
         unsigned char& cell = sector_grid_[r][col];
         if (cell == Sector_RoadHoriz) cell = Sector_RoadCross;
         else if (cell == Sector_Empty) cell = Sector_RoadVert;
       }
-      unsigned char& start = sector_grid_[another_x][col];
+      unsigned char& start = sector_grid_[anotherX][col];
       if (start == Sector_RoadHoriz) start = Sector_RoadCross;
       else if (start == Sector_Empty) start = Sector_RoadVert;
     }

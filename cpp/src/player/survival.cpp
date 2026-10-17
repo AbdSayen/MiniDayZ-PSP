@@ -76,7 +76,8 @@ void set_reason(SurvivalState& s, const char* why) {
 void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_temp,
                            bool is_running, bool is_night, bool is_raining,
                            bool perk_camel, bool perk_hamster, bool perk_regen,
-                           bool perk_metabolism, float clothing_insulation) {
+                           bool perk_metabolism, float clothing_insulation,
+                           bool vitamins_buff) {
   (void)is_running; // sprint metabolism not extracted as sverka yet
   (void)weather_temp;
 
@@ -149,8 +150,8 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
     }
   }
 
-  if (infected) {
-    blood -= 0.045f * dt; // infection DoT
+  if (infected && !vitamins_buff) {
+    blood -= 0.045f * dt; // infection DoT — suppressed while item_activate id29 IV32 active
     // Fever: push temperature toward ~82 (heat stress), not freeze
     if (temperature < 82.f) temperature += 1.2f * dt;
     else temperature -= 0.3f * dt; // oscillate near fever peak

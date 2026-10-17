@@ -1,0 +1,23 @@
+# Gardening / crop grow (C2 item_activate)
+
+Source: `original_docs/data.js` → `item_activate` (decoded `item_activate_decoded.txt`).
+
+## Verified
+
+| Item | Action |
+|------|--------|
+| Seed ids **47**, **48**, **68** (potato / pepper / tomato seeds) | On valid outdoor dirt tile (tile 6 under player): `CreateObject items_on_ground`, `StartTimer` **duration 20**, once, tag **`grow`**. |
+| Planting animation | `IV21=1`, `Wait 5`, `IV21=0`; SFX `planting_seeds`. |
+| Ground item ids created | **554** / **552** / **553** object types → log id **70** in client_log branches. |
+
+## Port (`game.cpp`)
+
+- `try_plant_seed` sets `grow_t = kC2CropGrowSeconds` (**20**).
+- `update_crops` decrements linearly (no rain/night/farmer modifiers — not found on grow timer in export).
+
+## Blocked / approx
+
+| Topic | Status |
+|-------|--------|
+| **`grow` timer OnTimer** full harvest transform (IV10 / sprite swap on items_on_ground) | Not fully decoded in this pass; desktop uses ready flag + crop_id harvest. |
+| **perk_farmer** on grow speed | No reference in `item_activate` planting branches. |

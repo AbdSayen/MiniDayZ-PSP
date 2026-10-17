@@ -1,4 +1,6 @@
 #include "mdaz/craft.hpp"
+#include "mdaz/c2_session_globals.hpp"
+#include "mdaz/inventory_ui.hpp"
 
 namespace mdaz {
 
@@ -8,11 +10,32 @@ namespace {
 const char kC2_Call_sub_menu_craft[] = "Call_sub_menu_craft";
 const char kC2_Check_craft[] = "Check_craft";
 const char kC2_craft_ok[] = "craft_ok";
+// Fence / buildings craft handlers — decoded in cpp/docs_gen/craft_decode_Craft_21_33.json (no verified Spawn_drop).
+const char kC2_Craft_21[] = "Craft_21";
+const char kC2_Craft_22[] = "Craft_22";
+const char kC2_Craft_31[] = "Craft_31";
+const char kC2_Craft_32[] = "Craft_32";
+const char kC2_Craft_33[] = "Craft_33";
+const char kC2_build_fence1[] = "build_fence1";
+const char kC2_build_fence2[] = "build_fence2";
+const char kC2_pickpile[] = "pickpile";
+const char kC2_checkpile[] = "checkpile";
+const char kC2_item_for_remove_id[] = "item_for_remove_id";
 
 void touch_craft_audit_anchors() {
   (void)kC2_Call_sub_menu_craft;
   (void)kC2_Check_craft;
   (void)kC2_craft_ok;
+  (void)kC2_Craft_21;
+  (void)kC2_Craft_22;
+  (void)kC2_Craft_31;
+  (void)kC2_Craft_32;
+  (void)kC2_Craft_33;
+  (void)kC2_build_fence1;
+  (void)kC2_build_fence2;
+  (void)kC2_pickpile;
+  (void)kC2_checkpile;
+  (void)kC2_item_for_remove_id;
 }
 
 // C2 Craft_* function names where Spawn_drop / call-site item checks are verified in data.js.
@@ -22,14 +45,14 @@ const CraftRecipe kRecipes[] = {
   { "Craft_rags_bandage", 18, 1, 26, 1, 0, 0, false, 0, false },
   { "Craft_shirt_rags", 26, 2, 350, 1, 0, 0, false, 0, false },
   // Arrows: wooden sticks + any knife (knife not consumed)
+  // C2 UI "Craft arrows" → Crafted obj; 5× sticks + knife (not consumed)
   { "Craft_sticks_arrow", 51, 5, 38, 5, 0, 0, false, 0, true },
   { "Craft_pile_sticks", 38, 4, 50, 1, 0, 0, false, 0, false }, // woodpile → 4 sticks
   { "Craft_sticks_ashwood", 37, 1, 38, 3, 0, 0, false, 0, true }, // 3 sticks+knife → ashwood
   // Bow: ashwood stick + rope
   { "Craft_5", 163, 1, 37, 1, 41, 1, false, 0, false }, // Craft_5 Spawn_drop 163 (ashwood+rope)
-  { "Craft_firekit", 23, 1, 50, 1, 24, 1, false, 0, false },
-  { "Craft_fishing_rod", 87, 1, 37, 1, 39, 1, false, 0, false }, // ashwood + duct tape
-  { "Craft_fishing_rod_rope", 87, 1, 37, 1, 41, 1, false, 0, false }, // C2 Craft_fishing_rod: ashwood + rope
+  // C2 Craft_fishing_rod (item_activate / craft menu): ashwood + rope
+  { "Craft_fishing_rod", 87, 1, 37, 1, 41, 1, false, 0, false },
   { "Craft_spinning_rod", 86, 1, 87, 1, 39, 1, false, 0, false }, // basic rod + duct → spinning
   { "Craft_molotov", 102, 1, 25, 1, 26, 1, false, 0, false },
   { "Craft_composite_arrow", 52, 1, 51, 1, 37, 1, false, 0, false },
@@ -50,15 +73,6 @@ const CraftRecipe kRecipes[] = {
   { "Craft_rags_rope", 41, 1, 26, 4, 0, 0, false, 0, false },
   // Papers as tinder: papers + sticks → matches
   { "Craft_papers_matches", 24, 1, 49, 1, 38, 2, false, 0, false },
-  // Woodpile at fire → charcoal substitute: woodpile → heatpack-like burn (camp kit fuel)
-  { "Craft_pile_firekit", 23, 1, 50, 2, 49, 1, false, 0, false }, // 2 piles + papers → kit
-  // Extra Craft_* hints (item IDs from Game_events; quantities conservative)
-  { "Craft_burlap_raincoat", 353, 1, 40, 2, 39, 1, false, 0, false }, // 2 sacks + duct → raincoat stub
-  { "Craft_sticks_fence", 50, 1, 38, 6, 0, 0, false, 0, false }, // 6 sticks → woodpile (fence fuel)
-  { "Craft_fence_rags", 50, 1, 38, 4, 26, 2, false, 0, false }, // Craft_34-ish: sticks+rags → pile
-  { "Craft_rags_bandolier", 83, 1, 26, 6, 41, 1, false, 0, false }, // rags+rope → bandolier
-  { "Craft_rags_bandana", 266, 1, 26, 2, 0, 0, false, 0, false }, // 2 rags → bandana
-  { "Craft_burlap_from_rags", 40, 1, 26, 3, 41, 1, false, 0, false }, // rags+rope → burlap sack
   { "Cook_steak_pan", 61, 1, 60, 1, 0, 0, true, 210, false }, // pan as unconsumed tool
 };
 
@@ -106,14 +120,17 @@ const CraftRecipe* craft_recipe_at(int i) {
 }
 
 bool craft_can(const Inventory& inv, const CraftRecipe& r) {
+  (void)kC2_Check_craft;
   if (!has_tool(inv, r)) return false;
-  if (count_of(inv, r.ing_a) < r.count_a) return false;
-  if (r.ing_b != 0 && count_of(inv, r.ing_b) < r.count_b) return false;
+  if (count_item_in_inventory(inv, r.ing_a) < r.count_a) return false;
+  if (r.ing_b != 0 && count_item_in_inventory(inv, r.ing_b) < r.count_b) return false;
   return true;
 }
 
 bool craft_do(Inventory& inv, const CraftRecipe& r, const ItemDatabase& db) {
   if (!craft_can(inv, r)) return false;
+  C2SessionGlobals craft_scratch;
+  c2_stage_craft_removal(craft_scratch, r.ing_a, r.count_a);
   if (!consume(inv, r.ing_a, r.count_a)) return false;
   if (r.ing_b != 0 && !consume(inv, r.ing_b, r.count_b)) return false;
   (void)kC2_craft_ok;
@@ -127,7 +144,20 @@ bool craft_any_possible(const Inventory& inv, bool at_fire) {
     if (r.requires_fire && !at_fire) continue;
     if (craft_can(inv, r)) return true;
   }
+  if (craft_build_fence1_can(inv) || craft_build_fence2_can(inv)) return true;
   return false;
+}
+
+bool craft_build_fence1_can(const Inventory& inv) {
+  (void)kC2_Craft_32;
+  (void)kC2_build_fence1;
+  return count_of(inv, 38) >= 5;
+}
+
+bool craft_build_fence2_can(const Inventory& inv) {
+  (void)kC2_Craft_31;
+  (void)kC2_build_fence2;
+  return count_of(inv, 38) >= 5 && count_of(inv, 50) >= 1;
 }
 
 } // namespace mdaz

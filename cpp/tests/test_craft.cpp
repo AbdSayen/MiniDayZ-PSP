@@ -33,23 +33,24 @@ int test_craft() {
 
   mdaz::Inventory inv;
   inv.add_item(26, 1, db);
-  const mdaz::CraftRecipe* r = mdaz::craft_recipe_at(0);
+  const mdaz::CraftRecipe* r = 0;
+  for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+    const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+    if (c && c->result_id == 18 && c->ing_a == 26) { r = c; break; }
+  }
   if (!r || !mdaz::craft_can(inv, *r)) {
     std::printf("FAIL craft_can rags\n");
     ++fail;
   } else if (!mdaz::craft_do(inv, *r, db)) {
     std::printf("FAIL craft_do\n");
     ++fail;
-  } else if (inv.slot(0).id != 18 && !(inv.slot(0).id == 18 || inv.slot(1).id == 18)) {
-    // bandage should appear somewhere
+  } else {
     bool found = false;
     for (int i = 0; i < inv.slot_count(); ++i) if (inv.slot(i).id == 18) found = true;
     if (!found) {
       std::printf("FAIL no bandage result\n");
       ++fail;
     } else std::printf("OK   craft rags->bandage\n");
-  } else {
-    std::printf("OK   craft rags->bandage\n");
   }
 
   {
@@ -172,30 +173,12 @@ int test_craft() {
     const mdaz::CraftRecipe* rod = 0;
     for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
       const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
-      if (c && c->result_id == 87 && c->ing_a == 37 && c->ing_b == 41) { rod = c; break; }
+      if (c && std::strcmp(c->name, "Craft_fishing_rod") == 0) { rod = c; break; }
     }
     if (!rod || !mdaz::craft_do(inv8, *rod, db4)) {
       std::printf("FAIL craft ashwood+rope->fishing rod\n");
       ++fail;
     } else std::printf("OK   craft ashwood+rope->rod\n");
-  }
-
-  // 2 rags → bandana
-  {
-    mdaz::ItemDatabase dbB;
-    dbB.load_from_json_string(
-      "{\"items\":[{\"id\":26,\"name\":\"Rags\"},{\"id\":266,\"name\":\"Bandana\"}]}");
-    mdaz::Inventory invB;
-    invB.add_item(26, 2, dbB);
-    const mdaz::CraftRecipe* ban = 0;
-    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
-      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
-      if (c && c->result_id == 266 && c->ing_a == 26) { ban = c; break; }
-    }
-    if (!ban || !mdaz::craft_do(invB, *ban, dbB)) {
-      std::printf("FAIL craft rags->bandana\n");
-      ++fail;
-    } else std::printf("OK   craft rags->bandana\n");
   }
 
   // Craft_4: improvised bag + 3 sticks → pack

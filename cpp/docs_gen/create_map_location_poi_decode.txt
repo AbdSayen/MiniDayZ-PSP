@@ -1,0 +1,23 @@
+# POI buildings — create_map_location / Buildings_base
+
+Sources: `original_docs/data.js`, `cpp/docs_gen/functions/create_map_location.json`, `create_map_location_body.json`, `tools/decode_poi_*.js`.
+
+## Verified
+
+| Constant | Value | Evidence |
+|----------|-------|----------|
+| SetTile footprint half-width | **300** layout units | Literals **-300** and **300** in `create_map_location` JSON |
+| Pair offset in port | **±150** (`kC2PoiPairHalfSpacing`) | Half of 300; used in `poi_layout.cpp` for two-building POIs |
+
+## create_map_element / Buildings_base
+
+- **37** `CreateObject` spawns onto layer **`Buildings_base`** (object type indices from Map layout templates, not hotspot+offset expressions in event bytecode).
+- Layout tag strings in function body: `white`, `city`, `barrack`, `church`, … — selection is branch-driven; full tag→offset table **not** extracted (instance positions live in Map layout `Buildings_base` layer).
+
+## Port status
+
+| Area | Status |
+|------|--------|
+| Dirt SetTile ±300 | **verified** (spacing only) |
+| Sprite choice per `LocationType` | **approx** — `poi_layout.cpp` tags from `create_map_element` string audit |
+| Per-building XY from `Buildings_base` IVs | **blocked** — prefab coordinates in Map layout, not decoded into runtime offsets |

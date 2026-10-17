@@ -1,0 +1,4 @@
+IF obj172 spr.cnd.CompareInstanceVar ["IV43",[8,0],5]
+DO obj180 fn.act.CallFunction [[2,"Check_ammo_inventory"],[13,58]]
+  IF obj1 ?2,Check_ammo_inventory []
+  IF obj13 ?7,0,58 []

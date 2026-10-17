@@ -1,0 +1,34 @@
+Mini DAYZ 1.4.1 — spawn1/spawn2/spawn3 / ally bots (from original_docs/data.js)
+
+Spawn_friend_bot_body.json
+  Pick obj245 within 2000px (alt 5000 compare 3) → create obj522 "Veteran friend" (ally, no gun).
+
+Spawn_team_camp_body.json
+  obj507 team camp markers; Bot_team_check_situation when obj549 IV127==3.
+
+Clear_team_camps
+  Destroy all obj507 instances.
+
+spawn1_impl.json
+  zed_resp["spawn1"] frame 16 → Trigger_spawn(IV151 from obj209).
+
+spawn2_impl.json
+  spawn1 frame 7 + spawn2 frame 4 → Trigger_spawn.
+
+spawn3_impl.json
+  secret_location_spawned 0→1: Spawn_drop item arrays at spawn1/2/3 markers (guns 154-157,167,166; civ 57,55,42,36,34,25; 60,71).
+
+TD_drop_weapons_body.json
+  Buildings pickup + Bullet angle 90; IV93 from player_weapons[0] — ported as spawn_drop_from_player(equipped).
+
+item_for_remove_id
+  C2 global (init 0) — inventory_set/remove_marked.
+
+Recheck_inventory_cards
+  Rust_layer Z ← max(card IV341 on objs 7/10/18/14).
+
+loot_checker2
+  avalible_interaction gate (tutorial steps skipped in C++).
+
+Vehicle Layering / Vehicles UI
+  Z 197/914/928 audit; GUI_draw_vehicle / GUI_erase_vehicle in hud.cpp.

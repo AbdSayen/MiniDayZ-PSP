@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mdaz/clothing_containers.hpp"
 #include "mdaz/item_db.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/survival.hpp"
@@ -9,13 +10,6 @@ namespace mdaz {
 
 static const int kInventorySlots = 24;
 static const int kHotbarSlots = 4;
-
-struct InvSlot {
-  ItemId id;
-  int count;
-  InvSlot() : id(0), count(0) {}
-  bool empty() const { return id == 0 || count <= 0; }
-};
 
 // Worn clothing IV6 durability (C2 item instance var).
 struct WornSlot {
@@ -46,6 +40,10 @@ public:
                             bool skip_vest_slot_if_gasmask);
   float worn_iv6(int i) const;
 
+  ClothingContainers& clothing() { return clothing_; }
+  const ClothingContainers& clothing() const { return clothing_; }
+  void sync_clothing_gates(const ItemDatabase& db);
+
   InvSlot& slot(int i);
   const InvSlot& slot(int i) const;
   int slot_count() const { return kInventorySlots; }
@@ -59,6 +57,7 @@ private:
   InvSlot slots_[kInventorySlots];
   WornSlot worn_[kMaxWorn];
   int worn_count_;
+  ClothingContainers clothing_;
 };
 
 } // namespace mdaz

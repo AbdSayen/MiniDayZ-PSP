@@ -1,0 +1,18 @@
+# Check_loot (Spawn_parameters → LOOT Respawn timer)
+
+Source: `var_assignments.json` / `Spawn_parameters.json` group **LOOT Respawn**.
+
+## Timer chain
+- Timer `LOOT_RESPAWN_TIME` → calls function **Check_loot**.
+- Check_loot → **Global_respawn** (map-wide pile refresh at POI markers).
+
+## Item id literals (extract_spawn_drop_ids.js harvest near Check_loot)
+Generic respawn pool ids (not full building trees): 1, 12–15, 25, 50, 75, 88, 100, 150, 200, 500.
+
+## POI-specific Trigger_spawn trees
+Full C2 uses pile obj209 **IV0** + building overlap; desktop uses typed `LootPileKind` tables:
+mil, hosp, gas, heli, police, fire, church, secret, civilian, **bunker** (Global_respawn at Loc_BunkerEntrance).
+
+## Gaps / blocked
+- `Check_loot.json` export truncated — no per-`b_hostel` / `b_hunter_shelter` branches decoded yet.
+- Next candidate POI after fire/church: **bunker entrance** loot via `spawn_bunker` on global respawn.

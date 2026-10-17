@@ -1,0 +1,337 @@
+{
+  "rowCount": 37,
+  "byTag": {
+    "c1": [
+      {
+        "typeId": 891,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          298
+        ]
+      }
+    ],
+    "w2": [
+      {
+        "typeId": 426,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          426
+        ]
+      }
+    ],
+    "s2": [
+      {
+        "typeId": 240,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          240
+        ]
+      },
+      {
+        "typeId": 239,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          239
+        ]
+      },
+      {
+        "typeId": 509,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          509
+        ]
+      },
+      {
+        "typeId": 425,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          425
+        ]
+      },
+      {
+        "typeId": 238,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          238
+        ]
+      },
+      {
+        "typeId": 206,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          206
+        ]
+      },
+      {
+        "typeId": 190,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          190
+        ]
+      },
+      {
+        "typeId": 233,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          233
+        ]
+      },
+      {
+        "typeId": 296,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          296
+        ]
+      },
+      {
+        "typeId": 196,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          196
+        ]
+      },
+      {
+        "typeId": 295,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          295
+        ]
+      },
+      {
+        "typeId": 297,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          297
+        ]
+      },
+      {
+        "typeId": 395,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          395
+        ]
+      },
+      {
+        "typeId": 301,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          301
+        ]
+      },
+      {
+        "typeId": 299,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          299
+        ]
+      },
+      {
+        "typeId": 291,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          291
+        ]
+      },
+      {
+        "typeId": 300,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          300
+        ]
+      },
+      {
+        "typeId": 294,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          294
+        ]
+      },
+      {
+        "typeId": 241,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          241
+        ]
+      },
+      {
+        "typeId": 292,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          292
+        ]
+      },
+      {
+        "typeId": 173,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          173
+        ]
+      },
+      {
+        "typeId": 293,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          293
+        ]
+      },
+      {
+        "typeId": 302,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          302
+        ]
+      },
+      {
+        "typeId": 303,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          303
+        ]
+      },
+      {
+        "typeId": 304,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          304
+        ]
+      },
+      {
+        "typeId": 567,
+        "variant": 0,
+        "nums": [
+          20,
+          151,
+          567
+        ]
+      },
+      {
+        "typeId": 638,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 644,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 650,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 696,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 772,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 785,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 852,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      },
+      {
+        "typeId": 890,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      }
+    ],
+    "spawn1": [
+      {
+        "typeId": 775,
+        "variant": 0,
+        "nums": [
+          20,
+          151
+        ]
+      }
+    ]
+  }
+}

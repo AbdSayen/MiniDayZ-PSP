@@ -1,0 +1,12 @@
+# Mag capacities — Mag_reload / player_weapons (909)
+
+## Blocked
+No event-path found that sets or compares player_weapons IV17/IV18 with literal mag
+capacities per weapon item id (151–210) in original_docs/data.js.
+
+Tools run: tools/extract_mag_capacity_proof.js, tools/decode_map501_mag.js (0 weapons).
+
+IV16–IV18 on 909 are wired to UI text (scope/silencer/belt display) in Switch_to_firearm trees.
+
+## Action
+weapons.cpp mag_capacity values unchanged (approx / KNOWN_ISSUES) until a proven IV path exists.

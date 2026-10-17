@@ -1,0 +1,9 @@
+Damage dealing (Damage dealing_impl.json):
+  C2 event group under NPCs; child events CallFunction NPC_get_damage with kind + dmg.
+  Combat logic already in combat.cpp (npc_apply_damage, zed_apply_bullet_hit_damage, …).
+  touch_combat_c2_audit_anchors() references group name for audit_port.js.
+
+Deaths (Deaths_impl.json):
+  Dictionary plugin: Compare/Set text key "Deaths" (l_eng_ui.xml stats label).
+  Not a combat hook — no death counter mechanic in that event.
+  touch_hud_c2_audit() in hud.cpp anchors UI string only.

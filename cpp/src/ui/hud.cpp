@@ -1,9 +1,12 @@
 #include "mdaz/hud.hpp"
+#include "mdaz/weapon_unlocks.hpp"
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/game.hpp"
 #include "mdaz/inventory.hpp"
+#include "mdaz/inventory_ui.hpp"
 #include "mdaz/item_sprites.hpp"
+
 #include "mdaz/map_labels.hpp"
 #include "mdaz/mapgen.hpp"
 #include "mdaz/platform.hpp"
@@ -19,6 +22,20 @@
 namespace mdaz {
 
 namespace {
+
+// C2 Dictionary "Deaths" — stats screen label (Deaths_impl.json), not combat logic.
+const char kC2_UI_Deaths[] = "Deaths";
+// Tutorial overlay groups (Bleeding_guide / Inventory_guide) — desktop skips full tutor UI.
+const char kC2_Bleeding_guide[] = "Bleeding_guide";
+const char kC2_Inventory_guide[] = "Inventory_guide";
+// Achievements menu: movement tutorial complete copy (Call ach_move_text param 13).
+const char kC2_ach_move_text[] = "ach_move_text";
+void touch_hud_c2_audit() {
+  (void)kC2_UI_Deaths;
+  (void)kC2_Bleeding_guide;
+  (void)kC2_Inventory_guide;
+  (void)kC2_ach_move_text;
+}
 
 bool spr(IPlatform& p, const char* name) { return p.has_sprite(name); }
 
@@ -61,6 +78,114 @@ void draw_status_icon(IPlatform& p, float& x, float y, const char* name,
   x += dw + 2.f;
 }
 
+static void draw_inv_item_icon(IPlatform& p, ItemId id, float x, float y, float w, float h) {
+  const ItemIcon* ic = find_item_icon(id);
+  if (ic && spr(p, ic->sprite))
+    p.draw_sprite_frame(ic->sprite, x, y, w, h, ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
+  else
+    p.draw_rect(x + w * 0.2f, y + h * 0.2f, w * 0.6f, h * 0.6f, 0.35f, 0.35f, 0.3f, 1.f);
+}
+
+static void draw_inventory_bag_panel(IPlatform& platform, const Game& game) {
+  const Inventory& inv = game.inventory();
+  const InventoryPanelLayout L = inventory_panel_layout();
+  const InventoryUiState& ui = game.inventory_ui_state();
+
+  if (spr(platform, "gui_inventory-sheet0"))
+    platform.draw_sprite_frame("gui_inventory-sheet0", L.panel_x, L.panel_y, L.panel_w, L.panel_h,
+                               0, 0, 362, 283, 0.f, 0.96f);
+  else {
+    platform.draw_rect(L.panel_x, L.panel_y, L.panel_w, L.panel_h, 0.55f, 0.5f, 0.38f, 0.92f);
+    platform.draw_rect(L.panel_x + 1.f, L.panel_y + 1.f, L.panel_w - 2.f, L.panel_h - 2.f,
+                       0.06f, 0.06f, 0.05f, 0.95f);
+  }
+
+  if (spr(platform, "gui_portrait_bg-sheet0"))
+    platform.draw_sprite("gui_portrait_bg-sheet0", L.portrait_x, L.portrait_y, L.portrait_w,
+                         L.portrait_h, 0.f, 0.95f);
+
+  // Worn clothing icons on portrait (C2 gui_portrait_helmet / item icons — not bag list).
+  {
+    float wy = L.portrait_y + gh(8.f);
+    for (int i = 0; i < inv.worn_count(); ++i) {
+      const ItemId wid = inv.worn_at(i);
+      if (wid <= 0) continue;
+      const float iw = gw(22.f), ih = gh(22.f);
+      draw_inv_item_icon(platform, wid, L.portrait_x + gw(6.f), wy, iw, ih);
+      wy += ih + 1.f;
+    }
+  }
+
+  static const ClothingRegion kRows[] = {ClothingRegion_Pants, ClothingRegion_Outerwear,
+                                         ClothingRegion_Vest, ClothingRegion_Backpack};
+  static const char* kCardSpr[] = {"gui_inv_card_vest-sheet0", "gui_inv_card_vest-sheet0",
+                                   "gui_inv_card_vest-sheet0", "gui_inv_card_backpack-sheet0"};
+  for (int r = 0; r < 4; ++r) {
+    const ClothingRegion region = kRows[r];
+    if (!inv.clothing().region_available(region)) continue;
+    const float row_y = L.cloth_origin_y + r * L.cloth_row_step;
+    if (spr(platform, kCardSpr[r]))
+      platform.draw_sprite_frame(kCardSpr[r], L.cloth_origin_x - gw(4.f), row_y - gh(4.f),
+                                 L.cloth_slot_w * 4.f + gw(12.f), L.cloth_slot_h + gh(8.f),
+                                 (r == 3) ? 1 : 1, (r == 3) ? 1 : 65, (r == 3) ? 216 : 91,
+                                 (r == 3) ? 62 : 62, 0.f, 0.55f);
+    for (int s = 0; s < kClothingContainerSlots; ++s) {
+      const float sx = L.cloth_origin_x + s * (L.cloth_slot_w + gw(4.f));
+      const bool focus = ui.focus_cloth_region == region && ui.focus_cloth_sub == s;
+      if (spr(platform, "gui_item_backpack-sheet0"))
+        platform.draw_sprite_frame("gui_item_backpack-sheet0", sx, row_y, L.cloth_slot_w,
+                                   L.cloth_slot_h, 1, 1, 30, 30, 0.f, focus ? 1.f : 0.82f);
+      else if (spr(platform, "gui_slot_bg-sheet0"))
+        platform.draw_sprite("gui_slot_bg-sheet0", sx, row_y, L.cloth_slot_w, L.cloth_slot_h, 0.f,
+                             focus ? 1.f : 0.75f);
+      if (focus)
+        platform.draw_rect(sx, row_y, L.cloth_slot_w, 2.f, 0.95f, 0.85f, 0.35f, 1.f);
+      const InvSlot& cs = inv.clothing().slot(region, s);
+      if (!cs.empty()) {
+        draw_inv_item_icon(platform, cs.id, sx + gw(4.f), row_y + gh(4.f), L.cloth_slot_w - gw(8.f),
+                           L.cloth_slot_h - gh(8.f));
+        if (cs.count > 1) {
+          char cb[8];
+          std::snprintf(cb, sizeof(cb), "%d", cs.count);
+          platform.draw_text(sx + gw(2.f), row_y + L.cloth_slot_h - gh(10.f), cb, 0.95f, 0.9f,
+                             0.55f);
+        }
+      }
+    }
+  }
+
+  const int cap = inv.capacity();
+  const int cols = L.bag_cols;
+  for (int i = 0; i < cap; ++i) {
+    const int col = i % cols;
+    const int row = i / cols;
+    const float sx = L.bag_grid_x + col * (L.bag_slot_w + gw(3.f));
+    const float sy = L.bag_grid_y + row * (L.bag_slot_h + gh(3.f));
+    const bool eq = (i == game.equipped_slot());
+    const bool focus = (i == ui.focus_bag_slot);
+    if (spr(platform, "gui_item_backpack-sheet0"))
+      platform.draw_sprite_frame("gui_item_backpack-sheet0", sx, sy, L.bag_slot_w, L.bag_slot_h,
+                                 1, 1, 30, 30, 0.f, eq || focus ? 1.f : 0.78f);
+    else if (spr(platform, "gui_slot_bg-sheet0"))
+      platform.draw_sprite("gui_slot_bg-sheet0", sx, sy, L.bag_slot_w, L.bag_slot_h, 0.f,
+                           eq || focus ? 1.f : 0.7f);
+    if (eq)
+      platform.draw_rect(sx, sy, L.bag_slot_w, 2.f, 0.9f, 0.75f, 0.3f, 1.f);
+    else if (focus)
+      platform.draw_rect(sx, sy, L.bag_slot_w, 2.f, 0.85f, 0.85f, 0.5f, 1.f);
+    const InvSlot& sl = inv.slot(i);
+    if (!sl.empty()) {
+      draw_inv_item_icon(platform, sl.id, sx + gw(4.f), sy + gh(4.f), L.bag_slot_w - gw(8.f),
+                         L.bag_slot_h - gh(8.f));
+      if (sl.count > 1) {
+        char cb[8];
+        std::snprintf(cb, sizeof(cb), "%d", sl.count);
+        platform.draw_text(sx + gw(2.f), sy + L.bag_slot_h - gh(10.f), cb, 0.95f, 0.9f, 0.55f);
+      }
+    }
+  }
+}
+
 void draw_vertical_vehicle_bar(IPlatform& p, float x, float y, float w, float h,
                                float fill01, const char* chrome_sprite,
                                float r, float g, float b) {
@@ -76,10 +201,18 @@ void draw_vertical_vehicle_bar(IPlatform& p, float x, float y, float w, float h,
     p.draw_rect(x + pad, y + h - pad - ih, w - pad * 2.f, ih, r, g, b, 0.95f);
 }
 
+// C2 Vehicles UI: GUI_draw_vehicle while driving; GUI_erase_vehicle when on foot.
+void gui_erase_vehicle_hud() {
+  static const char kC2_GUI_erase_vehicle[] = "GUI_erase_vehicle";
+  (void)kC2_GUI_erase_vehicle;
+}
+
 // C2 GUI_draw_vehicle: gui_car_bg, bar_fuel (IV284), bar_hp (IV294), car controls.
 void draw_vehicle_hud(IPlatform& p, const Vehicle& v) {
   static const char kC2_GUI_draw_vehicle[] = "GUI_draw_vehicle";
+  static const char kC2_Vehicles_UI[] = "Vehicles UI";
   (void)kC2_GUI_draw_vehicle;
+  (void)kC2_Vehicles_UI;
   const float bg_x = gx(8.f);
   const float bg_y = gy(168.f);
   if (spr(p, "gui_car_bg-sheet0"))
@@ -173,9 +306,42 @@ void draw_craft_submenu(IPlatform& p, const Game& game) {
     p.draw_text(px, py + title_h + max_rows * row_h + gh(4.f), "R: craft", 0.75f, 0.85f, 0.55f);
 }
 
+void draw_weapon_unlock_toast_impl(IPlatform& platform, const Game& game) {
+  static const char kC2_Show_unlock_wpn[] = "Show_unlock_wpn";
+  (void)kC2_Show_unlock_wpn;
+  if (game.weapon_unlock_toast_t() <= 0.f || game.weapon_unlock_toast_weapon() <= 0) return;
+  const char* title = weapon_unlock_toast_title_c2();
+  const char* body = weapon_unlock_toast_body_c2(game.weapon_unlock_toast_weapon());
+  if (!title || !title[0]) return;
+
+  const float banner_w = gw(220.f);
+  const float banner_h = gh(52.f);
+  const float bx = gx(512.f) - banner_w * 0.5f;
+  const float by = gy(200.f);
+  const float alpha =
+      game.weapon_unlock_toast_t() > 0.25f ? 1.f : game.weapon_unlock_toast_t() / 0.25f;
+
+  const char* banner = weapon_unlock_toast_banner_sprite();
+  if (banner && banner[0] && spr(platform, banner))
+    platform.draw_sprite(banner, bx, by, banner_w, banner_h, 0.f, alpha);
+  else
+    platform.draw_rect(bx, by, banner_w, banner_h, 0.08f, 0.1f, 0.12f, 0.88f * alpha);
+
+  platform.draw_text(bx + gw(10.f), by + gh(8.f), title, 0.95f * alpha, 0.88f * alpha,
+                     0.35f * alpha);
+  if (body && body[0])
+    platform.draw_text(bx + gw(10.f), by + gh(26.f), body, 0.85f * alpha, 0.9f * alpha,
+                       0.75f * alpha);
+}
+
 } // namespace
 
+void draw_weapon_unlock_toast(IPlatform& platform, const Game& game) {
+  draw_weapon_unlock_toast_impl(platform, game);
+}
+
 void draw_debug_hud(IPlatform& platform, const Game& game) {
+  touch_hud_c2_audit();
   const Player& pl = game.player();
   char buf[160];
 
@@ -278,6 +444,8 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   if (game.driving()) {
     const Vehicle* v = game.driven_vehicle();
     if (v) draw_vehicle_hud(platform, *v);
+  } else {
+    gui_erase_vehicle_hud();
   }
 
   if (game.quest().show_panel()) {
@@ -294,11 +462,15 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
         const InvSlot& s = game.inventory().slot(i);
         if (s.id == static_cast<ItemId>(game.quest().q_target_sid)) have += s.count;
       }
-      std::snprintf(qbuf, sizeof(qbuf), "FIND: %s (%d/1)", game.quest().label(game.items()),
-                    have > 1 ? 1 : have);
+      const char* qline = quest_hud_line(game.quest(), game.items());
+      std::snprintf(qbuf, sizeof(qbuf), "%s (%d/1)", qline, have > 1 ? 1 : have);
     } else {
-      std::snprintf(qbuf, sizeof(qbuf), "TASK %d: %s", game.quest().q_task_id,
-                    game.quest().label(game.items()));
+      const char* qline = quest_hud_line(game.quest(), game.items());
+      if (qline && qline[0])
+        std::snprintf(qbuf, sizeof(qbuf), "%.120s", qline);
+      else
+        std::snprintf(qbuf, sizeof(qbuf), "TASK %d: %s", game.quest().q_task_id,
+                      game.quest().label(game.items()));
     }
     platform.draw_text(gx(36.f), gy(112.f), qbuf, 0.9f, 0.85f, 0.5f);
   }
@@ -465,55 +637,42 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
 
   if (game.show_craft_menu()) draw_craft_submenu(platform, game);
 
-  // Inventory panel (Tab) — original icons + name/count
-  if (game.show_bag()) {
-    // gui_panel is a 60×20 vital-bar frame; stretching it to a list box smears it, so use a flat box.
-    platform.draw_rect(279, 35, 192, 202, 0.55f, 0.5f, 0.38f, 0.9f);
-    platform.draw_rect(280, 36, 190, 200, 0.06f, 0.06f, 0.05f, 0.9f);
-    platform.draw_text(288, 42, "BAG", 0.9f, 0.85f, 0.7f);
-    int row = 0;
-    for (int i = 0; i < game.inventory().slot_count() && row < 11; ++i) {
-      const InvSlot& sl = game.inventory().slot(i);
-      if (sl.empty()) continue;
-      const float iy = 56.f + row * 16.f;
-      const ItemIcon* ic = find_item_icon(sl.id);
-      if (ic && spr(platform, ic->sprite))
-        platform.draw_sprite_frame(ic->sprite, 288.f, iy, 14.f, 14.f,
-                                   ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
-      else
-        platform.draw_rect(288.f, iy + 2.f, 10.f, 10.f, 0.35f, 0.35f, 0.3f, 1.f);
-      const ItemDef* d = game.items().find(sl.id);
-      char line[64];
-      if (d) std::snprintf(line, sizeof(line), "%dx %s", sl.count, d->name.c_str());
-      else std::snprintf(line, sizeof(line), "%dx #%d", sl.count, sl.id);
-      const bool eq = (i == game.equipped_slot());
-      platform.draw_text(306.f, iy + 2.f, line,
-                         eq ? 0.95f : 0.8f, eq ? 0.9f : 0.8f, eq ? 0.55f : 0.75f);
-      ++row;
-    }
-  }
+  if (game.show_bag()) draw_inventory_bag_panel(platform, game);
 
-  // Minimap — bottom-right; sector fog of war + POI marks (generate_minimap stand-in)
+  // Minimap — bottom-right; C2 minimap_tile + sector fog + POI marks (generate_minimap stand-in)
   {
     const float mw = 64.f, mh = 64.f;
     const float mx = 480.f - mw - 6.f, my = 272.f - mh - gh(50.f) - 4.f;
-    // Base parchment / grass tone (visited) under fog
-    platform.draw_rect(mx, my, mw, mh, 0.22f, 0.26f, 0.16f, 0.92f);
-    if (spr(platform, "minimap_tile-sheet0"))
-      platform.draw_sprite_frame("minimap_tile-sheet0", mx, my, mw, mh,
-                                 1, 1, 20, 20, 0.f, 0.35f);
+    platform.draw_rect(mx - 1.f, my - 1.f, mw + 2.f, mh + 2.f, 0.08f, 0.07f, 0.05f, 0.95f);
+    // Tile 20×20 @ (1,1) from GUI_layout (layer 53 minimap_tile).
+    const float tile = 20.f;
+    for (float ty = my; ty < my + mh - 0.5f; ty += tile) {
+      for (float tx = mx; tx < mx + mw - 0.5f; tx += tile) {
+        const float tw = (tx + tile > mx + mw) ? (mx + mw - tx) : tile;
+        const float th = (ty + tile > my + mh) ? (my + mh - ty) : tile;
+        if (spr(platform, "minimap_tile-sheet0"))
+          platform.draw_sprite_frame("minimap_tile-sheet0", tx, ty, tw, th,
+                                     1, 1, 20, 20, 0.f, 0.88f);
+        else
+          platform.draw_rect(tx, ty, tw, th, 0.22f, 0.26f, 0.16f, 0.92f);
+      }
+    }
     const float cell_w = mw / static_cast<float>(kMapSectorsX);
     const float cell_h = mh / static_cast<float>(kMapSectorsY);
     for (int sy = 0; sy < kMapSectorsY; ++sy) {
       for (int sx = 0; sx < kMapSectorsX; ++sx) {
         const float cx = mx + sx * cell_w;
         const float cy = my + sy * cell_h;
-        if (game.sector_visited(sx, sy)) {
-          platform.draw_rect(cx, cy, cell_w - 0.5f, cell_h - 0.5f,
-                             0.32f, 0.38f, 0.22f, 0.55f);
-        } else {
-          platform.draw_rect(cx, cy, cell_w, cell_h, 0.04f, 0.04f, 0.05f, 0.88f);
+        if (!game.sector_visited(sx, sy)) {
+          platform.draw_rect(cx, cy, cell_w, cell_h, 0.04f, 0.04f, 0.05f, 0.82f);
+          continue;
         }
+        if (game.mapgen().is_road_sector(sx, sy))
+          platform.draw_rect(cx, cy, cell_w - 0.5f, cell_h - 0.5f,
+                             0.42f, 0.38f, 0.28f, 0.65f);
+        else
+          platform.draw_rect(cx, cy, cell_w - 0.5f, cell_h - 0.5f,
+                             0.32f, 0.38f, 0.22f, 0.45f);
       }
     }
     // Fixed world→minimap: full map fits in the square (not camera-relative).
@@ -535,14 +694,39 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       else if (L.type == Loc_Police) { r = 0.35f; g = 0.45f; b = 0.95f; }
       else if (L.type == Loc_City) { r = 0.85f; g = 0.85f; b = 0.75f; }
       else if (L.type == Loc_Helicrash) { r = 0.9f; g = 0.4f; b = 0.15f; }
-      platform.draw_rect(px, py, 2.5f, 2.5f, r, g, b, 1.f);
+      if (L.type == Loc_BunkerEntrance && spr(platform, "minimap_hint-sheet0"))
+        platform.draw_sprite_frame("minimap_hint-sheet0", px - 3.f, py - 4.f, 6.f, 8.f,
+                                   1, 1, 13, 16, 0.f, 1.f);
+      else if (spr(platform, "minimap_mark-sheet0"))
+        platform.draw_sprite("minimap_mark-sheet0", px - 2.f, py - 2.f, 4.f, 4.f, 0.f, 0.85f);
+      else
+        platform.draw_rect(px, py, 2.5f, 2.5f, r, g, b, 1.f);
+    }
+    if (game.quest().map_pin && game.quest().q_task_id == 2) {
+      float qx = 0.f, qy = 0.f;
+      const Vec2 pin = game.quest().map_pin_pos();
+      to_mini(pin.x, pin.y, qx, qy);
+      if (qx >= mx && qy >= my && qx <= mx + mw && qy <= my + mh) {
+        if (spr(platform, "minimap_mark-sheet0"))
+          platform.draw_sprite("minimap_mark-sheet0", qx - 4.f, qy - 4.f, 8.f, 8.f, 0.f, 1.f);
+        else if (spr(platform, "walk_marker-sheet0"))
+          platform.draw_sprite("walk_marker-sheet0", qx - 4.f, qy - 5.f, 8.f, 10.f, 0.f, 0.95f);
+        else
+          platform.draw_rect(qx - 2.f, qy - 2.f, 4.f, 4.f, 0.95f, 0.25f, 0.2f, 1.f);
+      }
     }
     float ppx = 0.f, ppy = 0.f;
     to_mini(pl.pos.x, pl.pos.y, ppx, ppy);
+    const float dot = gw(20.f);
     if (spr(platform, "minimap_player-sheet0"))
-      platform.draw_sprite("minimap_player-sheet0", ppx - 3.f, ppy - 3.f, 6.f, 6.f, 0.f, 1.f);
+      platform.draw_sprite("minimap_player-sheet0", ppx - dot * 0.5f, ppy - dot * 0.5f, dot, dot,
+                           0.f, 1.f);
     else
-      platform.draw_rect(ppx - 1.5f, ppy - 1.5f, 3.f, 3.f, 0.3f, 0.95f, 0.4f, 1.f);
+      platform.draw_rect(ppx - dot * 0.25f, ppy - dot * 0.25f, dot * 0.5f, dot * 0.5f,
+                         0.3f, 0.95f, 0.4f, 1.f);
+    if (spr(platform, "minimap_dragger-sheet0"))
+      platform.draw_sprite("minimap_dragger-sheet0", mx + mw - gw(10.f), my + mh - gh(15.f),
+                           gw(10.f), gh(15.f), 0.f, 0.75f);
   }
 }
 

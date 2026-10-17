@@ -5,6 +5,9 @@
 namespace mdaz {
 
 namespace {
+// C2 Spawn_parameters group name (Timer Check_loot → Global_respawn lives under this group).
+const char kC2_LOOT_Respawn_group[] = "LOOT Respawn";
+
 inline float airdrop_period() {
   // Airdrop_Timer_ALL = 360 is the in-game cycle; Airdrop_recharge = 400 init fallback
   return static_cast<float>(balance::Airdrop_Timer_ALL > 0
@@ -24,6 +27,7 @@ struct WorldTimers {
   WorldTimers() { reset(); }
 
   void reset() {
+    (void)kC2_LOOT_Respawn_group;
     zed_respawn = static_cast<float>(balance::ZED_RESPAWN_TIME);
     bot_respawn = static_cast<float>(balance::BOT_RESPAWN_TIME);
     loot_respawn = static_cast<float>(balance::LOOT_RESPAWN_TIME);

@@ -1,0 +1,21 @@
+# Weapon IV0 path scan (auto)
+Generated: 2026-10-17T13:07:38.050Z
+
+## Sverka promoted (unambiguous only)
+- **151**: IV0=23 — Game_events: bullet 88 Set IV1←172.itemId + IV0 literal (New_bullet spawn chain) (prior decode)
+
+## Rejected (ambiguous tag-window IV0)
+- 167 (repeater): IV0=23 — single IV0 in tag window without IV1←172 pairing — not promoted
+- 177 (aug): IV0=5 — single IV0 in tag window without IV1←172 pairing — not promoted
+- 179 (mac10): IV0=5 — single IV0 in tag window without IV1←172 pairing — not promoted
+- 185 (vss): IV0=5 — single IV0 in tag window without IV1←172 pairing — not promoted
+- 186 (sv98): IV0=5 — single IV0 in tag window without IV1←172 pairing — not promoted
+- 151 (fnx): candidates 23, 25, 40 — need IV1←172.151 + sole literal (see New_bullet_decoded)
+
+## Path summaries
+- game_events_910_88: {}
+- bullets_parameters IV0 literals (5–120): 10
+- new_bullet branches with IV0: 1 weapon ids
+
+- 909 IV0 CompareInstanceVar counts are weapon-type tags (strings in export), not damage literals.
+- Bullets_parameters slice: IV0 literals are travel/decay, not per-weapon base damage.

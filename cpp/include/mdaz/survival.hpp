@@ -38,7 +38,8 @@ struct SurvivalState {
   void update(float dt, const SurvivalRates& rates, float weather_temp,
               bool is_running, bool is_night, bool is_raining,
               bool perk_camel, bool perk_hamster, bool perk_regen,
-              bool perk_metabolism, float clothing_insulation = 0.f);
+              bool perk_metabolism, float clothing_insulation = 0.f,
+              bool vitamins_buff = false);
 
   bool is_dead() const { return blood <= 0.f; }
 

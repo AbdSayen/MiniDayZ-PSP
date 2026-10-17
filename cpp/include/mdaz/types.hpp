@@ -8,6 +8,13 @@ namespace mdaz {
 typedef std::int32_t ItemId;
 typedef std::uint32_t EntityId;
 
+struct InvSlot {
+  ItemId id;
+  int count;
+  InvSlot() : id(0), count(0) {}
+  bool empty() const { return id == 0 || count <= 0; }
+};
+
 enum AppState {
   AppState_Loading = 0,
   AppState_Menu,

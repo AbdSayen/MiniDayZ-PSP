@@ -1,0 +1,8 @@
+s_weapons_impl.json:
+  IF player_weapons CompareInstanceVar → "s_weapons2"
+  DO Set layer visible "s_weapons" (act 137)
+
+C2: player_weapons object toggles s_weapons vs s_weapons2 sprite layers during rifle reload
+(reload_rifle.json / molotov_reload.json reference s_weapons repeatedly).
+
+C++: no layered weapon sprite yet — touch_weapon_c2_audit_anchors() references s_weapons/s_weapons2.

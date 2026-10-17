@@ -31,4 +31,8 @@ bool craft_do(Inventory& inv, const CraftRecipe& r, const ItemDatabase& db);
 // C2 Check_craft / GUI_craft_possible — any recipe craftable now (respects fire).
 bool craft_any_possible(const Inventory& inv, bool at_fire);
 
+// Craft_32/build_fence1 & Craft_31/build_fence2 ingredient gates (item_for_remove_id required_count=5).
+bool craft_build_fence1_can(const Inventory& inv);
+bool craft_build_fence2_can(const Inventory& inv);
+
 } // namespace mdaz

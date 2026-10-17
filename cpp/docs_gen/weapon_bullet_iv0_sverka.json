@@ -1,0 +1,9 @@
+{
+  "151": {
+    "iv0": [
+      23
+    ],
+    "sverka": true,
+    "path": "Game_events: bullet 88 Set IV1←172.itemId + IV0 literal (New_bullet spawn chain)"
+  }
+}

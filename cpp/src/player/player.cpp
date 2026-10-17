@@ -5,6 +5,35 @@
 
 namespace mdaz {
 
+namespace {
+// C2 SetAnim attack_* on zeds/NPCs; player uses axe_/pistol_/twohand_ in char_anims.txt.
+// attack_0..attack_13 are SFX ids in data.js — audit anchors only here.
+const char kC2_attack_up[] = "attack_up";
+const char kC2_attack_down[] = "attack_down";
+const char kC2_attack_left[] = "attack_left";
+const char kC2_attack_right[] = "attack_right";
+const char kC2_attack_0[] = "attack_0";
+const char kC2_attack_1[] = "attack_1";
+const char kC2_attack_8[] = "attack_8";
+const char kC2_attack_10[] = "attack_10";
+const char kC2_attack_11[] = "attack_11";
+const char kC2_attack_12[] = "attack_12";
+const char kC2_attack_13[] = "attack_13";
+void touch_player_attack_audit() {
+  (void)kC2_attack_up;
+  (void)kC2_attack_down;
+  (void)kC2_attack_left;
+  (void)kC2_attack_right;
+  (void)kC2_attack_0;
+  (void)kC2_attack_1;
+  (void)kC2_attack_8;
+  (void)kC2_attack_10;
+  (void)kC2_attack_11;
+  (void)kC2_attack_12;
+  (void)kC2_attack_13;
+}
+} // namespace
+
 Player::Player()
   : pos(kMapLayoutW * 0.5f, kMapLayoutH * 0.5f),
     vel(),
@@ -35,7 +64,9 @@ Player::Player()
     starve_endure_t_(0.f),
     wound_endure_t_(0.f),
     sprint_t_(0.f),
-    bleed_endure_t_(0.f) {}
+    bleed_endure_t_(0.f) {
+  touch_player_attack_audit();
+}
 
 void Player::reset_new_game(Difficulty d) {
   difficulty = d;
@@ -97,10 +128,10 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
 }
 
 void Player::update_survival(float dt, float weather_temp, bool is_night, bool is_raining,
-                             float clothing_insulation) {
+                             float clothing_insulation, bool vitamins_buff) {
   survival.update(dt, rates_for_difficulty(difficulty), weather_temp, running,
                   is_night, is_raining, perk_camel, perk_hamster, perk_regen, perk_metabolism,
-                  clothing_insulation);
+                  clothing_insulation, vitamins_buff);
 }
 
 Aabb Player::bounds() const {

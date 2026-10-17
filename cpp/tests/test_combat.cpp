@@ -7,6 +7,7 @@
 #include "mdaz/animal.hpp"
 
 #include <cstdio>
+#include <cstring>
 
 int test_combat() {
   std::printf("--- test_combat ---\n");
@@ -151,6 +152,39 @@ int test_combat() {
     ++fail;
   } else {
     std::printf("OK   M4 rifle reload branch\n");
+  }
+
+  {
+    mdaz::Rng sfx_rng(7);
+    const char* fal = mdaz::weapon_fire_sfx_tag(175, sfx_rng);
+    if (!fal || (std::strcmp(fal, "fn_fal_single_1") && std::strcmp(fal, "fn_fal_single_2"))) {
+      std::printf("FAIL FN-CAL sfx want fn_fal_single_* got %s\n", fal ? fal : "(null)");
+      ++fail;
+    } else {
+      std::printf("OK   FN-CAL fire sfx %s\n", fal);
+    }
+    const char* m4s = mdaz::weapon_fire_sfx_tag(158, sfx_rng);
+    if (!m4s || (std::strcmp(m4s, "m4_single_1") && std::strcmp(m4s, "m4_single_2"))) {
+      std::printf("FAIL M4 fire sfx\n");
+      ++fail;
+    } else {
+      std::printf("OK   M4 fire sfx %s\n", m4s);
+    }
+    const char* zed = mdaz::pick_zed_player_hit_sfx(sfx_rng);
+    if (!zed || std::strncmp(zed, "attack_", 7) != 0) {
+      std::printf("FAIL zed hit sfx pool\n");
+      ++fail;
+    } else {
+      std::printf("OK   zed hit sfx %s\n", zed);
+    }
+    if (std::strcmp(mdaz::c2_zed_screamer_attack_sfx(), "attack_8") != 0) {
+      std::printf("FAIL screamer sfx\n");
+      ++fail;
+    } else {
+      std::printf("OK   screamer attack_8\n");
+    }
+    mdaz::touch_combat_c2_audit_anchors();
+    mdaz::touch_weapon_c2_audit_anchors();
   }
 
   const mdaz::WeaponDef* bow = mdaz::find_weapon(163);

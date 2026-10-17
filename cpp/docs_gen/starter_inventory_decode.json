@@ -1,0 +1,13 @@
+{
+  "source": "original_docs/data.js Game_events heuristics (tools/extract_starter_hints.js)",
+  "status": "partial_blocked",
+  "notes": "Start events / SEED RUNS slices show repeated item-id literals (1,2,3,4) but no verified Spawn_drop starter table or per-difficulty counts. Desktop port keeps lean kit in game.cpp until Check_item_inventory / inventory seed events are decoded.",
+  "start_events_top_ids": [
+    { "id": 1, "name": "Canned beans", "count_hint": 7 },
+    { "id": 2, "name": "Canned tuna", "count_hint": 2 },
+    { "id": 4, "name": "Rice", "count_hint": 2 },
+    { "id": 3, "name": "Tactical bacon", "count_hint": 1 }
+  ],
+  "gamesav_nearby_ids": [1, 10, 15, 100, 51, 110, 300, 350],
+  "desktop_port_starter_ref": "cpp/src/core/game.cpp start_new_game (approximate survival kit, not sverka)"
+}

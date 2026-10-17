@@ -104,11 +104,11 @@ public:
   SdlPlatform()
     : window_(0), renderer_(0), quit_(false),
       w_(kPspWidth * 2), h_(kPspHeight * 2),
-      prev_attack_(false), prev_interact_(false), prev_inventory_(false),
+      prev_attack_(false), prev_interact_(false), prev_inventory_(false), prev_bag_(false),
       prev_reload_(false), prev_pause_(false), prev_confirm_(false),
       prev_save_(false), prev_load_(false), prev_torch_(false),
       prev_drop_(false), prev_mag_reload_(false), prev_craft_(false), prev_throw_(false),
-      prev_equip_prev_(false), prev_equip_next_(false) {
+      prev_equip_prev_(false), prev_equip_next_(false), prev_mouse_left_(false) {
     images_dir_[0] = 0;
   }
 
@@ -163,6 +163,8 @@ public:
       clear_textures();
       return false;
     }
+    if (!has_sprite("bitmap_font-sheet0"))
+      std::fprintf(stderr, "[mdaz] HUD font: 5x7 fallback (no bitmap_font sheet in images)\n");
     std::fprintf(stderr, "[mdaz] sprites OK: %s\n", images_dir_);
     return true;
   }
@@ -224,6 +226,7 @@ public:
     out.inventory = keys[SDL_SCANCODE_C] != 0;
     out.reload = keys[SDL_SCANCODE_R] != 0;
     out.bag = keys[SDL_SCANCODE_TAB] != 0;
+    out.bag_pressed = out.bag && !prev_bag_;
     out.run = keys[SDL_SCANCODE_LSHIFT] != 0;
     out.crouch = keys[SDL_SCANCODE_LCTRL] != 0 || keys[SDL_SCANCODE_RCTRL] != 0;
     out.pause = keys[SDL_SCANCODE_P] != 0;
@@ -240,6 +243,7 @@ public:
     prev_attack_ = out.attack;
     prev_interact_ = out.interact;
     prev_inventory_ = out.inventory;
+    prev_bag_ = out.bag;
     prev_reload_ = out.reload;
     prev_pause_ = out.pause;
     prev_confirm_ = out.confirm;
@@ -266,6 +270,19 @@ public:
     prev_throw_ = keys[SDL_SCANCODE_F] != 0;
     prev_equip_prev_ = keys[SDL_SCANCODE_Q] != 0;
     prev_equip_next_ = keys[SDL_SCANCODE_X] != 0;
+
+    int mwx = 0, mwy = 0;
+    const Uint32 mbuttons = SDL_GetMouseState(&mwx, &mwy);
+    out.mouse_left = (mbuttons & SDL_BUTTON_LMASK) != 0;
+    out.mouse_left_pressed = out.mouse_left && !prev_mouse_left_;
+    prev_mouse_left_ = out.mouse_left;
+    if (renderer_) {
+      float lx = 0.f, ly = 0.f;
+      SDL_RenderWindowToLogical(renderer_, static_cast<float>(mwx),
+                                static_cast<float>(mwy), &lx, &ly);
+      out.mouse_x = lx;
+      out.mouse_y = ly;
+    }
 
     // ESC is handled by Game (menu/pause); only window close quits the host.
     return !quit_;
@@ -431,10 +448,12 @@ private:
   int w_, h_;
   char images_dir_[512];
   std::map<std::string, TexEntry> tex_;
-  bool prev_attack_, prev_interact_, prev_inventory_, prev_reload_, prev_pause_, prev_confirm_;
+  bool prev_attack_, prev_interact_, prev_inventory_, prev_bag_, prev_reload_, prev_pause_,
+      prev_confirm_;
   bool prev_save_, prev_load_, prev_torch_;
   bool prev_drop_, prev_mag_reload_, prev_craft_, prev_throw_;
   bool prev_equip_prev_, prev_equip_next_;
+  bool prev_mouse_left_;
 };
 
 IPlatform* create_platform() {
