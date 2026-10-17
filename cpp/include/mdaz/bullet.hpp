@@ -13,6 +13,7 @@ struct Bullet {
   bool from_player;
   bool explosive;  // F1 / molotov splash on death or hit
   bool leaves_fire; // molotov places campfire puddle
+  bool is_arrow;    // bow / crossbow projectile sprite
 };
 
 static const int kMaxBullets = 64;

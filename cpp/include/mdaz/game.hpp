@@ -114,6 +114,7 @@ private:
   float inv_full_flash_; // HUD flash when pickup fails
   float tent_warmth_t_;  // remaining shelter bonus seconds after placing tent
   float indoor_t_;       // POI interior search warmth timer
+  float footstep_t_;     // cadence timer for run/walk SFX
   float wetness_;        // 0..100 clothes wetness (rain up / fire dry)
   float gasmask_filter_; // 0..100 filter life while wearing gasmask
   float adrenaline_t_;   // morphine sprint boost remaining seconds
@@ -163,6 +164,23 @@ private:
   float wind_sfx_cd_;
   float flare_t_;
   Vec2 flare_pos_;
+
+  // Visual FX / corpses (presentation parity with C2)
+  enum FxKind { Fx_Muzzle = 0, Fx_Hit, Fx_Explode, Fx_Shell, Fx_Blood, Fx_Fish };
+  static const int kMaxFx = 32;
+  struct FxSprite { Vec2 pos; float life; float angle; FxKind kind; bool active; };
+  FxSprite fx_[kMaxFx];
+  int fx_count_;
+
+  enum CorpseKind { Corpse_Zed = 0, Corpse_Bandit, Corpse_Deer, Corpse_Wolf, Corpse_Dog, Corpse_Other };
+  static const int kMaxCorpses = 48;
+  struct Corpse { Vec2 pos; float life; float angle; CorpseKind kind; int variant; bool active; };
+  Corpse corpses_[kMaxCorpses];
+  int corpse_count_;
+
+  void spawn_fx(FxKind kind, Vec2 pos, float angle_deg = 0.f, float life = 0.12f);
+  void spawn_corpse(CorpseKind kind, Vec2 pos, float angle_deg, int variant = 0);
+  void update_fx(float dt);
 
   void mark_sector_visited();
   void update_menu(float dt, const InputState& in);

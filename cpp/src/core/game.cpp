@@ -2,6 +2,7 @@
 #include "mdaz/combat.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/hud.hpp"
+#include "mdaz/item_sprites.hpp"
 #include "mdaz/map_labels.hpp"
 #include "mdaz/save_game.hpp"
 #include "mdaz/weapons.hpp"
@@ -22,15 +23,19 @@ float dist2(Vec2 a, Vec2 b) {
 
 float world_to_screen_scale() { return 0.55f; }
 
-// C2 packs many 30×30 frames into 128×128 sheets at (1+col*32, 1+row*32).
-// data.js: idle_down/up/right/left = cols 0..3 on row 0; walk rows 1..3.
-int facing_to_col(float deg) {
+// C2 character sheets (data.js 1.4.1): 30×30 cells, stride 32, origin (1,1).
+// Idle: one frame per facing on row 0 — down(1,1) up(33,1) right(65,1) left(97,1).
+// Run: animation run_{dir} = 4 frames across columns on a fixed row:
+//   run_down y=33, run_up y=65, run_right y=97, run_left y=1 (reuses idle row).
+enum FaceDir { Face_Down = 0, Face_Up = 1, Face_Right = 2, Face_Left = 3 };
+
+FaceDir facing_to_dir(float deg) {
   while (deg > 180.f) deg -= 360.f;
   while (deg < -180.f) deg += 360.f;
-  if (deg >= -45.f && deg < 45.f) return 2;   // right
-  if (deg >= 45.f && deg < 135.f) return 0;   // down
-  if (deg >= -135.f && deg < -45.f) return 1; // up
-  return 3; // left
+  if (deg >= -45.f && deg < 45.f) return Face_Right;
+  if (deg >= 45.f && deg < 135.f) return Face_Down;
+  if (deg >= -135.f && deg < -45.f) return Face_Up;
+  return Face_Left;
 }
 
 void sprite_sheet_name(char* out, int out_n, const char* base, int sheet) {
@@ -39,32 +44,150 @@ void sprite_sheet_name(char* out, int out_n, const char* base, int sheet) {
   std::snprintf(out, out_n, "%s-sheet%d", base, sheet);
 }
 
-// Draw one C2 character/animal frame (default 30×30 cell). No rotation —
-// direction is already encoded in the frame column (as in the original).
-void draw_c2_char(IPlatform* p, float sx, float sy, float size,
-                  const char* base, float facing_deg, int walk_frame,
-                  int cell = 30, int stride = 32) {
+void draw_c2_frame(IPlatform* p, const char* base, int sheet,
+                   float sx, float sy, float size, int srcx, int srcy,
+                   int cell = 30) {
   if (!p || !base) return;
   char name[64];
-  // Prefer sheet0; walk uses rows. sheet1/2 are weapon poses etc.
-  sprite_sheet_name(name, (int)sizeof(name), base, 0);
+  sprite_sheet_name(name, (int)sizeof(name), base, sheet);
   if (!p->has_sprite(name)) return;
-  const int col = facing_to_col(facing_deg);
-  int row = 0;
-  if (walk_frame > 0) row = 1 + ((walk_frame - 1) % 3);
-  const int srcx = 1 + col * stride;
-  const int srcy = 1 + row * stride;
   p->draw_sprite_frame(name, sx - size * 0.5f, sy - size * 0.5f, size, size,
                        srcx, srcy, cell, cell, 0.f, 1.f);
 }
 
-void draw_world_sprite(IPlatform* p, float cx, float cy, float sc, Vec2 cam, Vec2 world,
-                       const char* name, float size, float angle_deg = 0.f, float alpha = 1.f) {
-  if (!p || !name) return;
-  const float sx = cx + (world.x - cam.x) * sc;
-  const float sy = cy + (world.y - cam.y) * sc;
-  if (p->has_sprite(name))
-    p->draw_sprite(name, sx - size * 0.5f, sy - size * 0.5f, size, size, angle_deg, alpha);
+// Draw one C2 character frame matching original idle_* / run_* selection.
+// walk_frame: 0 = idle, 1..N = run cycle (mod 4 for 30px skins).
+// run_left uses sheet1 (data.js); other run/idle use sheet0.
+void draw_c2_char(IPlatform* p, float sx, float sy, float size,
+                  const char* base, float facing_deg, int walk_frame,
+                  int cell = 30, int stride = 32) {
+  if (!p || !base) return;
+  const FaceDir dir = facing_to_dir(facing_deg);
+  int sheet = 0, col = 0, row = 0;
+  if (cell == 38 && stride == 40) {
+    if (walk_frame <= 0) {
+      if (dir == Face_Down) { col = 0; row = 0; }
+      else if (dir == Face_Up) { col = 1; row = 0; }
+      else if (dir == Face_Right) { col = 2; row = 0; }
+      else { col = 0; row = 1; }
+    } else {
+      const int fr = (walk_frame - 1) % 3;
+      if (dir == Face_Down) { col = fr; row = 1; }
+      else if (dir == Face_Up) { col = fr; row = 2; }
+      else if (dir == Face_Right) { col = fr % 3; row = 2; }
+      else { col = fr % 3; row = 1; }
+    }
+  } else if (walk_frame <= 0) {
+    col = static_cast<int>(dir);
+    row = 0;
+    sheet = 0;
+  } else {
+    col = (walk_frame - 1) % 4;
+    if (dir == Face_Down) { sheet = 0; row = 1; }
+    else if (dir == Face_Up) { sheet = 0; row = 2; }
+    else if (dir == Face_Right) { sheet = 0; row = 3; }
+    else { sheet = 1; row = 0; } // run_left → sheet1
+  }
+  draw_c2_frame(p, base, sheet, sx, sy, size,
+                1 + col * stride, 1 + row * stride, cell);
+}
+
+enum HoldPose { Hold_None, Hold_Pistol, Hold_TwoHand, Hold_Axe };
+
+HoldPose hold_pose_for(const WeaponDef* w) {
+  if (!w) return Hold_None;
+  if (w->stats.is_melee) {
+    if (w->item_id == 202 || w->item_id == 204 || w->item_id == 206) return Hold_Axe;
+    return Hold_None;
+  }
+  // One-hand pistols / SMGs from weapons table
+  const ItemId id = w->item_id;
+  if (id == 151 || id == 152 || id == 153 || id == 165 || id == 169 ||
+      id == 170 || id == 179) return Hold_Pistol;
+  return Hold_TwoHand;
+}
+
+// Standing gun/axe poses from data.js (body vs hands differ).
+void hold_pose_uv(HoldPose pose, FaceDir dir, bool hands, int& sheet, int& x, int& y) {
+  sheet = 0; x = 1; y = 1;
+  if (pose == Hold_Pistol) {
+    if (!hands) {
+      sheet = 1;
+      if (dir == Face_Down) { x = 33; y = 97; }
+      else if (dir == Face_Up) { x = 1; y = 97; }
+      else if (dir == Face_Left) { x = 65; y = 97; }
+      else { x = 97; y = 97; }
+    } else {
+      if (dir == Face_Down) { sheet = 1; x = 65; y = 97; }
+      else if (dir == Face_Up) { sheet = 1; x = 33; y = 97; }
+      else if (dir == Face_Left) { sheet = 1; x = 97; y = 97; }
+      else { sheet = 2; x = 1; y = 1; }
+    }
+  } else if (pose == Hold_TwoHand) {
+    if (!hands) {
+      sheet = 2;
+      if (dir == Face_Down) { x = 33; y = 1; }
+      else if (dir == Face_Up) { x = 1; y = 1; }
+      else if (dir == Face_Left) { x = 65; y = 1; }
+      else { x = 97; y = 1; }
+    } else {
+      sheet = 2;
+      if (dir == Face_Down) { x = 33; y = 1; }
+      else if (dir == Face_Up) { x = 65; y = 1; }
+      else if (dir == Face_Left) { x = 97; y = 1; }
+      else { x = 1; y = 33; }
+    }
+  } else if (pose == Hold_Axe) {
+    sheet = 1;
+    // axe_* frame 0 (swing start)
+    if (dir == Face_Down) { x = 65; y = 33; }
+    else if (dir == Face_Up) { x = 1; y = 33; }
+    else if (dir == Face_Left) { x = 1; y = 65; }
+    else { x = 65; y = 65; }
+  }
+}
+
+// Pick body skin from worn clothing (C2 style skins, not inventory icon overlays).
+const char* player_body_skin(const Inventory& inv) {
+  bool mil = false, hunt = false, civil = false, mask = false;
+  for (int i = 0; i < inv.worn_count(); ++i) {
+    const ItemId id = inv.worn_at(i);
+    if (id == 250 || id == 257 || id == 262) mask = true;
+    if (id == 251 || id == 263 || id == 265 || id == 303 || id == 355 ||
+        id == 400 || id == 402 || id == 403 || id == 404)
+      mil = true;
+    if (id == 306 || id == 364 || id == 451 || id == 254 || id == 258)
+      hunt = true;
+    if (id == 353 || id == 300 || id == 301 || id == 350)
+      civil = true;
+  }
+  if (mask) return "player_skin_maniac";
+  if (mil) return "player_skin_veteran";
+  if (hunt) return "player_skin_survivalist";
+  if (civil) return "player_skin_redneck";
+  return "player_skin_def_1";
+}
+
+void draw_player_c2(IPlatform* p, float sx, float sy, float size,
+                    float facing_deg, int walk_frame, HoldPose hold,
+                    const char* body_skin) {
+  if (!p) return;
+  if (!body_skin) body_skin = "player_skin_def_1";
+  char probe[64];
+  sprite_sheet_name(probe, (int)sizeof(probe), body_skin, 0);
+  if (!p->has_sprite(probe)) body_skin = "player_skin_def_1";
+  const FaceDir dir = facing_to_dir(facing_deg);
+  // Moving → always run_*; standing with gun/axe → hold pose; else idle
+  if (walk_frame > 0 || hold == Hold_None) {
+    draw_c2_char(p, sx, sy, size, body_skin, facing_deg, walk_frame);
+    draw_c2_char(p, sx, sy, size, "player_hands_white", facing_deg, walk_frame);
+    return;
+  }
+  int bs = 0, bx = 1, by = 1, hs = 0, hx = 1, hy = 1;
+  hold_pose_uv(hold, dir, false, bs, bx, by);
+  hold_pose_uv(hold, dir, true, hs, hx, hy);
+  draw_c2_frame(p, body_skin, bs, sx, sy, size, bx, by);
+  draw_c2_frame(p, "player_hands_white", hs, sx, sy, size, hx, hy);
 }
 
 // Pine tree: first frame is 47×92 at 1,1 (not the whole 128 sheet).
@@ -85,7 +208,7 @@ const char* poi_building_sprite(LocationType t, int variant) {
   case Loc_Firestation: return "b_fire_station-sheet0";
   case Loc_Church: return "b_church-sheet0";
   case Loc_Military: return (variant & 1) ? "b_military_barrack-sheet0" : "b_military_shtab-sheet0";
-  case Loc_Helicrash: return "car_explode-sheet0";
+  case Loc_Helicrash: return "heli_crash-sheet0";
   case Loc_BunkerEntrance: return "b_hunter_shelter-sheet0";
   case Loc_Secret: return "b_hunter_shelter-sheet0";
   case Loc_City: return "b_hostel-sheet0";
@@ -100,12 +223,71 @@ const char* poi_building_sprite(LocationType t, int variant) {
   }
 }
 
+const char* poi_interior_sprite(LocationType t, int variant) {
+  switch (t) {
+  case Loc_Hospital: return "b_hospital_int-sheet0";
+  case Loc_GasStation: return "b_gas_station_int-sheet0";
+  case Loc_Police: return "b_police_station_int-sheet0";
+  case Loc_Firestation: return "b_fire_station_int-sheet0";
+  case Loc_Church: return "b_church_int-sheet0";
+  case Loc_Military:
+    return (variant & 1) ? "b_military_barrack_int-sheet0" : "b_military_shtab_int-sheet0";
+  case Loc_BunkerEntrance:
+  case Loc_Secret: return "b_hunter_shelter_int-sheet0";
+  case Loc_City: return "b_hostel_int-sheet0";
+  case Loc_Village:
+  default:
+    switch (variant % 4) {
+    case 0: return "b_village_brown_int-sheet0";
+    case 1: return "b_village_green_int-sheet0";
+    case 2: return "b_village_red_int-sheet0";
+    default: return "b_village_yellow_int-sheet0";
+    }
+  }
+}
+
+// Native frame sizes from data.js (sheet0 frame 0).
+void poi_native_px(const char* spr, int& nw, int& nh) {
+  nw = 100; nh = 100;
+  if (!spr) return;
+  if (std::strstr(spr, "b_hospital")) { nw = 512; nh = 404; }
+  else if (std::strstr(spr, "b_gas_station")) { nw = 107; nh = 107; }
+  else if (std::strstr(spr, "b_police")) { nw = 238; nh = 235; }
+  else if (std::strstr(spr, "b_fire")) { nw = 545; nh = 287; }
+  else if (std::strstr(spr, "b_church")) { nw = 296; nh = 532; }
+  else if (std::strstr(spr, "b_military_barrack")) { nw = 282; nh = 143; }
+  else if (std::strstr(spr, "b_military_shtab")) { nw = 353; nh = 197; }
+  else if (std::strstr(spr, "b_hunter")) { nw = 76; nh = 68; }
+  else if (std::strstr(spr, "b_hostel")) { nw = 170; nh = 155; }
+  else if (std::strstr(spr, "b_village_brown")) { nw = 172; nh = 156; }
+  else if (std::strstr(spr, "b_village_green")) { nw = 137; nh = 134; }
+  else if (std::strstr(spr, "b_village_red")) { nw = 175; nh = 155; }
+  else if (std::strstr(spr, "b_village_yellow")) { nw = 187; nh = 120; }
+  else if (std::strstr(spr, "heli_crash")) { nw = 240; nh = 186; }
+  else if (std::strstr(spr, "car_explode")) { nw = 100; nh = 100; }
+}
+
+void draw_poi_sprite(IPlatform* p, float sx, float sy, const char* spr, float max_dim) {
+  if (!p || !spr) return;
+  int nw = 100, nh = 100;
+  poi_native_px(spr, nw, nh);
+  const float m = static_cast<float>(nw > nh ? nw : nh);
+  const float s = max_dim / m;
+  const float dw = static_cast<float>(nw) * s;
+  const float dh = static_cast<float>(nh) * s;
+  if (p->has_sprite(spr))
+    p->draw_sprite(spr, sx - dw * 0.5f, sy - dh * 0.5f, dw, dh, 0.f, 1.f);
+  else
+    p->draw_rect(sx - 8, sy - 8, 16, 16, 0.5f, 0.45f, 0.3f, 0.9f);
+}
+
 } // namespace
 
 Game::Game()
   : platform_(0), audio_(0), state_(AppState_Loading), quit_(false),
     state_timer_(0.f), attack_cd_(0.f), reload_cd_(0.f), airdrop_alert_(0.f), radio_t_(0.f),
     torch_battery_(100.f), inv_full_flash_(0.f), tent_warmth_t_(0.f), indoor_t_(0.f),
+    footstep_t_(0.f),
     wetness_(0.f), gasmask_filter_(100.f), adrenaline_t_(0.f), limp_t_(0.f), melee_break_mul_(1.f), has_headlamp_(false),
     gun_jammed_(false), mag_rounds_(0), mag_weapon_id_(0),
     equipped_slot_(0), in_bunker_(false), bunker_looted_(false),
@@ -113,13 +295,15 @@ Game::Game()
     trap_count_(0), howl_cd_(0.f), cough_cd_(0.f), tree_count_(0),
     blood_drip_count_(0), bleed_drip_cd_(0.f), crouching_(false), fuel_warn_cd_(0.f),
     rain_sfx_cd_(0.f), lightning_t_(0.f), thunder_cd_(0.f), cough_alert_t_(0.f),
-    wind_sfx_cd_(0.f), flare_t_(0.f) {
+    wind_sfx_cd_(0.f), flare_t_(0.f), fx_count_(0), corpse_count_(0) {
   flare_pos_ = Vec2();
   data_dir_[0] = 0;
   last_airdrop_pos_ = Vec2();
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
   prev_scream_ = false;
   for (int i = 0; i < kMaxTraps; ++i) traps_[i].active = false;
+  for (int i = 0; i < kMaxFx; ++i) fx_[i].active = false;
+  for (int i = 0; i < kMaxCorpses; ++i) corpses_[i].active = false;
 }
 
 int Game::ammo_for_equipped() const {
@@ -284,7 +468,11 @@ void Game::start_new_game(Difficulty d) {
   cough_cd_ = 0.f;
   blood_drip_count_ = 0;
   bleed_drip_cd_ = 0.f;
+  fx_count_ = 0;
+  corpse_count_ = 0;
   for (int i = 0; i < kMaxTraps; ++i) traps_[i].active = false;
+  for (int i = 0; i < kMaxFx; ++i) fx_[i].active = false;
+  for (int i = 0; i < kMaxCorpses; ++i) corpses_[i].active = false;
   quest_.reset();
   quest_.start(Quest_KillZeds10);
   timers_.reset();
@@ -296,6 +484,7 @@ void Game::start_new_game(Difficulty d) {
   inv_full_flash_ = 0.f;
   tent_warmth_t_ = 0.f;
   indoor_t_ = 0.f;
+  footstep_t_ = 0.f;
   wetness_ = 0.f;
   gasmask_filter_ = 100.f;
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
@@ -398,6 +587,7 @@ void Game::start_new_game(Difficulty d) {
   inventory_.add_item(250, 1, items_); // Gasmask
 
   state_ = AppState_Playing;
+  if (audio_) audio_->play("ambient", 0.22f);
 }
 
 void Game::spawn_poi_loot() {
@@ -555,7 +745,11 @@ void Game::try_melee_attack() {
       if (b->hp <= 0.f) {
         b->alive = false;
         player_.bandits_killed += 1;
+        spawn_corpse(Corpse_Bandit, b->pos, 0.f, 0);
+        spawn_fx(Fx_Hit, b->pos, 0.f, 0.2f);
         loot_.spawn_bandit(b->pos, rng_);
+      } else {
+        spawn_fx(Fx_Hit, b->pos, 0.f, 0.1f);
       }
     }
   }
@@ -625,7 +819,26 @@ void Game::try_ranged_attack() {
     const ItemId sid = inventory_.slot(i).id;
     if (sid == 80 || sid == 81) { silenced = true; break; }
   }
-  if (audio_) audio_->play_at("gunshot", player_.pos.x, player_.pos.y, silenced ? 0.28f : 0.8f);
+  if (audio_) {
+    const char* shot = "gunshot";
+    if (silenced) shot = "gunshot_silent";
+    else {
+      const ItemId wid = inventory_.slot(equipped_slot_).id;
+      if (wid == 159 || wid == 174) shot = "gun_akm";
+      else if (wid == 160 || wid == 161) shot = "gun_ak74";
+      else if (wid == 151) shot = "gun_fnx";
+      else if (wid == 152 || wid == 176) shot = "gun_colt";
+      else if (wid == 170) shot = "gun_glock";
+      else if (wid == 163 || wid == 164) shot = "gun_bow";
+      else if (wid == 154 || wid == 155 || wid == 171) shot = "gun_shotgun";
+      else if (wid == 178) shot = "gun_saiga";
+      else if (wid == 156 || wid == 172) shot = "gun_mosin";
+      else if (wid == 158 || wid == 162 || wid == 177) shot = "gun_m4";
+      else if (wid == 169 || wid == 173 || wid == 179) shot = "gun_mp5";
+      else if (wid == 168 || wid == 186) shot = "gun_svd";
+    }
+    audio_->play_at(shot, player_.pos.x, player_.pos.y, silenced ? 0.45f : 0.8f);
+  }
   {
     const float hear_r = silenced ? 90.f : 420.f;
     const float boost = silenced ? 260.f : 450.f;
@@ -636,11 +849,13 @@ void Game::try_ranged_attack() {
     }
     // Loud shots stampede deer/rabbits; silenced barely scares
     const float scare_r = silenced ? 120.f : 480.f;
+    bool deer_ran = false;
     for (int ai = 0; ai < animals_.count(); ++ai) {
       Animal* a = animals_.at(ai);
       if (!a->alive) continue;
       if (a->type != Animal_Deer && a->type != Animal_Rabbit && a->type != Animal_Crow) continue;
       if (dist2(a->pos, player_.pos) > scare_r * scare_r) continue;
+      if (a->type == Animal_Deer) deer_ran = true;
       const float dx = a->pos.x - player_.pos.x;
       const float dy = a->pos.y - player_.pos.y;
       const float len = std::sqrt(dx * dx + dy * dy);
@@ -650,6 +865,7 @@ void Game::try_ranged_attack() {
         a->pos.y += (dy / len) * push;
       }
     }
+    if (deer_ran && audio_ && !silenced) audio_->play("deer", 0.4f);
   }
   dispersion_.on_shot(player_.running && !crouching_);
   float ang_off = dispersion_.sample_offset_deg(rng_);
@@ -669,7 +885,23 @@ void Game::try_ranged_attack() {
   ang_off *= scope_mul;
   const float ang = player_.facing_deg + ang_off;
   const float dmg = roll_bullet_damage(w->stats.damage, rng_);
-  bullets_.spawn(player_.pos, ang, 520.f, dmg, w->stats.range / 520.f + 0.15f, true);
+  const bool bow = (w->item_id == 163 || w->item_id == 164);
+  Bullet* shot = bullets_.spawn(player_.pos, ang, bow ? 380.f : 520.f, dmg,
+                                w->stats.range / 520.f + 0.15f, true);
+  if (shot && bow) shot->is_arrow = true;
+  {
+    const float rad = ang * 0.01745329252f;
+    spawn_fx(Fx_Muzzle,
+             Vec2(player_.pos.x + std::cos(rad) * 14.f,
+                  player_.pos.y + std::sin(rad) * 14.f),
+             ang, 0.08f);
+    // Ejected casing drifts sideways briefly
+    const float side = rad + 1.5707963f;
+    spawn_fx(Fx_Shell,
+             Vec2(player_.pos.x + std::cos(side) * 6.f,
+                  player_.pos.y + std::sin(side) * 6.f),
+             ang + 90.f, 0.35f);
+  }
 }
 
 void Game::try_pickup_loot() {
@@ -707,20 +939,90 @@ void Game::try_pickup_loot() {
   }
 }
 
+void Game::spawn_fx(FxKind kind, Vec2 pos, float angle_deg, float life) {
+  FxSprite* slot = 0;
+  for (int i = 0; i < fx_count_; ++i) {
+    if (!fx_[i].active) { slot = &fx_[i]; break; }
+  }
+  if (!slot && fx_count_ < kMaxFx) slot = &fx_[fx_count_++];
+  if (!slot) {
+    // Steal oldest
+    slot = &fx_[0];
+    for (int i = 1; i < fx_count_; ++i)
+      if (fx_[i].life < slot->life) slot = &fx_[i];
+  }
+  slot->pos = pos;
+  slot->life = life;
+  slot->angle = angle_deg;
+  slot->kind = kind;
+  slot->active = true;
+}
+
+void Game::spawn_corpse(CorpseKind kind, Vec2 pos, float angle_deg, int variant) {
+  Corpse* slot = 0;
+  for (int i = 0; i < corpse_count_; ++i) {
+    if (!corpses_[i].active) { slot = &corpses_[i]; break; }
+  }
+  if (!slot && corpse_count_ < kMaxCorpses) slot = &corpses_[corpse_count_++];
+  if (!slot) {
+    float worst = 1e9f;
+    for (int i = 0; i < corpse_count_; ++i) {
+      if (corpses_[i].life < worst) { worst = corpses_[i].life; slot = &corpses_[i]; }
+    }
+  }
+  if (!slot) return;
+  slot->pos = pos;
+  slot->life = 90.f;
+  slot->angle = angle_deg;
+  slot->kind = kind;
+  slot->variant = variant;
+  slot->active = true;
+}
+
+void Game::update_fx(float dt) {
+  for (int i = 0; i < fx_count_; ++i) {
+    if (!fx_[i].active) continue;
+    if (fx_[i].kind == Fx_Shell) {
+      const float rad = fx_[i].angle * 0.01745329252f;
+      fx_[i].pos.x += std::cos(rad) * 28.f * dt;
+      fx_[i].pos.y += std::sin(rad) * 28.f * dt + 12.f * dt; // arc down
+      fx_[i].angle += 220.f * dt;
+    } else if (fx_[i].kind == Fx_Blood) {
+      fx_[i].pos.y += 8.f * dt;
+    }
+    fx_[i].life -= dt;
+    if (fx_[i].life <= 0.f) fx_[i].active = false;
+  }
+  for (int i = 0; i < corpse_count_; ++i) {
+    if (!corpses_[i].active) continue;
+    corpses_[i].life -= dt;
+    if (corpses_[i].life <= 0.f) corpses_[i].active = false;
+  }
+}
+
 void Game::on_animal_killed(Animal& a) {
   a.alive = false;
   player_.animals_killed += 1;
   if (player_.animals_killed >= 5) player_.perk_hunter = true;
   ItemId meat = 60; // Raw steak default (deer / large)
   int n = player_.perk_hunter ? 2 : 1;
+  CorpseKind ck = Corpse_Other;
   if (a.type == Animal_Rabbit || a.type == Animal_Crow) {
     meat = 71; // Rabbit meat
   } else if (a.type == Animal_Deer) {
     n = player_.perk_hunter ? 3 : 2; // deer yields more
-  } else if (a.type == Animal_Wolf || a.type == Animal_Dog) {
+    ck = Corpse_Deer;
+  } else if (a.type == Animal_Wolf) {
     meat = 60;
     n = player_.perk_hunter ? 2 : 1;
+    ck = Corpse_Wolf;
+  } else if (a.type == Animal_Dog) {
+    meat = 60;
+    ck = Corpse_Dog;
   }
+  spawn_corpse(ck, a.pos, 0.f, 0);
+  spawn_fx(Fx_Hit, a.pos, 0.f, 0.2f);
+  spawn_fx(Fx_Blood, a.pos, 0.f, 0.45f);
   loot_.spawn_item(a.pos, meat, n);
   // Crow: also drop sticks (feather substitute for fletching)
   if (a.type == Animal_Crow && rng_.next_float() < 0.6f) {
@@ -731,6 +1033,15 @@ void Game::on_animal_killed(Animal& a) {
 void Game::on_zed_killed(Zombie& z) {
   z.alive = false;
   player_.zeds_killed += 1;
+  int variant = 0;
+  if (z.type == Zed_Fast) variant = 1;
+  else if (z.type == Zed_Army || z.type == Zed_ArmyShooter) variant = 2;
+  else if (z.type == Zed_Buried) variant = 3;
+  else if (z.type == Zed_Tank) variant = 4;
+  else if (z.type == Zed_Screamer) variant = 5;
+  spawn_corpse(Corpse_Zed, z.pos, 0.f, variant);
+  spawn_fx(Fx_Hit, z.pos, 0.f, 0.22f);
+  spawn_fx(Fx_Blood, z.pos, 0.f, 0.5f);
   loot_.spawn_random(z.pos, rng_);
   // Crows scavenge corpse
   if (rng_.next_float() < 0.45f) {
@@ -756,7 +1067,8 @@ void Game::write_death_log() {
 
 void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
   const float r2 = 75.f * 75.f;
-  if (audio_) audio_->play_at("gunshot", pos.x, pos.y, 1.f);
+  if (audio_) audio_->play_at(leave_fire ? "explode" : "explode", pos.x, pos.y, 1.f);
+  spawn_fx(Fx_Explode, pos, leave_fire ? 1.f : 0.f, 0.45f); // angle=1 marks molotov
   if (leave_fire) campfires_.place(pos, 25.f);
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
@@ -778,6 +1090,8 @@ void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
     if (bd->hp <= 0.f) {
       bd->alive = false;
       player_.bandits_killed += 1;
+      spawn_corpse(Corpse_Bandit, bd->pos, 0.f, 0);
+      spawn_fx(Fx_Hit, bd->pos, 0.f, 0.2f);
       loot_.spawn_bandit(bd->pos, rng_);
     }
   }
@@ -797,6 +1111,7 @@ void Game::resolve_bullet_hits() {
       // Enemy bullet vs player (Player_get_hit "bullet" path)
       if (dist2(b->pos, player_.pos) < 14.f * 14.f) {
         apply_incoming_damage(b->damage, true);
+        spawn_fx(Fx_Hit, player_.pos, 0.f, 0.15f);
         if (player_.survival.blood <= 0.f) {
           std::strncpy(player_.survival.death_reason, "Bullet",
                        sizeof(player_.survival.death_reason) - 1);
@@ -830,6 +1145,7 @@ void Game::resolve_bullet_hits() {
       if (!z->alive) continue;
       if (dist2(b->pos, z->pos) < 18.f * 18.f) {
         z->hp -= b->damage;
+        spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
         b->alive = false;
         if (z->hp <= 0.f) on_zed_killed(*z);
         break;
@@ -841,6 +1157,7 @@ void Game::resolve_bullet_hits() {
       if (!a->alive) continue;
       if (dist2(b->pos, a->pos) < 16.f * 16.f) {
         a->hp -= b->damage;
+        spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
         b->alive = false;
         if (a->hp <= 0.f) on_animal_killed(*a);
         break;
@@ -855,7 +1172,11 @@ void Game::resolve_bullet_hits() {
         if (bd->hp <= 0.f) {
           bd->alive = false;
           player_.bandits_killed += 1;
+          spawn_corpse(Corpse_Bandit, bd->pos, 0.f, 0);
+          spawn_fx(Fx_Hit, bd->pos, 0.f, 0.2f);
           loot_.spawn_bandit(bd->pos, rng_);
+        } else {
+          spawn_fx(Fx_Hit, bd->pos, 0.f, 0.1f);
         }
         break;
       }
@@ -949,7 +1270,7 @@ void Game::try_mag_reload() {
   mag_rounds_ += loaded;
   reload_cd_ = 1.4f;
   attack_cd_ = 1.4f;
-  if (audio_) audio_->play("craft", 0.55f);
+  if (audio_) audio_->play("reload", 0.6f);
 }
 
 void Game::try_throw_projectile() {
@@ -1130,6 +1451,7 @@ void Game::update_traps(float dt) {
             if (b->hp <= 0.f) {
               b->alive = false;
               player_.bandits_killed += 1;
+              spawn_corpse(Corpse_Bandit, b->pos, 0.f, 0);
               loot_.spawn_bandit(b->pos, rng_);
             }
             break;
@@ -1316,6 +1638,12 @@ void Game::update_army_shooters(float dt) {
     ang += rng_.range(-6.f, 6.f); // imperfect aim
     const float dmg = roll_bullet_damage(18.f, rng_);
     bullets_.spawn(z->pos, ang, 480.f, dmg, 0.95f, false);
+    {
+      const float rad = ang * 0.01745329252f;
+      spawn_fx(Fx_Muzzle,
+               Vec2(z->pos.x + std::cos(rad) * 12.f, z->pos.y + std::sin(rad) * 12.f),
+               ang, 0.07f);
+    }
     z->attack_cooldown = 1.35f;
   }
 }
@@ -1336,6 +1664,12 @@ void Game::update_bandit_guns(float dt) {
     ang += rng_.range(-spread, spread);
     const float dmg = roll_bullet_damage(20.f, rng_);
     bullets_.spawn(b->pos, ang, 500.f, dmg, 0.9f, false);
+    {
+      const float rad = ang * 0.01745329252f;
+      spawn_fx(Fx_Muzzle,
+               Vec2(b->pos.x + std::cos(rad) * 12.f, b->pos.y + std::sin(rad) * 12.f),
+               ang, 0.07f);
+    }
     b->attack_cooldown = 1.15f;
     if (audio_) audio_->play("gunshot", 0.35f);
   }
@@ -1425,10 +1759,13 @@ void Game::update_playing(float dt, const InputState& in) {
     if (!in_bunker_) {
       // Soft water band near map edges — wade slow (full water tiles TBD)
       const float margin = 400.f;
-      if (player_.pos.x < margin || player_.pos.y < margin ||
-          player_.pos.x > kMapLayoutW - margin || player_.pos.y > kMapLayoutH - margin) {
+      const bool wading = player_.pos.x < margin || player_.pos.y < margin ||
+          player_.pos.x > kMapLayoutW - margin || player_.pos.y > kMapLayoutH - margin;
+      if (wading) {
         mx *= 0.55f;
         my *= 0.55f;
+        if ((in.move_x != 0.f || in.move_y != 0.f) && rng_.next_float() < 0.04f)
+          spawn_fx(Fx_Hit, player_.pos, 0.f, 0.15f);
       }
       // Heavy rain slows sprint; raincoat (353) resists wet slow + infection
       if (weather_.rain > 0.7f) {
@@ -1516,6 +1853,25 @@ void Game::update_playing(float dt, const InputState& in) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
       player_.facing_deg = std::atan2(in.move_y, in.move_x) * 57.2957795f;
     }
+    // Footsteps — forest / sand / bunker / default run clips
+    {
+      const float speed2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
+      if (speed2 > 8.f * 8.f && audio_) {
+        const bool sprinting = speed2 > 55.f * 55.f;
+        footstep_t_ -= dt;
+        if (footstep_t_ <= 0.f) {
+          footstep_t_ = sprinting ? 0.28f : 0.42f;
+          const float margin = 420.f;
+          const bool shore = player_.pos.x < margin || player_.pos.y < margin ||
+            player_.pos.x > kMapLayoutW - margin || player_.pos.y > kMapLayoutH - margin;
+          const char* step = in_bunker_ ? "step_concrete" :
+                             shore ? "step_sand" : "step_forest";
+          audio_->play_at(step, player_.pos.x, player_.pos.y, sprinting ? 0.35f : 0.22f);
+        }
+      } else {
+        footstep_t_ = 0.f;
+      }
+    }
     // Crash into blocked cells while driving
     if (world_.is_blocked(player_.pos.x, player_.pos.y)) {
       player_.pos.x -= in.move_x * 8.f;
@@ -1582,6 +1938,17 @@ void Game::update_playing(float dt, const InputState& in) {
       wind_sfx_cd_ <= 0.f && audio_ && rng_.next_float() < 0.008f) {
     audio_->play("wind", 0.25f);
     wind_sfx_cd_ = 12.f + rng_.next_float() * 18.f;
+  }
+  // Nearby crow call
+  if (!in_bunker_ && audio_ && wind_sfx_cd_ <= 0.f && rng_.next_float() < 0.01f) {
+    for (int i = 0; i < animals_.count(); ++i) {
+      const Animal* a = animals_.at(i);
+      if (!a->alive || a->type != Animal_Crow) continue;
+      if (dist2(a->pos, player_.pos) > 220.f * 220.f) continue;
+      audio_->play_at("crow", a->pos.x, a->pos.y, 0.35f);
+      wind_sfx_cd_ = 6.f + rng_.next_float() * 10.f;
+      break;
+    }
   }
   if (!in_bunker_ && weather_.rain > 0.9f && thunder_cd_ <= 0.f &&
       rng_.next_float() < 0.015f) {
@@ -1848,6 +2215,7 @@ void Game::update_playing(float dt, const InputState& in) {
     }
 
     update_traps(dt);
+    update_fx(dt);
 
     // Screamer also agitates nearby wolves
     if (zombies_.scream_active()) {
@@ -1961,6 +2329,7 @@ void Game::update_playing(float dt, const InputState& in) {
         if (b->hp <= 0.f) {
           b->alive = false;
           player_.bandits_killed += 1;
+          spawn_corpse(Corpse_Bandit, b->pos, 0.f, 0);
           loot_.spawn_bandit(b->pos, rng_);
           if (audio_) audio_->play("hit", 0.55f);
         }
@@ -2156,6 +2525,8 @@ void Game::update_playing(float dt, const InputState& in) {
           const float ruffe_p = used_bait ? 0.38f : 0.22f;
           inventory_.add_item(rng_.next_float() < ruffe_p ? 93 : 94, 1, items_);
           player_.fish_caught += 1;
+          spawn_fx(Fx_Fish,
+                   Vec2(player_.pos.x + 10.f, player_.pos.y + 4.f), 0.f, 0.7f);
           if (audio_) audio_->play("pickup", 0.4f);
         } else if (!near_water && audio_) {
           audio_->play("melee_swing", 0.15f); // cast on dry land — nothing
@@ -2203,7 +2574,7 @@ void Game::update_playing(float dt, const InputState& in) {
               !player_.survival.infected && rng_.next_float() < 0.2f) {
             player_.survival.infected = true;
           }
-          if (audio_) audio_->play("pickup", 0.3f);
+          if (audio_) audio_->play("drink", 0.3f);
         } else if (!searched && rng_.next_float() < bush_chance) {
           // Bush forage: sticks / berries / rags
           static const ItemId kBush[] = { 38, 27, 26, 33, 97, 73 };
@@ -2211,7 +2582,7 @@ void Game::update_playing(float dt, const InputState& in) {
           inventory_.add_item(id, 1 + (player_.perk_farmer ? 1 : 0), items_);
           player_.forage_count += 1;
           if (player_.forage_count >= 8) player_.perk_farmer = true;
-          if (audio_) audio_->play("pickup", 0.35f);
+          if (audio_) audio_->play("bush", 0.4f);
         }
         } // end non-seed interact
       }
@@ -2432,7 +2803,7 @@ void Game::update_playing(float dt, const InputState& in) {
           if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
             adrenaline_t_ = 10.f;
             used_special = true;
-            if (audio_) audio_->play("pickup", 0.4f);
+            if (audio_) audio_->play("drink", 0.4f);
           }
         } else if (eq.id == 57) { // Bear trap — place
           used_special = try_place_trap(0);
@@ -2509,18 +2880,32 @@ void Game::update_playing(float dt, const InputState& in) {
       if (!used_special) {
         const ItemId before = inventory_.slot(equipped_slot_).id;
         const bool was_bleed = player_.survival.bleeding > 0.f;
+        auto play_consume = [&](ItemId id) {
+          if (!audio_) return;
+          // Drinks / medical / food family tags
+          if (id == 8 || id == 9 || id == 10 || id == 30 || id == 54 || id == 55 ||
+              id == 62 || id == 63 || id == 25)
+            audio_->play("drink", 0.45f);
+          else if (id == 18 || id == 19 || id == 26 || id == 28 || id == 29 ||
+                   id == 45 || id == 46)
+            audio_->play("craft", 0.4f);
+          else
+            audio_->play("eat", 0.4f);
+        };
         if (!inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
           for (int i = 0; i < inventory_.slot_count(); ++i) {
             const ItemId id = inventory_.slot(i).id;
             if (inventory_.use_consumable(i, player_.survival, items_, &rng_)) {
               if (id == 45) { adrenaline_t_ = 18.f; limp_t_ = 0.f; }
               if (id == 18 || id == 26) limp_t_ = 0.f; // bandage/rags as splint stub
+              play_consume(id);
               break;
             }
           }
         } else {
           if (before == 45) { adrenaline_t_ = 18.f; limp_t_ = 0.f; }
           if (before == 18 || before == 26) limp_t_ = 0.f;
+          play_consume(before);
           (void)was_bleed;
         }
       }
@@ -2583,38 +2968,49 @@ void Game::render() {
   const float sc = world_to_screen_scale();
 
   if (state_ == AppState_Menu) {
-    platform_->clear(0.06f, 0.07f, 0.05f);
-    if (platform_->has_sprite("tilemap_forest.png") || platform_->has_sprite("tilemap_forest")) {
-      // Tiled original forest backdrop
-      for (int ty = 0; ty < 3; ++ty)
+    platform_->clear(0.12f, 0.14f, 0.18f);
+    // Original menu backdrop (amenu_bg) or sky/city layers
+    if (platform_->has_sprite("amenu_bg-sheet0"))
+      platform_->draw_sprite("amenu_bg-sheet0", 0, 0, 480, 272, 0.f, 1.f);
+    else if (platform_->has_sprite("tiledbgmenu_sky_sprite-sheet0"))
+      platform_->draw_sprite("tiledbgmenu_sky_sprite-sheet0", 0, 0, 480, 160, 0.f, 1.f);
+    else if (platform_->has_sprite("tilemap_forest")) {
+      for (int ty = 0; ty < 2; ++ty)
         for (int tx = 0; tx < 3; ++tx)
-          platform_->draw_sprite("tilemap_forest", (float)(tx * 160 - 20), (float)(ty * 120 - 20),
-                                 180.f, 140.f, 0.f, 0.55f);
-    } else {
-      platform_->draw_rect(0, 0, 480, 272, 0.08f, 0.1f, 0.07f, 1.f);
+          platform_->draw_sprite("tilemap_forest", (float)(tx * 160 - 20), (float)(ty * 100 - 10),
+                                 180.f, 120.f, 0.f, 0.45f);
+    }
+    if (!platform_->has_sprite("amenu_bg-sheet0")) {
+      if (platform_->has_sprite("tiledbgmenu_city_down"))
+        platform_->draw_sprite("tiledbgmenu_city_down", 0, 140, 480, 140, 0.f, 1.f);
+      if (platform_->has_sprite("tiledbgmenu_city_up"))
+        platform_->draw_sprite("tiledbgmenu_city_up", 0, 100, 480, 100, 0.f, 0.85f);
     }
     if (platform_->has_sprite("player_skin_def_1-sheet0"))
-      platform_->draw_sprite("player_skin_def_1-sheet0", 360, 140, 72, 72, 0.f, 1.f);
-    platform_->draw_text(40, 50, "MINI DAYZ C++", 0.95f, 0.9f, 0.75f);
-    platform_->draw_text(40, 75, "BASELINE 1.4.1", 0.7f, 0.75f, 0.6f);
-    platform_->draw_text(40, 110, "1 NOVICE  2 REGULAR  3 VETERAN", 0.75f, 0.8f, 0.65f);
+      draw_c2_char(platform_, 400.f, 200.f, 48.f, "player_skin_def_1", 90.f, 0);
+    platform_->draw_rect(20, 40, 220, 180, 0.02f, 0.02f, 0.03f, 0.55f);
+    platform_->draw_text(40, 50, "MINI DAYZ", 0.95f, 0.9f, 0.75f);
+    platform_->draw_text(40, 70, "1.4.1  C++ PORT", 0.65f, 0.7f, 0.55f);
+    platform_->draw_text(40, 105, "1 NOVICE  2 REGULAR  3 VETERAN", 0.75f, 0.8f, 0.65f);
     const char* diff = "NOVICE";
     if (menu_difficulty_ == Difficulty_Regular) diff = "REGULAR";
     if (menu_difficulty_ == Difficulty_Veteran) diff = "VETERAN";
     char dbuf[64];
     std::snprintf(dbuf, sizeof(dbuf), "DIFFICULTY: %s", diff);
-    platform_->draw_text(40, 130, dbuf, 0.9f, 0.85f, 0.55f);
-    platform_->draw_text(40, 160, "ENTER - NEW GAME", 0.8f, 0.85f, 0.7f);
-    platform_->draw_text(40, 180, "F9 - CONTINUE SAVE", 0.75f, 0.8f, 0.65f);
-    platform_->draw_text(40, 200, "ESC - QUIT", 0.65f, 0.7f, 0.6f);
+    platform_->draw_text(40, 125, dbuf, 0.9f, 0.85f, 0.55f);
+    platform_->draw_text(40, 155, "ENTER - NEW GAME", 0.8f, 0.85f, 0.7f);
+    platform_->draw_text(40, 175, "F9 - CONTINUE SAVE", 0.75f, 0.8f, 0.65f);
+    platform_->draw_text(40, 195, "ESC - QUIT", 0.65f, 0.7f, 0.6f);
   } else if (state_ == AppState_Playing || state_ == AppState_Paused) {
     if (in_bunker_) platform_->clear(0.08f, 0.07f, 0.06f);
     else if (weather_.is_night) platform_->clear(0.05f, 0.06f, 0.08f);
     else platform_->clear(0.14f, 0.18f, 0.11f);
 
     if (in_bunker_ && bunker_.width > 0) {
+      // World cell 8×8 (collision); atlas tilemap_bunker 150×300 = 5×10 of 30×30
       const float tile = 8.f;
       const float bsc = 1.0f;
+      const bool has_bunk = platform_->has_sprite("tilemap_bunker");
       const int view_x = static_cast<int>(player_.pos.x / tile) - 30;
       const int view_y = static_cast<int>(player_.pos.y / tile) - 17;
       for (int ty = 0; ty < 34; ++ty) {
@@ -2626,41 +3022,168 @@ void Game::render() {
           if (tile_id <= 0) continue;
           float sx = cx + (bx * tile - player_.pos.x) * bsc;
           float sy = cy + (by * tile - player_.pos.y) * bsc;
-          float r = 0.28f, g = 0.24f, b = 0.2f;
-          // Floors vs walls (heuristic matching is_blocked_world walkables)
-          if (tile_id == 6 || tile_id == 16 || tile_id == 20 || tile_id == 1) {
-            r = 0.18f; g = 0.17f; b = 0.15f;
+          if (has_bunk) {
+            // C2 bunker tileset: tile 0 empty; ids 1..50 → atlas cells 0..49
+            int idx = tile_id - 1;
+            if (idx < 0) idx = 0;
+            if (idx > 49) idx = idx % 50;
+            const int ux = (idx % 5) * 30;
+            const int uy = (idx / 5) * 30;
+            platform_->draw_sprite_frame("tilemap_bunker", sx, sy, tile, tile,
+                                        ux, uy, 30, 30, 0.f, 1.f);
           } else {
-            r = 0.42f; g = 0.36f; b = 0.3f;
+            float r = 0.28f, g = 0.24f, b = 0.2f;
+            if (tile_id == 6 || tile_id == 16 || tile_id == 20 || tile_id == 1) {
+              r = 0.18f; g = 0.17f; b = 0.15f;
+            } else {
+              r = 0.42f; g = 0.36f; b = 0.3f;
+            }
+            platform_->draw_rect(sx, sy, tile, tile, r, g, b, 1.f);
           }
-          platform_->draw_rect(sx, sy, tile, tile, r, g, b, 1.f);
         }
       }
-      platform_->draw_text(8, 220, "BUNKER  E - EXIT", 0.75f, 0.7f, 0.55f);
     } else {
-      // Ground: original forest tilemap (tiled), fallback checker
+      // Ground: ground_lvl1–4 (60×60) underlay + forest 150×150 + water/sand
       {
-        const float tile = 96.f;
         const bool has_forest = platform_->has_sprite("tilemap_forest");
-        for (int gx = -4; gx <= 4; ++gx) {
-          for (int gy = -3; gy <= 3; ++gy) {
-            const float wx = player_.pos.x + gx * (tile / sc);
-            const float wy = player_.pos.y + gy * (tile / sc);
-            const float sx = cx + (wx - player_.pos.x) * sc;
-            const float sy = cy + (wy - player_.pos.y) * sc;
-            const float margin = 400.f;
-            const bool water = wx < margin || wy < margin ||
-              wx > kMapLayoutW - margin || wy > kMapLayoutH - margin;
-            if (water) {
-              platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                                   0.12f, 0.22f, 0.35f, 1.f);
-            } else if (has_forest) {
-              platform_->draw_sprite("tilemap_forest",
-                                     sx - tile * 0.5f, sy - tile * 0.5f, tile, tile, 0.f, 1.f);
-            } else {
-              const bool alt = ((gx + gy) & 1) != 0;
-              platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                                   alt ? 0.16f : 0.13f, alt ? 0.20f : 0.17f, alt ? 0.12f : 0.10f, 1.f);
+        const bool has_water = platform_->has_sprite("tilemap_water");
+        const bool has_sand = platform_->has_sprite("tilemap_sand");
+        const bool has_g1 = platform_->has_sprite("ground_lvl1_tilemap");
+        const bool has_g2 = platform_->has_sprite("ground_lvl2_tilemap");
+        const bool has_g3 = platform_->has_sprite("ground_lvl3_tilemap");
+        const bool has_g4 = platform_->has_sprite("ground_lvl4_tilemap");
+        const bool has_gnd = has_g1 || has_g2 || has_g3 || has_g4;
+        const float forest_w = 150.f;
+        const float water_w = 60.f;
+        // Each ground_lvl*: 300×300 atlas → 5×5 of 60×60 (C2 tile size).
+        // Pick atlas by coarse biome hash so the map isn't one repeating sheet.
+        if (has_gnd) {
+          const float step = 60.f;
+          const float tile = step * sc;
+          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
+          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
+          for (int gx = gx0 - 10; gx <= gx0 + 10; ++gx) {
+            for (int gy = gy0 - 7; gy <= gy0 + 7; ++gy) {
+              const float wx = (gx + 0.5f) * step;
+              const float wy = (gy + 0.5f) * step;
+              const float margin = 400.f;
+              if (wx < margin || wy < margin ||
+                  wx > kMapLayoutW - margin || wy > kMapLayoutH - margin) continue;
+              const float sx = cx + (wx - player_.pos.x) * sc;
+              const float sy = cy + (wy - player_.pos.y) * sc;
+              const int ux = ((gx % 5) + 5) % 5;
+              const int uy = ((gy % 5) + 5) % 5;
+              // Coarse 4×4 cell biome → lvl 1..4
+              const int bx = gx / 4;
+              const int by = gy / 4;
+              const unsigned bh = static_cast<unsigned>(bx * 73856093u) ^
+                                  static_cast<unsigned>(by * 19349663u);
+              const int lvl = static_cast<int>(bh % 4u);
+              const char* gspr = "ground_lvl1_tilemap";
+              if (lvl == 1 && has_g2) gspr = "ground_lvl2_tilemap";
+              else if (lvl == 2 && has_g3) gspr = "ground_lvl3_tilemap";
+              else if (lvl == 3 && has_g4) gspr = "ground_lvl4_tilemap";
+              else if (!has_g1) {
+                if (has_g2) gspr = "ground_lvl2_tilemap";
+                else if (has_g3) gspr = "ground_lvl3_tilemap";
+                else gspr = "ground_lvl4_tilemap";
+              }
+              platform_->draw_sprite_frame(gspr,
+                sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                ux * 60, uy * 60, 60, 60, 0.f, 1.f);
+            }
+          }
+        }
+        // Forest canopy layer (coarse)
+        {
+          const float step = forest_w;
+          const float tile = forest_w * sc;
+          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
+          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
+          for (int gx = gx0 - 4; gx <= gx0 + 4; ++gx) {
+            for (int gy = gy0 - 3; gy <= gy0 + 3; ++gy) {
+              const float wx = (gx + 0.5f) * step;
+              const float wy = (gy + 0.5f) * step;
+              const float sx = cx + (wx - player_.pos.x) * sc;
+              const float sy = cy + (wy - player_.pos.y) * sc;
+              const float margin = 400.f;
+              const bool water = wx < margin || wy < margin ||
+                wx > kMapLayoutW - margin || wy > kMapLayoutH - margin;
+              if (water) continue;
+              if (has_forest) {
+                const int ux = ((gx % 3) + 3) % 3;
+                const int uy = ((gy % 3) + 3) % 3;
+                // Soft overlay so ground_lvl shows through a bit
+                platform_->draw_sprite_frame("tilemap_forest",
+                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                  ux * 150, uy * 150, 150, 150, 0.f, has_gnd ? 0.55f : 1.f);
+              } else if (!has_gnd) {
+                platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                                     0.14f, 0.18f, 0.11f, 1.f);
+              }
+            }
+          }
+        }
+        // Water / sand fringe (finer 60×60 cells)
+        {
+          const float step = water_w;
+          const float tile = water_w * sc;
+          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
+          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
+          for (int gx = gx0 - 10; gx <= gx0 + 10; ++gx) {
+            for (int gy = gy0 - 7; gy <= gy0 + 7; ++gy) {
+              const float wx = (gx + 0.5f) * step;
+              const float wy = (gy + 0.5f) * step;
+              const float margin = 400.f;
+              const bool deep = wx < margin - 80.f || wy < margin - 80.f ||
+                wx > kMapLayoutW - margin + 80.f || wy > kMapLayoutH - margin + 80.f;
+              const bool shore = !deep && (wx < margin || wy < margin ||
+                wx > kMapLayoutW - margin || wy > kMapLayoutH - margin);
+              if (!deep && !shore) continue;
+              const float sx = cx + (wx - player_.pos.x) * sc;
+              const float sy = cy + (wy - player_.pos.y) * sc;
+              const int ux = ((gx % 3) + 3) % 3;
+              const int uy = ((gy % 5) + 5) % 5;
+              if (deep && has_water) {
+                platform_->draw_sprite_frame("tilemap_water",
+                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                  ux * 60, uy * 60, 60, 60, 0.f, 1.f);
+              } else if (shore && has_sand) {
+                platform_->draw_sprite_frame("tilemap_sand",
+                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                  ux * 60, uy * 60, 60, 60, 0.f, 1.f);
+              } else if (deep) {
+                platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                                     0.12f, 0.22f, 0.35f, 1.f);
+              }
+            }
+          }
+        }
+        // ground_enviroment_tilemap: 30×30 cells in 150×510 (5×17) — scatter props
+        if (platform_->has_sprite("ground_enviroment_tilemap")) {
+          const float step = 30.f;
+          const float tile = step * sc;
+          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
+          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
+          for (int gx = gx0 - 12; gx <= gx0 + 12; ++gx) {
+            for (int gy = gy0 - 8; gy <= gy0 + 8; ++gy) {
+              // Sparse placement: ~1/7 cells get a prop
+              const unsigned h = static_cast<unsigned>(gx * 73856093u) ^
+                                 static_cast<unsigned>(gy * 19349663u);
+              if ((h % 7u) != 0u) continue;
+              const float wx = (gx + 0.5f) * step;
+              const float wy = (gy + 0.5f) * step;
+              const float margin = 420.f;
+              if (wx < margin || wy < margin ||
+                  wx > kMapLayoutW - margin || wy > kMapLayoutH - margin) continue;
+              const float sx = cx + (wx - player_.pos.x) * sc;
+              const float sy = cy + (wy - player_.pos.y) * sc;
+              const int idx = static_cast<int>(h % 85u); // 5*17
+              const int ux = (idx % 5) * 30;
+              const int uy = (idx / 5) * 30;
+              platform_->draw_sprite_frame("ground_enviroment_tilemap",
+                sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
+                ux, uy, 30, 30, 0.f, 1.f);
             }
           }
         }
@@ -2679,6 +3202,62 @@ void Game::render() {
           platform_->draw_rect(sx - 2, sy - 2, 4, 3, 0.55f, 0.05f, 0.08f, 0.25f + 0.45f * a);
       }
 
+      // Corpses (under living actors)
+      for (int i = 0; i < corpse_count_; ++i) {
+        if (!corpses_[i].active) continue;
+        if (dist2(corpses_[i].pos, player_.pos) > 420.f * 420.f) continue;
+        float sx = cx + (corpses_[i].pos.x - player_.pos.x) * sc;
+        float sy = cy + (corpses_[i].pos.y - player_.pos.y) * sc;
+        const float fade = corpses_[i].life < 10.f ? corpses_[i].life / 10.f : 1.f;
+        const char* spr = 0;
+        int sw = 30, sh = 30;
+        if (corpses_[i].kind == Corpse_Zed) {
+          if (corpses_[i].variant == 1) spr = "zed_fast_skin1_dead-sheet0";
+          else if (corpses_[i].variant == 2) spr = "zed_army_dead_skin1-sheet0";
+          else if (corpses_[i].variant == 3) spr = "zed_buried_skin_dead-sheet0";
+          else spr = "zed_normal_skin1_dead-sheet0";
+          sw = 40; sh = 30;
+        } else if (corpses_[i].kind == Corpse_Bandit) {
+          spr = "bandit_dead-sheet0"; sw = 20; sh = 30;
+        } else if (corpses_[i].kind == Corpse_Deer) {
+          spr = "deer_dead-sheet0"; sw = 38; sh = 38;
+        } else if (corpses_[i].kind == Corpse_Dog) {
+          spr = "dog_dead-sheet0"; sw = 30; sh = 30;
+        } else if (corpses_[i].kind == Corpse_Wolf) {
+          spr = platform_->has_sprite("wolf_dead-sheet0") ? "wolf_dead-sheet0" : "dog_dead-sheet0";
+          sw = 30; sh = 30;
+        }
+        if (spr && platform_->has_sprite(spr)) {
+          const float dw = static_cast<float>(sw) * sc * 0.9f;
+          const float dh = static_cast<float>(sh) * sc * 0.9f;
+          platform_->draw_sprite_frame(spr, sx - dw * 0.5f, sy - dh * 0.5f, dw, dh,
+                                       1, 1, sw, sh, corpses_[i].angle, fade);
+        } else {
+          platform_->draw_rect(sx - 6, sy - 3, 12, 6, 0.35f, 0.12f, 0.1f, 0.55f * fade);
+        }
+      }
+
+      // Berry bushes (original berry_bush frame)
+      if (platform_->has_sprite("berry_bush-sheet0")) {
+        const float step = 90.f;
+        const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
+        const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
+        for (int gx = gx0 - 5; gx <= gx0 + 5; ++gx) {
+          for (int gy = gy0 - 4; gy <= gy0 + 4; ++gy) {
+            const unsigned h = static_cast<unsigned>(gx * 374761u) ^
+                               static_cast<unsigned>(gy * 6682651u);
+            if ((h % 5u) != 0u) continue;
+            const float wx = (gx + 0.5f) * step;
+            const float wy = (gy + 0.5f) * step;
+            if (dist2(Vec2(wx, wy), player_.pos) > 360.f * 360.f) continue;
+            float sx = cx + (wx - player_.pos.x) * sc;
+            float sy = cy + (wy - player_.pos.y) * sc;
+            platform_->draw_sprite_frame("berry_bush-sheet0",
+              sx - 14.f, sy - 9.f, 28.f, 18.f, 35, 1, 28, 18, 0.f, 1.f);
+          }
+        }
+      }
+
       // Forest trees — crop first pine frame (47×92), not whole sheet
       for (int i = 0; i < tree_count_; ++i) {
         if (dist2(trees_[i], player_.pos) > 380.f * 380.f) continue;
@@ -2687,54 +3266,84 @@ void Game::render() {
         draw_pine(platform_, sx, sy, 70.f);
       }
 
-      // Dirt roads between nearby POIs (scaffold until tile roads ported)
-      for (int i = 0; i < mapgen_.location_count(); ++i) {
-        const MapLocation& A = mapgen_.location(i);
-        for (int j = i + 1; j < mapgen_.location_count(); ++j) {
-          const MapLocation& B = mapgen_.location(j);
-          const float dx = B.pos.x - A.pos.x;
-          const float dy = B.pos.y - A.pos.y;
-          const float d2ab = dx * dx + dy * dy;
-          if (d2ab < 200.f * 200.f || d2ab > 900.f * 900.f) continue;
-          const float len = std::sqrt(d2ab);
-          const int steps = static_cast<int>(len / 28.f);
-          if (steps < 2) continue;
-          for (int s = 1; s < steps; ++s) {
-            const float t = static_cast<float>(s) / static_cast<float>(steps);
-            const float wx = A.pos.x + dx * t;
-            const float wy = A.pos.y + dy * t;
-            if (dist2(Vec2(wx, wy), player_.pos) > 420.f * 420.f) continue;
-            float sx = cx + (wx - player_.pos.x) * sc;
-            float sy = cy + (wy - player_.pos.y) * sc;
-            platform_->draw_rect(sx - 4, sy - 4, 8, 8, 0.28f, 0.24f, 0.16f, 0.55f);
+      // Dirt roads between nearby POIs — sand atlas tiles
+      {
+        const bool has_sand = platform_->has_sprite("tilemap_sand");
+        for (int i = 0; i < mapgen_.location_count(); ++i) {
+          const MapLocation& A = mapgen_.location(i);
+          for (int j = i + 1; j < mapgen_.location_count(); ++j) {
+            const MapLocation& B = mapgen_.location(j);
+            const float dx = B.pos.x - A.pos.x;
+            const float dy = B.pos.y - A.pos.y;
+            const float d2ab = dx * dx + dy * dy;
+            if (d2ab < 200.f * 200.f || d2ab > 900.f * 900.f) continue;
+            const float len = std::sqrt(d2ab);
+            const int steps = static_cast<int>(len / 30.f);
+            if (steps < 2) continue;
+            for (int s = 1; s < steps; ++s) {
+              const float t = static_cast<float>(s) / static_cast<float>(steps);
+              const float wx = A.pos.x + dx * t;
+              const float wy = A.pos.y + dy * t;
+              if (dist2(Vec2(wx, wy), player_.pos) > 420.f * 420.f) continue;
+              float sx = cx + (wx - player_.pos.x) * sc;
+              float sy = cy + (wy - player_.pos.y) * sc;
+              const float tw = 30.f * sc;
+              if (has_sand) {
+                const int ux = ((s % 3) + 3) % 3;
+                const int uy = ((i + j) % 5);
+                platform_->draw_sprite_frame("tilemap_sand",
+                  sx - tw * 0.5f, sy - tw * 0.5f, tw, tw,
+                  ux * 60, uy * 60, 60, 60, 0.f, 0.85f);
+              } else {
+                platform_->draw_rect(sx - 4, sy - 4, 8, 8, 0.28f, 0.24f, 0.16f, 0.55f);
+              }
+            }
           }
         }
       }
 
-      // Map POIs — original building sprites + labels when close
+      // Map POIs — interiors when standing inside, else exterior shells
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
+        if (dist2(L.pos, player_.pos) > 520.f * 520.f) continue;
         float sx = cx + (L.pos.x - player_.pos.x) * sc;
         float sy = cy + (L.pos.y - player_.pos.y) * sc;
-        const float d2p = dist2(L.pos, player_.pos);
-        if (d2p < 520.f * 520.f) {
-          const char* bspr = poi_building_sprite(L.type, i);
-          float bsz = 90.f;
-          if (L.type == Loc_Hospital || L.type == Loc_City) bsz = 110.f;
-          if (L.type == Loc_Military) bsz = 100.f;
-          if (L.type == Loc_Helicrash) bsz = 64.f;
-          if (platform_->has_sprite(bspr))
-            platform_->draw_sprite(bspr, sx - bsz * 0.5f, sy - bsz * 0.5f, bsz, bsz, 0.f, 1.f);
+        float max_dim = 100.f;
+        if (L.type == Loc_Hospital) max_dim = 140.f;
+        else if (L.type == Loc_Firestation || L.type == Loc_Church) max_dim = 130.f;
+        else if (L.type == Loc_Military || L.type == Loc_Police) max_dim = 110.f;
+        else if (L.type == Loc_City) max_dim = 100.f;
+        else if (L.type == Loc_Helicrash) max_dim = 56.f;
+        else if (L.type == Loc_BunkerEntrance || L.type == Loc_Secret) max_dim = 48.f;
+        else if (L.type == Loc_GasStation) max_dim = 64.f;
+        const float enter_r = max_dim * 0.35f;
+        const bool inside = (L.type != Loc_Helicrash) &&
+                            dist2(L.pos, player_.pos) < enter_r * enter_r;
+        if (inside) {
+          if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
+          const char* ispr = poi_interior_sprite(L.type, i);
+          if (platform_->has_sprite(ispr))
+            draw_poi_sprite(platform_, sx, sy, ispr, max_dim);
           else
-            platform_->draw_rect(sx - 8, sy - 8, 16, 16, 0.5f, 0.45f, 0.3f, 0.9f);
+            draw_poi_sprite(platform_, sx, sy, poi_building_sprite(L.type, i), max_dim);
+        } else {
+          draw_poi_sprite(platform_, sx, sy, poi_building_sprite(L.type, i), max_dim);
         }
-        if (d2p < 450.f * 450.f && sx > 20.f && sx < 440.f && sy > 20.f && sy < 220.f) {
-          platform_->draw_text(sx - 10.f, sy - 14.f, location_label(L.type), 0.85f, 0.85f, 0.7f);
+        // Nameplate when close
+        if (dist2(L.pos, player_.pos) < 160.f * 160.f) {
+          const char* lab = location_label(L.type);
+          if (lab)
+            platform_->draw_text(sx - 18.f, sy - max_dim * 0.55f - 8.f, lab,
+                                 0.9f, 0.85f, 0.55f);
         }
+        if (L.type == Loc_BunkerEntrance &&
+            platform_->has_sprite("alife_marker-sheet0"))
+          platform_->draw_sprite("alife_marker-sheet0",
+            sx - 6.f, sy - max_dim * 0.55f - 14.f, 12.f, 12.f, 0.f, 1.f);
       }
     }
 
-    // Loot (overworld + bunker dens) — bunker uses 1:1 scale so use matching sc
+    // Loot — near piles show first item icon (original ground pickup look)
     {
       const float lsc = in_bunker_ ? 1.f : sc;
       for (int i = 0; i < loot_.count(); ++i) {
@@ -2743,14 +3352,34 @@ void Game::render() {
         float sx = cx + (p->pos.x - player_.pos.x) * lsc;
         float sy = cy + (p->pos.y - player_.pos.y) * lsc;
         if (p->is_airdrop) {
+          if (platform_->has_sprite("ee_pubg_drop_smoke"))
+            platform_->draw_sprite("ee_pubg_drop_smoke", sx - 18, sy - 28, 36, 36, 0.f, 0.55f);
           if (platform_->has_sprite("airdrop_box-sheet0"))
             platform_->draw_sprite("airdrop_box-sheet0", sx - 10, sy - 8, 20, 16, 0.f, 1.f);
           else
             platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
-        } else if (platform_->has_sprite("spawn_loot_point-sheet0")) {
-          platform_->draw_sprite("spawn_loot_point-sheet0", sx - 6, sy - 6, 12, 12, 0.f, 1.f);
-        } else {
-          platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.9f, 0.85f, 0.2f, 1.f);
+          continue;
+        }
+        const float d2p = dist2(p->pos, player_.pos);
+        bool drew_icon = false;
+        if (d2p < 160.f * 160.f && p->item_count > 0) {
+          ItemId show = 0;
+          for (int j = 0; j < p->item_count; ++j) {
+            if (p->counts[j] > 0) { show = p->items[j]; break; }
+          }
+          const ItemIcon* ic = show ? find_item_icon(show) : 0;
+          if (ic && platform_->has_sprite(ic->sprite)) {
+            const float iw = (d2p < 70.f * 70.f) ? 18.f : 12.f;
+            platform_->draw_sprite_frame(ic->sprite, sx - iw * 0.5f, sy - iw * 0.5f, iw, iw,
+                                         ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
+            drew_icon = true;
+          }
+        }
+        if (!drew_icon) {
+          if (platform_->has_sprite("spawn_loot_point-sheet0"))
+            platform_->draw_sprite("spawn_loot_point-sheet0", sx - 8, sy - 8, 16, 16, 0.f, 1.f);
+          else
+            platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.9f, 0.85f, 0.2f, 1.f);
         }
       }
     }
@@ -2758,16 +3387,16 @@ void Game::render() {
     // Zombies — one 30×30 C2 frame (facing col + walk row), not whole sheet
     {
       const float zsc = in_bunker_ ? 1.f : sc;
-      const int zanim = 1 + (static_cast<int>(state_timer_ * 6.f) % 3);
+      const int zanim = 1 + (static_cast<int>(state_timer_ * 6.f) % 4);
       for (const Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
         if (!z->alive) continue;
         float sx = cx + (z->pos.x - player_.pos.x) * zsc;
         float sy = cy + (z->pos.y - player_.pos.y) * zsc;
-        float zsz = 40.f;
+        float zsz = 30.f;
         if (z->type == Zed_Buried && z->ambush_boost <= 0.f) {
           if (platform_->has_sprite("zed_buried_hidden-sheet0"))
             platform_->draw_sprite_frame("zed_buried_hidden-sheet0",
-                                        sx - 16, sy - 10, 32, 20, 1, 1, 30, 30, 0.f, 1.f);
+                                        sx - 15, sy - 10, 30, 20, 1, 1, 30, 30, 0.f, 1.f);
           else
             platform_->draw_rect(sx - 7, sy - 3, 14, 8, 0.32f, 0.28f, 0.18f, 0.9f);
           continue;
@@ -2776,55 +3405,88 @@ void Game::render() {
         if (z->type == Zed_Fast) base = "zed_fast_skin1";
         else if (z->type == Zed_Army || z->type == Zed_ArmyShooter) base = "zed_army_skin1";
         else if (z->type == Zed_Buried) base = "zed_buried_skin";
-        else if (z->type == Zed_Tank) { base = "zed_tank_skin"; zsz = 56.f; }
+        else if (z->type == Zed_Tank) { base = "zed_tank_skin"; zsz = 42.f; }
         else if (z->type == Zed_Screamer) base = "zed_screamer_skin";
         const float fdeg = std::atan2(player_.pos.y - z->pos.y, player_.pos.x - z->pos.x) * 57.2957795f;
         char probe[64];
         sprite_sheet_name(probe, (int)sizeof(probe), base, 0);
+        // Soft ground shadow
+        platform_->draw_rect(sx - zsz * 0.35f, sy + zsz * 0.28f, zsz * 0.7f, 4.f,
+                             0.f, 0.f, 0.f, 0.28f);
         if (platform_->has_sprite(probe))
           draw_c2_char(platform_, sx, sy, zsz, base, fdeg, zanim);
         else
           platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.7f, 0.2f, 0.15f, 1.f);
-        platform_->draw_rect(sx - 5, sy - zsz * 0.5f - 3.f, 10.f * (z->hp / z->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+        // Night glowing eyes (original zed_*_eyes overlays)
+        if (!in_bunker_ && weather_.is_night && !player_.torch_on) {
+          const char* eyes = "zed_normal_eyes";
+          if (z->type == Zed_Fast) eyes = "zed_fast_eyes";
+          else if (z->type == Zed_Army || z->type == Zed_ArmyShooter) eyes = "zed_army_eyes";
+          else if (z->type == Zed_Buried) eyes = "zed_buried_eyes";
+          else if (z->type == Zed_Tank) eyes = "zed_tank_eyes";
+          else if (z->type == Zed_Screamer) eyes = "zed_screamer_eyes";
+          char eprobe[64];
+          sprite_sheet_name(eprobe, (int)sizeof(eprobe), eyes, 0);
+          if (platform_->has_sprite(eprobe))
+            draw_c2_char(platform_, sx, sy, zsz, eyes, fdeg, 0);
+        }
+        if (z->hp < z->max_hp * 0.99f)
+          platform_->draw_rect(sx - 5, sy - zsz * 0.5f - 3.f, 10.f * (z->hp / z->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
       }
     }
 
     if (!in_bunker_) {
-      // Airdrop compass while alert active
+      // Airdrop marker while alert active
       if (airdrop_alert_ > 0.f) {
         float sx = cx + (last_airdrop_pos_.x - player_.pos.x) * sc;
         float sy = cy + (last_airdrop_pos_.y - player_.pos.y) * sc;
-        platform_->draw_rect(sx - 8, sy - 8, 16, 16, 1.f, 0.8f, 0.1f, 0.35f);
+        if (platform_->has_sprite("airdrop_parachute-sheet0"))
+          platform_->draw_sprite("airdrop_parachute-sheet0", sx - 16, sy - 28, 32, 32, 0.f, 0.9f);
+        else if (platform_->has_sprite("gui_airdrop_icon-sheet0"))
+          platform_->draw_sprite("gui_airdrop_icon-sheet0", sx - 10, sy - 10, 20, 20, 0.f, 0.9f);
+        else
+          platform_->draw_rect(sx - 8, sy - 8, 16, 16, 1.f, 0.8f, 0.1f, 0.35f);
       }
 
-      // Screamer pulse ring
+      // Screamer — subtle pulse only (no debug text)
       if (zombies_.scream_active()) {
         const Vec2 sp = zombies_.scream_pos();
         float sx = cx + (sp.x - player_.pos.x) * sc;
         float sy = cy + (sp.y - player_.pos.y) * sc;
-        const float pulse = 20.f + 12.f * std::fabs(std::sin(state_timer_ * 8.f));
+        const float pulse = 18.f + 8.f * std::fabs(std::sin(state_timer_ * 6.f));
         platform_->draw_rect(sx - pulse, sy - pulse, pulse * 2.f, pulse * 2.f,
-                             0.9f, 0.3f, 0.85f, 0.18f);
-        platform_->draw_rect(sx - pulse * 0.5f, sy - pulse * 0.5f, pulse, pulse,
-                             0.95f, 0.5f, 0.9f, 0.22f);
+                             0.7f, 0.2f, 0.65f, 0.08f);
       }
 
       // Animals — cropped frames (wolf 30×30, deer 38×38)
       {
-        const int aanim = 1 + (static_cast<int>(state_timer_ * 5.f) % 3);
+        const int aanim = 1 + (static_cast<int>(state_timer_ * 5.f) % 4);
         for (int i = 0; i < animals_.count(); ++i) {
           const Animal* a = animals_.at(i);
           if (!a->alive) continue;
           float sx = cx + (a->pos.x - player_.pos.x) * sc;
           float sy = cy + (a->pos.y - player_.pos.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - a->pos.y, player_.pos.x - a->pos.x) * 57.2957795f;
+          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
           if (a->type == Animal_Wolf || a->type == Animal_Dog) {
-            draw_c2_char(platform_, sx, sy, 42.f, "wolf_skin", fdeg, aanim);
+            draw_c2_char(platform_, sx, sy, 30.f, "wolf_skin", fdeg, aanim);
+            if (a->type == Animal_Dog && platform_->has_sprite("dog_marker-sheet0"))
+              platform_->draw_sprite("dog_marker-sheet0", sx - 5.f, sy - 22.f, 10.f, 8.f, 0.f, 0.85f);
+            if (!in_bunker_ && weather_.is_night) {
+              const char* ae = (a->type == Animal_Dog) ? "dog_eyes" : "wolf_eyes";
+              char ap[64];
+              sprite_sheet_name(ap, (int)sizeof(ap), ae, 0);
+              if (platform_->has_sprite(ap))
+                draw_c2_char(platform_, sx, sy, 30.f, ae, fdeg, 0);
+            }
           } else if (a->type == Animal_Deer) {
-            // deer cells are 38×38 with stride 40
-            draw_c2_char(platform_, sx, sy, 46.f, "deer_skin", fdeg, aanim, 38, 40);
+            draw_c2_char(platform_, sx, sy, 38.f, "deer_skin", fdeg, aanim, 38, 40);
+            if (!in_bunker_ && weather_.is_night && platform_->has_sprite("deer_eyes-sheet0"))
+              draw_c2_char(platform_, sx, sy, 38.f, "deer_eyes", fdeg, 0, 38, 40);
           } else if (a->type == Animal_Rabbit) {
-            draw_c2_char(platform_, sx, sy, 28.f, "rabbit_skin", fdeg, aanim);
+            draw_c2_char(platform_, sx, sy, 30.f, "rabbit_skin", fdeg, aanim);
+            if (!in_bunker_ && weather_.is_night && platform_->has_sprite("rabbit_eyes-sheet0"))
+              draw_c2_char(platform_, sx, sy, 30.f, "rabbit_eyes", fdeg, 0);
           } else {
             platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.2f, 0.2f, 0.22f, 1.f);
           }
@@ -2833,17 +3495,22 @@ void Game::render() {
 
       // Bandits — 30×30 frames
       {
-        const int banim = 1 + (static_cast<int>(state_timer_ * 5.f) % 3);
+        const int banim = 1 + (static_cast<int>(state_timer_ * 5.f) % 4);
         for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
           if (!bd->alive) continue;
           float sx = cx + (bd->pos.x - player_.pos.x) * sc;
           float sy = cy + (bd->pos.y - player_.pos.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
+          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
           if (platform_->has_sprite("bandit_skin-sheet0"))
-            draw_c2_char(platform_, sx, sy, 40.f, "bandit_skin", fdeg, banim);
+            draw_c2_char(platform_, sx, sy, 30.f, "bandit_skin", fdeg, banim);
           else
             platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
-          platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+          if (platform_->has_sprite("bot_bandit_melee_marker-sheet0"))
+            platform_->draw_sprite("bot_bandit_melee_marker-sheet0",
+              sx - 5.f, sy - 28.f, 10.f, 8.f, 0.f, 0.9f);
+          if (bd->hp < bd->max_hp * 0.99f)
+            platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
         }
       }
 
@@ -2871,54 +3538,171 @@ void Game::render() {
         }
       }
 
-      // Campfires
+      // Campfires (flicker between fireplace sheets)
       for (int i = 0; i < campfires_.count(); ++i) {
         const Campfire* f = campfires_.at(i);
         if (!f->active) continue;
         float sx = cx + (f->pos.x - player_.pos.x) * sc;
         float sy = cy + (f->pos.y - player_.pos.y) * sc;
-        if (platform_->has_sprite("fire_place_warm-sheet0"))
-          platform_->draw_sprite("fire_place_warm-sheet0", sx - 22, sy - 22, 44, 44, 0.f, 1.f);
+        const int flick = (static_cast<int>(state_timer_ * 8.f) + i) & 1;
+        const char* fire =
+          (flick && platform_->has_sprite("fireplace-sheet1")) ? "fireplace-sheet1" :
+          platform_->has_sprite("fireplace-sheet0") ? "fireplace-sheet0" :
+          platform_->has_sprite("fire_place_warm-sheet0") ? "fire_place_warm-sheet0" : 0;
+        if (fire)
+          platform_->draw_sprite(fire, sx - 20, sy - 20, 40, 40, 0.f, 1.f);
         else {
           platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.9f, 0.35f, 0.05f, 0.9f);
           platform_->draw_rect(sx - 3, sy - 10, 6, 6, 1.f, 0.7f, 0.15f, 0.7f);
         }
       }
 
-      // Placed traps / barbed wire
+      // Placed traps / barbed wire — original sprites
       for (int i = 0; i < trap_count_; ++i) {
         if (!traps_[i].active) continue;
         float sx = cx + (traps_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (traps_[i].pos.y - player_.pos.y) * sc;
         if (traps_[i].kind == 0) {
-          const float g = traps_[i].sprung ? 0.35f : 0.55f;
-          platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.45f, g, 0.25f, 0.95f);
+          const char* ts = traps_[i].sprung ? "beartrap_deployed-sheet0" : "beartrap-sheet0";
+          if (platform_->has_sprite(ts))
+            platform_->draw_sprite(ts, sx - 8, sy - 5, 16, 10, 0.f, 1.f);
+          else
+            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.45f, 0.45f, 0.25f, 0.95f);
         } else if (traps_[i].kind == 2) {
-          // Wood fence post
           platform_->draw_rect(sx - 3, sy - 10, 6, 20, 0.45f, 0.32f, 0.18f, 0.95f);
           platform_->draw_rect(sx - 10, sy - 4, 20, 3, 0.5f, 0.36f, 0.2f, 0.9f);
         } else if (traps_[i].kind == 3) {
           platform_->draw_rect(sx - 4, sy - 3, 8, 6, 0.35f, 0.35f, 0.2f, 0.95f);
           platform_->draw_rect(sx - 2, sy - 5, 4, 3, 0.7f, 0.2f, 0.15f, 0.9f);
         } else if (traps_[i].kind == 4) {
-          // Landmine disc
-          platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.25f, 0.28f, 0.2f, 0.95f);
-          platform_->draw_rect(sx - 2, sy - 2, 4, 4, 0.85f, 0.25f, 0.1f, 0.9f);
+          if (platform_->has_sprite("landmine-sheet0"))
+            platform_->draw_sprite("landmine-sheet0", sx - 6, sy - 6, 12, 12, 0.f, 1.f);
+          else {
+            platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.25f, 0.28f, 0.2f, 0.95f);
+            platform_->draw_rect(sx - 2, sy - 2, 4, 4, 0.85f, 0.25f, 0.1f, 0.9f);
+          }
         } else {
-          platform_->draw_rect(sx - 14, sy - 14, 28, 28, 0.35f, 0.3f, 0.28f, 0.35f);
-          platform_->draw_rect(sx - 8, sy - 1, 16, 2, 0.6f, 0.55f, 0.5f, 0.8f);
+          if (platform_->has_sprite("barbedwire-sheet0"))
+            platform_->draw_sprite("barbedwire-sheet0", sx - 14, sy - 10, 28, 20, 0.f, 0.95f);
+          else if (platform_->has_sprite("barberwire_deployed-sheet0"))
+            platform_->draw_sprite("barberwire_deployed-sheet0", sx - 14, sy - 10, 28, 20, 0.f, 0.95f);
+          else {
+            platform_->draw_rect(sx - 14, sy - 14, 28, 28, 0.35f, 0.3f, 0.28f, 0.35f);
+            platform_->draw_rect(sx - 8, sy - 1, 16, 2, 0.6f, 0.55f, 0.5f, 0.8f);
+          }
         }
       }
     }
 
-    // Bullets
+    // Bullets — grenade / molotov fly sprites, else zed_bullet strip
     {
       const float bsc = in_bunker_ ? 1.f : sc;
+      const bool has_b = platform_->has_sprite("zed_bullet-sheet0");
       for (const Bullet* b = bullets_.begin(); b != bullets_.end(); ++b) {
         if (!b->alive) continue;
         float sx = cx + (b->pos.x - player_.pos.x) * bsc;
         float sy = cy + (b->pos.y - player_.pos.y) * bsc;
-        platform_->draw_rect(sx - 1, sy - 1, 3, 3, 1.f, 0.95f, 0.4f, 1.f);
+        const float ang = std::atan2(b->vel.y, b->vel.x) * 57.2957795f;
+        if (b->leaves_fire && platform_->has_sprite("molotov_fly-sheet0")) {
+          platform_->draw_sprite("molotov_fly-sheet0", sx - 6, sy - 6, 12, 12, ang, 1.f);
+        } else if (b->explosive && platform_->has_sprite("f1_grenade_active-sheet0")) {
+          platform_->draw_sprite("f1_grenade_active-sheet0", sx - 6, sy - 6, 12, 12, ang, 1.f);
+        } else if (b->is_arrow && platform_->has_sprite("arrow_bullet-sheet0")) {
+          platform_->draw_sprite("arrow_bullet-sheet0", sx - 10, sy - 2, 20, 4, ang, 1.f);
+        } else if (has_b) {
+          platform_->draw_sprite("zed_bullet-sheet0", sx - 8, sy - 1.5f, 16, 3, ang, 1.f);
+        } else {
+          platform_->draw_rect(sx - 1, sy - 1, 3, 3, 1.f, 0.95f, 0.4f, 1.f);
+        }
+      }
+    }
+
+    // Muzzle / hit / explode FX
+    {
+      const float bsc = in_bunker_ ? 1.f : sc;
+      for (int i = 0; i < fx_count_; ++i) {
+        if (!fx_[i].active) continue;
+        float sx = cx + (fx_[i].pos.x - player_.pos.x) * bsc;
+        float sy = cy + (fx_[i].pos.y - player_.pos.y) * bsc;
+        const float a = fx_[i].life > 0.05f ? 1.f : fx_[i].life / 0.05f;
+        if (fx_[i].kind == Fx_Muzzle) {
+          const int frame = static_cast<int>(fx_[i].life * 40.f) % 3;
+          const char* mz = (frame == 1 && platform_->has_sprite("muzzle_sprite-sheet1"))
+                            ? "muzzle_sprite-sheet1"
+                          : (frame == 2 && platform_->has_sprite("muzzle_sprite-sheet2"))
+                            ? "muzzle_sprite-sheet2"
+                          : platform_->has_sprite("muzzle_sprite-sheet0")
+                            ? "muzzle_sprite-sheet0"
+                          : platform_->has_sprite("muzzle_flash-sheet0")
+                            ? "muzzle_flash-sheet0" : 0;
+          if (mz)
+            platform_->draw_sprite(mz, sx - 14, sy - 14, 28, 28, fx_[i].angle, a);
+          else
+            platform_->draw_rect(sx - 4, sy - 4, 8, 8, 1.f, 0.9f, 0.4f, a);
+        } else if (fx_[i].kind == Fx_Hit) {
+          if (platform_->has_sprite("test_bullet_hit-sheet0"))
+            platform_->draw_sprite_frame("test_bullet_hit-sheet0",
+              sx - 10, sy - 10, 20, 20, 1, 1, 20, 20, 0.f, a);
+          else if (platform_->has_sprite("test_bodyhit-sheet0"))
+            platform_->draw_sprite_frame("test_bodyhit-sheet0",
+              sx - 10, sy - 10, 20, 20, 1, 1, 20, 20, 0.f, a);
+          else
+            platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.9f, 0.2f, 0.15f, a);
+        } else if (fx_[i].kind == Fx_Shell) {
+          const char* sh = platform_->has_sprite("test_shell-sheet0")
+                             ? "test_shell-sheet0" : 0;
+          if (sh)
+            platform_->draw_sprite(sh, sx - 3, sy - 2, 6, 4, fx_[i].angle, a);
+          else
+            platform_->draw_rect(sx - 2, sy - 1, 4, 2, 0.75f, 0.65f, 0.25f, a);
+        } else if (fx_[i].kind == Fx_Blood) {
+          if (platform_->has_sprite("blood_drop-sheet0"))
+            platform_->draw_sprite("blood_drop-sheet0", sx - 6, sy - 6, 12, 12, 0.f, a * 0.85f);
+          else
+            platform_->draw_rect(sx - 4, sy - 3, 8, 6, 0.55f, 0.05f, 0.08f, a * 0.7f);
+        } else if (fx_[i].kind == Fx_Fish) {
+          const int fr = (static_cast<int>(fx_[i].life * 8.f) % 3);
+          const char* fs = (fr == 1 && platform_->has_sprite("fish_sprite-sheet1"))
+                             ? "fish_sprite-sheet1"
+                           : (fr == 2 && platform_->has_sprite("fish_sprite-sheet2"))
+                             ? "fish_sprite-sheet2"
+                           : platform_->has_sprite("fish_sprite-sheet0")
+                             ? "fish_sprite-sheet0" : 0;
+          if (fs)
+            platform_->draw_sprite(fs, sx - 10, sy - 6, 20, 12, 0.f, a);
+          else
+            platform_->draw_rect(sx - 6, sy - 3, 12, 6, 0.4f, 0.55f, 0.7f, a);
+        } else if (fx_[i].kind == Fx_Explode) {
+          const bool molotov = fx_[i].angle > 0.5f;
+          if (molotov && platform_->has_sprite("molotov_flame"))
+            platform_->draw_sprite("molotov_flame", sx - 24, sy - 24, 48, 48, 0.f, a);
+          else if (platform_->has_sprite("grenadeparticles"))
+            platform_->draw_sprite("grenadeparticles", sx - 30, sy - 30, 60, 60, 0.f, a);
+          else if (platform_->has_sprite("car_explode-sheet0"))
+            platform_->draw_sprite("car_explode-sheet0", sx - 28, sy - 28, 56, 56, 0.f, a);
+          else
+            platform_->draw_rect(sx - 20, sy - 20, 40, 40, 1.f, 0.45f, 0.1f, a * 0.7f);
+        }
+      }
+    }
+
+    // Cloud shadows drifting over the map (daytime)
+    if (!in_bunker_ && !weather_.is_night && platform_->has_sprite("cloud_shadow-sheet0")) {
+      const float drift = state_timer_ * 12.f;
+      for (int i = 0; i < 5; ++i) {
+        const float bx = std::fmod(drift * (0.6f + 0.15f * i) + i * 97.f, 560.f) - 40.f;
+        const float by = 20.f + (i * 47) % 200;
+        platform_->draw_sprite("cloud_shadow-sheet0", bx, by, 140.f, 70.f, 0.f, 0.18f);
+      }
+    }
+
+    // Light snow dust when cold / night fringe
+    if (!in_bunker_ && weather_.ambient_temp < 5.f &&
+        platform_->has_sprite("snow_ground-sheet0")) {
+      for (int i = 0; i < 8; ++i) {
+        const float gx = std::fmod(state_timer_ * 8.f + i * 61.f, 500.f) - 10.f;
+        const float gy = std::fmod(state_timer_ * 3.f + i * 37.f, 290.f);
+        platform_->draw_sprite("snow_ground-sheet0", gx, gy, 18, 6, 0.f, 0.2f);
       }
     }
 
@@ -2940,10 +3724,19 @@ void Game::render() {
                              vehicles_.driven()->type == Vehicle_Bike);
     if (!in_bunker_ && weather_.is_night && !player_.torch_on && !headlights) {
       if (player_.nvg_on) {
-        // Green phosphor NVG: mild vignette + brighter mid
-        platform_->draw_rect(0, 0, 480, 272, 0.02f, 0.18f, 0.05f, 0.18f);
-        platform_->draw_rect(cx - 90, cy - 70, 180, 140, 0.08f, 0.35f, 0.12f, 0.12f);
-        platform_->draw_text(8, 8, "NVG", 0.35f, 0.9f, 0.4f);
+        if (platform_->has_sprite("light_nvg_color_tiled"))
+          platform_->draw_sprite("light_nvg_color_tiled", 0, 0, 480, 272, 0.f, 0.35f);
+        else {
+          platform_->draw_rect(0, 0, 480, 272, 0.02f, 0.18f, 0.05f, 0.18f);
+          platform_->draw_rect(cx - 90, cy - 70, 180, 140, 0.08f, 0.35f, 0.12f, 0.12f);
+        }
+      } else if (platform_->has_sprite("night_overlay-sheet0")) {
+        platform_->draw_sprite("night_overlay-sheet0", 0, 0, 480, 272, 0.f, 0.72f);
+        for (int si = 0; si < 18; ++si) {
+          const float sx = static_cast<float>((si * 97 + 13) % 480);
+          const float sy = static_cast<float>((si * 53 + 7) % 120);
+          platform_->draw_rect(sx, sy, 1, 1, 0.85f, 0.9f, 1.f, 0.45f);
+        }
       } else {
         platform_->draw_rect(0, 0, 480, 272, 0.f, 0.f, 0.08f, 0.48f);
         for (int si = 0; si < 24; ++si) {
@@ -2953,24 +3746,43 @@ void Game::render() {
         }
       }
     }
-    if (!in_bunker_ && weather_.rain > 0.7f && weather_.rain < 1.2f) {
-      // Rain streaks (cheap)
-      for (int i = 0; i < 18; ++i) {
-        const float rx = static_cast<float>((i * 37 + static_cast<int>(weather_.rain * 40.f)) % 480);
-        const float ry = static_cast<float>((i * 53 + static_cast<int>(weather_.day_phase * 200.f)) % 272);
-        platform_->draw_rect(rx, ry, 1, 6, 0.55f, 0.6f, 0.7f, 0.35f);
+    if (!in_bunker_ && weather_.rain > 0.55f) {
+      if (platform_->has_sprite("rain_fade-sheet0"))
+        platform_->draw_sprite("rain_fade-sheet0", 0, 0, 480, 272, 0.f,
+                               0.12f + 0.2f * (weather_.rain > 1.f ? 1.f : weather_.rain));
+      // Falling rain — crop small streaks from rain_particle atlas
+      const bool has_rp = platform_->has_sprite("rain_particle-sheet0");
+      for (int i = 0; i < 28; ++i) {
+        const float rx = static_cast<float>((i * 37 + static_cast<int>(state_timer_ * 180.f)) % 480);
+        const float ry = static_cast<float>((i * 53 + static_cast<int>(state_timer_ * 220.f)) % 272);
+        if (has_rp)
+          platform_->draw_sprite_frame("rain_particle-sheet0", rx, ry, 3, 10,
+                                       2 + (i % 4) * 8, 2 + (i % 3) * 12, 4, 12, 0.f, 0.45f);
+        else
+          platform_->draw_rect(rx, ry, 1, 6, 0.55f, 0.6f, 0.7f, 0.35f);
+      }
+      if (platform_->has_sprite("rain_ground-sheet0")) {
+        for (int i = 0; i < 6; ++i) {
+          const float gx = static_cast<float>((i * 79 + 20) % 460);
+          const float gy = 200.f + static_cast<float>((i * 17) % 50);
+          platform_->draw_sprite("rain_ground-sheet0", gx, gy, 24, 8, 0.f, 0.25f);
+        }
       }
     }
     if (player_.torch_on || headlights) {
-      const float glow = headlights ? 40.f : 28.f;
-      platform_->draw_rect(cx - glow, cy - glow, glow * 2.f, glow * 2.f,
-                           0.55f, 0.4f, 0.1f, headlights ? 0.2f : 0.25f);
-      platform_->draw_rect(cx - glow * 0.5f, cy - glow * 0.5f, glow, glow,
-                           0.75f, 0.55f, 0.15f, headlights ? 0.28f : 0.35f);
-      // Facing cone (torch beam / vehicle headlights)
-      if (player_.torch_on || headlights) {
-        float face = player_.facing_deg;
-        if (headlights && vehicles_.driven()) face = vehicles_.driven()->facing_deg;
+      float face = player_.facing_deg;
+      if (headlights && vehicles_.driven()) face = vehicles_.driven()->facing_deg;
+      if (headlights && platform_->has_sprite("car_light-sheet0")) {
+        const float rad = face * 0.01745329252f;
+        const float bx = cx + std::cos(rad) * 36.f;
+        const float by = cy + std::sin(rad) * 36.f;
+        platform_->draw_sprite("car_light-sheet0", bx - 40, by - 24, 80, 48, face, 0.55f);
+      } else if (player_.torch_on && platform_->has_sprite("light_sprite-sheet0")) {
+        platform_->draw_sprite("light_sprite-sheet0", cx - 48, cy - 48, 96, 96, face, 0.5f);
+      } else {
+        const float glow = headlights ? 40.f : 28.f;
+        platform_->draw_rect(cx - glow, cy - glow, glow * 2.f, glow * 2.f,
+                             0.55f, 0.4f, 0.1f, headlights ? 0.2f : 0.25f);
         const float rad = face * 0.01745329252f;
         const int steps = headlights ? 10 : 8;
         for (int s = 2; s <= steps; ++s) {
@@ -2979,10 +3791,7 @@ void Game::render() {
           const float bx = cx + std::cos(rad) * d;
           const float by = cy + std::sin(rad) * d;
           platform_->draw_rect(bx - w * 0.5f, by - w * 0.5f, w, w,
-                               headlights ? 0.9f : 0.85f,
-                               headlights ? 0.85f : 0.7f,
-                               headlights ? 0.55f : 0.25f,
-                               0.1f + 0.02f * s);
+                               0.9f, 0.8f, 0.4f, 0.1f + 0.02f * s);
         }
       }
     }
@@ -2997,45 +3806,95 @@ void Game::render() {
       platform_->draw_rect(0, 0, 480, 272, 0.15f, 0.35f, 0.1f, 0.08f);
     }
 
-    // Player — one 30×30 C2 frame (facing=column, walk=row); hands layered
+    // Player — idle/run + pistol/twohand/axe hold poses (data.js sheets 0–2)
     {
-      const int panim = player_.running ? (1 + static_cast<int>(state_timer_ * 10.f) % 3) : 0;
-      const float psz = crouching_ ? 36.f : 44.f;
-      if (platform_->has_sprite("player_skin_def_1-sheet0")) {
-        draw_c2_char(platform_, cx, cy, psz, "player_skin_def_1", player_.facing_deg, panim);
-        draw_c2_char(platform_, cx, cy, psz, "player_hands_white", player_.facing_deg, panim);
-      } else {
-        platform_->draw_rect(cx - 6, cy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
+      const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
+      const bool moving = spd2 > 4.f;
+      int panim = 0;
+      if (moving) {
+        const float rate = player_.running ? 10.f : 6.f;
+        panim = 1 + (static_cast<int>(state_timer_ * rate) % 4);
       }
-      const float rad = player_.facing_deg * 0.01745329252f;
+      const float psz = crouching_ ? 26.f : 30.f;
       const InvSlot& eq = inventory_.slot(equipped_slot_);
       const WeaponDef* w = eq.empty() ? 0 : find_weapon(eq.id);
-      const float aim_len = (w && !w->stats.is_melee) ? 36.f : 10.f;
-      for (int s = 1; s <= 4; ++s) {
-        const float d = aim_len * (static_cast<float>(s) / 4.f);
-        platform_->draw_rect(cx + std::cos(rad) * d - 1.f,
-                             cy + std::sin(rad) * d - 1.f, 2, 2,
-                             0.9f, 0.95f, 0.8f, 0.35f + 0.15f * s);
+      const HoldPose hold = hold_pose_for(w);
+      platform_->draw_rect(cx - 11.f, cy + 12.f, 22.f, 4.f, 0.f, 0.f, 0.f, 0.3f);
+      const char* body = player_body_skin(inventory_);
+      char body_probe[64];
+      sprite_sheet_name(body_probe, (int)sizeof(body_probe), body, 0);
+      if (platform_->has_sprite(body_probe) ||
+          platform_->has_sprite("player_skin_def_1-sheet0"))
+        draw_player_c2(platform_, cx, cy, psz, player_.facing_deg, panim, hold, body);
+      else
+        platform_->draw_rect(cx - 6, cy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
+      // Gasmask / helmet badge overlay (inventory icon cropped small on head)
+      if (wearing_gasmask() && platform_->has_sprite("gasmask-sheet0"))
+        platform_->draw_sprite_frame("gasmask-sheet0",
+          cx - 6.f, cy - psz * 0.45f, 12.f, 12.f, 1, 1, 30, 30, 0.f, 0.95f);
+
+      // Original crosshair when holding a firearm (best scope in bag)
+      if (w && !w->stats.is_melee && !vehicles_.player_driving()) {
+        const char* ch = "crosshair_rds-sheet0";
+        int cw = 8, chh = 7;
+        int best = 0; // 0 none, 1 rds, 2 pu, 3 pso, 4 acog, 5 long
+        for (int i = 0; i < inventory_.slot_count(); ++i) {
+          const ItemId sid = inventory_.slot(i).id;
+          int rank = 0;
+          if (sid == 76) rank = 1;
+          else if (sid == 77) rank = 2;
+          else if (sid == 78) rank = 3;
+          else if (sid == 79) rank = 4;
+          else if (sid == 98) rank = 5;
+          if (rank > best) best = rank;
+        }
+        if (best == 5) { ch = "crosshair_long-sheet0"; cw = 11; chh = 5; }
+        else if (best == 4) { ch = "crosshair_acog-sheet0"; cw = 10; chh = 7; }
+        else if (best == 3) { ch = "crosshair_pso-sheet0"; cw = 11; chh = 8; }
+        else if (best == 2) { ch = "crosshair_pu-sheet0"; cw = 11; chh = 6; }
+        else if (best == 1) { ch = "crosshair_rds-sheet0"; cw = 8; chh = 7; }
+        const float rad = player_.facing_deg * 0.01745329252f;
+        const float reach = crouching_ ? 48.f : 40.f;
+        const float hx = cx + std::cos(rad) * reach;
+        const float hy = cy + std::sin(rad) * reach;
+        if (platform_->has_sprite(ch))
+          platform_->draw_sprite(ch, hx - cw * 0.5f, hy - chh * 0.5f,
+                                 static_cast<float>(cw), static_cast<float>(chh), 0.f, 0.95f);
+        else
+          platform_->draw_rect(hx - 1, hy - 1, 2, 2, 0.95f, 0.9f, 0.5f, 0.9f);
       }
     }
 
     draw_debug_hud(*platform_, *this);
     if (state_ == AppState_Paused) {
-      platform_->draw_rect(140, 110, 200, 40, 0.f, 0.f, 0.f, 0.55f);
-      platform_->draw_text(180, 122, "PAUSED", 1.f, 1.f, 0.55f);
+      platform_->draw_rect(0, 0, 480, 272, 0.f, 0.f, 0.f, 0.45f);
+      if (platform_->has_sprite("menu_btn_wood-sheet0"))
+        platform_->draw_sprite("menu_btn_wood-sheet0", 140, 100, 200, 48, 0.f, 0.95f);
+      else
+        platform_->draw_rect(140, 100, 200, 48, 0.08f, 0.06f, 0.04f, 0.9f);
+      platform_->draw_text(195, 116, "PAUSED", 1.f, 0.95f, 0.7f);
+      platform_->draw_text(155, 160, "ESC - RESUME", 0.75f, 0.8f, 0.65f);
     }
   } else if (state_ == AppState_Dead) {
-    platform_->clear(0.12f, 0.02f, 0.02f);
-    platform_->draw_text(160, 100, "YOU DIED", 1.f, 0.3f, 0.25f);
+    platform_->clear(0.04f, 0.01f, 0.01f);
+    if (platform_->has_sprite("dead_screen-sheet0"))
+      platform_->draw_sprite("dead_screen-sheet0", 40.f, 16.f, 400.f, 170.f, 0.f, 1.f);
+    else
+      platform_->draw_text(160, 80, "YOU DIED", 1.f, 0.3f, 0.25f);
+    if (platform_->has_sprite("player_skin_dead-sheet0"))
+      platform_->draw_sprite_frame("player_skin_dead-sheet0",
+        210.f, 150.f, 48.f, 48.f, 1, 1, 30, 30, 0.f, 1.f);
     if (player_.survival.death_reason[0]) {
-      platform_->draw_text(140, 130, player_.survival.death_reason, 0.85f, 0.5f, 0.45f);
+      char cause[96];
+      std::snprintf(cause, sizeof(cause), "KILLED BY: %s", player_.survival.death_reason);
+      platform_->draw_text(140, 205, cause, 0.85f, 0.5f, 0.45f);
     }
     char buf[96];
     std::snprintf(buf, sizeof(buf), "DAY %d  ZEDS %d  BOTS %d  ANIMALS %d",
                   player_.days_survived, player_.zeds_killed, player_.bandits_killed,
                   player_.animals_killed);
-    platform_->draw_text(80, 160, buf, 0.8f, 0.6f, 0.55f);
-    platform_->draw_text(120, 200, "ENTER - MENU", 0.75f, 0.55f, 0.5f);
+    platform_->draw_text(80, 225, buf, 0.8f, 0.6f, 0.55f);
+    platform_->draw_text(120, 250, "ENTER - MENU", 0.75f, 0.55f, 0.5f);
   }
 
   platform_->end_frame();

@@ -21,6 +21,7 @@ Bullet* BulletSystem::spawn(Vec2 pos, float angle_deg, float speed, float damage
   b.from_player = from_player;
   b.explosive = explosive;
   b.leaves_fire = leaves_fire;
+  b.is_arrow = false;
   return &b;
 }
 

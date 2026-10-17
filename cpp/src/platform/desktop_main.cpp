@@ -29,6 +29,8 @@ int main(int argc, char** argv) {
   }
 
   mdaz::IAudio* audio = mdaz::create_sdl_audio();
+  // Original 1.4.1 Construct media pack
+  audio->set_media_dir("C:/Users/abdur/Desktop/MiniDayZ/original_docs/media");
 
   mdaz::Game game;
   if (!game.init(platform, data_dir)) {

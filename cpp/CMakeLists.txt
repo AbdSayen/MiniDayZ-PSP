@@ -33,6 +33,7 @@ set(MDAZ_CORE_SOURCES
   src/weather/weather.cpp
   src/save/save_game.cpp
   src/ui/hud.cpp
+  src/ui/item_sprites.cpp
   src/ui/quest.cpp
   src/platform/platform_null.cpp
 )
