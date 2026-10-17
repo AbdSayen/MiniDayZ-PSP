@@ -1,0 +1,24 @@
+=== generate_array_roads_1 (data.js On function) ===
+Locals: Row, anotherX, anotherX2 (init -1)
+For Row = 0 .. Map_size_X-1:
+  Reset anotherX/anotherX2
+  For each column on row: Array uid 150 At(col, Row) in {9,6,11,15}
+    When value == 15: first -> anotherX, second -> anotherX2
+  When anotherX/anotherX2 valid and anotherX2 > anotherX:
+    If At(anotherX, Row) == 0 -> SetAt(anotherX, Row, 13)
+
+=== generate_array_roads_2 ===
+Same pairing on columns (Row index as Y):
+  If At(Row, anotherX) == 13 -> SetAt(Row, anotherX, 14)
+  If At(Row, anotherX) == 0  -> SetAt(Row, anotherX, 12)
+
+=== C++ port (mapgen.cpp apply_generate_array_roads) ===
+POI sectors -> grid cell 15; pair 15s on each row/col; interior empty cells -> 13 (horiz) then 12/14 (vert).
+WorldTilemaps stamps runtime dirt tile 15 on sectors with markers 12/13/14.
+
+JSON extracts: generate_array_roads_1.json, generate_array_roads_2.json
+
+=== GUI_draw_vehicle (GUI_draw_vehicle.json) ===
+Creates GUI_controls; sets bar_fuel / bar_hp from Vehicle IV284/294;
+shows nofuel (IV284 low) and disable (condition low) child layers.
+C++: hud.cpp draw_vehicle_hud (gui_car_bg, gui_car_fuel/condition strips, control buttons).

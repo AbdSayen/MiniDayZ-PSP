@@ -1,0 +1,973 @@
+279
+player_hands_white idle_down 1 5 0
+0 1 1 30 30 1
+player_hands_white idle_up 1 5 0
+0 33 1 30 30 1
+player_hands_white idle_right 1 5 0
+0 65 1 30 30 1
+player_hands_white idle_left 1 5 0
+0 97 1 30 30 1
+player_hands_white run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_hands_white run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_hands_white run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_hands_white run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_hands_white axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_hands_white axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_hands_white axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 65 65 30 30 1
+player_hands_white axe_right 3 10 0
+1 97 65 30 30 1
+1 1 97 30 30 1
+1 97 65 30 30 1
+player_hands_white pistol_up 1 5 0
+1 33 97 30 30 1
+player_hands_white pistol_down 1 5 0
+1 65 97 30 30 1
+player_hands_white pistol_left 1 5 0
+1 97 97 30 30 1
+player_hands_white pistol_right 1 5 0
+2 1 1 30 30 1
+player_hands_white twohand_down 1 5 0
+2 33 1 30 30 1
+player_hands_white twohand_up 1 5 0
+2 65 1 30 30 1
+player_hands_white twohand_left 1 5 0
+2 97 1 30 30 1
+player_hands_white twohand_right 1 5 0
+2 1 33 30 30 1
+player_hands_white using_item 4 8 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 97 33 30 30 1
+2 65 33 30 30 1
+zed_normal_skin1 idle_down 1 5 0
+0 1 1 30 30 1
+zed_normal_skin1 idle_up 1 5 0
+0 33 1 30 30 1
+zed_normal_skin1 idle_right 1 5 0
+0 65 1 30 30 1
+zed_normal_skin1 idle_left 1 5 0
+0 97 1 30 30 1
+zed_normal_skin1 run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+zed_normal_skin1 run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+zed_normal_skin1 run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+zed_normal_skin1 run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+zed_normal_skin1 attack_down 4 8 1
+0 1 1 30 30 7
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+zed_normal_skin1 attack_left 4 8 1
+0 97 1 30 30 7
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 97 33 30 30 1
+zed_normal_skin1 attack_up 4 8 1
+1 1 65 30 30 7
+1 33 65 30 30 1
+1 65 65 30 30 1
+1 33 65 30 30 1
+zed_normal_skin1 attack_right 4 8 1
+1 97 65 30 30 7
+1 1 97 30 30 1
+1 33 97 30 30 1
+1 1 97 30 30 1
+zed_normal_skin1 walk_down 3 5 1
+1 65 97 30 30 1
+1 97 97 30 30 1
+2 1 1 30 30 1
+zed_normal_skin1 walk_up 3 5 1
+2 33 1 30 30 1
+2 65 1 30 30 1
+2 97 1 30 30 1
+zed_normal_skin1 walk_left 4 5 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 97 33 30 30 1
+zed_normal_skin1 walk_right 4 5 1
+2 1 65 30 30 1
+2 33 65 30 30 1
+2 65 65 30 30 1
+2 97 65 30 30 1
+zed_army_skin1 idle_down 1 5 0
+0 1 1 30 30 1
+zed_army_skin1 idle_up 1 5 0
+0 33 1 30 30 1
+zed_army_skin1 idle_right 1 5 0
+0 65 1 30 30 1
+zed_army_skin1 idle_left 1 5 0
+0 97 1 30 30 1
+zed_army_skin1 run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+zed_army_skin1 run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+zed_army_skin1 run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+zed_army_skin1 run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+zed_army_skin1 attack_down 3 2 1
+0 1 1 30 30 1
+1 1 33 30 30 1
+1 33 33 30 30 1
+zed_army_skin1 attack_up 3 2 1
+0 33 1 30 30 1
+1 65 33 30 30 1
+1 97 33 30 30 1
+zed_army_skin1 attack_right 3 2 1
+0 65 1 30 30 1
+1 1 65 30 30 1
+1 33 65 30 30 1
+zed_army_skin1 attack_left 3 2 1
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 1 97 30 30 1
+zed_army_skin1 walk_left 3 5 1
+1 33 97 30 30 1
+1 65 97 30 30 1
+1 97 97 30 30 1
+zed_army_skin1 walk_right 3 5 1
+2 1 1 30 30 1
+2 33 1 30 30 1
+2 65 1 30 30 1
+zed_army_skin1 walk_up 3 5 1
+2 97 1 30 30 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+zed_army_skin1 walk_down 3 5 1
+2 65 33 30 30 1
+2 97 33 30 30 1
+2 1 65 30 30 1
+zed_fast_skin1 idle_down 1 5 0
+0 1 1 30 30 1
+zed_fast_skin1 idle_up 1 5 0
+0 33 1 30 30 1
+zed_fast_skin1 idle_right 1 5 0
+0 65 1 30 30 1
+zed_fast_skin1 idle_left 1 5 0
+0 97 1 30 30 1
+zed_fast_skin1 run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+zed_fast_skin1 run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+zed_fast_skin1 run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+zed_fast_skin1 run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+zed_fast_skin1 attack_down 3 2 1
+0 1 1 30 30 1
+0 1 1 30 30 1
+1 1 33 30 30 1
+zed_fast_skin1 attack_up 3 2 1
+0 33 1 30 30 1
+0 33 1 30 30 1
+1 33 33 30 30 1
+zed_fast_skin1 attack_left 3 2 1
+0 97 1 30 30 1
+0 97 1 30 30 1
+1 65 33 30 30 1
+zed_fast_skin1 attack_right 3 2 1
+1 97 33 30 30 1
+1 97 33 30 30 1
+1 1 65 30 30 1
+zed_fast_skin1 walk_down 3 5 1
+1 33 65 30 30 1
+1 65 65 30 30 1
+1 97 65 30 30 1
+zed_fast_skin1 walk_up 3 5 1
+1 1 97 30 30 1
+1 33 97 30 30 1
+1 65 97 30 30 1
+zed_fast_skin1 walk_right 3 5 1
+1 97 97 30 30 1
+2 1 1 30 30 1
+2 33 1 30 30 1
+zed_fast_skin1 walk_left 3 5 1
+2 65 1 30 30 1
+2 97 1 30 30 1
+2 1 33 30 30 1
+wolf_skin idle_down 1 5 0
+0 1 1 30 30 1
+wolf_skin idle_up 1 5 0
+0 33 1 30 30 1
+wolf_skin idle_right 1 5 0
+0 65 1 30 30 1
+wolf_skin idle_left 1 5 0
+0 97 1 30 30 1
+wolf_skin run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+wolf_skin run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+wolf_skin run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+wolf_skin run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+wolf_skin attack_down 4 10 1
+1 1 33 30 30 5
+1 33 33 30 30 1
+1 65 33 30 30 1
+1 33 33 30 30 1
+wolf_skin attack_up 4 10 1
+0 33 1 30 30 5
+1 97 33 30 30 1
+1 1 65 30 30 1
+1 97 33 30 30 1
+wolf_skin attack_right 5 10 1
+1 33 65 30 30 5
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 1 97 30 30 1
+1 65 65 30 30 1
+wolf_skin attack_left 5 10 1
+1 33 97 30 30 5
+1 65 97 30 30 1
+1 97 97 30 30 1
+2 1 1 30 30 1
+1 65 97 30 30 1
+wolf_skin idle_hor1 2 1 1
+2 33 1 30 30 1
+2 65 1 30 30 1
+wolf_skin idle_hor2 3 5 1
+2 97 1 30 30 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+deer_skin idle_down 1 5 0
+0 1 1 38 38 1
+deer_skin idle_up 1 5 0
+0 41 1 38 38 1
+deer_skin idle_right 1 5 0
+0 81 1 38 38 1
+deer_skin idle_left 1 5 0
+0 1 41 38 38 1
+deer_skin run_down 3 8 1
+0 41 41 38 38 1
+0 81 41 38 38 1
+0 1 81 38 38 1
+deer_skin run_up 3 8 1
+0 41 81 38 38 1
+0 81 81 38 38 1
+1 1 1 38 38 1
+deer_skin run_right 4 8 1
+1 81 79 37 35 1
+1 81 41 36 36 1
+1 1 81 34 37 1
+1 37 81 36 32 1
+deer_skin run_left 4 8 1
+1 41 1 38 38 1
+1 81 1 38 38 1
+1 1 41 38 38 1
+1 41 41 38 38 1
+deer_skin idle_eat 1 5 0
+1 4 4 1 1 1
+rabbit_skin idle_down 1 5 0
+0 1 1 18 18 1
+rabbit_skin idle_up 1 5 0
+0 21 1 18 18 1
+rabbit_skin idle_right 1 5 0
+0 41 1 18 18 1
+rabbit_skin idle_left 1 5 0
+0 1 21 18 18 1
+rabbit_skin run_down 3 11 1
+0 21 21 18 18 1
+0 41 21 18 18 1
+0 1 41 18 18 1
+rabbit_skin run_up 3 11 1
+0 21 41 18 18 1
+0 41 41 18 18 1
+1 1 1 18 18 1
+rabbit_skin run_right 3 11 1
+1 21 1 18 18 1
+1 41 1 18 18 1
+1 1 21 18 18 1
+rabbit_skin run_left 3 11 1
+1 21 21 18 18 1
+1 41 21 18 18 1
+1 1 41 18 18 1
+zed_screamer_skin idle_down 1 5 0
+0 1 1 30 30 1
+zed_screamer_skin idle_up 1 5 0
+0 33 1 30 30 1
+zed_screamer_skin idle_right 1 5 0
+0 65 1 30 30 1
+zed_screamer_skin idle_left 1 5 0
+0 97 1 30 30 1
+zed_screamer_skin run_down 3 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+zed_screamer_skin run_up 3 8 1
+0 33 1 30 30 1
+0 97 33 30 30 1
+0 1 65 30 30 1
+zed_screamer_skin run_right 3 8 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+zed_screamer_skin run_left 3 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+zed_screamer_skin scream 7 3 0
+0 97 97 30 30 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+1 1 33 30 30 1
+1 33 33 30 30 1
+zed_buried_skin idle_down 1 5 0
+0 1 1 30 30 1
+zed_buried_skin idle_up 1 5 0
+0 33 1 30 30 1
+zed_buried_skin idle_right 1 5 0
+0 65 1 30 30 1
+zed_buried_skin idle_left 1 5 0
+0 97 1 30 30 1
+zed_buried_skin run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+zed_buried_skin run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+zed_buried_skin run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+zed_buried_skin run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+zed_buried_skin attack_down 4 8 1
+0 1 1 30 30 7
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+zed_buried_skin attack_left 4 8 1
+0 97 1 30 30 7
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+zed_buried_skin attack_up 4 8 1
+0 33 1 30 30 7
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 65 65 30 30 1
+zed_buried_skin attack_right 4 8 1
+0 65 1 30 30 7
+1 97 65 30 30 1
+1 1 97 30 30 1
+1 33 97 30 30 1
+zed_buried_skin walk_down 3 5 1
+1 65 97 30 30 1
+1 97 97 30 30 1
+2 1 1 30 30 1
+zed_buried_skin walk_up 3 5 1
+2 33 1 30 30 1
+2 65 1 30 30 1
+2 97 1 30 30 1
+zed_buried_skin walk_left 4 5 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 1 33 30 30 1
+2 65 33 30 30 1
+zed_buried_skin walk_right 4 5 1
+2 97 33 30 30 1
+2 1 65 30 30 1
+2 97 33 30 30 1
+2 33 65 30 30 1
+player_skin_redneck idle_down 1 5 0
+0 1 1 30 30 1
+player_skin_redneck idle_up 1 5 0
+0 33 1 30 30 1
+player_skin_redneck idle_right 1 5 0
+0 65 1 30 30 1
+player_skin_redneck idle_left 1 5 0
+0 97 1 30 30 1
+player_skin_redneck run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_skin_redneck run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_skin_redneck run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_skin_redneck run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_skin_redneck axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_skin_redneck axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_skin_redneck axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 1 65 30 30 1
+player_skin_redneck axe_right 3 10 0
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 65 65 30 30 1
+player_skin_redneck pistol_up 1 5 0
+1 1 97 30 30 1
+player_skin_redneck pistol_down 1 5 0
+1 33 97 30 30 1
+player_skin_redneck pistol_left 1 5 0
+1 65 97 30 30 1
+player_skin_redneck pistol_right 1 5 0
+1 97 97 30 30 1
+player_skin_redneck twohand_up 1 5 0
+2 1 1 30 30 1
+player_skin_redneck twohand_down 1 5 0
+2 33 1 30 30 1
+player_skin_redneck twohand_left 1 5 0
+2 65 1 30 30 1
+player_skin_redneck twohand_right 1 5 0
+2 97 1 30 30 1
+player_skin_redneck using_item 4 8 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 33 33 30 30 1
+player_skin_def_1 idle_down 1 5 0
+0 1 1 30 30 1
+player_skin_def_1 idle_up 1 5 0
+0 33 1 30 30 1
+player_skin_def_1 idle_right 1 5 0
+0 65 1 30 30 1
+player_skin_def_1 idle_left 1 5 0
+0 97 1 30 30 1
+player_skin_def_1 run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_skin_def_1 run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_skin_def_1 run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_skin_def_1 run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_skin_def_1 axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_skin_def_1 axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_skin_def_1 axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 1 65 30 30 1
+player_skin_def_1 axe_right 3 10 0
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 65 65 30 30 1
+player_skin_def_1 pistol_up 1 5 0
+1 1 97 30 30 1
+player_skin_def_1 pistol_down 1 5 0
+1 33 97 30 30 1
+player_skin_def_1 pistol_left 1 5 0
+1 65 97 30 30 1
+player_skin_def_1 pistol_right 1 5 0
+1 97 97 30 30 1
+player_skin_def_1 twohand_up 1 5 0
+2 1 1 30 30 1
+player_skin_def_1 twohand_down 1 5 0
+2 33 1 30 30 1
+player_skin_def_1 twohand_left 1 5 0
+2 65 1 30 30 1
+player_skin_def_1 twohand_right 1 5 0
+2 97 1 30 30 1
+player_skin_def_1 using_item 4 8 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 33 33 30 30 1
+player_skin_survivalist idle_down 1 5 0
+0 1 1 30 30 1
+player_skin_survivalist idle_up 1 5 0
+0 33 1 30 30 1
+player_skin_survivalist idle_right 1 5 0
+0 65 1 30 30 1
+player_skin_survivalist idle_left 1 5 0
+0 97 1 30 30 1
+player_skin_survivalist run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_skin_survivalist run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_skin_survivalist run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_skin_survivalist run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_skin_survivalist axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_skin_survivalist axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_skin_survivalist axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 1 65 30 30 1
+player_skin_survivalist axe_right 3 10 0
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 65 65 30 30 1
+player_skin_survivalist pistol_up 1 5 0
+1 1 97 30 30 1
+player_skin_survivalist pistol_down 1 5 0
+1 33 97 30 30 1
+player_skin_survivalist pistol_left 1 5 0
+1 65 97 30 30 1
+player_skin_survivalist pistol_right 1 5 0
+1 97 97 30 30 1
+player_skin_survivalist twohand_up 1 5 0
+2 1 1 30 30 1
+player_skin_survivalist twohand_down 1 5 0
+2 33 1 30 30 1
+player_skin_survivalist twohand_left 1 5 0
+2 65 1 30 30 1
+player_skin_survivalist twohand_right 1 5 0
+2 97 1 30 30 1
+player_skin_survivalist using_item 4 8 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 33 33 30 30 1
+player_skin_veteran idle_down 1 5 0
+0 1 1 30 30 1
+player_skin_veteran idle_up 1 5 0
+0 33 1 30 30 1
+player_skin_veteran idle_right 1 5 0
+0 65 1 30 30 1
+player_skin_veteran idle_left 1 5 0
+0 97 1 30 30 1
+player_skin_veteran run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_skin_veteran run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_skin_veteran run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_skin_veteran run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_skin_veteran axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_skin_veteran axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_skin_veteran axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 1 65 30 30 1
+player_skin_veteran axe_right 3 10 0
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 65 65 30 30 1
+player_skin_veteran pistol_up 1 5 0
+1 1 97 30 30 1
+player_skin_veteran pistol_down 1 5 0
+1 33 97 30 30 1
+player_skin_veteran pistol_left 1 5 0
+1 65 97 30 30 1
+player_skin_veteran pistol_right 1 5 0
+1 97 97 30 30 1
+player_skin_veteran twohand_up 1 5 0
+2 1 1 30 30 1
+player_skin_veteran twohand_down 1 5 0
+2 33 1 30 30 1
+player_skin_veteran twohand_left 1 5 0
+2 65 1 30 30 1
+player_skin_veteran twohand_right 1 5 0
+2 97 1 30 30 1
+player_skin_veteran using_item 4 8 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 33 33 30 30 1
+player_skin_maniac idle_down 1 5 0
+0 1 1 30 30 1
+player_skin_maniac idle_up 1 5 0
+0 33 1 30 30 1
+player_skin_maniac idle_right 1 5 0
+0 65 1 30 30 1
+player_skin_maniac idle_left 1 5 0
+0 97 1 30 30 1
+player_skin_maniac run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+player_skin_maniac run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+player_skin_maniac run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+player_skin_maniac run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+player_skin_maniac axe_up 3 10 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+1 1 33 30 30 1
+player_skin_maniac axe_down 3 10 0
+1 65 33 30 30 1
+1 97 33 30 30 1
+1 65 33 30 30 1
+player_skin_maniac axe_left 3 10 0
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 1 65 30 30 1
+player_skin_maniac axe_right 3 10 0
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 65 65 30 30 1
+player_skin_maniac pistol_up 1 5 0
+1 1 97 30 30 1
+player_skin_maniac pistol_down 1 5 0
+1 33 97 30 30 1
+player_skin_maniac pistol_left 1 5 0
+1 65 97 30 30 1
+player_skin_maniac pistol_right 1 5 0
+1 97 97 30 30 1
+player_skin_maniac twohand_up 1 5 0
+2 1 1 30 30 1
+player_skin_maniac twohand_down 1 5 0
+2 33 1 30 30 1
+player_skin_maniac twohand_left 1 5 0
+2 65 1 30 30 1
+player_skin_maniac twohand_right 1 5 0
+2 97 1 30 30 1
+player_skin_maniac using_item 4 8 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+2 65 33 30 30 1
+2 33 33 30 30 1
+bandit_skin idle_down 1 5 0
+0 1 1 30 30 1
+bandit_skin idle_up 1 5 0
+0 33 1 30 30 1
+bandit_skin idle_right 1 5 0
+0 65 1 30 30 1
+bandit_skin idle_left 1 5 0
+0 97 1 30 30 1
+bandit_skin run_down 4 10 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+bandit_skin run_up 4 10 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+bandit_skin run_right 4 10 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+bandit_skin run_left 4 10 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+bandit_skin pistol_up 1 5 0
+1 1 33 30 30 1
+bandit_skin pistol_down 1 5 0
+1 33 33 30 30 1
+bandit_skin pistol_left 1 5 0
+1 65 33 30 30 1
+bandit_skin pistol_right 1 5 0
+1 97 33 30 30 1
+bandit_skin using_item 3 8 1
+1 1 65 30 30 1
+1 33 65 30 30 1
+1 65 65 30 30 1
+zed_tank_skin idle_down 1 0 0
+0 1 1 40 40 1
+zed_tank_skin idle_up 1 0 0
+0 43 1 40 40 1
+zed_tank_skin idle_left 1 0 0
+0 85 1 40 40 1
+zed_tank_skin idle_right 1 0 0
+0 127 1 40 40 1
+zed_tank_skin run_down 4 8 1
+0 169 1 40 40 1
+0 211 1 40 40 1
+0 1 43 40 40 1
+0 211 1 40 40 1
+zed_tank_skin run_up 4 8 1
+0 43 43 40 40 1
+0 85 43 40 40 1
+0 127 43 40 40 1
+0 169 43 40 40 1
+zed_tank_skin run_right 4 8 1
+0 211 43 40 40 1
+0 1 85 40 40 1
+0 43 85 40 40 1
+0 85 85 40 40 1
+zed_tank_skin run_left 4 8 1
+0 127 85 40 40 1
+0 169 85 40 40 1
+0 211 85 40 40 1
+0 1 127 40 40 1
+zed_tank_skin attack_down 3 5 1
+0 43 127 40 40 1
+0 85 127 40 40 1
+0 127 127 40 40 1
+zed_tank_skin attack_right 3 5 1
+0 169 127 40 40 1
+0 211 127 40 40 1
+0 1 169 40 40 1
+zed_tank_skin attack_left 3 5 1
+0 43 169 40 40 1
+0 85 169 40 40 1
+0 127 169 40 40 1
+zed_tank_skin attack_up 3 5 1
+0 169 169 40 40 1
+0 211 169 40 40 1
+0 1 211 40 40 1
+zed_tank_skin stun 2 2 1
+0 43 211 40 40 1
+0 85 211 40 40 1
+zed_tank_skin scream 2 5 1
+0 127 211 40 40 1
+0 169 211 40 40 1
+dog_skin idle_down 1 5 0
+0 1 1 30 30 1
+dog_skin idle_up 1 5 0
+0 33 1 30 30 1
+dog_skin idle_right 1 5 0
+0 65 1 30 30 1
+dog_skin idle_left 1 5 0
+0 97 1 30 30 1
+dog_skin run_down 4 8 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+0 65 33 30 30 1
+0 97 33 30 30 1
+dog_skin run_up 4 8 1
+0 1 65 30 30 1
+0 33 65 30 30 1
+0 65 65 30 30 1
+0 97 65 30 30 1
+dog_skin run_right 4 8 1
+0 1 97 30 30 1
+0 33 97 30 30 1
+0 65 97 30 30 1
+0 97 97 30 30 1
+dog_skin run_left 4 8 1
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 65 1 30 30 1
+1 97 1 30 30 1
+dog_skin attack_down 3 10 1
+0 1 1 30 30 5
+1 1 33 30 30 1
+1 33 33 30 30 1
+dog_skin attack_up 3 10 1
+1 65 33 30 30 5
+1 97 33 30 30 1
+1 1 65 30 30 1
+dog_skin attack_right 5 10 1
+1 33 65 30 30 5
+1 65 65 30 30 1
+1 97 65 30 30 1
+1 1 97 30 30 1
+1 65 65 30 30 1
+dog_skin attack_left 5 10 1
+1 33 97 30 30 5
+1 65 97 30 30 1
+1 97 97 30 30 1
+2 1 1 30 30 1
+1 65 97 30 30 1
+dog_skin idle_hor1 2 1 1
+2 33 1 30 30 1
+2 65 1 30 30 1
+dog_skin idle_hor2 3 5 1
+2 97 1 30 30 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+dog_skin meeting 4 5 1
+2 65 33 30 30 1
+2 97 33 30 30 1
+2 1 65 30 30 1
+2 33 65 30 30 1
+zed_normal_skin1 die1 5 8 0
+1 1 1 30 30 1
+1 33 1 30 30 1
+1 1 33 30 30 1
+0 1 1 40 30 1
+0 1 33 40 30 1
+zed_normal_skin1 die2 5 8 0
+1 33 33 30 30 1
+2 1 1 30 30 1
+2 33 1 30 30 1
+2 1 33 30 30 1
+2 33 33 30 30 1
+zed_fast_skin1 die1 5 8 0
+0 85 43 30 30 1
+0 85 75 30 30 1
+0 1 85 30 30 1
+0 33 85 30 30 1
+1 0 0 30 30 1
+zed_fast_skin1 die2 5 8 0
+0 1 1 40 40 1
+0 43 1 40 40 1
+0 85 1 40 40 1
+0 1 43 40 40 1
+0 43 43 40 40 1
+zed_buried_skin die1 5 8 0
+1 1 33 30 30 1
+1 33 33 30 30 1
+0 1 1 40 30 1
+0 1 33 40 30 1
+1 1 1 40 30 1
+zed_screamer_skin die1 4 8 0
+0 1 1 30 30 1
+0 33 1 30 30 1
+0 1 33 30 30 1
+0 33 33 30 30 1
+wolf_skin die1 3 8 0
+0 0 0 30 30 1
+1 0 0 30 30 1
+2 0 0 30 30 1

@@ -18,17 +18,26 @@ int test_combat() {
     ++fail;
   } else std::printf("OK   normal zed dmg=9\n");
 
-  if (mdaz::wolf_melee_damage() != 10.f) {
-    std::printf("FAIL wolf dmg\n");
+  if (mdaz::wolf_melee_damage() != 9.f) {
+    std::printf("FAIL wolf player dmg want 9 (Zed_dmg) got %g\n", mdaz::wolf_melee_damage());
     ++fail;
-  } else std::printf("OK   wolf dmg=10\n");
+  } else std::printf("OK   wolf player dmg=9 (Zed_dmg)\n");
+
+  if (mdaz::wolf_attack_melee_range() != 50.f ||
+      mdaz::wolf_attack_cooldown_sec() != 3.f) {
+    std::printf("FAIL wolf attack range/cooldown\n");
+    ++fail;
+  } else {
+    std::printf("OK   wolf attack range 50 cooldown 3s\n");
+  }
 
   mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Novice);
   if (mdaz::zed_melee_damage(mdaz::Zed_Normal) != 6.f ||
+      mdaz::wolf_melee_damage() != 6.f ||
       mdaz::npc_wolf_damage() != 6.f) {
     std::printf("FAIL novice npc dmg table\n");
     ++fail;
-  } else std::printf("OK   novice npc dmg 6/6\n");
+  } else std::printf("OK   novice npc dmg 6/6/6\n");
   mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Veteran);
   if (mdaz::zed_melee_damage(mdaz::Zed_Normal) != 10.f ||
       mdaz::zed_melee_damage(mdaz::Zed_Army) != 15.f) {
@@ -36,6 +45,30 @@ int test_combat() {
     ++fail;
   } else std::printf("OK   veteran npc dmg 10/15\n");
   mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Regular);
+
+  {
+    float hp = 40.f;
+    const float applied = mdaz::npc_apply_damage(hp, mdaz::NpcDmg_Zed, 15.f);
+    if (applied != 15.f || hp != 25.f) {
+      std::printf("FAIL npc_apply_damage want 15/25 got %g/%g\n", applied, hp);
+      ++fail;
+    } else {
+      std::printf("OK   npc_apply_damage subtract IV\n");
+    }
+    if (mdaz::npc_damage_kind_for_zed(mdaz::Zed_Tank) != mdaz::NpcDmg_ZedTank ||
+        mdaz::npc_damage_kind_for_animal(mdaz::Animal_Wolf) != mdaz::NpcDmg_Wolf) {
+      std::printf("FAIL npc damage kind mapping\n");
+      ++fail;
+    } else {
+      std::printf("OK   npc_get_damage kind map\n");
+    }
+    if (mdaz::npc_health_bar_width(15.f, 30.f, mdaz::NpcDmg_Zed) != 15.f) {
+      std::printf("FAIL npc health bar width\n");
+      ++fail;
+    } else {
+      std::printf("OK   npc health bar min(30,hp)\n");
+    }
+  }
 
   mdaz::DispersionState disp;
   disp.reset_from_globals();
@@ -130,6 +163,44 @@ int test_combat() {
   }
 
   {
+    if (mdaz::player_damage_after_armor(40.f, mdaz::Inventory(), mdaz::PlayerDmg_Bullet) != 40.f) {
+      std::printf("FAIL bullet path should skip vest mul\n");
+      ++fail;
+    } else {
+      std::printf("OK   Player_get_hit bullet skips armor mul\n");
+    }
+    if (!mdaz::weapon_bullet_iv8_armor_pierce(156) ||
+        mdaz::weapon_bullet_iv8_armor_pierce(158)) {
+      std::printf("FAIL IV8 weapon map mosin/m4\n");
+      ++fail;
+    } else {
+      std::printf("OK   Bullets_dmg_deal IV8 weapon ids\n");
+    }
+    mdaz::Rng prng(99);
+    float zhp = 100.f;
+    const float once = mdaz::zed_apply_bullet_hit_damage(
+      zhp, mdaz::NpcDmg_Zed, 80.f, mdaz::Zed_Normal, true, prng);
+    if (once != 80.f || zhp != 20.f) {
+      std::printf("FAIL IV8 ignored on normal zed\n");
+      ++fail;
+    } else {
+      std::printf("OK   IV8 no double on normal zed\n");
+    }
+    int doubles = 0;
+    for (int t = 0; t < 300; ++t) {
+      zhp = 200.f;
+      mdaz::zed_apply_bullet_hit_damage(zhp, mdaz::NpcDmg_Zed, 80.f, mdaz::Zed_Army, true, prng);
+      if (zhp == 40.f) ++doubles; // 200-80-80 vs 200-80=120
+    }
+    if (doubles < 35 || doubles > 110) {
+      std::printf("FAIL IV8 army double rate %d/300 (want ~20%% for dmg 80)\n", doubles);
+      ++fail;
+    } else {
+      std::printf("OK   IV8 army double-hit proc ~%d/300\n", doubles);
+    }
+  }
+
+  {
     mdaz::ItemDatabase db;
     db.load_from_json_string(
       "{\"items\":[{\"id\":251,\"name\":\"Army helmet\"},{\"id\":400,\"name\":\"Bulletproof vest\"}]}");
@@ -146,6 +217,27 @@ int test_combat() {
       ++fail;
     } else {
       std::printf("OK   armor mul helmet+vest %.3f\n", mul);
+    }
+    mdaz::Rng wear_rng(99);
+    const float helm_before = inv.worn_iv6(0);
+    for (int w = 0; w < 40 && inv.worn_iv6(0) >= helm_before - 0.01f; ++w)
+      inv.apply_hit_armor_wear(wear_rng, true, false, false);
+    if (inv.worn_iv6(0) >= helm_before - 0.01f) {
+      std::printf("FAIL bullet IV6 wear on worn gear\n");
+      ++fail;
+    } else {
+      std::printf("OK   bullet IV6 wear (helmet slot)\n");
+    }
+    mdaz::Rng def_rng(42);
+    int blocks = 0;
+    for (int t = 0; t < 500; ++t) {
+      if (mdaz::roll_player_melee_def_block(def_rng, mdaz::MeleeDef_Heavy, 0.f)) ++blocks;
+    }
+    if (blocks < 80 || blocks > 220) {
+      std::printf("FAIL melee def_percent block rate %d/500\n", blocks);
+      ++fail;
+    } else {
+      std::printf("OK   melee def_percent blocks ~%d/500\n", blocks);
     }
   }
 

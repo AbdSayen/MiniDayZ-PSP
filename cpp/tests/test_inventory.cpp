@@ -161,6 +161,25 @@ int test_inventory() {
   }
 
   {
+    mdaz::ItemDatabase filldb;
+    filldb.load_from_json_string(
+      "{\"items\":[{\"id\":1,\"name\":\"Beans\",\"stack_max\":1}]}");
+    mdaz::Inventory finv;
+    for (int i = 0; i < finv.capacity(); ++i) {
+      if (!finv.add_item(1, 1, filldb)) break;
+    }
+    if (finv.can_add_item(1, 1, filldb)) {
+      std::printf("FAIL can_add when bag full\n");
+      ++fail;
+    } else if (finv.add_item(1, 1, filldb)) {
+      std::printf("FAIL add_item overflow when full\n");
+      ++fail;
+    } else {
+      std::printf("OK   Check_space_inventory full bag\n");
+    }
+  }
+
+  {
     mdaz::ItemDatabase adb;
     adb.load_from_json_string("{\"items\":[{\"id\":12,\"name\":\".45 ACP\"}]}");
     mdaz::Inventory ainv;

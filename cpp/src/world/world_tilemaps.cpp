@@ -147,68 +147,72 @@ bool WorldTilemaps::stamp_tile(const char* image, float world_x, float world_y, 
   return stamp_fill(image, world_x, world_y, 1, 1, tile_id, tile_w, tile_h, atlas_cols);
 }
 
+bool WorldTilemaps::ensure_ground_overlay() {
+  for (int i = static_count_; i < count_; ++i) {
+    Map& m = maps_[i];
+    if (std::strcmp(m.image, "ground_lvl1_tilemap") == 0 && m.cols >= 64 && m.rows >= 64)
+      return true;
+  }
+  return alloc_map("ground_lvl1_tilemap", 0.f, 0.f, kOverlayCols, kOverlayRows,
+                   kTile, kTile, 5, -1);
+}
+
+void WorldTilemaps::stamp_location_footprint(const MapLocation& L) {
+  if (!ensure_ground_overlay()) return;
+  auto fill_ground = [&](float wx, float wy, int cols, int rows, int tile) {
+    stamp_fill("ground_lvl1_tilemap", wx, wy, cols, rows, tile);
+  };
+  int pad = 7;
+  if (L.type == Loc_City || L.type == Loc_Military) pad = 15;
+  else if (L.type == Loc_Hospital || L.type == Loc_Firestation) pad = 13;
+  else if (L.type == Loc_Village || L.type == Loc_Police || L.type == Loc_Church) pad = 11;
+  else if (L.type == Loc_GasStation || L.type == Loc_Helicrash) pad = 9;
+  else if (L.type == Loc_BunkerEntrance || L.type == Loc_Secret) pad = 5;
+
+  if (tile_at("ground_lvl1_tilemap", L.pos.x, L.pos.y) == 15) return;
+
+  const float half = static_cast<float>(pad) * 0.5f * static_cast<float>(kTile);
+  fill_ground(L.pos.x - half, L.pos.y - half, pad, pad, 15);
+  fill_ground(L.pos.x - 8.5f * kTile, L.pos.y - kTile, 17, 2, 15);
+  fill_ground(L.pos.x - kTile, L.pos.y - 8.5f * kTile, 2, 17, 15);
+  fill_ground(L.pos.x - 4.5f * kTile, L.pos.y - kTile, 9, 2, 15);
+  fill_ground(L.pos.x - kTile, L.pos.y - 4.5f * kTile, 2, 9, 15);
+
+  if (L.type == Loc_Helicrash) {
+    stamp_fill("tilemap_water", L.pos.x + 120.f, L.pos.y - 60.f, 3, 3, 4, 60, 60, 3);
+  }
+}
+
 void WorldTilemaps::stamp_from_mapgen(const MapGenerator& gen) {
   clear_runtime();
-  // One full-map ground overlay (empty = -1) + one water overlay for puddles.
-  // Cell budget: 298*334*2 ≈ 199k — too big for kMaxTiles 120k.
-  // Use ground overlay only at full size; water as small local fills.
-  if (!alloc_map("ground_lvl1_tilemap", 0.f, 0.f, kOverlayCols, kOverlayRows,
-                 kTile, kTile, 5, -1)) {
-    return;
-  }
+  if (!ensure_ground_overlay()) return;
 
   auto set_ground = [&](float wx, float wy, int tile) {
     stamp_tile("ground_lvl1_tilemap", wx, wy, tile);
-  };
-  auto fill_ground = [&](float wx, float wy, int cols, int rows, int tile) {
-    stamp_fill("ground_lvl1_tilemap", wx, wy, cols, rows, tile);
   };
 
   // C2 create_map_location: ground SetTile → 15; water → 4.
   for (int i = 0; i < gen.location_count(); ++i) {
     const MapLocation& L = gen.location(i);
-    int pad = 7;
-    if (L.type == Loc_City || L.type == Loc_Military) pad = 15;
-    else if (L.type == Loc_Hospital || L.type == Loc_Firestation) pad = 13;
-    else if (L.type == Loc_Village || L.type == Loc_Police || L.type == Loc_Church) pad = 11;
-    else if (L.type == Loc_GasStation || L.type == Loc_Helicrash) pad = 9;
-    else if (L.type == Loc_BunkerEntrance || L.type == Loc_Secret) pad = 5;
-
-    const float half = static_cast<float>(pad) * 0.5f * static_cast<float>(kTile);
-    fill_ground(L.pos.x - half, L.pos.y - half, pad, pad, 15);
-
-    // Cross strips matching common SetTileRange sizes (17×2, 2×17, 9×2, 2×9).
-    fill_ground(L.pos.x - 8.5f * kTile, L.pos.y - kTile, 17, 2, 15);
-    fill_ground(L.pos.x - kTile, L.pos.y - 8.5f * kTile, 2, 17, 15);
-    fill_ground(L.pos.x - 4.5f * kTile, L.pos.y - kTile, 9, 2, 15);
-    fill_ground(L.pos.x - kTile, L.pos.y - 4.5f * kTile, 2, 9, 15);
-
-    if (L.type == Loc_Helicrash) {
-      stamp_fill("tilemap_water", L.pos.x + 120.f, L.pos.y - 60.f, 3, 3, 4, 60, 60, 3);
-    }
+    if (!L.active) continue;
+    stamp_location_footprint(L);
   }
 
-  // Dirt corridors ≈ generate_array_roads between nearby sector POIs.
-  for (int i = 0; i < gen.location_count(); ++i) {
-    const MapLocation& A = gen.location(i);
-    for (int j = i + 1; j < gen.location_count(); ++j) {
-      const MapLocation& B = gen.location(j);
-      const int manh = std::abs(A.sector_x - B.sector_x) + std::abs(A.sector_y - B.sector_y);
-      if (manh < 1 || manh > 3) continue;
-      const float dx = B.pos.x - A.pos.x;
-      const float dy = B.pos.y - A.pos.y;
-      const float len = std::sqrt(dx * dx + dy * dy);
-      if (len < 200.f) continue;
-      const int steps = static_cast<int>(len / static_cast<float>(kTile));
-      for (int s = 0; s <= steps; ++s) {
-        const float t = static_cast<float>(s) / static_cast<float>(steps > 0 ? steps : 1);
-        const float wx = A.pos.x + dx * t;
-        const float wy = A.pos.y + dy * t;
-        set_ground(wx - kTile, wy, 15);
-        set_ground(wx, wy, 15);
-        set_ground(wx + kTile, wy, 15);
-        set_ground(wx, wy - kTile, 15);
-        set_ground(wx, wy + kTile, 15);
+  // C2 generate_array_roads_1/_2 sector markers (12/13/14) → runtime dirt tile 15.
+  {
+    const float sw = kMapLayoutW / static_cast<float>(kMapSectorsX);
+    const float sh = kMapLayoutH / static_cast<float>(kMapSectorsY);
+    for (int sy = 0; sy < kMapSectorsY; ++sy) {
+      for (int sx = 0; sx < kMapSectorsX; ++sx) {
+        if (!gen.is_road_sector(sx, sy)) continue;
+        const float cx = (static_cast<float>(sx) + 0.5f) * sw;
+        const float cy = (static_cast<float>(sy) + 0.5f) * sh;
+        for (int dy = -1; dy <= 1; ++dy) {
+          for (int dx = -1; dx <= 1; ++dx) {
+            set_ground(cx + static_cast<float>(dx) * kTile,
+                       cy + static_cast<float>(dy) * kTile, 15);
+          }
+        }
       }
     }
   }

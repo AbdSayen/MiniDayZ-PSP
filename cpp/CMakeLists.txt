@@ -24,8 +24,10 @@ set(MDAZ_CORE_SOURCES
   src/world/campfire.cpp
   src/world/world_tilemaps.cpp
   src/world/layout_sprites.cpp
+  src/world/char_anims.cpp
   src/inventory/item_db.cpp
   src/inventory/inventory.cpp
+  src/inventory/inventory_armor.cpp
   src/inventory/ammo.cpp
   src/inventory/craft.cpp
   src/combat/combat.cpp

@@ -5,12 +5,15 @@
 #include "mdaz/inventory.hpp"
 #include "mdaz/item_db.hpp"
 #include "mdaz/loot.hpp"
+#include "mdaz/mapgen.hpp"
 #include "mdaz/quest.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/balance_globals.hpp"
 #include "mdaz/types.hpp"
 #include "mdaz/vehicle.hpp"
 #include "mdaz/weapons.hpp"
 
+#include <cmath>
 #include <cstdio>
 
 int test_systems() {
@@ -31,11 +34,19 @@ int test_systems() {
   mdaz::Vehicle* v = vs.spawn(mdaz::Vehicle_Car, mdaz::Vec2(0, 0));
   mdaz::Vec2 pos(5, 0);
   if (!v) { std::printf("FAIL vehicle spawn\n"); ++fail; }
-  else {
-    bool drove = vs.update(0.1f, pos, 1.f, 0.f, true); // mount
-    drove = vs.update(0.1f, pos, 1.f, 0.f, false);
-    if (!drove || !vs.player_driving()) { std::printf("FAIL drive\n"); ++fail; }
-    else std::printf("OK   vehicle mount/drive\n");
+  else if (v->fuel != mdaz::vehicle_balance::kFuelMax ||
+           v->hp != mdaz::vehicle_balance::kHpMax) {
+    std::printf("FAIL vehicle spawn fuel/hp %.0f/%.0f\n", v->fuel, v->hp);
+    ++fail;
+  } else {
+    const float fuel0 = v->fuel;
+    vs.update(0.1f, pos, 1.f, 0.f, true); // mount
+    vs.update(0.1f, pos, 1.f, 0.f, false);
+    if (!vs.player_driving()) { std::printf("FAIL drive\n"); ++fail; }
+    else if (v->fuel >= fuel0) {
+      std::printf("FAIL vehicle fuel drain (C2 -8/0.1s)\n");
+      ++fail;
+    } else std::printf("OK   vehicle mount/drive/fuel tick\n");
     if (!v->stash_add(18, 2) || v->stash_used() != 1) {
       std::printf("FAIL vehicle stash add\n");
       ++fail;
@@ -47,16 +58,50 @@ int test_systems() {
         ++fail;
       } else std::printf("OK   vehicle stash\n");
     }
+    vs.on_destroyed(*v);
+    if (v->active || v->respawn_t <= 0.f) {
+      std::printf("FAIL Uaz_respawn timer\n");
+      ++fail;
+    } else std::printf("OK   Uaz_respawn delay %.0fs\n", v->respawn_t);
   }
 
   mdaz::ItemDatabase db;
   db.load_from_json_file("data/items.json");
   mdaz::Inventory inv;
   mdaz::Rng qr(99);
+  mdaz::MapGenerator mg;
+  mg.generate_new_game(42);
+  mg.reload_locations(mdaz::Vec2(5000.f, 5000.f), mdaz::LocationReload_Start);
+  int active = 0;
+  for (int i = 0; i < mg.location_count(); ++i)
+    if (mg.location(i).active) ++active;
+  if (active < 1) {
+    std::printf("FAIL Reload_locations_start activated none\n");
+    ++fail;
+  } else {
+    std::printf("OK   Reload_locations_start %d POIs active\n", active);
+  }
+  const mdaz::Vec2 map_mid(8925.f, 10000.f);
+  mg.reload_locations(map_mid, mdaz::LocationReload_Runtime);
+  int near = 0, far_inactive = 0;
+  for (int i = 0; i < mg.location_count(); ++i) {
+    const mdaz::MapLocation& L = mg.location(i);
+    const float dx = L.pos.x - map_mid.x;
+    const float dy = L.pos.y - map_mid.y;
+    const float d = std::sqrt(dx * dx + dy * dy);
+    if (d <= static_cast<float>(mdaz::balance::respawn_radius2) && L.active) ++near;
+    if (d > static_cast<float>(mdaz::balance::respawn_radius2) && !L.active) ++far_inactive;
+  }
+  if (near < 1) {
+    std::printf("FAIL Reload_locations near load\n");
+    ++fail;
+  } else
+    std::printf("OK   Reload_locations runtime near=%d far_off=%d\n", near, far_inactive);
+
   mdaz::QuestState q;
-  q.generate_quest(qr);
+  q.generate_quest_item(qr);
   if (q.q_task_id != 1 || q.q_target_sid <= 0) {
-    std::printf("FAIL Generate_quest task/target\n");
+    std::printf("FAIL Generate_quest_item task/target\n");
     ++fail;
   } else if (q.tick(inv, db)) {
     std::printf("FAIL quest completed without item\n");
@@ -69,6 +114,29 @@ int test_systems() {
     } else
       std::printf("OK   C2 quest task1 fetch sid %d\n", q.q_target_sid);
   }
+  q.generate_quest_case();
+  if (q.q_task_id != 3 || q.q_target_sid != 88) {
+    std::printf("FAIL Generate_quest_case\n");
+    ++fail;
+  } else {
+    inv.add_item(88, 1, db);
+    if (!q.tick(inv, db, 0))
+      std::printf("FAIL quest case item 88\n");
+    else
+      std::printf("OK   quest task3 case sid 88\n");
+  }
+  q.reset();
+  q.generate_quest_bandits(qr, mg);
+  if (q.q_task_id != 2) {
+    std::printf("FAIL Generate_quest_bandits\n");
+    ++fail;
+  } else if (!q.tick(inv, db, 1)) {
+    if (!q.tick(inv, db, 0))
+      std::printf("FAIL quest bandits clear\n");
+    else
+      std::printf("OK   quest task2 bandits cleared\n");
+  } else
+    std::printf("FAIL quest bandits tick with hostiles\n");
 
   const mdaz::WeaponDef* fnx = mdaz::find_weapon(151);
   if (!fnx || fnx->stats.damage != 23.f) {
@@ -169,6 +237,19 @@ int test_systems() {
       ++fail;
     } else {
       std::printf("OK   bunker loot (%d items)\n", bun->item_count);
+    }
+  }
+
+  // generate_array_roads_1/_2: paired POI sectors on a row produce road markers.
+  {
+    mdaz::MapGenerator roads;
+    roads.clear();
+    roads.generate_new_game(777);
+    if (roads.road_sector_count() < 1) {
+      std::printf("FAIL generate_array_roads (no road sectors seed 777)\n");
+      ++fail;
+    } else {
+      std::printf("OK   generate_array_roads sectors=%d\n", roads.road_sector_count());
     }
   }
 

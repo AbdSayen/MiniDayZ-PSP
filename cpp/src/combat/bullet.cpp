@@ -22,6 +22,7 @@ Bullet* BulletSystem::spawn(Vec2 pos, float angle_deg, float speed, float damage
   b.explosive = explosive;
   b.leaves_fire = leaves_fire;
   b.is_arrow = false;
+  b.armor_pierce_iv8 = false;
   return &b;
 }
 

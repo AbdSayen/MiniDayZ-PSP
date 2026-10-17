@@ -41,6 +41,8 @@ public:
   int count() const { return count_; }
   LootPile* at(int i) { return &piles_[i]; }
   const LootPile* at(int i) const { return &piles_[i]; }
+  // Restore piles from save (Load_loot subset); clears existing piles first.
+  void load_from_save(const struct SavedLootPile* piles, int n);
 
 private:
   LootPile piles_[kMaxLootPiles];

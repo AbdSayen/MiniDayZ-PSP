@@ -1,5 +1,9 @@
 #include "mdaz/combat.hpp"
+#include "mdaz/animal.hpp"
+#include "mdaz/balance_globals.hpp"
+#include "mdaz/inventory.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/zombie.hpp"
 
 // Fist melee pick distance observed as 45 in event data near "Fist".
 
@@ -25,6 +29,57 @@ WeaponStats default_pistol_stats() {
   w.dispersion_deg = 2.f;
   w.is_melee = false;
   return w;
+}
+
+NpcGetDamageKind npc_damage_kind_for_zed(ZedType t) {
+  switch (t) {
+  case Zed_Screamer:
+    return NpcDmg_ZedScreamer;
+  case Zed_Tank:
+    return NpcDmg_ZedTank;
+  case Zed_Normal:
+  case Zed_Buried:
+  case Zed_Army:
+  case Zed_Fast:
+  case Zed_ArmyShooter:
+  default:
+    return NpcDmg_Zed;
+  }
+}
+
+NpcGetDamageKind npc_damage_kind_for_animal(AnimalType t) {
+  switch (t) {
+  case Animal_Deer:
+    return NpcDmg_Deer;
+  case Animal_Rabbit:
+    return NpcDmg_Rabbit;
+  case Animal_Dog:
+    return NpcDmg_Dog;
+  case Animal_Wolf:
+  default:
+    return NpcDmg_Wolf;
+  }
+}
+
+NpcGetDamageKind npc_damage_kind_for_bandit(bool /*has_gun*/) {
+  // Hostile bots in 1.4.1 export use bandit827 IV3 path (Bullets_dmg_deal type 9).
+  return NpcDmg_BotBandit;
+}
+
+// C2 function NPC_get_damage — subtract rolled dmg from the IV mapped by kind (see combat.hpp).
+float npc_apply_damage(float& hp, NpcGetDamageKind /*kind*/, float amount) {
+  if (amount <= 0.f || hp <= 0.f) return 0.f;
+  const float applied = amount > hp ? hp : amount;
+  hp -= applied;
+  if (hp < 0.f) hp = 0.f;
+  return applied;
+}
+
+float npc_health_bar_width(float hp, float max_hp, NpcGetDamageKind /*kind*/) {
+  if (max_hp <= 0.f) return 0.f;
+  const float ratio = hp / max_hp;
+  const float scaled = ratio * 30.f;
+  return scaled > 30.f ? 30.f : (scaled < 0.f ? 0.f : scaled);
 }
 
 float apply_difficulty_damage_reducer(float damage, float reducer) {
@@ -73,6 +128,17 @@ void set_npc_damage_for_difficulty(Difficulty d) {
 }
 
 float npc_wolf_damage() { return g_wolf_dmg; }
+float npc_zed_fast_damage() { return g_zed_fast_dmg; }
+float npc_zed_army_damage() { return g_zed_army_dmg; }
+
+float wolf_player_melee_damage() {
+  // Wolf_dmg_deal passes global Zed_dmg into Player_get_hit (not Wolf_dmg).
+  return g_zed_dmg;
+}
+
+float wolf_attack_melee_range() { return 50.f; }
+
+float wolf_attack_cooldown_sec() { return 3.f; }
 
 float npc_bandit_melee_damage(bool has_gun) {
   return has_gun ? g_bandit_gun_melee : g_bandit_melee;
@@ -104,6 +170,72 @@ float roll_bullet_damage(float base_damage, Rng& rng) {
   const float v = rng.range(lo, hi);
   // round() as in original
   return static_cast<float>(static_cast<int>(v + (v >= 0.f ? 0.5f : -0.5f)));
+}
+
+float clothing_iv6_max(ItemId id) {
+  if (id >= 400 && id <= 405) return 100.f;
+  if (id == 251 || id == 263 || id == 400 || id == 404) return 100.f;
+  if (id == 252 || id == 253 || id == 259 || id == 262 || id == 265 || id == 267) return 80.f;
+  if ((id >= 350 && id <= 365) || id == 353) return 80.f;
+  if (id >= 300 && id <= 306) return 70.f;
+  if (id == 454 || id == 455 || (id >= 450 && id <= 457)) return 60.f;
+  if (id == 250 || id == 83 || id == 260) return 40.f;
+  return 50.f;
+}
+
+bool roll_player_melee_def_block(Rng& rng, MeleeDefPercentTier tier, float perk_meleedef) {
+  float lo = 5.f;
+  switch (tier) {
+  case MeleeDef_Medium:
+    lo = 15.f;
+    break;
+  case MeleeDef_Heavy:
+    lo = 25.f;
+    break;
+  case MeleeDef_Blunt:
+    lo = 35.f;
+    break;
+  case MeleeDef_KnifeClass:
+  default:
+    lo = 5.f;
+    break;
+  }
+  const float def = rng.range(lo, lo + 5.f + perk_meleedef);
+  const float roll = rng.next_float() * 100.f;
+  return roll <= def;
+}
+
+MeleeDefPercentTier melee_def_tier_for_npc_damage(float damage, float zed_fast_dmg,
+                                                    float zed_army_dmg) {
+  if (damage >= zed_army_dmg - 0.5f) return MeleeDef_Blunt;
+  if (damage <= zed_fast_dmg + 0.5f) return MeleeDef_Medium;
+  return MeleeDef_Heavy;
+}
+
+float player_damage_after_armor(float amount, const Inventory& inv, PlayerDamageKind kind) {
+  if (amount <= 0.f) return 0.f;
+  if (kind == PlayerDmg_Bullet) return amount;
+  float out = amount * inv.armor_damage_mul();
+  if (out < 0.5f) out = 0.5f;
+  return out;
+}
+
+bool weapon_bullet_iv8_armor_pierce(ItemId weapon_id) {
+  // Bullets_dmg_deal: IV8 proc blocks list mosin/sks/svd/repeater (sv98 unlock same cluster).
+  return weapon_id == 156 || weapon_id == 157 || weapon_id == 167 || weapon_id == 168 ||
+         weapon_id == 172 || weapon_id == 186;
+}
+
+float zed_apply_bullet_hit_damage(float& hp, NpcGetDamageKind kind, float rolled_dmg, ZedType ztype,
+                                  bool bullet_iv8, Rng& rng) {
+  float applied = npc_apply_damage(hp, kind, rolled_dmg);
+  if (!bullet_iv8 || rolled_dmg <= 0.f) return applied;
+  if (ztype != Zed_Army && ztype != Zed_ArmyShooter && ztype != Zed_Tank) return applied;
+  // Bullets_dmg_deal: Compare [8,2] rolled dmg vs random(0,100) — proc when dmg < rand (~20% at dmg=80).
+  const float roll = rng.next_float() * 100.f;
+  if (rolled_dmg >= roll) return applied;
+  applied += npc_apply_damage(hp, kind, rolled_dmg);
+  return applied;
 }
 
 DispersionState::DispersionState() { reset_from_globals(); }

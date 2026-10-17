@@ -27,7 +27,7 @@ struct InputState {
   bool torch_pressed;
   bool drop_pressed;       // G — drop one from equipped slot
   bool mag_reload_pressed; // V — mag/chamber reload (same as Tap_reload / R)
-  bool craft_pressed;      // B — craft when recipe available
+  bool craft_pressed;      // B — toggle craft recipe list (Call_sub_menu_craft)
   bool throw_pressed;      // F — throw stick / improvised projectile
   bool bag; // hold Tab to show inventory list
   int slot_digit; // 1..9 pressed this frame, else 0

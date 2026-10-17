@@ -1,5 +1,7 @@
 #include "mdaz/inventory.hpp"
 
+#include "mdaz/combat.hpp"
+
 #include <string>
 
 namespace mdaz {
@@ -12,7 +14,7 @@ void Inventory::clear() {
     slots_[i].count = 0;
   }
   worn_count_ = 0;
-  for (int i = 0; i < kMaxWorn; ++i) worn_[i] = 0;
+  for (int i = 0; i < kMaxWorn; ++i) worn_[i] = WornSlot();
 }
 
 InvSlot& Inventory::slot(int i) { return slots_[i]; }
@@ -30,9 +32,9 @@ int Inventory::capacity() const {
   bool has_bandolier = false;
   bool has_case = false;
   for (int i = 0; i < worn_count_; ++i) {
-    apply_bag(worn_[i]);
-    if (worn_[i] == 83) has_bandolier = true;
-    if (worn_[i] == 88) has_case = true; // Protector Case
+    apply_bag(worn_[i].id);
+    if (worn_[i].id == 83) has_bandolier = true;
+    if (worn_[i].id == 88) has_case = true; // Protector Case
   }
   // Bags in inventory also expand carry (wear optional stub)
   for (int i = 0; i < kInventorySlots; ++i) {
@@ -48,8 +50,52 @@ int Inventory::capacity() const {
   return cap;
 }
 
+namespace {
+
+int stack_max_for(const Inventory& inv, ItemId id, int count, const ItemDatabase& db) {
+  if (id <= 0 || count <= 0) return 0;
+  const ItemDef* def = db.find(id);
+  int stack_max = def ? def->stack_max : 1;
+  if (def && def->category == ItemCat_Ammo) {
+    bool has_band = false;
+    for (int i = 0; i < kInventorySlots; ++i) {
+      if (inv.slot(i).id == 83 && inv.slot(i).count > 0) { has_band = true; break; }
+    }
+    for (int i = 0; i < inv.worn_count() && !has_band; ++i) {
+      if (inv.worn_at(i) == 83) has_band = true;
+    }
+    if (has_band) stack_max *= 2;
+  }
+  return stack_max;
+}
+
+} // namespace
+
+bool Inventory::can_add_item(ItemId id, int count, const ItemDatabase& db) const {
+  if (id <= 0 || count <= 0) return false;
+  const int stack_max = stack_max_for(*this, id, count, db);
+  if (stack_max <= 0) return false;
+  int remaining = count;
+  const int cap = capacity();
+  for (int i = 0; i < cap && remaining > 0; ++i) {
+    const InvSlot& s = slots_[i];
+    if (s.id == id && s.count < stack_max) {
+      const int space = stack_max - s.count;
+      remaining -= (remaining < space ? remaining : space);
+    }
+  }
+  for (int i = 0; i < cap && remaining > 0; ++i) {
+    if (slots_[i].empty()) {
+      const int take = remaining < stack_max ? remaining : stack_max;
+      remaining -= take;
+    }
+  }
+  return remaining == 0;
+}
+
 bool Inventory::add_item(ItemId id, int count, const ItemDatabase& db) {
   if (id <= 0 || count <= 0) return false;
+  if (!can_add_item(id, count, db)) return false;
   const ItemDef* def = db.find(id);
   int stack_max = def ? def->stack_max : 1;
   // Bandolier (83) doubles ammo stack size
@@ -59,7 +105,7 @@ bool Inventory::add_item(ItemId id, int count, const ItemDatabase& db) {
       if (slots_[i].id == 83 && slots_[i].count > 0) { has_band = true; break; }
     }
     for (int i = 0; i < worn_count_ && !has_band; ++i) {
-      if (worn_[i] == 83) has_band = true;
+      if (worn_[i].id == 83) has_band = true;
     }
     if (has_band) stack_max *= 2;
   }
@@ -182,7 +228,11 @@ void Inventory::restore_worn(const ItemId* ids, int count) {
   if (!ids || count <= 0) return;
   if (count > kMaxWorn) count = kMaxWorn;
   for (int i = 0; i < count; ++i) {
-    if (ids[i] > 0) worn_[worn_count_++] = ids[i];
+    if (ids[i] > 0) {
+      worn_[worn_count_].id = ids[i];
+      worn_[worn_count_].iv6 = clothing_iv6_max(ids[i]);
+      ++worn_count_;
+    }
   }
 }
 
@@ -204,9 +254,11 @@ bool Inventory::wear_clothing(int slot_i, const ItemDatabase& db) {
   if (worn_count_ >= kMaxWorn) return false;
   // Avoid duplicates
   for (int i = 0; i < worn_count_; ++i) {
-    if (worn_[i] == slots_[slot_i].id) return true;
+    if (worn_[i].id == slots_[slot_i].id) return true;
   }
-  worn_[worn_count_++] = slots_[slot_i].id;
+  worn_[worn_count_].id = slots_[slot_i].id;
+  worn_[worn_count_].iv6 = clothing_iv6_max(slots_[slot_i].id);
+  ++worn_count_;
   return true;
 }
 
@@ -214,7 +266,7 @@ float Inventory::clothing_insulation() const {
   // Per-piece warmth toward Day_cold reduction (ushanka/down/gorka warmer)
   float v = 0.f;
   for (int i = 0; i < worn_count_; ++i) {
-    const ItemId id = worn_[i];
+    const ItemId id = worn_[i].id;
     float piece = 1.2f;
     if (id == 254 || id == 258) piece = 2.2f;      // Warm hat / Ushanka
     else if (id == 264) piece = 1.4f;                   // Police hat
@@ -240,7 +292,8 @@ float Inventory::clothing_insulation() const {
 float Inventory::armor_damage_mul() const {
   float mul = 1.f;
   for (int i = 0; i < worn_count_; ++i) {
-    const ItemId id = worn_[i];
+    const ItemId id = worn_[i].id;
+    if (id <= 0 || worn_[i].iv6 <= 0.f) continue;
     // Helmets
     if (id == 251 || id == 263) mul *= 0.85f;      // Army / Gorka
     else if (id == 252 || id == 253) mul *= 0.9f;  // Moto

@@ -74,7 +74,7 @@ void unpack_vehicles(const SaveBlob& in, VehicleSystem* vs) {
   const int n = in.vehicle_count < 4 ? in.vehicle_count : 4;
   for (int i = 0; i < n; ++i) {
     const SavedVehicle& s = in.vehicles[i];
-    if (s.type <= Vehicle_None || s.type > Vehicle_Bike) continue;
+    if (s.type <= Vehicle_None || s.type > Vehicle_Truck) continue;
     Vehicle* v = vs->spawn(static_cast<VehicleType>(s.type), Vec2(s.x, s.y));
     if (!v) continue;
     v->facing_deg = s.facing;
@@ -148,6 +148,28 @@ void unpack_fires(const SaveBlob& in, FireSaveView* fires) {
   }
 }
 
+void pack_loot(const LootSaveView* loot, SaveBlob& out) {
+  out.loot_count = 0;
+  out.loot_respawn_t = 0.f;
+  if (!loot) return;
+  const int n = loot->count < LootSaveView::kMax ? loot->count : LootSaveView::kMax;
+  for (int i = 0; i < n; ++i) {
+    if (loot->piles[i].item_count <= 0) continue;
+    out.loot_piles[out.loot_count++] = loot->piles[i];
+  }
+}
+
+void unpack_loot(const SaveBlob& in, LootSaveView* loot) {
+  if (!loot) return;
+  loot->count = 0;
+  if (in.version < 14) return;
+  const int n = in.loot_count < LootSaveView::kMax ? in.loot_count : LootSaveView::kMax;
+  for (int i = 0; i < n; ++i) {
+    if (in.loot_piles[i].item_count <= 0) continue;
+    loot->piles[loot->count++] = in.loot_piles[i];
+  }
+}
+
 } // namespace
 
 bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
@@ -162,7 +184,8 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
                                  const CropSaveView* crops,
                                  const TrapSaveView* traps,
                                  const WorldExtras* extras,
-                                 const FireSaveView* fires) {
+                                 const FireSaveView* fires,
+                                 const LootSaveView* loot) {
   std::memset(&out, 0, sizeof(out));
   out.magic = kMagic;
   out.version = kVersion;
@@ -183,7 +206,10 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   }
   out.worn_count = inv.worn_count();
   if (out.worn_count > 6) out.worn_count = 6;
-  for (int i = 0; i < out.worn_count; ++i) out.worn_ids[i] = inv.worn_at(i);
+  for (int i = 0; i < out.worn_count; ++i) {
+    out.worn_ids[i] = inv.worn_at(i);
+    out.worn_iv6[i] = inv.worn_iv6(i);
+  }
   out.day_phase = weather.day_phase;
   out.rain = weather.rain;
   out.infected = player.survival.infected ? 1 : 0;
@@ -203,6 +229,7 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   pack_crops(crops, out);
   pack_traps(traps, out);
   pack_fires(fires, out);
+  pack_loot(loot, out);
   out.reserved_v10 = 0.f;
   if (extras) {
     out.airdrop_t = extras->airdrop_t;
@@ -212,6 +239,7 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.adrenaline_t = extras->adrenaline_t;
     out.bunker_looted = extras->bunker_looted;
     out.melee_break_mul = extras->melee_break_mul > 0.f ? extras->melee_break_mul : 1.f;
+    out.loot_respawn_t = extras->loot_respawn_t;
   } else {
     out.airdrop_t = 360.f;
     out.airdrop_x = out.airdrop_y = 0.f;
@@ -219,6 +247,7 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.adrenaline_t = 0.f;
     out.bunker_looted = 0;
     out.melee_break_mul = 1.f;
+    out.loot_respawn_t = 0.f;
   }
   return true;
 }
@@ -234,7 +263,8 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
                                   CropSaveView* crops,
                                   TrapSaveView* traps,
                                   WorldExtras* extras,
-                                  FireSaveView* fires) {
+                                  FireSaveView* fires,
+                                  LootSaveView* loot) {
   if (in.magic != kMagic) return false;
   if (in.version < 2 || in.version > kVersion) return false;
   player.reset_new_game(in.difficulty);
@@ -256,7 +286,10 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
     inv.slot(i).id = in.inv_ids[i];
     inv.slot(i).count = in.inv_counts[i];
   }
-  inv.restore_worn(in.worn_ids, in.worn_count);
+  if (in.version >= 15)
+    inv.restore_worn_iv6(in.worn_ids, in.worn_iv6, in.worn_count);
+  else
+    inv.restore_worn(in.worn_ids, in.worn_count);
   weather.day_phase = in.day_phase;
   weather.rain = in.rain;
   weather.sync_from_day_phase();
@@ -296,6 +329,7 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   unpack_crops(in, crops);
   unpack_traps(in, traps);
   unpack_fires(in, fires);
+  unpack_loot(in, loot);
   if (extras) {
     if (in.version >= 10) {
       extras->airdrop_t = in.airdrop_t;
@@ -314,6 +348,11 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
       extras->bunker_looted = 0;
       extras->melee_break_mul = 1.f;
     }
+    if (in.version >= 14) {
+      extras->loot_respawn_t = in.loot_respawn_t;
+    } else {
+      extras->loot_respawn_t = 0.f;
+    }
   }
   return true;
 }
@@ -330,11 +369,13 @@ bool SaveSystem::save_file(IPlatform& io, const char* path, const Player& player
                            const CropSaveView* crops,
                            const TrapSaveView* traps,
                            const WorldExtras* extras,
-                           const FireSaveView* fires) {
+                           const FireSaveView* fires,
+                           const LootSaveView* loot) {
   SaveBlob blob;
   if (!write_to_buffer(player, inv, weather, equipped_slot, blob, visited, visited_len,
                        torch_battery, quest_active, quest_progress, mag_rounds, wetness,
-                       gasmask_filter, fish_caught, vehicles, crops, traps, extras, fires))
+                       gasmask_filter, fish_caught, vehicles, crops, traps, extras, fires,
+                       loot))
     return false;
   return io.write_file(path, &blob, sizeof(blob));
 }
@@ -351,19 +392,21 @@ bool SaveSystem::load_file(IPlatform& io, const char* path, Player& player,
                            CropSaveView* crops,
                            TrapSaveView* traps,
                            WorldExtras* extras,
-                           FireSaveView* fires) {
+                           FireSaveView* fires,
+                           LootSaveView* loot) {
   char* data = 0;
   std::size_t size = 0;
   if (!io.read_file(path, &data, &size)) return false;
   bool ok = false;
-  // Accept current and older truncated blobs (v2..v13)
+  // Accept current and older truncated blobs (v2..v14)
   if (size >= 64 && size <= sizeof(SaveBlob)) {
     SaveBlob blob;
     std::memset(&blob, 0, sizeof(blob));
     std::memcpy(&blob, data, size);
     ok = read_from_buffer(blob, player, inv, weather, equipped_slot, visited, visited_len,
                           torch_battery, quest_active, quest_progress, mag_rounds, wetness,
-                          gasmask_filter, fish_caught, vehicles, crops, traps, extras, fires);
+                          gasmask_filter, fish_caught, vehicles, crops, traps, extras, fires,
+                          loot);
   }
   delete[] data;
   return ok;

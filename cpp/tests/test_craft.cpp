@@ -7,6 +7,10 @@
 
 int test_craft() {
   std::printf("--- test_craft / timers ---\n");
+  if (mdaz::craft_recipe_count() < 1) {
+    std::printf("FAIL craft_recipe_count\n");
+    return 1;
+  }
   int fail = 0;
 
   mdaz::WorldTimers t;

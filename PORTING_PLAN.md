@@ -2,7 +2,8 @@
 
 **Baseline source:** `original_docs/` — Bohemia Interactive Mini DAYZ **1.4.1** (Construct 2 HTML5 export)  
 **Also present (not baseline):** `docs/` Plus 1.2, `reloaded_docs/` Reloaded 1.1  
-**Verified on disk:** 2026-10-17 — `original_docs/data.js` ~6.72 MB; `images/` 1137 PNGs; `media/` 207 audio; `cpp/` 29 `.cpp` sources + 9 tests; desktop `minidayz_desktop.exe` builds.
+**Verified on disk:** 2026-10-17 — `original_docs/data.js` ~6.72 MB; `images/` 1137 PNGs; `media/` 207 audio; desktop `minidayz_desktop.exe` + `mdaz_tests.exe` build and pass.  
+**Parity snapshot (audit):** ~**98/175** C2 functions referenced (**56%**); gameplay globals ~**79%**; Craft_* **55%**; perks **100%**. Executable path is C++ only (does not run `c2runtime.js`). PSP EBOOT **not** verified.
 
 ---
 

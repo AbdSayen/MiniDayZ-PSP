@@ -1,0 +1,16 @@
+# Wolf_dmg_deal / wolf_attack SFX (from original_docs/data.js event uid 969224502359120)
+# Extract: tools/extract_event_block.js 969224502359120 + manual decode
+
+Trigger: wolf (obj469) animation frame "attack" playing, anim name "punch".
+
+On overlap with player interactor (obj172) pinned to wolf:
+  ScrollTo anim: duration 3s, rate 0.4  → attack cycle ~3s between hits
+  CallFunction Player_get_hit params: attacker "wolf", damage global Zed_dmg (NOT Wolf_dmg)
+  CallFunction Update_Stats
+  PlayAtObjectByName: random wolf_attack | wolf_attack_2 | wolf_attack_3 (tag zmb, vol 5)
+
+Secondary (Player_Hear_radius): same SFX when wolf in hearing range of player.
+
+Wolf AI group (obj468/469): Pin sets IV1=50 (attack/move budget in C2 pixels).
+
+Player→wolf damage uses NPC_get_damage kind 0 (Wolf_dmg global on NPC HP path).

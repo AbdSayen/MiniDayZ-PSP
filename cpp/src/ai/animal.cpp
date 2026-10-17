@@ -6,7 +6,7 @@
 namespace mdaz {
 
 float wolf_melee_damage() {
-  return npc_wolf_damage();
+  return wolf_player_melee_damage();
 }
 
 Animal::Animal()
@@ -67,8 +67,12 @@ int AnimalSystem::alive_of_type(AnimalType t) const {
   return n;
 }
 
-float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding) {
+float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
+                           bool* wolf_melee_hit) {
   float dmg = 0.f;
+  if (wolf_melee_hit) *wolf_melee_hit = false;
+  const float wolf_range = wolf_attack_melee_range();
+  const float wolf_cd = wolf_attack_cooldown_sec();
   // Pack howl: if any wolf is close, pull distant packmates in
   bool pack_alert = false;
   for (int i = 0; i < count_; ++i) {
@@ -97,9 +101,14 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding) {
         a.pos.x += (dx / dist) * spd * dt;
         a.pos.y += (dy / dist) * spd * dt;
       }
-      if (dist < 26.f && a.attack_cooldown <= 0.f) {
-        dmg += (a.type == Animal_Wolf) ? wolf_melee_damage() : wolf_melee_damage() * 0.7f;
-        a.attack_cooldown = 1.1f;
+      if (dist < wolf_range && a.attack_cooldown <= 0.f) {
+        if (a.type == Animal_Wolf) {
+          dmg += wolf_melee_damage();
+          if (wolf_melee_hit) *wolf_melee_hit = true;
+        } else {
+          dmg += wolf_melee_damage() * 0.7f; // dog — no C2 wolf_attack SFX path
+        }
+        a.attack_cooldown = wolf_cd;
       }
     } else if (a.type == Animal_Crow) {
       // Crows scatter farther / faster

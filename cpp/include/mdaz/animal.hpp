@@ -33,7 +33,9 @@ public:
   void clear();
   Animal* spawn(AnimalType t, Vec2 p);
   // Returns melee damage dealt to player this frame (wolves/dogs).
-  float update(float dt, Vec2 player_pos, bool player_bleeding = false);
+  // wolf_melee_hit set when a wolf (not dog) lands a Wolf_dmg_deal hit.
+  float update(float dt, Vec2 player_pos, bool player_bleeding = false,
+               bool* wolf_melee_hit = 0);
   int count() const { return count_; }
   int alive_count() const;
   int alive_of_type(AnimalType t) const;
@@ -45,6 +47,7 @@ private:
   EntityId next_id_;
 };
 
-float wolf_melee_damage(); // balance::Wolf_dmg
+// Wolf→player hit damage (Zed_dmg via Wolf_dmg_deal); see wolf_player_melee_damage().
+float wolf_melee_damage();
 
 } // namespace mdaz

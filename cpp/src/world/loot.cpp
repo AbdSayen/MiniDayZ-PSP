@@ -1,4 +1,5 @@
 #include "mdaz/loot.hpp"
+#include "mdaz/save_game.hpp"
 
 namespace mdaz {
 
@@ -42,6 +43,31 @@ int ammo_qty(ItemId id, Rng& rng) {
 LootSystem::LootSystem() : count_(0) {}
 
 void LootSystem::clear() { count_ = 0; }
+
+void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
+  clear();
+  if (!piles || n <= 0) return;
+  if (n > kMaxLootPiles) n = kMaxLootPiles;
+  for (int i = 0; i < n; ++i) {
+    const SavedLootPile& s = piles[i];
+    if (s.item_count <= 0) continue;
+    if (count_ >= kMaxLootPiles) break;
+    LootPile& p = piles_[count_++];
+    p.pos = Vec2(s.x, s.y);
+    p.item_count = 0;
+    p.active = true;
+    p.is_airdrop = s.is_airdrop != 0;
+    const int ic = s.item_count > 8 ? 8 : s.item_count;
+    for (int j = 0; j < ic; ++j) {
+      if (s.items[j] <= 0 || s.counts[j] <= 0) continue;
+      push_item(p, s.items[j], s.counts[j]);
+    }
+    if (p.item_count <= 0) {
+      --count_;
+      continue;
+    }
+  }
+}
 
 void LootSystem::push_item(LootPile& p, ItemId id, int n) {
   if (p.item_count >= 8) return;

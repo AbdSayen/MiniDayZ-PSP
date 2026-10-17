@@ -28,4 +28,7 @@ const CraftRecipe* craft_recipe_at(int i);
 bool craft_can(const Inventory& inv, const CraftRecipe& r);
 bool craft_do(Inventory& inv, const CraftRecipe& r, const ItemDatabase& db);
 
+// C2 Check_craft / GUI_craft_possible — any recipe craftable now (respects fire).
+bool craft_any_possible(const Inventory& inv, bool at_fire);
+
 } // namespace mdaz

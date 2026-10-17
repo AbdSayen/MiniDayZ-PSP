@@ -14,9 +14,11 @@
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
 #include "mdaz/quest.hpp"
+#include "mdaz/char_anims.hpp"
 #include "mdaz/layout_sprites.hpp"
 #include "mdaz/world_tilemaps.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/save_game.hpp"
 #include "mdaz/timers.hpp"
 #include "mdaz/types.hpp"
 #include "mdaz/vehicle.hpp"
@@ -55,6 +57,8 @@ public:
   bool in_bunker() const { return in_bunker_; }
   bool driving() const { return vehicles_.player_driving(); }
   bool show_bag() const { return show_bag_; }
+  bool show_craft_menu() const { return show_craft_menu_; }
+  int craft_menu_index() const { return craft_menu_index_; }
   bool near_campfire() const { return campfires_.near_fire(player_.pos); }
   int equipped_slot() const { return equipped_slot_; }
   float attack_cd() const { return attack_cd_; }
@@ -111,11 +115,15 @@ private:
   WorldTilemaps world_tiles_;
   WorldTilemaps menu_tiles_;
   LayoutSprites menu_sprites_;
+  CharAnims char_anims_;
   DispersionState dispersion_;
   Rng rng_;
   float state_timer_;
   float attack_cd_;
   float reload_cd_;
+  float player_anim_t_;   // locomotion clock
+  float melee_anim_t_;    // >0 while playing axe/melee swing
+  float use_anim_t_;      // >0 while playing using_item
   float airdrop_alert_;
   float radio_t_; // seconds to show radio HUD after use
   float torch_battery_; // 0..100 — drains while torch/NVG on; Battery (22) refills
@@ -135,6 +143,8 @@ private:
   bool in_bunker_;
   bool bunker_looted_;
   bool show_bag_;
+  bool show_craft_menu_;
+  int craft_menu_index_;
   Difficulty menu_difficulty_;
   Vec2 overworld_pos_;
   Vec2 last_airdrop_pos_;
@@ -196,12 +206,23 @@ private:
 
   enum CorpseKind { Corpse_Zed = 0, Corpse_Bandit, Corpse_Deer, Corpse_Wolf, Corpse_Dog, Corpse_Other };
   static const int kMaxCorpses = 48;
-  struct Corpse { Vec2 pos; float life; float angle; CorpseKind kind; int variant; bool active; };
+  struct Corpse {
+    Vec2 pos;
+    float life;
+    float angle;
+    CorpseKind kind;
+    int variant;
+    bool active;
+    float die_anim_t;     // seconds left playing die1/die2 via char_anims
+    int die_style;        // 1 or 2 (C2 random die pick)
+    char anim_base[32];   // e.g. zed_normal_skin1, wolf_skin
+  };
   Corpse corpses_[kMaxCorpses];
   int corpse_count_;
 
   void spawn_fx(FxKind kind, Vec2 pos, float angle_deg = 0.f, float life = 0.12f);
-  void spawn_corpse(CorpseKind kind, Vec2 pos, float angle_deg, int variant = 0);
+  void spawn_corpse(CorpseKind kind, Vec2 pos, float angle_deg, int variant = 0,
+                    const char* anim_base = 0, float die_anim_sec = 0.f, int die_style = 1);
   void update_fx(float dt);
 
   void mark_sector_visited();
@@ -212,6 +233,8 @@ private:
   void try_ranged_attack();
   void try_pickup_loot();
   void try_craft();
+  void toggle_craft_menu();
+  void try_craft_menu_recipe();
   void try_place_campfire();
   bool try_place_trap(int kind);
   void update_traps(float dt);
@@ -226,9 +249,24 @@ private:
   void tick_molotov_burn(float dt);
   void on_animal_killed(Animal& a);
   void on_zed_killed(Zombie& z);
-  void apply_incoming_damage(float amount, bool can_bleed);
+  void hurt_zombie(Zombie& z, float amount);
+  void hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8);
+  void hurt_animal(Animal& a, float amount);
+  void hurt_bandit(Bandit& b, float amount);
+  void apply_incoming_damage(float amount, bool can_bleed,
+                             PlayerDamageKind kind = PlayerDmg_Default,
+                             const char* death_if_lethal = 0,
+                             MeleeDefPercentTier melee_def_tier = MeleeDef_Heavy,
+                             bool try_melee_def = false);
   void write_death_log();
   void spawn_poi_loot();
+  void spawn_loot_for_poi(MapLocation& L);
+  void spawn_hostiles_for_poi(const MapLocation& L);
+  void sync_location_stream(LocationReloadMode mode);
+  void maybe_spawn_quest_bandits();
+  int bandits_alive_near(Vec2 pos, float radius) const;
+  Vec2 location_reload_anchor_;
+  bool quest_bandits_spawned_;
   void update_army_shooters(float dt);
   void update_bandit_guns(float dt);
   void pack_crops_view(CropSaveView& out) const;
@@ -237,6 +275,8 @@ private:
   void apply_traps_view(const TrapSaveView& in);
   void pack_fires_view(FireSaveView& out) const;
   void apply_fires_view(const FireSaveView& in);
+  void pack_loot_view(LootSaveView& out) const;
+  void apply_loot_view(const LootSaveView& in);
 };
 
 } // namespace mdaz

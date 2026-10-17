@@ -177,6 +177,9 @@ public:
     load_replace("death", "tutor_death.ogg");
     load_replace("airdrop", "drop1.ogg");
     load_replace("howl", "wolf_spot.ogg");
+    load_replace("wolf_attack", "wolf_attack.ogg");
+    load_replace("wolf_attack_2", "wolf_attack_2.ogg");
+    load_replace("wolf_attack_3", "wolf_attack_3.ogg");
     load_replace("cough", "empty_click.ogg");
     load_replace("rain", "rain_loop.ogg");
     load_replace("thunder", "car_crash_1.ogg");

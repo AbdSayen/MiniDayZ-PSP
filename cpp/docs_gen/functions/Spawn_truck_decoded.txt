@@ -1,0 +1,4 @@
+=== Spawn_truck len 237 ===
+CallFunction: Spawn_volga
+CallFunction: Spawn_uaz
+CallFunction: Spawn_truck

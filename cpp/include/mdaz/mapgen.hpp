@@ -25,7 +25,15 @@ struct MapLocation {
   Vec2 pos;
   int sector_x;
   int sector_y;
-  bool active;
+  bool active;       // C2 map_element IV3 (1 = create_map_location loaded)
+  bool loot_seeded;  // Spawn_drop / POI piles spawned while loaded
+};
+
+// C2 Reload_locations / Reload_locations_start / Reload_locations_aftersave
+enum LocationReloadMode {
+  LocationReload_Runtime = 0,
+  LocationReload_Start,
+  LocationReload_AfterSave
 };
 
 static const int kMaxLocations = 128;
@@ -52,8 +60,8 @@ struct PoiPartView {
 int poi_part_count(LocationType t, int variant);
 PoiPartView poi_part(LocationType t, int variant, int part_index);
 
-// Scaffold for generate_array_locations / generate_location / generate_helicrashes.
-// POI clusters use poi_part_* tables; full tile/road Array placement not yet ported.
+// C2 generate_array_roads_1/_2 sector markers (Array uid 150, Map_size 16×16).
+// 15 = POI marker; 12/13/14 = road cells consumed by generate_array_tomap → dirt tile 15.
 class MapGenerator {
 public:
   MapGenerator();
@@ -61,16 +69,30 @@ public:
   void generate_new_game(int seed);
   // Stamp POI footprints into World collision grid (approximate building blockers).
   void apply_collision(class World& world) const;
+  void apply_collision_for(int index, class World& world) const;
+  void rebuild_collision(class World& world) const;
+  // Distance-based POI load/unload (respawn_radius2; start/aftersave cap min(r,1000)).
+  void reload_locations(Vec2 player, LocationReloadMode mode);
   int location_count() const { return count_; }
   const MapLocation& location(int i) const { return locs_[i]; }
+  MapLocation& location_mut(int i) { return locs_[i]; }
   const RiverParams& river() const { return river_; }
+  // True when sector grid holds C2 road marker (12/13/14) after generate_array_roads_*.
+  bool is_road_sector(int sector_x, int sector_y) const;
+  int road_sector_count() const { return road_count_; }
 
 private:
   MapLocation locs_[kMaxLocations];
   int count_;
   RiverParams river_;
+  static const int kSectorGrid = 16;
+  unsigned char sector_grid_[kSectorGrid][kSectorGrid];
+  int road_count_;
   void add(LocationType t, int sx, int sy);
   void init_river(int seed);
+  void apply_generate_array_roads();
+  static float reload_radius_for(LocationReloadMode mode);
+  static float dist_to(const MapLocation& L, Vec2 p);
 };
 
 } // namespace mdaz

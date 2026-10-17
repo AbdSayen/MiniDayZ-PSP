@@ -4,21 +4,46 @@
 
 namespace mdaz {
 
-// Vehicle scaffold — C2 has car/boat groups; full physics not ported.
+// C2 Vehicle family IVs (object type t946 / family "Vehicle"): 284=fuel, 294=condition (hp bar).
+namespace vehicle_balance {
+constexpr float kFuelMax = 100.f;       // Spawn_uaz / Car_respawn set IV to 100
+constexpr float kHpMax = 100.f;
+constexpr float kRefuelAdd = 40.f;      // Using inventory: action 172,159 +40, cap 100
+constexpr float kFuelTickSec = 0.1f;    // Drivable vehicles Every 0.1s
+constexpr float kFuelSubtractPerTick = 8.f; // subtract 8 from IV284 each tick
+constexpr float kRespawnDelaySec = 600.f;   // Timer → Uaz_respawn / Volga_respawn
+constexpr float kRespawnCallDelaySec = 1.f; // Uaz_respawn → Car_respawn_uaz
+constexpr float kCrashBuildingHp = 15.f;    // Vehicle collisions [[10,1],[7,[0,15]]]
+constexpr float kCrashHardHp = 30.f;        // car_crash_* [[10,1],[7,[0,30]]]
+constexpr float kLowFuelWarn = 20.f;        // GUI nofuel branch (bar threshold; approximate)
+} // namespace vehicle_balance
+
 enum VehicleType {
   Vehicle_None = 0,
-  Vehicle_Car,
-  Vehicle_Boat,
-  Vehicle_Bike
+  Vehicle_Car = 1, // drivable UAZ (car_uaz_base); legacy enum name
+  Vehicle_Boat = 2,
+  Vehicle_Bike = 3,
+  Vehicle_Volga = 4,
+  Vehicle_Truck = 5,
 };
+
+inline bool vehicle_is_drivable_car(VehicleType t) {
+  return t == Vehicle_Car || t == Vehicle_Volga || t == Vehicle_Truck;
+}
+
+inline bool vehicle_has_world_respawn(VehicleType t) {
+  return t == Vehicle_Car || t == Vehicle_Volga;
+}
 
 struct Vehicle {
   VehicleType type;
   Vec2 pos;
+  Vec2 respawn_anchor;
   float facing_deg;
   float fuel;
   float hp;
   bool active;
+  float respawn_t; // seconds until Car_respawn_* (0 = not waiting)
   // Trunk / basket stash (car/boat/bike)
   static const int kStashSlots = 4;
   ItemId stash_ids[kStashSlots];
@@ -36,6 +61,13 @@ public:
   VehicleSystem();
   void clear();
   Vehicle* spawn(VehicleType t, Vec2 pos);
+  // C2 map reload spawns (Spawn_uaz / Spawn_volga / Spawn_truck dispatch).
+  void spawn_uaz(Vec2 pos);
+  void spawn_volga(Vec2 pos);
+  void spawn_truck(Vec2 pos);
+  void tick_respawn(float dt);
+  void on_destroyed(Vehicle& v);
+  void apply_crash_damage(Vehicle& v, float hp_loss);
   // Repair driven or nearest vehicle; returns true if repaired.
   bool try_repair(Vec2 player_pos, float amount);
   // Returns true if player is currently driving (movement applied to vehicle).
@@ -49,6 +81,7 @@ public:
   const Vehicle* at(int i) const { return &vehicles_[i]; }
 
 private:
+  void respawn_vehicle(Vehicle& v);
   static const int kMax = 16;
   Vehicle vehicles_[kMax];
   int count_;

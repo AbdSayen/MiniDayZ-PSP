@@ -1,0 +1,154 @@
+=== Vehicle collisions len 30095 ===
+Action p4 a310 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p178 a111 | Fence_destroy_1 | Fence_destroy_2 |  | nums:178,111,3,1,19,82,2,2,3,4,336,360,360,1,2
+Action p19 a82 | Fence_destroy_1 | Fence_destroy_2 | nums:19,82,2,2
+Action p4 a336 strs: 
+Action p4 a305 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a306 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a560 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p4 a308 strs: 
+Action p178 a280 | hard_ground_1 | hard_ground_2 | ground_hit | nums:178,280,3,1,19,82,2,2,3,20,910,65,20,910,66
+Action p19 a82 | hard_ground_1 | hard_ground_2 | nums:19,82,2,2
+Action p4 a946 strs: 
+Action p4 a308 strs: 
+Action p178 a280 | hard_ground_1 | hard_ground_2 | ground_hit | nums:178,280,3,1,19,82,2,2,3,20,724,65,20,724,66
+Action p19 a82 | hard_ground_1 | hard_ground_2 | nums:19,82,2,2
+Action p178 a111 | car_explode |  | nums:178,111,3,1,2,3,4,946,360,1,2
+Action p4 a946 strs: 
+Action p261 a106 | Timer | Uaz_respawn | nums:261,106,600,3,1,2
+Action p261 a106 | Timer | Volga_respawn | nums:261,106,600,3,1,2
+Action p4 a252 strs: 
+Action p252 a121 | Fade | nums:252,121
+Action p252 a192 | Fade | nums:252,192,1,0.5
+Action p4 a821 strs: 
+Action p4 a819 strs: 
+Action p4 a819 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a927 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a339 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a336 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a941 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,941,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a941 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a710 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,710,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a710 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a469 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,469,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a469 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a472 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,472,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a472 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a609 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,609,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a609 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a549 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,549,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a549 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+CallFunction: Bots_team_agro
+Action p4 a827 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,827,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a827 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+CallFunction: Bots_team_agro
+Action p4 a540 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,540,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a540 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a243 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,243,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a243 strs: 
+CallFunction: NPC_get_damage
+Action p243 a73 | static_cars | nums:243,73,4,521,5,2,7
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p261 a107 | Timer | Uaz_respawn | nums:261,107,1,2
+CallFunction: Car_respawn_uaz
+Action p261 a107 | Timer | Volga_respawn | nums:261,107,1,2
+CallFunction: Car_respawn_volga

@@ -1,5 +1,6 @@
 #include "mdaz/hud.hpp"
 #include "mdaz/balance_globals.hpp"
+#include "mdaz/craft.hpp"
 #include "mdaz/game.hpp"
 #include "mdaz/inventory.hpp"
 #include "mdaz/item_sprites.hpp"
@@ -58,6 +59,118 @@ void draw_status_icon(IPlatform& p, float& x, float y, const char* name,
   const float dw = gw(nw * 1.6f), dh = gh(nh * 1.6f);
   p.draw_sprite(name, x, y, dw, dh, 0.f, 1.f);
   x += dw + 2.f;
+}
+
+void draw_vertical_vehicle_bar(IPlatform& p, float x, float y, float w, float h,
+                               float fill01, const char* chrome_sprite,
+                               float r, float g, float b) {
+  if (fill01 < 0.f) fill01 = 0.f;
+  if (fill01 > 1.f) fill01 = 1.f;
+  if (spr(p, chrome_sprite))
+    p.draw_sprite(chrome_sprite, x, y, w, h, 0.f, 0.92f);
+  else
+    p.draw_rect(x, y, w, h, 0.12f, 0.12f, 0.12f, 0.85f);
+  const float pad = gw(2.f);
+  const float ih = (h - pad * 2.f) * fill01;
+  if (ih >= 1.f)
+    p.draw_rect(x + pad, y + h - pad - ih, w - pad * 2.f, ih, r, g, b, 0.95f);
+}
+
+// C2 GUI_draw_vehicle: gui_car_bg, bar_fuel (IV284), bar_hp (IV294), car controls.
+void draw_vehicle_hud(IPlatform& p, const Vehicle& v) {
+  static const char kC2_GUI_draw_vehicle[] = "GUI_draw_vehicle";
+  (void)kC2_GUI_draw_vehicle;
+  const float bg_x = gx(8.f);
+  const float bg_y = gy(168.f);
+  if (spr(p, "gui_car_bg-sheet0"))
+    p.draw_sprite("gui_car_bg-sheet0", bg_x, bg_y, gw(78.f), gh(106.f), 0.f, 0.9f);
+
+  const float bar_w = gw(10.f);
+  const float bar_h = gh(70.f);
+  const float bar_y = bg_y + gh(76.f);
+  const float fuel_x = bg_x + gw(52.f);
+  const float hp_x = bg_x + gw(16.f);
+  const float fuel01 = v.fuel / vehicle_balance::kFuelMax;
+  const float hp01 = v.hp / vehicle_balance::kHpMax;
+
+  draw_vertical_vehicle_bar(p, hp_x, bar_y, bar_w, bar_h, hp01, "gui_car_condition-sheet0",
+                            0.35f, 0.75f, 0.35f);
+  draw_vertical_vehicle_bar(p, fuel_x, bar_y, bar_w, bar_h, fuel01, "gui_car_fuel-sheet0",
+                            0.85f, 0.75f, 0.25f);
+
+  if (v.fuel < 15.f && spr(p, "gui_car_nofuel_icon-sheet0"))
+    p.draw_sprite("gui_car_nofuel_icon-sheet0", fuel_x + gw(12.f), bar_y - gh(8.f),
+                   gw(18.f), gh(18.f), 0.f, 1.f);
+  if (v.hp < 25.f && spr(p, "gui_car_disable_icon-sheet0"))
+    p.draw_sprite("gui_car_disable_icon-sheet0", hp_x - gw(4.f), bar_y - gh(8.f),
+                   gw(18.f), gh(18.f), 0.f, 1.f);
+
+  if (spr(p, "gui_btn_car_leave-sheet0"))
+    p.draw_sprite("gui_btn_car_leave-sheet0", gx(8.f), gy(228.f), gw(40.f), gh(28.f), 0.f, 0.85f);
+  if (spr(p, "gui_btn_car_forward-sheet0"))
+    p.draw_sprite("gui_btn_car_forward-sheet0", gx(48.f), gy(200.f), gw(36.f), gh(28.f), 0.f, 0.75f);
+  if (spr(p, "gui_btn_car_backward-sheet0"))
+    p.draw_sprite("gui_btn_car_backward-sheet0", gx(48.f), gy(232.f), gw(36.f), gh(28.f), 0.f, 0.75f);
+  if (spr(p, "gui_btn_car_wheel_left-sheet0"))
+    p.draw_sprite("gui_btn_car_wheel_left-sheet0", gx(92.f), gy(200.f), gw(32.f), gh(26.f), 0.f, 0.7f);
+  if (spr(p, "gui_btn_car_wheel_right-sheet0"))
+    p.draw_sprite("gui_btn_car_wheel_right-sheet0", gx(128.f), gy(200.f), gw(32.f), gh(26.f), 0.f, 0.7f);
+}
+
+// C2 Call_sub_menu_craft + Check_craft: sub_menu chrome, recipe rows, GUI_craft_possible tint.
+void draw_craft_submenu(IPlatform& p, const Game& game) {
+  static const char kC2_Call_sub_menu_craft[] = "Call_sub_menu_craft";
+  static const char kC2_Check_craft[] = "Check_craft";
+  (void)kC2_Call_sub_menu_craft;
+  (void)kC2_Check_craft;
+
+  const float px = 8.f;
+  const float py = 118.f;
+  const float pw = 200.f;
+  const float title_h = 18.f;
+  const float row_h = 16.f;
+  if (spr(p, "sub_menu_title-sheet0"))
+    p.draw_sprite("sub_menu_title-sheet0", px, py, pw, title_h, 0.f, 0.95f);
+  else
+    p.draw_rect(px, py, pw, title_h, 0.35f, 0.32f, 0.28f, 0.92f);
+  p.draw_text(px + gw(8.f), py + gh(4.f), "CRAFT", 0.95f, 0.9f, 0.75f);
+
+  const bool at_fire = game.near_campfire();
+  const int n = craft_recipe_count();
+  const int sel = game.craft_menu_index();
+  const int max_rows = 8;
+  int start = 0;
+  if (n > max_rows) {
+    start = sel - max_rows / 2;
+    if (start < 0) start = 0;
+    if (start > n - max_rows) start = n - max_rows;
+  }
+  int row = 0;
+  for (int i = start; i < n && row < max_rows; ++i) {
+    const CraftRecipe* r = craft_recipe_at(i);
+    if (!r) continue;
+    const float ry = py + title_h + row * row_h;
+    if (spr(p, "sub_menu-sheet0"))
+      p.draw_sprite("sub_menu-sheet0", px, ry, pw, row_h, 0.f, i == sel ? 1.f : 0.88f);
+    else
+      p.draw_rect(px, ry, pw, row_h, 0.12f, 0.11f, 0.1f, i == sel ? 0.95f : 0.82f);
+
+    const bool possible = craft_can(game.inventory(), *r) &&
+                          (!r->requires_fire || at_fire);
+    const ItemDef* res = game.items().find(r->result_id);
+    char line[72];
+    if (res)
+      std::snprintf(line, sizeof(line), "%s x%d", res->name.c_str(), r->result_count);
+    else
+      std::snprintf(line, sizeof(line), "#%d x%d", r->result_id, r->result_count);
+    const float tr = possible ? 0.55f : 0.45f;
+    const float tg = possible ? 0.95f : 0.55f;
+    const float tb = possible ? 0.45f : 0.45f;
+    p.draw_text(px + gw(6.f), ry + gh(6.f), line, tr, tg, tb);
+    ++row;
+  }
+  if (craft_any_possible(game.inventory(), at_fire))
+    p.draw_text(px, py + title_h + max_rows * row_h + gh(4.f), "R: craft", 0.75f, 0.85f, 0.55f);
 }
 
 } // namespace
@@ -164,23 +277,7 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
 
   if (game.driving()) {
     const Vehicle* v = game.driven_vehicle();
-    if (v) {
-      char fbuf[40];
-      std::snprintf(fbuf, sizeof(fbuf), "%.0f", v->fuel);
-      platform.draw_text(220, 228, fbuf, v->fuel < 20.f ? 0.95f : 0.7f,
-                         v->fuel < 20.f ? 0.4f : 0.75f, 0.9f);
-      // Original car chrome
-      if (spr(platform, "gui_car_fuel-sheet0"))
-        platform.draw_sprite("gui_car_fuel-sheet0", 200.f, 220.f, 16.f, 16.f, 0.f, 0.9f);
-      if (spr(platform, "gui_btn_car_leave-sheet0"))
-        platform.draw_sprite("gui_btn_car_leave-sheet0", 430.f, 200.f, 40.f, 28.f, 0.f, 0.85f);
-      if (spr(platform, "gui_btn_car_forward-sheet0"))
-        platform.draw_sprite("gui_btn_car_forward-sheet0", 8.f, 180.f, 36.f, 28.f, 0.f, 0.75f);
-      if (spr(platform, "gui_btn_car_backward-sheet0"))
-        platform.draw_sprite("gui_btn_car_backward-sheet0", 8.f, 212.f, 36.f, 28.f, 0.f, 0.75f);
-      if (v->fuel < 15.f && spr(platform, "gui_car_nofuel_icon-sheet0"))
-        platform.draw_sprite("gui_car_nofuel_icon-sheet0", 250.f, 220.f, 18.f, 18.f, 0.f, 1.f);
-    }
+    if (v) draw_vehicle_hud(platform, *v);
   }
 
   if (game.quest().show_panel()) {
@@ -365,6 +462,8 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
                            stick, stick, 0.f, 0.7f);
     }
   }
+
+  if (game.show_craft_menu()) draw_craft_submenu(platform, game);
 
   // Inventory panel (Tab) — original icons + name/count
   if (game.show_bag()) {

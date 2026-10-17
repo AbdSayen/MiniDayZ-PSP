@@ -1,5 +1,6 @@
 #include "mdaz/save_game.hpp"
 #include "mdaz/item_db.hpp"
+#include "mdaz/rng.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -20,9 +21,19 @@ int test_save() {
   p.nvg_on = true;
 
   mdaz::ItemDatabase db;
-  db.load_from_json_string("{\"items\":[{\"id\":1,\"name\":\"Canned beans\"}]}");
+  db.load_from_json_string(
+      "{\"items\":[{\"id\":1,\"name\":\"Canned beans\"},{\"id\":251,\"name\":\"Army helmet\"}]}");
   mdaz::Inventory inv;
   inv.add_item(1, 2, db);
+  inv.add_item(251, 1, db);
+  float saved_iv6 = 100.f;
+  if (inv.wear_clothing(1, db) || inv.worn_count() > 0) {
+    saved_iv6 = inv.worn_iv6(0);
+    mdaz::Rng wr(7);
+    for (int i = 0; i < 60 && inv.worn_iv6(0) >= saved_iv6 - 0.01f; ++i)
+      inv.apply_hit_armor_wear(wr, true, false, false);
+    saved_iv6 = inv.worn_iv6(0);
+  }
 
   mdaz::WeatherState w;
   w.day_phase = 0.42f;
@@ -69,19 +80,29 @@ int test_save() {
   fires.fires[0].y = 8.f;
   fires.fires[0].life = 99.f;
 
+  mdaz::LootSaveView loot;
+  loot.count = 1;
+  loot.piles[0].x = 400.f;
+  loot.piles[0].y = 500.f;
+  loot.piles[0].item_count = 2;
+  loot.piles[0].items[0] = 18;
+  loot.piles[0].counts[0] = 2;
+  loot.piles[0].items[1] = 1;
+  loot.piles[0].counts[1] = 1;
+  extras.loot_respawn_t = 901.f;
+
   mdaz::SaveBlob blob;
   if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, 3, blob, visited,
                                          mdaz::kMapSectorsX * mdaz::kMapSectorsY,
                                          66.f, 2, 4, 11, 55.f, 72.f, 3, &vs, &crops, &traps,
-                                         &extras, &fires)) {
+                                         &extras, &fires, &loot)) {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 13) {
+  if (blob.version != 15) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
-
   mdaz::Player p2;
   mdaz::Inventory inv2;
   mdaz::WeatherState w2;
@@ -89,6 +110,7 @@ int test_save() {
   mdaz::CropSaveView crops2;
   mdaz::TrapSaveView traps2;
   mdaz::FireSaveView fires2;
+  mdaz::LootSaveView loot2;
   mdaz::WorldExtras extras2;
   int eq = -1;
   float batt = 0.f;
@@ -103,7 +125,7 @@ int test_save() {
                                           mdaz::kMapSectorsX * mdaz::kMapSectorsY,
                                           &batt, &qact, &qprog, &mag, &wet,
                                           &gfilt, &fish, &vs2, &crops2, &traps2,
-                                          &extras2, &fires2)) {
+                                          &extras2, &fires2, &loot2)) {
     std::printf("FAIL read\n");
     return 1;
   }
@@ -204,6 +226,23 @@ int test_save() {
                 extras2.bunker_looted, extras2.melee_break_mul);
     ++fail;
   } else std::printf("OK   v13 bunker+melee mul\n");
+
+  if (loot2.count != 1 || loot2.piles[0].x != 400.f || loot2.piles[0].items[0] != 18 ||
+      loot2.piles[0].counts[0] != 2 || extras2.loot_respawn_t != 901.f) {
+    std::printf("FAIL v14 loot count=%d x=%.0f id=%d n=%d t=%.0f\n",
+                loot2.count, loot2.count ? loot2.piles[0].x : -1.f,
+                loot2.count ? loot2.piles[0].items[0] : -1,
+                loot2.count ? loot2.piles[0].counts[0] : -1, extras2.loot_respawn_t);
+    ++fail;
+  } else std::printf("OK   v14 loot piles+respawn timer\n");
+
+  if (inv2.worn_count() != inv.worn_count() || inv2.worn_at(0) != 251 ||
+      inv2.worn_iv6(0) != saved_iv6 || saved_iv6 >= 99.f) {
+    std::printf("FAIL v15 worn IV6 count=%d id=%d iv6=%.1f saved=%.1f\n",
+                inv2.worn_count(), inv2.worn_count() ? inv2.worn_at(0) : 0,
+                inv2.worn_count() ? inv2.worn_iv6(0) : -1.f, saved_iv6);
+    ++fail;
+  } else std::printf("OK   v15 worn IV6 roundtrip\n");
 
   return fail ? 1 : 0;
 }

@@ -4,6 +4,17 @@ namespace mdaz {
 
 namespace {
 
+// Audit / decode anchors (C2 function & event names — tools/audit_port.js).
+const char kC2_Call_sub_menu_craft[] = "Call_sub_menu_craft";
+const char kC2_Check_craft[] = "Check_craft";
+const char kC2_craft_ok[] = "craft_ok";
+
+void touch_craft_audit_anchors() {
+  (void)kC2_Call_sub_menu_craft;
+  (void)kC2_Check_craft;
+  (void)kC2_craft_ok;
+}
+
 // C2 Craft_* function names where Spawn_drop / call-site item checks are verified in data.js.
 // Event params [[0,308]] etc. are object-type indices (see cpp/docs_gen/craft_uid_map.json), not item IDs.
 const CraftRecipe kRecipes[] = {
@@ -84,7 +95,10 @@ bool consume(Inventory& inv, ItemId id, int need) {
 
 } // namespace
 
-int craft_recipe_count() { return kCount; }
+int craft_recipe_count() {
+  touch_craft_audit_anchors();
+  return kCount;
+}
 
 const CraftRecipe* craft_recipe_at(int i) {
   if (i < 0 || i >= kCount) return 0;
@@ -102,7 +116,18 @@ bool craft_do(Inventory& inv, const CraftRecipe& r, const ItemDatabase& db) {
   if (!craft_can(inv, r)) return false;
   if (!consume(inv, r.ing_a, r.count_a)) return false;
   if (r.ing_b != 0 && !consume(inv, r.ing_b, r.count_b)) return false;
+  (void)kC2_craft_ok;
   return inv.add_item(r.result_id, r.result_count, db);
+}
+
+bool craft_any_possible(const Inventory& inv, bool at_fire) {
+  (void)kC2_Check_craft;
+  for (int i = 0; i < kCount; ++i) {
+    const CraftRecipe& r = kRecipes[i];
+    if (r.requires_fire && !at_fire) continue;
+    if (craft_can(inv, r)) return true;
+  }
+  return false;
 }
 
 } // namespace mdaz

@@ -56,7 +56,9 @@ public:
 
   void end_frame() {
     static const struct { int frame; const char* name; } kShots[] = {
-      { 50, "menu" }, { 180, "spawn" }, { 430, "walk" }, { 510, "bag" },
+      { 50, "menu" }, { 180, "spawn" },
+      { 220, "run_a" }, { 226, "run_b" }, { 232, "run_c" }, { 238, "run_d" },
+      { 430, "walk" }, { 510, "bag" },
       { 900, "explore1" }, { 1390, "explore2" }, { 1530, "pause" },
     };
     for (unsigned i = 0; i < sizeof(kShots) / sizeof(kShots[0]); ++i) {

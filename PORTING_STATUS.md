@@ -17,7 +17,9 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Weapon base damage | Исследована | Fist **10**/45; FNX **23**; sword **15** sverka |
 | Bullet hit variance | **Сверена с оригиналом** | ±25% |
 | Fist melee range | **Сверена с оригиналом** | 45 |
-| Combat zed/wolf dmg | **Сверена с оригиналом** | Regular 9/6/13/10; Novice 6/4/9/6; Veteran 10/8/15/10 |
+| Combat zed/wolf dmg | **Сверена с оригиналом** | Regular 9/6/13/10; wolf **→player** uses **Zed_dmg** (Wolf_dmg_deal); wolf range **50**, cd **3s**, attack SFX trio |
+| NPC_get_damage | **Сверена с оригиналом** (routing) | Kind 0–11 → IV slot; bullets use `zed_apply_bullet_hit_damage` + IV8 on army/tank |
+| Player bullet armor | **Сверена с оригиналом** (partial) | Bullet skips mul; **IV6** wear + broken armor; melee **def_percent** + IV6 wear |
 | Player_get_hit bleed | **Сверена с оригиналом** | ≈50%; Bleed 60s |
 | Dispersion | **Сверена с оригиналом** | Persistent state |
 | Timers loot/zed/airdrop | **Сверена с оригиналом** (constants) | |
@@ -25,12 +27,12 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Zombie AI types | Реализуется | Buried/screamer/army/tank/… |
 | Animals | Реализуется | Howl/stampede/crow/deer SFX |
 | Bandits / bots | Реализуется | Melee+gun; markers |
-| Vehicles | Реализуется | Car/boat/bike + 4-slot trunk stash (G) |
+| Vehicles | Реализуется | UAZ/Volga/Truck + boat/bike; C2 fuel/respawn/crash; **GUI_draw_vehicle** HUD (bg/fuel/hp bars, controls); mount/drive |
 | Quests | Реализуется | Chain …church→military→helicrash→day2; HUD panel |
 | Map generation | Реализуется | POI counts from globals; dirt/water stamps; **multi-building POI tables** from C2 layout tags (`poi_layout.cpp`); roads Array / full tilegen still incomplete |
 | Bunker loader | Протестирована | RLE 225×74; tile atlas draw |
 | Craft | Реализуется | Core + Craft_21/22/3 firekit paths; incomplete vs full C2 |
-| Save | Протестирована | MDAZ v13 (+bunker_looted/melee mul) |
+| Save | Протестирована | MDAZ v15 (+worn IV6); v14 loot piles |
 | Audio | Реализуется | Original OGG tags + procedural fallback |
 | Sprites / VFX | Реализуется | C2 sheet crops; muzzle/shell/blood/fish/grenade |
 | HUD / menu | Реализуется | GUI crops; bag icons; night_overlay; amenu_bg |

@@ -1,0 +1,323 @@
+=== Drivable vehicles len 66327 ===
+Action p4 a310 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p4 a809 strs: 
+Action p178 a111 | Fence_destroy_1 | Fence_destroy_2 |  | nums:178,111,3,1,19,82,2,2,3,4,336,360,360,1,2
+Action p19 a82 | Fence_destroy_1 | Fence_destroy_2 | nums:19,82,2,2
+Action p4 a336 strs: 
+Action p4 a305 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p4 a814 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a306 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p4 a815 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a560 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p4 a818 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p4 a308 strs: 
+Action p178 a280 | hard_ground_1 | hard_ground_2 | ground_hit | nums:178,280,3,1,19,82,2,2,3,20,910,65,20,910,66
+Action p19 a82 | hard_ground_1 | hard_ground_2 | nums:19,82,2,2
+Action p4 a946 strs: 
+Action p4 a308 strs: 
+Action p178 a280 | hard_ground_1 | hard_ground_2 | ground_hit | nums:178,280,3,1,19,82,2,2,3,20,724,65,20,724,66
+Action p19 a82 | hard_ground_1 | hard_ground_2 | nums:19,82,2,2
+Action p178 a111 | car_explode |  | nums:178,111,3,1,2,3,4,946,360,1,2
+Action p4 a946 strs: 
+Action p261 a106 | Timer | Uaz_respawn | nums:261,106,600,3,1,2
+Action p261 a106 | Timer | Volga_respawn | nums:261,106,600,3,1,2
+Action p4 a252 strs: 
+Action p252 a121 | Fade | nums:252,121
+Action p252 a192 | Fade | nums:252,192,1,0.5
+Action p4 a821 strs: 
+Action p4 a819 strs: 
+Action p4 a819 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a820 strs: 
+Action p4 a927 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a339 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a336 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p178 a111 | car_crash_1 | car_crash_2 | car_crash_3 |  | nums:178,111,3,1,19,82,2,2,2,3,4,946,360,360,1
+Action p19 a82 | car_crash_1 | car_crash_2 | car_crash_3 | nums:19,82,2,2,2
+Action p4 a946 strs: 
+Action p4 a941 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,941,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a941 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a710 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,710,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a710 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a469 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,469,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a469 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a472 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,472,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a472 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a609 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,609,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a609 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a549 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,549,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a549 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+CallFunction: Bots_team_agro
+Action p4 a827 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,827,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a827 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+CallFunction: Bots_team_agro
+Action p4 a540 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,540,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a540 strs: 
+CallFunction: NPC_get_damage
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a243 strs: 
+Action p178 a111 | body_1 | body_2 | zmb | nums:178,111,3,1,19,82,2,2,3,4,243,360,360,5,1
+Action p19 a82 | body_1 | body_2 | nums:19,82,2,2
+Action p4 a243 strs: 
+CallFunction: NPC_get_damage
+Action p243 a73 | static_cars | nums:243,73,4,521,5,2,7
+Action p4 a521 strs: 
+Action p19 a82 | a1 | a2 | nums:19,82,2,2
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p261 a107 | Timer | Uaz_respawn | nums:261,107,1,2
+CallFunction: Car_respawn_uaz
+Action p261 a107 | Timer | Volga_respawn | nums:261,107,1,2
+CallFunction: Car_respawn_volga
+Action p4 a804 strs: 
+CallFunction: GUI_erase_vehicle
+Action p178 a114 | car_engine_stop_uaz |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a217 | uaz_engine_ | nums:178,217,1,10,2,20,946,151
+Action p184 a237 | AltMove | nums:184,237,3,1
+Action p216 a113 | Pin | nums:216,113
+Action p4 a172 strs: 
+Action p216 a57 | Pin | nums:216,57,4,172,3
+Action p4 a172 strs: 
+Action p184 a113 | Pin | nums:184,113
+Action p178 a114 | car_door_open |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+CallFunction: GUI_show_dpad
+Action p178 a114 | car_engine_stop_volga |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a217 | volga_engine_ | nums:178,217,1,10,2,20,946,151
+Action p184 a237 | AltMove | nums:184,237,3,1
+Action p216 a113 | Pin | nums:216,113
+Action p4 a172 strs: 
+Action p216 a57 | Pin | nums:216,57,4,172,3
+Action p4 a172 strs: 
+Action p184 a113 | Pin | nums:184,113
+Action p178 a114 | car_door_open |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+CallFunction: GUI_show_dpad
+CallFunction: Bot_friend_bailout
+Action p180 a40 | GUI_draw_vehicle | nums:180,40,2,1,2
+Action p4 a464 strs: 
+Action p4 a462 strs: 
+Action p4 a463 strs: 
+Action p4 a26 strs: 
+Action p4 a25 strs: 
+Action p4 a184 strs: 
+CallFunction: GUI_hide_dpad
+Action p247 a131 | Turret | nums:247,131,4,946
+Action p4 a946 strs: 
+Action p270 a131 | Turret | nums:270,131,4,946
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p178 a114 | car_door_open |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_door_close |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_engine_start_uaz |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_engine_idle_uaz | uaz_engine_ | nums:178,114,2,3,1,4,946,360,360,1,10,2,20,946,151
+Action p4 a946 strs: 
+Action p4 a803 strs: 
+Action p4 a802 strs: 
+Action p4 a800 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a801 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a804 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p178 a114 | car_door_open |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_door_close |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_engine_start_volga |  | nums:178,114,2,3,4,172,360,360,1,2
+Action p4 a172 strs: 
+Action p178 a114 | car_engine_idle_volga | volga_engine_ | nums:178,114,2,3,1,4,946,360,360,1,10,2,20,946,151
+Action p4 a946 strs: 
+Action p4 a803 strs: 
+Action p4 a802 strs: 
+Action p4 a800 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a801 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a804 strs: 
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p180 a40 | GUI_erase_vehicle | nums:180,40,2,1,2
+Action p247 a285 | Turret | nums:247,285
+Action p247 a131 | Turret | nums:247,131,4,915
+Action p4 a915 strs: 
+Action p270 a285 | Turret | nums:270,285
+Action p270 a131 | Turret | nums:270,131,4,915
+Action p4 a915 strs: 
+Action p4 a915 strs: 
+Action p4 a915 strs: 
+Action p4 a915 strs: 
+Action p4 a505 strs: 
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a498 strs: 
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a515 strs: 
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p19 a42 | GUI_controls | nums:19,42,2
+Action p4 a502 strs: 
+Action p19 a44 | GUI_controls | nums:19,44,2
+Action p19 a42 | GUI_controls | nums:19,42,2
+CallFunction: Switch_to_melee
+CallFunction: Switch_to_firearm
+CallFunction: Switch_to_pistol
+Action p4 a802 strs: 
+Action p4 a802 strs: 
+Action p4 a803 strs: 
+Action p4 a801 strs: 
+Action p4 a800 strs: 
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p4 a946 strs: 
+Action p4 a822 strs: 
+Action p4 a946 strs: 
+Action p4 a946 strs: 
+Action p178 a217 | uaz_engine_ | nums:178,217,1,10,2,20,946,151
+Action p178 a114 | car_engine_stop_uaz |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a217 | volga_engine_ | nums:178,217,1,10,2,20,946,151
+Action p178 a114 | car_engine_stop_volga |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a217 | uaz_engine_ | nums:178,217,1,10,2,20,946,151
+Action p178 a114 | car_engine_stop_uaz |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a217 | volga_engine_ | nums:178,217,1,10,2,20,946,151
+Action p178 a114 | car_engine_stop_volga |  | nums:178,114,2,3,4,946,360,360,1,2
+Action p4 a946 strs: 
+Action p178 a293 | uaz_engine_ | Vehicle | Vehicle | nums:178,293,1,10,2,20,946,151,4,1,19,86,7,22,946
+Action p19 a86 | Vehicle | Vehicle | nums:19,86,7,22,946,284,22,946,294
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p22 a946 | Vehicle | nums:22,946,294
+Action p178 a293 | volga_engine_ | Vehicle | Vehicle | nums:178,293,1,10,2,20,946,151,4,1,19,86,7,22,946
+Action p19 a86 | Vehicle | Vehicle | nums:19,86,7,22,946,284,22,946,294
+Action p22 a946 | Vehicle | nums:22,946,284
+Action p22 a946 | Vehicle | nums:22,946,294
+Action p22 a946 | Vehicle | nums:22,946,284
+CallFunction: noice
+Action p180 a40 | Car_respawn_uaz | nums:180,40,2,1,2
+Action p4 a507 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a816 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a816 strs: 
+Action p4 a806 strs: 
+Action p180 a40 | Car_respawn_volga | nums:180,40,2,1,2
+Action p4 a507 strs: 
+Action p4 a812 strs: 
+Action p4 a812 strs: 
+Action p4 a807 strs: 
+Action p4 a812 strs: 
+Action p4 a807 strs: 
+Action p4 a812 strs: 
+Action p4 a816 strs: 
+Action p4 a812 strs: 
+Action p4 a812 strs: 
+Action p4 a812 strs: 
+Action p4 a807 strs: 
+Action p4 a812 strs: 
+Action p4 a807 strs: 
+Action p4 a812 strs: 
+Action p4 a816 strs: 
+Action p4 a812 strs: 

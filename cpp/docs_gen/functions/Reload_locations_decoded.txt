@@ -1,0 +1,36 @@
+Mini DAYZ 1.4.1 — Reload_locations* (from original_docs/data.js)
+Extracted: cpp/docs_gen/functions/Reload_locations_impl.json (+ _start / _aftersave)
+
+=== Reload_locations (runtime) ===
+On function Reload_locations:
+1) Destroy/clear helper object 510; reposition items_on_ground layer (184/216).
+2) For each map_element 507 where distance(player,507) > respawn_radius2 AND IV3==1:
+   → CallFunction erase_map_location(507.IV151)
+3) For each map_element 507 where distance(player,507) <= respawn_radius2 AND IV3==0:
+   → CallFunction create_map_location(507.IV151)
+
+Globals: respawn_radius2 = 2000 (balance_globals.hpp).
+
+Trigger (ScrollTo group): when player scroll distance IV49×0.72 exceeded → Reload_locations.
+C++ port: reload when player moved > respawn_radius2×0.72 from last anchor (game.cpp).
+
+=== Reload_locations_start ===
+On new game / level load: for each 507 with distance(player,507) <= min(respawn_radius2,1000):
+   → create_map_location (no far erase pass).
+
+=== Reload_locations_aftersave ===
+1) For ALL 507: erase_map_location
+2) Then same near create as start: distance <= min(respawn_radius2,1000) → create_map_location
+
+=== create_map_location (partial, verified elsewhere) ===
+Stamps ground tile 15 / water 4; spawns building sprites. C++: stamp_location_footprint + POI sprites when active.
+
+=== NOT in core 1323-byte Reload_locations block ===
+- respawn_radius_npc zed cull: not referenced in Reload_locations_impl.json (zed_resp appears in extended sheets / game modes).
+- Full C2 sprite destroy on erase_map_location: C++ hides inactive POIs; dirt tiles not erased on unload (weak erase evidence).
+
+Evidence files:
+  cpp/docs_gen/functions/Reload_locations_impl.json
+  cpp/docs_gen/functions/Reload_locations_start_impl.json
+  cpp/docs_gen/functions/Reload_locations_aftersave_impl.json
+  tools/_find_reload_triggers.js

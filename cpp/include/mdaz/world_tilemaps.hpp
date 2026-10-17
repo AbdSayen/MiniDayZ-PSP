@@ -6,6 +6,7 @@ namespace mdaz {
 
 class IPlatform;
 class MapGenerator;
+struct MapLocation;
 
 // Static Tilemap instances of the C2 "Map" layout (borders: water, sand, forest, base ground)
 // plus runtime stamps from create_map_location (dirt tile 15 / water tile 4).
@@ -34,6 +35,9 @@ public:
 
   // C2 create_map_location footprints + dirt corridors between nearby POIs.
   void stamp_from_mapgen(const MapGenerator& gen);
+  // Single POI dirt stamp when Reload_locations calls create_map_location (tile 15).
+  void stamp_location_footprint(const MapLocation& L);
+  bool ensure_ground_overlay();
 
   int tile_at(const char* image, float wx, float wy) const;
   void draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,

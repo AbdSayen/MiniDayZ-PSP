@@ -55,6 +55,22 @@ struct FireSaveView {
   FireSaveView() : count(0) {}
 };
 
+// Ground loot piles (Save_loot / Load_loot CSV in C2 — compact binary in MDAZ v14).
+struct SavedLootPile {
+  float x, y;
+  unsigned char item_count;
+  unsigned char is_airdrop;
+  ItemId items[8];
+  unsigned char counts[8];
+};
+
+struct LootSaveView {
+  static const int kMax = 32;
+  int count;
+  SavedLootPile piles[kMax];
+  LootSaveView() : count(0) {}
+};
+
 struct SaveBlob {
   int magic;
   int version;
@@ -109,6 +125,12 @@ struct SaveBlob {
   // v13 — bunker loot flag + duct-tape melee durability mul
   int bunker_looted;
   float melee_break_mul;
+  // v14 — ground loot + LOOT_RESPAWN_TIME timer snapshot
+  int loot_count;
+  SavedLootPile loot_piles[LootSaveView::kMax];
+  float loot_respawn_t;
+  // v15 — worn clothing IV6 durability
+  float worn_iv6[6];
 };
 
 struct WorldExtras {
@@ -118,15 +140,17 @@ struct WorldExtras {
   float adrenaline_t;
   int bunker_looted;
   float melee_break_mul;
+  float loot_respawn_t;
   WorldExtras()
     : airdrop_t(360.f), airdrop_x(0.f), airdrop_y(0.f),
-      tent_warmth_t(0.f), adrenaline_t(0.f), bunker_looted(0), melee_break_mul(1.f) {}
+      tent_warmth_t(0.f), adrenaline_t(0.f), bunker_looted(0), melee_break_mul(1.f),
+      loot_respawn_t(0.f) {}
 };
 
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 13;
+  static const int kVersion = 15;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,
@@ -140,7 +164,8 @@ public:
                               const CropSaveView* crops = 0,
                               const TrapSaveView* traps = 0,
                               const WorldExtras* extras = 0,
-                              const FireSaveView* fires = 0);
+                              const FireSaveView* fires = 0,
+                              const LootSaveView* loot = 0);
   static bool read_from_buffer(const SaveBlob& in, Player& player, Inventory& inv,
                                WeatherState& weather, int* equipped_slot,
                                bool* visited = 0, int visited_len = 0,
@@ -152,7 +177,8 @@ public:
                                CropSaveView* crops = 0,
                                TrapSaveView* traps = 0,
                                WorldExtras* extras = 0,
-                               FireSaveView* fires = 0);
+                               FireSaveView* fires = 0,
+                               LootSaveView* loot = 0);
 
   static bool save_file(IPlatform& io, const char* path, const Player& player,
                         const Inventory& inv, const WeatherState& weather,
@@ -166,7 +192,8 @@ public:
                         const CropSaveView* crops = 0,
                         const TrapSaveView* traps = 0,
                         const WorldExtras* extras = 0,
-                        const FireSaveView* fires = 0);
+                        const FireSaveView* fires = 0,
+                        const LootSaveView* loot = 0);
   static bool load_file(IPlatform& io, const char* path, Player& player,
                         Inventory& inv, WeatherState& weather,
                         int* equipped_slot = 0,
@@ -179,7 +206,8 @@ public:
                         CropSaveView* crops = 0,
                         TrapSaveView* traps = 0,
                         WorldExtras* extras = 0,
-                        FireSaveView* fires = 0);
+                        FireSaveView* fires = 0,
+                        LootSaveView* loot = 0);
 };
 
 } // namespace mdaz

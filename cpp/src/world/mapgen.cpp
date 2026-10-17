@@ -3,6 +3,8 @@
 #include "mdaz/rng.hpp"
 #include "mdaz/world.hpp"
 
+#include <cmath>
+
 namespace mdaz {
 
 namespace {
@@ -15,9 +17,33 @@ const char kC2_river_R[] = "river_R";
 const char kC2_River_ready[] = "River_ready";
 const char kC2_Bridges[] = "Bridges";
 const char kC2_Bridges_2[] = "Bridges_2";
+const char kC2_Reload_locations[] = "Reload_locations";
+const char kC2_Reload_locations_start[] = "Reload_locations_start";
+const char kC2_Reload_locations_aftersave[] = "Reload_locations_aftersave";
+const char kC2_create_map_location[] = "create_map_location";
+const char kC2_erase_map_location[] = "erase_map_location";
+const char kC2_respawn_radius2[] = "respawn_radius2";
+const char kC2_generate_array_roads_1[] = "generate_array_roads_1";
+const char kC2_generate_array_roads_2[] = "generate_array_roads_2";
+
+enum SectorCell : unsigned char {
+  Sector_Empty = 0,
+  Sector_RoadHoriz = 13, // generate_array_roads_1 SetAt
+  Sector_RoadVert = 12,  // generate_array_roads_2 SetAt (0 → 12)
+  Sector_RoadCross = 14, // generate_array_roads_2 SetAt (13 → 14)
+  Sector_PoiMarker = 15,
+};
+
+bool sector_triggers_road_scan(unsigned char v) {
+  return v == 9 || v == 6 || v == 11 || v == Sector_PoiMarker;
+}
+
+bool sector_is_road_marker(unsigned char v) {
+  return v == Sector_RoadHoriz || v == Sector_RoadVert || v == Sector_RoadCross;
+}
 } // namespace
 
-MapGenerator::MapGenerator() : count_(0) {
+MapGenerator::MapGenerator() : count_(0), road_count_(0) {
   river_.valid = false;
   river_.sector_x = 0;
   river_.sector_y = 0;
@@ -28,6 +54,9 @@ MapGenerator::MapGenerator() : count_(0) {
 void MapGenerator::clear() {
   count_ = 0;
   river_.valid = false;
+  road_count_ = 0;
+  for (int y = 0; y < kSectorGrid; ++y)
+    for (int x = 0; x < kSectorGrid; ++x) sector_grid_[y][x] = Sector_Empty;
 }
 
 void MapGenerator::init_river(int seed) {
@@ -58,12 +87,26 @@ void MapGenerator::add(LocationType t, int sx, int sy) {
   L.sector_y = sy;
   L.pos.x = (static_cast<float>(sx) + 0.5f) * (kMapLayoutW / kMapSectorsX);
   L.pos.y = (static_cast<float>(sy) + 0.5f) * (kMapLayoutH / kMapSectorsY);
-  L.active = true;
+  L.active = false;
+  L.loot_seeded = false;
+}
+
+float MapGenerator::dist_to(const MapLocation& L, Vec2 p) {
+  const float dx = L.pos.x - p.x;
+  const float dy = L.pos.y - p.y;
+  return std::sqrt(dx * dx + dy * dy);
+}
+
+float MapGenerator::reload_radius_for(LocationReloadMode mode) {
+  const float r = static_cast<float>(balance::respawn_radius2);
+  if (mode == LocationReload_Runtime) return r;
+  const float cap = 1000.f;
+  return r < cap ? r : cap;
 }
 
 void MapGenerator::generate_new_game(int seed) {
   clear();
-  // C2 pipeline: generate_array_locations → generate_array_roads_* → generate_array_tomap
+  // C2: generate_array_locations → generate_array_roads_1/_2 → generate_array_tomap
   Rng rng(static_cast<std::uint32_t>(seed ? seed : 140));
 
   // Counts from balance_globals (C2 globals villages/cities/…).
@@ -98,25 +141,135 @@ void MapGenerator::generate_new_game(int seed) {
   place(Loc_BunkerEntrance, 1, 3);
   place(Loc_Secret, 1, 0);
   init_river(seed);
+  apply_generate_array_roads();
+}
+
+void MapGenerator::apply_generate_array_roads() {
+  static const char* const kRoadAudit[] = {kC2_generate_array_roads_1, kC2_generate_array_roads_2};
+  (void)kRoadAudit[0];
+  (void)kRoadAudit[1];
+
+  for (int y = 0; y < kSectorGrid; ++y)
+    for (int x = 0; x < kSectorGrid; ++x) sector_grid_[y][x] = Sector_Empty;
+  for (int i = 0; i < count_; ++i) {
+    const MapLocation& L = locs_[i];
+    if (L.sector_x >= 0 && L.sector_x < kSectorGrid && L.sector_y >= 0 &&
+        L.sector_y < kSectorGrid)
+      sector_grid_[L.sector_y][L.sector_x] = Sector_PoiMarker;
+  }
+
+  const int map_w = static_cast<int>(balance::Map_size_X);
+  const int map_h = static_cast<int>(balance::Map_size_Y);
+
+  // generate_array_roads_1: scan rows, pair POI markers (15), mark corridor 13.
+  for (int row = 0; row < map_h; ++row) {
+    int another_x = -1;
+    int another_x2 = -1;
+    for (int col = 0; col < map_w; ++col) {
+      const unsigned char v = sector_grid_[row][col];
+      if (!sector_triggers_road_scan(v)) continue;
+      if (v == Sector_PoiMarker) {
+        if (another_x < 0) another_x = col;
+        else another_x2 = col;
+      }
+    }
+    if (another_x >= 0 && another_x2 > another_x) {
+      for (int c = another_x + 1; c < another_x2; ++c) {
+        if (sector_grid_[row][c] == Sector_Empty) sector_grid_[row][c] = Sector_RoadHoriz;
+      }
+      if (sector_grid_[row][another_x] == Sector_Empty)
+        sector_grid_[row][another_x] = Sector_RoadHoriz;
+    }
+  }
+
+  // generate_array_roads_2: scan columns; 0→12, existing 13→14 (intersections).
+  for (int col = 0; col < map_w; ++col) {
+    int another_x = -1;
+    int another_x2 = -1;
+    for (int row = 0; row < map_h; ++row) {
+      const unsigned char v = sector_grid_[row][col];
+      if (!sector_triggers_road_scan(v)) continue;
+      if (v == Sector_PoiMarker) {
+        if (another_x < 0) another_x = row;
+        else another_x2 = row;
+      }
+    }
+    if (another_x >= 0 && another_x2 > another_x) {
+      for (int r = another_x + 1; r < another_x2; ++r) {
+        unsigned char& cell = sector_grid_[r][col];
+        if (cell == Sector_RoadHoriz) cell = Sector_RoadCross;
+        else if (cell == Sector_Empty) cell = Sector_RoadVert;
+      }
+      unsigned char& start = sector_grid_[another_x][col];
+      if (start == Sector_RoadHoriz) start = Sector_RoadCross;
+      else if (start == Sector_Empty) start = Sector_RoadVert;
+    }
+  }
+
+  road_count_ = 0;
+  for (int y = 0; y < kSectorGrid; ++y) {
+    for (int x = 0; x < kSectorGrid; ++x) {
+      if (sector_is_road_marker(sector_grid_[y][x])) ++road_count_;
+    }
+  }
+}
+
+bool MapGenerator::is_road_sector(int sector_x, int sector_y) const {
+  if (sector_x < 0 || sector_y < 0 || sector_x >= kSectorGrid || sector_y >= kSectorGrid)
+    return false;
+  return sector_is_road_marker(sector_grid_[sector_y][sector_x]);
+}
+
+void MapGenerator::apply_collision_for(int idx, World& world) const {
+  if (idx < 0 || idx >= count_) return;
+  const MapLocation& L = locs_[idx];
+  const int n = poi_part_count(L.type, idx);
+  for (int p = 0; p < n; ++p) {
+    const PoiPartView part = poi_part(L.type, idx, p);
+    if (!part.valid) continue;
+    const float cx = L.pos.x + part.dx;
+    const float cy = L.pos.y + part.dy;
+    const float r = part.block_r > 0.f ? part.block_r : 45.f;
+    world.set_blocked_world(cx, cy, true);
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        if (dx == 0 && dy == 0) continue;
+        world.set_blocked_world(cx + dx * r * 0.35f, cy + dy * r * 0.35f, true);
+      }
+    }
+  }
 }
 
 void MapGenerator::apply_collision(World& world) const {
   for (int i = 0; i < count_; ++i) {
-    const MapLocation& L = locs_[i];
-    const int n = poi_part_count(L.type, i);
-    for (int p = 0; p < n; ++p) {
-      const PoiPartView part = poi_part(L.type, i, p);
-      if (!part.valid) continue;
-      const float cx = L.pos.x + part.dx;
-      const float cy = L.pos.y + part.dy;
-      const float r = part.block_r > 0.f ? part.block_r : 45.f;
-      world.set_blocked_world(cx, cy, true);
-      for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-          if (dx == 0 && dy == 0) continue;
-          world.set_blocked_world(cx + dx * r * 0.35f, cy + dy * r * 0.35f, true);
-        }
-      }
+    if (locs_[i].active) apply_collision_for(i, world);
+  }
+}
+
+void MapGenerator::rebuild_collision(World& world) const {
+  world.reset();
+  apply_collision(world);
+}
+
+void MapGenerator::reload_locations(Vec2 player, LocationReloadMode mode) {
+  static const char* const kReloadAudit[] = {
+      kC2_Reload_locations, kC2_Reload_locations_start, kC2_Reload_locations_aftersave,
+      kC2_create_map_location, kC2_erase_map_location, kC2_respawn_radius2};
+  (void)kReloadAudit[0];
+
+  const float R = reload_radius_for(mode);
+  if (mode == LocationReload_AfterSave) {
+    for (int i = 0; i < count_; ++i) locs_[i].active = false;
+  }
+
+  for (int i = 0; i < count_; ++i) {
+    MapLocation& L = locs_[i];
+    const float d = dist_to(L, player);
+    if (mode == LocationReload_Runtime) {
+      if (d > R && L.active) L.active = false;
+      else if (d <= R && !L.active) L.active = true;
+    } else {
+      if (d <= R) L.active = true;
     }
   }
 }

@@ -1,6 +1,6 @@
 # Known Issues & Limitations
 
-Last updated: 2026-10-17 (molotov/bow/weather pass; PSP EBOOT still unverified)
+Last updated: 2026-10-17 (IV6 armor wear, melee def_percent, Death_guide sprites; PSP EBOOT still unverified)
 
 ## External / environment
 
@@ -19,8 +19,8 @@ Last updated: 2026-10-17 (molotov/bow/weather pass; PSP EBOOT still unverified)
 | Mag capacities | Approximate; not fully extracted from C2 reload events. |
 | Survival / weather timebase | `Timer_ALL`/`Day_Night_speed`/`Rain_speed` drive phase + rain toggle; cold globals applied when non-zero. Still approximate vs full C2 Day&Night event tree. |
 | Molotov / bow | **Sverka (partial):** molotov throw speed **300**, ~**5s** flame, **0.5s** `Molotov_damage` ticks (10/9/8/7/6 by target class). Bow **163**: **V** nocks arrow (**2s**, `Bow_reload`/`Mag_reload` path); crossbow uses mag reload. |
-| Death screen | Native `dead_screen` + stats; `last_death.txt` uses `Death_log_*` field names. Full C2 `Death_guide` tutorial overlay not ported. |
-| Map generation | POI counts from `balance_globals`; static Map-layout borders from `world_tilemaps.txt`; runtime dirt **tile 15** pads/crosses + corridors + heli water **tile 4** via `WorldTilemaps::stamp_from_mapgen`. **River:** C2 `generate_array_locations` declares locals `river_X`/`river_Y`/`river_R` (default **R=2**) and `Bridges`/`Bridges_2`, but **data.js never reads/writes them** — port stamps a seed-based horizontal/vertical **tile 4** band (`tilemap_water`) using `river_R` width only. Full C2 river path / bridge tiles (map_element IV==4 + `199,185` ranges) not decoded. POI clusters in `poi_layout.cpp`; roads Array still incomplete. |
+| Death screen | Native `dead_screen` + stats; `last_death.txt` uses `Death_log_*` field names. **Partial:** `Death_guide` sprites (`gui_tutor_tip_bg`, `bot_tutor_*`) after delay; `tutor_death` audio on death. Full C2 Death_guide event tree / text panels not decoded. |
+| Map generation | POI counts from `balance_globals`; static Map-layout borders; runtime dirt **tile 15** POI footprints + **generate_array_roads_1/_2** sector markers (**12/13/14** between paired POI **15** cells on rows/cols) stamped as dirt corridors; heli water **tile 4**. **Reload_locations** partial (see prior notes). **River** band seed-only (export never uses `river_X/Y`). Full `generate_array_locations` Array **150** cell types (6/9/11/…) not fully ported — roads use POI sector **15** only. `generate_array_tomap` / `generate_mapgen_toelements` not ported. |
 | Bunker | RLE load + walkable dens; typed bunker/mil/hosp loot + multi-type zeds — still not full C2 bunker event tree. |
 | Crafting | Partial recipe set. **`Craft_1`/`Craft_4`/`Craft_5`** ported (bag/pack/bow via `Spawn_drop`). Event params `[[0,308]]` etc. are **object-type table indices** (e.g. 308=`test_bullet_hit`, 389=`composite_arrows` sprite), not item IDs — see `cpp/docs_gen/craft_uid_map.json`. **`Craft_3`/`Craft_21`–`22`/`Craft_31`–`34`** still blocked (pickpile/`Crafted`/world fence; no verified `Spawn_drop` result). |
 | Reload / ammo | **Sverka:** `Mag_reload` sets `Reloading_mag`, pistol path uses `reload_pistol` when `player_weapons` IV93==0, rifle uses `Reload_rifle`; `Reloading_time=1` on many pistol paths; `+19` ticks added in `Mag_reload_body.json`. Port: R/V → `try_mag_reload`, `consume_ammo_from_bag`, pistol 1s reload. **Not ported:** `Check_ammo_pants/vest/outerwear/backpack` (clothing container slots), exact per-weapon IV0 reload ticks. |
@@ -32,8 +32,13 @@ Last updated: 2026-10-17 (molotov/bow/weather pass; PSP EBOOT still unverified)
 | Tree chop | Fell trees leave stumps that regrow ~90–150s. |
 | Airdrop timer | Uses `Airdrop_Timer_ALL`=360 (was recharge 400); radio ETA HUD shows estimate. |
 | Vehicle stash | 4 slots via G near vehicle; persisted in MDAZ **v7**. |
-| Zed / animal HP | Melee dmg sverka by difficulty; HP/speed values still stubs pending object IV extract. |
-| Difficulty NPC dmg | Novice/Regular/Veteran tables for Zed/Army/Wolf from C2 States assigns; Zed_fast Novice/Veteran interpolated (4/8). |
+| Drivable cars | **Partial C2:** UAZ/Volga/Truck spawn; IV284 fuel **−8/0.1s**, max **100**, gas **+40**; crash hp **15/30**; UAZ/Volga **600s+1s** respawn. **GUI_draw_vehicle** partial: `gui_car_bg`, vertical **bar_fuel** / **bar_hp** (IV284/294), nofuel/disable icons, car button sprites; hidden when not driving (**GUI_erase_vehicle** / States). AltMove speed, full **Vehicles UI** / dpad car layer, truck respawn, boat fuel tick **not** verified. |
+| Zed / animal HP | **NPC_get_damage** wired (`npc_apply_damage` + kind map 0–11); HP bar uses C2 `min(30, hp×scale)`. Max HP / speed still stubs pending full IV extract. |
+| Difficulty NPC dmg | Novice/Regular/Veteran tables for Zed/Army/Wolf from C2 States assigns; Zed_fast Novice/Veteran interpolated (4/8). **Wolf→player** hits use **Zed_dmg** in `Wolf_dmg_deal` (not `Wolf_dmg` global); player→wolf still uses `Wolf_dmg` via `NPC_get_damage` kind 0. |
+| Bullets_dmg_deal / armor | **Sverka (partial):** rolled dmg ±25%; `NPC_get_damage` kinds 0–11; player bullets skip vest/helmet **mul** (`Player_get_hit` bullet path). **IV6** wear on bullet + melee hits (`dmg_randomizer` 3–7 → helmet/vest/outer/pants/backpack slots); broken armor (IV6≤0) drops mul. **IV8** second hit on army/tank zeds for mosin/SKS/SVD/repeater/SV-98/sawed mosin when `dmg < random(0,100)`. Melee **def_percent** block roll (IV4 tiers 5/15/25/35 + `perk_meleedef`). **Not ported:** full `dmg_hint` IV15 frame routing, exact IV6 max per item from C2 spawn, bullet IV2 hitbox / kill cam, full bot kind 6–10 routing. |
+| Wolf attack | **Sverka (partial):** range **50**, cooldown **3s** (ScrollTo), SFX `wolf_attack`/`_2`/`_3`. Animation/interactor overlap not simulated — distance check only. |
+| Loot save/load | MDAZ **v14** stores up to **32** ground piles + `loot_respawn_t` (`LOOT_RESPAWN_TIME`=1480 default). C2 `Save_loot`/`Load_loot` GUI CSV + per-pile `checkpile`/`Spawn_drop_from_player` not ported; `LOOT_respawn` stagger timers (**3/4/5s** on obj209) not replicated — only global recharge timer. |
+| Pickup space | `Check_space_inventory` → `can_add_item` before pickup; no clothing-container slot checks (`Check_space_pants` full tree). |
 | POI loot tables | Typed tables (mil/hosp/gas/heli/police/fire/church/secret) + weighted Spawn_drop — not full C2 Check_loot trees. |
 | AI | Zed/animal/bandit behaviors functional but incomplete vs C2 event trees. |
 | Audio | Original OGG tags mapped for common cues; not every C2 audio tag. |
@@ -66,6 +71,7 @@ Audit 2026-10-17 (`node tools/audit_port.js` + keyword search in `original_docs/
 | Overworld tiles | Base grass = tile 6; static borders from `world_tilemaps.txt`; POI dirt footprints stamped at runtime (tile 15). Away from POIs/roads the interior is still mostly bare grass — C2 also plants buildings/trees via `create_map_element` / `generate_location` (partially approximated). |
 | Menu | Background is the original Menu layout (tilemaps + 149 sprites from `tools/extract_layout_sprites.js`), slow camera pan, `menu_btn_wood` buttons. Pan speed/path is a guess, not taken from C2 events. |
 | Font | 5×7 bitmap font drawn with rects, not the original `bitmap_font` sheet. |
+| Character anims | Idle/run/axe/pistol/twohand/using_item + zed walk/run/attack from `char_anims.txt`. **Death:** zed/wolf play `die1`/`die2` ~0.55s on kill when frames exist, then static dead sheets; tank/screamer/deer/rabbit often skip (no living-skin die in export). Player still `player_skin_dead` sprite. |
 | Minimap | Dark square with markers; original minimap rendering not ported. |
 | Buildings | POI sprites drawn at native frame size × world scale; **2-building offsets** (~±150 world units from `create_map_location` ±300 SetTile windows) per `poi_layout.cpp`. Not C2 `Buildings_base` instance var placement. |
 | Clothing layers | Skin swap by worn tier + gasmask badge; not full per-piece clothing spritesheets on body. |
