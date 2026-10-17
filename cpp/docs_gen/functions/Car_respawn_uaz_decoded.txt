@@ -1,0 +1,19 @@
+=== Car_respawn_uaz len 3330 ===
+Action p180 a40 | Car_respawn_uaz | nums:180,40,2,1,2
+Action p4 a507 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a816 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a807 strs: 
+Action p4 a806 strs: 
+Action p4 a816 strs: 
+Action p4 a806 strs: 

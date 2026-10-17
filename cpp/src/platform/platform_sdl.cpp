@@ -107,7 +107,7 @@ public:
       prev_attack_(false), prev_interact_(false), prev_inventory_(false),
       prev_reload_(false), prev_pause_(false), prev_confirm_(false),
       prev_save_(false), prev_load_(false), prev_torch_(false),
-      prev_drop_(false), prev_mag_reload_(false), prev_throw_(false),
+      prev_drop_(false), prev_mag_reload_(false), prev_craft_(false), prev_throw_(false),
       prev_equip_prev_(false), prev_equip_next_(false) {
     images_dir_[0] = 0;
   }
@@ -253,6 +253,7 @@ public:
     out.torch_pressed = keys[SDL_SCANCODE_T] != 0 && !prev_torch_;
     out.drop_pressed = keys[SDL_SCANCODE_G] != 0 && !prev_drop_;
     out.mag_reload_pressed = keys[SDL_SCANCODE_V] != 0 && !prev_mag_reload_;
+    out.craft_pressed = keys[SDL_SCANCODE_B] != 0 && !prev_craft_;
     out.throw_pressed = keys[SDL_SCANCODE_F] != 0 && !prev_throw_;
     if (keys[SDL_SCANCODE_Q] && !prev_equip_prev_) out.equip_delta -= 1;
     if (keys[SDL_SCANCODE_X] && !prev_equip_next_) out.equip_delta += 1; // cycle hotbar
@@ -261,6 +262,7 @@ public:
     prev_torch_ = keys[SDL_SCANCODE_T] != 0;
     prev_drop_ = keys[SDL_SCANCODE_G] != 0;
     prev_mag_reload_ = keys[SDL_SCANCODE_V] != 0;
+    prev_craft_ = keys[SDL_SCANCODE_B] != 0;
     prev_throw_ = keys[SDL_SCANCODE_F] != 0;
     prev_equip_prev_ = keys[SDL_SCANCODE_Q] != 0;
     prev_equip_next_ = keys[SDL_SCANCODE_X] != 0;
@@ -415,6 +417,8 @@ private:
       tex_[name] = e;
       return 0;
     }
+    // Pixel art — nearest filter avoids blur / rainbow fringe when scaled.
+    SDL_SetTextureScaleMode(e.tex, SDL_ScaleModeNearest);
     e.w = w;
     e.h = h;
     tex_[name] = e;
@@ -429,7 +433,7 @@ private:
   std::map<std::string, TexEntry> tex_;
   bool prev_attack_, prev_interact_, prev_inventory_, prev_reload_, prev_pause_, prev_confirm_;
   bool prev_save_, prev_load_, prev_torch_;
-  bool prev_drop_, prev_mag_reload_, prev_throw_;
+  bool prev_drop_, prev_mag_reload_, prev_craft_, prev_throw_;
   bool prev_equip_prev_, prev_equip_next_;
 };
 

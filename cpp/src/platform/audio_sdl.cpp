@@ -187,6 +187,8 @@ public:
     load_replace("eat", "eatingsoft_0.ogg");
     load_replace("drink", "drinksoda_0.ogg");
     load_replace("reload", "fnx45_reload.ogg");
+    load_replace("reload_pistol", "reload_pistol.ogg");
+    load_replace("reload_rifle", "reload_rifle.ogg");
     load_replace("explode", "f1_explode.ogg");
     load_replace("bush", "bushsearch.ogg");
     load_replace("step_forest", "forest_run_1.ogg");

@@ -259,6 +259,7 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   inv.restore_worn(in.worn_ids, in.worn_count);
   weather.day_phase = in.day_phase;
   weather.rain = in.rain;
+  weather.sync_from_day_phase();
   if (equipped_slot) *equipped_slot = in.equipped_slot;
   if (visited && visited_len > 0) {
     if (in.version >= 3) unpack_visited(in.visited, visited, visited_len);

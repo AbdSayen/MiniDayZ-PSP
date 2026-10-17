@@ -3,40 +3,68 @@
 
 namespace mdaz {
 
+namespace {
+// C2: Timer_ALL wraps at 1440; Day_Night_speed=720 advances the in-game clock.
+constexpr float kTimerWrap = 1440.f;
+constexpr float kTimerStart = 360.f; // matches balance Timer_ALL initial
+
+bool hours_are_night(int h) {
+  // Day&Night group: dusk after ~19, dawn before ~6 (Timer_Hours checks).
+  return h < 6 || h >= 19;
+}
+} // namespace
+
 WeatherState::WeatherState() { reset(); }
 
 void WeatherState::reset() {
-  day_phase = 0.35f; // morning-ish
+  timer_all = kTimerStart;
+  day_phase = timer_all / kTimerWrap;
   rain = 0.f;
+  raining = false;
+  rain_phase_ = 0.f;
   ambient_temp = 55.f;
-  is_night = false;
+  is_night = hours_are_night(timer_hours());
+}
+
+int WeatherState::timer_hours() const {
+  return static_cast<int>(timer_all / 60.f) % 24;
+}
+
+void WeatherState::sync_from_day_phase() {
+  timer_all = day_phase * kTimerWrap;
+  is_night = hours_are_night(timer_hours());
 }
 
 void WeatherState::update(float dt) {
-  // Day_Night_speed=720 and Rain_speed=360 are Construct timeline units.
-  // Mapping: treat as "full cycle units per in-game day-equivalent".
-  // Until the exact C2 expression is extracted, advance phase so that
-  // higher speed => faster cycle. Documented as APPROXIMATE.
   const float day_speed = static_cast<float>(balance::Day_Night_speed);
   const float rain_speed = static_cast<float>(balance::Rain_speed);
 
-  day_phase += (day_speed / 720.f) * (dt / 600.f); // ~10 min real => one cycle at default
-  while (day_phase >= 1.f) day_phase -= 1.f;
-  while (day_phase < 0.f) day_phase += 1.f;
+  // One full Timer_ALL cycle in Day_Night_speed wall seconds (720s default).
+  timer_all += dt * (kTimerWrap / day_speed);
+  while (timer_all >= kTimerWrap) timer_all -= kTimerWrap;
+  while (timer_all < 0.f) timer_all += kTimerWrap;
+  day_phase = timer_all / kTimerWrap;
 
-  is_night = (day_phase < 0.25f || day_phase > 0.75f);
+  is_night = hours_are_night(timer_hours());
 
-  // Simple rain pulse using rain_speed relative to day_speed
-  rain += (rain_speed / 360.f) * 0.01f * dt;
-  if (rain > 1.5f) rain = 0.f;
-  const float rain_amount = (rain > 0.7f && rain < 1.2f) ? 1.f : 0.f;
+  // Rain_speed timer toggles Rain global; pulse rain intensity while active.
+  rain_phase_ += dt * (kTimerWrap / rain_speed);
+  if (rain_phase_ >= kTimerWrap) {
+    rain_phase_ -= kTimerWrap;
+    raining = !raining;
+  }
+  if (raining) {
+    rain += dt * 0.35f;
+    if (rain > 1.f) rain = 1.f;
+  } else {
+    rain -= dt * 0.25f;
+    if (rain < 0.f) rain = 0.f;
+  }
 
-  ambient_temp = is_night ? 30.f : 60.f;
-  ambient_temp -= rain_amount * 15.f;
-  // Incorporate original cold globals as offsets when active
-  if (rain_amount > 0.f) ambient_temp -= static_cast<float>(balance::Rain_cold);
-  if (is_night) ambient_temp -= static_cast<float>(balance::Night_cold) * 0.01f;
-  else ambient_temp -= static_cast<float>(balance::Day_cold) * 0.01f;
+  ambient_temp = is_night ? 38.f : 62.f;
+  ambient_temp -= static_cast<float>(is_night ? balance::Night_cold : balance::Day_cold);
+  if (rain > 0.25f)
+    ambient_temp -= static_cast<float>(balance::Rain_cold) * rain;
 }
 
 } // namespace mdaz

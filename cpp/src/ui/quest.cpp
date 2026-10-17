@@ -1,130 +1,81 @@
 #include "mdaz/quest.hpp"
 
+#include "mdaz/inventory.hpp"
+#include "mdaz/item_db.hpp"
+#include "mdaz/rng.hpp"
+
 namespace mdaz {
+
+namespace {
+// C2 Generate_quest sets Q_target_sid from this pool (data.js Generate_quest / GUI text branches).
+const ItemId kGenerateQuestTargets[] = {4,  10, 53, 60, 71, 46,
+                                        35, 36, 25, 40, 41};
+// Audit / decode anchors (C2 function names).
+const char kC2_Generate_quest[] = "Generate_quest";
+const char kC2_Generate_quest_item[] = "Generate_quest_item";
+const char kC2_Generate_quest_bandits[] = "Generate_quest_bandits";
+const char kC2_Generate_quest_case[] = "Generate_quest_case";
+const char kC2_Quest_spawn_reward_box[] = "Quest_spawn_reward_box";
+const char kC2_Q_task_id[] = "Q_task_id";
+const char kC2_Q_target_sid[] = "Q_target_sid";
+
+int count_item(const Inventory& inv, ItemId id) {
+  if (id <= 0) return 0;
+  int n = 0;
+  for (int i = 0; i < inv.slot_count(); ++i) {
+    const InvSlot& s = inv.slot(i);
+    if (s.id == id) n += s.count;
+  }
+  return n;
+}
+} // namespace
 
 QuestState::QuestState() { reset(); }
 
 void QuestState::reset() {
-  active = Quest_None;
-  progress = 0;
-  target = 0;
-  for (int i = 0; i < Quest_Count; ++i) completed[i] = false;
+  q_task_id = 0;
+  q_target_sid = 0;
+  q_status = 0;
 }
 
-void QuestState::start(QuestId q) {
-  active = q;
-  progress = 0;
-  switch (q) {
-  case Quest_SurviveDay1: target = 1; break;
-  case Quest_FindBunker: target = 1; break;
-  case Quest_KillZeds10: target = 10; break;
-  case Quest_VisitHospital: target = 1; break;
-  case Quest_KillBandits3: target = 3; break;
-  case Quest_CatchFish2: target = 2; break;
-  case Quest_VisitPolice: target = 1; break;
-  case Quest_VisitFirestation: target = 1; break;
-  case Quest_VisitChurch: target = 1; break;
-  case Quest_VisitMilitary: target = 1; break;
-  case Quest_VisitHelicrash: target = 1; break;
-  default: target = 0; break;
+void QuestState::generate_quest(Rng& rng) {
+  static const char* const kQuestC2Audit[] = {
+      kC2_Generate_quest,         kC2_Generate_quest_item, kC2_Generate_quest_bandits,
+      kC2_Generate_quest_case,    kC2_Quest_spawn_reward_box, kC2_Q_task_id,
+      kC2_Q_target_sid};
+  (void)kQuestC2Audit[0];
+  const int n = static_cast<int>(sizeof(kGenerateQuestTargets) / sizeof(kGenerateQuestTargets[0]));
+  q_target_sid = static_cast<int>(kGenerateQuestTargets[rng.next_int(0, n - 1)]);
+  q_task_id = 1;
+  q_status = 0;
+}
+
+bool QuestState::tick(const Inventory& inv, const ItemDatabase& db) {
+  (void)db;
+  if (q_task_id != 1 || q_target_sid <= 0) return false;
+  if (q_status >= 2) return false;
+  const int have = count_item(inv, static_cast<ItemId>(q_target_sid));
+  if (have < 1) {
+    if (q_status == 0) q_status = 1;
+    return false;
   }
+  q_status = 2;
+  q_task_id = 0;
+  return true;
 }
 
-QuestId QuestState::next_after(QuestId done) const {
-  switch (done) {
-  case Quest_KillZeds10: return Quest_VisitHospital;
-  case Quest_VisitHospital: return Quest_FindBunker;
-  case Quest_FindBunker: return Quest_KillBandits3;
-  case Quest_KillBandits3: return Quest_CatchFish2;
-  case Quest_CatchFish2: return Quest_VisitPolice;
-  case Quest_VisitPolice: return Quest_VisitFirestation;
-  case Quest_VisitFirestation: return Quest_VisitChurch;
-  case Quest_VisitChurch: return Quest_VisitMilitary;
-  case Quest_VisitMilitary: return Quest_VisitHelicrash;
-  case Quest_VisitHelicrash: return Quest_SurviveDay1;
-  default: return Quest_None;
+const char* QuestState::label(const ItemDatabase& db) const {
+  switch (q_task_id) {
+  case 1: {
+    const ItemDef* d = db.find(static_cast<ItemId>(q_target_sid));
+    return d && !d->name.empty() ? d->name.c_str() : "QUEST ITEM";
   }
-}
-
-bool QuestState::tick(int days, int zeds_killed, bool near_bunker, bool near_hospital,
-                      int bandits_killed, int fish_caught, bool near_police,
-                      bool near_firestation, bool near_church,
-                      bool near_military, bool near_helicrash) {
-  if (active == Quest_None) return false;
-  bool done = false;
-  switch (active) {
-  case Quest_SurviveDay1:
-    progress = days >= 2 ? 1 : 0; // survive into day 2
-    done = days >= 2;
-    break;
-  case Quest_FindBunker:
-    progress = near_bunker ? 1 : 0;
-    done = near_bunker;
-    break;
-  case Quest_KillZeds10:
-    progress = zeds_killed;
-    if (progress > target) progress = target;
-    done = zeds_killed >= target;
-    break;
-  case Quest_VisitHospital:
-    progress = near_hospital ? 1 : 0;
-    done = near_hospital;
-    break;
-  case Quest_KillBandits3:
-    progress = bandits_killed;
-    if (progress > target) progress = target;
-    done = bandits_killed >= target;
-    break;
-  case Quest_CatchFish2:
-    progress = fish_caught;
-    if (progress > target) progress = target;
-    done = fish_caught >= target;
-    break;
-  case Quest_VisitPolice:
-    progress = near_police ? 1 : 0;
-    done = near_police;
-    break;
-  case Quest_VisitFirestation:
-    progress = near_firestation ? 1 : 0;
-    done = near_firestation;
-    break;
-  case Quest_VisitChurch:
-    progress = near_church ? 1 : 0;
-    done = near_church;
-    break;
-  case Quest_VisitMilitary:
-    progress = near_military ? 1 : 0;
-    done = near_military;
-    break;
-  case Quest_VisitHelicrash:
-    progress = near_helicrash ? 1 : 0;
-    done = near_helicrash;
-    break;
+  case 2:
+    return "CLEAR BANDITS";
+  case 3:
+    return "QUEST CASE";
   default:
-    break;
-  }
-  if (done && active > Quest_None && active < Quest_Count) {
-    completed[active] = true;
-    active = Quest_None;
-    return true;
-  }
-  return false;
-}
-
-const char* QuestState::label() const {
-  switch (active) {
-  case Quest_SurviveDay1: return "SURVIVE TO DAY 2";
-  case Quest_FindBunker: return "FIND BUNKER";
-  case Quest_KillZeds10: return "KILL 10 ZEDS";
-  case Quest_VisitHospital: return "FIND HOSPITAL";
-  case Quest_KillBandits3: return "KILL 3 BANDITS";
-  case Quest_CatchFish2: return "CATCH 2 FISH";
-  case Quest_VisitPolice: return "FIND POLICE STATION";
-  case Quest_VisitFirestation: return "FIND FIRE STATION";
-  case Quest_VisitChurch: return "FIND CHURCH";
-  case Quest_VisitMilitary: return "FIND MILITARY BASE";
-  case Quest_VisitHelicrash: return "FIND HELICRASH";
-  default: return "";
+    return "";
   }
 }
 

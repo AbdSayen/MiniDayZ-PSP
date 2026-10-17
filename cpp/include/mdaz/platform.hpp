@@ -26,7 +26,8 @@ struct InputState {
   bool load_pressed;
   bool torch_pressed;
   bool drop_pressed;       // G — drop one from equipped slot
-  bool mag_reload_pressed; // V — mag/chamber reload stub
+  bool mag_reload_pressed; // V — mag/chamber reload (same as Tap_reload / R)
+  bool craft_pressed;      // B — craft when recipe available
   bool throw_pressed;      // F — throw stick / improvised projectile
   bool bag; // hold Tab to show inventory list
   int slot_digit; // 1..9 pressed this frame, else 0
@@ -42,7 +43,8 @@ struct InputState {
       confirm(false), confirm_pressed(false),
       cancel(false), save_pressed(false), load_pressed(false),
       torch_pressed(false), drop_pressed(false), mag_reload_pressed(false),
-      throw_pressed(false), bag(false), slot_digit(0), equip_delta(0) {}
+      craft_pressed(false), throw_pressed(false), bag(false), slot_digit(0),
+      equip_delta(0) {}
 };
 
 class IPlatform {

@@ -13,6 +13,7 @@ Campfire* CampfireSystem::place(Vec2 pos, float life) {
       fires_[i].pos = pos;
       fires_[i].life = life;
       fires_[i].active = true;
+      fires_[i].molotov_burn = false;
       return &fires_[i];
     }
   }
@@ -21,7 +22,14 @@ Campfire* CampfireSystem::place(Vec2 pos, float life) {
   f.pos = pos;
   f.life = life;
   f.active = true;
+  f.molotov_burn = false;
   return &f;
+}
+
+Campfire* CampfireSystem::place_molotov(Vec2 pos, float life) {
+  Campfire* f = place(pos, life);
+  if (f) f->molotov_burn = true;
+  return f;
 }
 
 bool CampfireSystem::boost_near(Vec2 pos, float add_life, float radius) {
@@ -54,7 +62,7 @@ float CampfireSystem::warmth_near(Vec2 pos, float radius) const {
   float best = 0.f;
   const float r2 = radius * radius;
   for (int i = 0; i < count_; ++i) {
-    if (!fires_[i].active) continue;
+    if (!fires_[i].active || fires_[i].molotov_burn) continue;
     const float dx = fires_[i].pos.x - pos.x;
     const float dy = fires_[i].pos.y - pos.y;
     const float d2 = dx * dx + dy * dy;
@@ -67,6 +75,17 @@ float CampfireSystem::warmth_near(Vec2 pos, float radius) const {
 
 bool CampfireSystem::near_fire(Vec2 pos, float radius) const {
   return warmth_near(pos, radius) > 0.05f;
+}
+
+bool CampfireSystem::in_molotov_burn(Vec2 pos, float radius) const {
+  const float r2 = radius * radius;
+  for (int i = 0; i < count_; ++i) {
+    if (!fires_[i].active || !fires_[i].molotov_burn) continue;
+    const float dx = fires_[i].pos.x - pos.x;
+    const float dy = fires_[i].pos.y - pos.y;
+    if (dx * dx + dy * dy <= r2) return true;
+  }
+  return false;
 }
 
 } // namespace mdaz

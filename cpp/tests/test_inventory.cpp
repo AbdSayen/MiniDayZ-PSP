@@ -1,3 +1,4 @@
+#include "mdaz/ammo.hpp"
 #include "mdaz/inventory.hpp"
 #include "mdaz/item_db.hpp"
 
@@ -156,6 +157,24 @@ int test_inventory() {
       ++fail;
     } else {
       std::printf("OK   protector case +3 capacity\n");
+    }
+  }
+
+  {
+    mdaz::ItemDatabase adb;
+    adb.load_from_json_string("{\"items\":[{\"id\":12,\"name\":\".45 ACP\"}]}");
+    mdaz::Inventory ainv;
+    ainv.add_item(12, 7, adb);
+    ainv.add_item(12, 5, adb);
+    if (mdaz::count_ammo_in_bag(ainv, 12) != 12) {
+      std::printf("FAIL ammo count\n");
+      ++fail;
+    } else if (mdaz::consume_ammo_from_bag(ainv, 12, 4) != 4 ||
+               mdaz::count_ammo_in_bag(ainv, 12) != 8) {
+      std::printf("FAIL ammo consume\n");
+      ++fail;
+    } else {
+      std::printf("OK   ammo count/consume\n");
     }
   }
 

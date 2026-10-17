@@ -37,7 +37,8 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | Z / Space | Attack / confirm |
 | E | Loot / bunker / mount / chop tree (axe) / fish / building search / forage |
 | C | Use item (food/med/NVG/flare/morphine/energy) / wear armor·bag |
-| R | Craft (bow/arrows/bag/molotov…) / cook near fire |
+| R / V | Mag reload from bag ammo (`Mag_reload`) |
+| B | Craft (bow/arrows/bag/molotov…) / cook near fire |
 | F | Throw F1 / molotov / stick |
 | C + Battery | Refill torch/NVG charge |
 | C + Tent | Place shelter (long warmth) |
@@ -47,7 +48,6 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | C + Whiskey | Drink (warmth + short adrenaline) |
 | C + Gasmask/Headlamp | Wear |
 | G | Drop one from equipped slot |
-| V | Reload mag from reserve ammo |
 | T | Place campfire (if kit) / else toggle torch |
 | Q / X / mousewheel | Cycle hotbar |
 | Tab | Hold: inventory list |

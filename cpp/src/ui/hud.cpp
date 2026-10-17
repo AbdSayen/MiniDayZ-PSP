@@ -1,6 +1,7 @@
 #include "mdaz/hud.hpp"
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/game.hpp"
+#include "mdaz/inventory.hpp"
 #include "mdaz/item_sprites.hpp"
 #include "mdaz/map_labels.hpp"
 #include "mdaz/mapgen.hpp"
@@ -182,16 +183,26 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     }
   }
 
-  if (game.quest().active != Quest_None) {
+  if (game.quest().show_panel()) {
     if (spr(platform, "gui_quest_panel-sheet0"))
       platform.draw_sprite("gui_quest_panel-sheet0", gx(4.f), gy(100.f),
                            gw(220.f), gh(36.f), 0.f, 0.85f);
     if (spr(platform, "quest_icon-sheet0"))
       platform.draw_sprite("quest_icon-sheet0", gx(8.f), gy(105.f),
                            gw(22.f), gh(22.f), 0.f, 1.f);
-    char qbuf[72];
-    std::snprintf(qbuf, sizeof(qbuf), "%s %d/%d", game.quest().label(),
-                  game.quest().progress, game.quest().target);
+    char qbuf[96];
+    if (game.quest().q_task_id == 1) {
+      int have = 0;
+      for (int i = 0; i < game.inventory().slot_count(); ++i) {
+        const InvSlot& s = game.inventory().slot(i);
+        if (s.id == static_cast<ItemId>(game.quest().q_target_sid)) have += s.count;
+      }
+      std::snprintf(qbuf, sizeof(qbuf), "FIND: %s (%d/1)", game.quest().label(game.items()),
+                    have > 1 ? 1 : have);
+    } else {
+      std::snprintf(qbuf, sizeof(qbuf), "TASK %d: %s", game.quest().q_task_id,
+                    game.quest().label(game.items()));
+    }
     platform.draw_text(gx(36.f), gy(112.f), qbuf, 0.9f, 0.85f, 0.5f);
   }
 
@@ -383,45 +394,56 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     }
   }
 
-  // Minimap — bottom-right above hotbar; tile frame 20×20 @ (1,1) in 128 sheet
+  // Minimap — bottom-right; sector fog of war + POI marks (generate_minimap stand-in)
   {
     const float mw = 64.f, mh = 64.f;
     const float mx = 480.f - mw - 6.f, my = 272.f - mh - gh(50.f) - 4.f;
+    // Base parchment / grass tone (visited) under fog
+    platform.draw_rect(mx, my, mw, mh, 0.22f, 0.26f, 0.16f, 0.92f);
     if (spr(platform, "minimap_tile-sheet0"))
       platform.draw_sprite_frame("minimap_tile-sheet0", mx, my, mw, mh,
-                                 1, 1, 20, 20, 0.f, 0.85f);
-    else
-      platform.draw_rect(mx, my, mw, mh, 0.05f, 0.06f, 0.05f, 0.75f);
+                                 1, 1, 20, 20, 0.f, 0.35f);
     const float cell_w = mw / static_cast<float>(kMapSectorsX);
     const float cell_h = mh / static_cast<float>(kMapSectorsY);
     for (int sy = 0; sy < kMapSectorsY; ++sy) {
       for (int sx = 0; sx < kMapSectorsX; ++sx) {
-        if (!game.sector_visited(sx, sy)) {
-          platform.draw_rect(mx + sx * cell_w, my + sy * cell_h, cell_w, cell_h,
-                             0.02f, 0.02f, 0.03f, 0.7f);
+        const float cx = mx + sx * cell_w;
+        const float cy = my + sy * cell_h;
+        if (game.sector_visited(sx, sy)) {
+          platform.draw_rect(cx, cy, cell_w - 0.5f, cell_h - 0.5f,
+                             0.32f, 0.38f, 0.22f, 0.55f);
+        } else {
+          platform.draw_rect(cx, cy, cell_w, cell_h, 0.04f, 0.04f, 0.05f, 0.88f);
         }
       }
     }
-    const float scale = 0.004f;
+    // Fixed world→minimap: full map fits in the square (not camera-relative).
+    auto to_mini = [&](float wx, float wy, float& ox, float& oy) {
+      ox = mx + (wx / kMapLayoutW) * mw;
+      oy = my + (wy / kMapLayoutH) * mh;
+    };
     for (int i = 0; i < game.mapgen().location_count(); ++i) {
       const MapLocation& L = game.mapgen().location(i);
       if (!game.sector_visited(L.sector_x, L.sector_y) && L.type != Loc_BunkerEntrance) continue;
-      float px = mx + mw * 0.5f + (L.pos.x - pl.pos.x) * scale;
-      float py = my + mh * 0.5f + (L.pos.y - pl.pos.y) * scale;
-      if (px < mx || py < my || px > mx + mw - 2 || py > my + mh - 2) continue;
-      float r = 0.55f, g = 0.55f, b = 0.35f;
+      float px = 0.f, py = 0.f;
+      to_mini(L.pos.x, L.pos.y, px, py);
+      if (px < mx || py < my || px > mx + mw - 2.f || py > my + mh - 2.f) continue;
+      float r = 0.7f, g = 0.65f, b = 0.4f;
       if (L.type == Loc_BunkerEntrance) { r = 0.95f; g = 0.65f; b = 0.2f; }
-      else if (L.type == Loc_Military) { r = 0.25f; g = 0.7f; b = 0.3f; }
+      else if (L.type == Loc_Military) { r = 0.25f; g = 0.75f; b = 0.3f; }
       else if (L.type == Loc_Hospital) { r = 0.9f; g = 0.35f; b = 0.35f; }
-      else if (L.type == Loc_GasStation) { r = 0.85f; g = 0.75f; b = 0.2f; }
+      else if (L.type == Loc_GasStation) { r = 0.9f; g = 0.8f; b = 0.2f; }
       else if (L.type == Loc_Police) { r = 0.35f; g = 0.45f; b = 0.95f; }
-      platform.draw_rect(px, py, 2, 2, r, g, b, 1.f);
+      else if (L.type == Loc_City) { r = 0.85f; g = 0.85f; b = 0.75f; }
+      else if (L.type == Loc_Helicrash) { r = 0.9f; g = 0.4f; b = 0.15f; }
+      platform.draw_rect(px, py, 2.5f, 2.5f, r, g, b, 1.f);
     }
+    float ppx = 0.f, ppy = 0.f;
+    to_mini(pl.pos.x, pl.pos.y, ppx, ppy);
     if (spr(platform, "minimap_player-sheet0"))
-      platform.draw_sprite("minimap_player-sheet0",
-                           mx + mw * 0.5f - 3.f, my + mh * 0.5f - 3.f, 6.f, 6.f, 0.f, 1.f);
+      platform.draw_sprite("minimap_player-sheet0", ppx - 3.f, ppy - 3.f, 6.f, 6.f, 0.f, 1.f);
     else
-      platform.draw_rect(mx + mw * 0.5f - 1.f, my + mh * 0.5f - 1.f, 3, 3, 0.3f, 0.9f, 0.4f, 1.f);
+      platform.draw_rect(ppx - 1.5f, ppy - 1.5f, 3.f, 3.f, 0.3f, 0.95f, 0.4f, 1.f);
   }
 }
 

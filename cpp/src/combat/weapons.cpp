@@ -117,4 +117,46 @@ const WeaponDef* weapon_def_at(int index) {
   return &kWeapons[index];
 }
 
+bool weapon_reload_uses_pistol_anim(const WeaponDef* w) {
+  if (!w || w->stats.is_melee || w->ammo_id <= 0) return false;
+  // IV93 == 0 in original → reload_pistol branch (Mag_reload_body.json).
+  switch (w->item_id) {
+  case 151:
+  case 152:
+  case 153:
+  case 165:
+  case 170:
+  case 181:
+  case 182:
+  case 169:
+  case 173:
+  case 179:
+    return true;
+  default:
+    break;
+  }
+  if (w->ammo_id == 17) return true; // shotguns share pistol reload clip in C2
+  return w->mag_capacity > 0 && w->mag_capacity <= 10;
+}
+
+float weapon_reload_duration_sec(const WeaponDef* w) {
+  if (!w) return 1.f;
+  // Verified in data.js: Reloading_time set to 1 for many pistol/SMG reload paths.
+  if (weapon_reload_uses_pistol_anim(w)) return 1.f;
+  // Mag_reload: duration includes +19 ticks on top of weapon reload IV (≈ +0.32s at 60 Hz).
+  const float tick_pad = 19.f / 60.f;
+  if (w->stats.fire_interval >= 0.65f) return 1.f + tick_pad; // bolt/lever family
+  return 1.4f; // rifle default — still approximate (weapon IV0 not fully extracted)
+}
+
+bool weapon_uses_bow_nock(const WeaponDef* w) {
+  return w && w->item_id == 163 && w->ammo_id > 0 && w->mag_capacity == 0;
+}
+
+float weapon_bow_nock_sec(const WeaponDef* w) {
+  (void)w;
+  // Bow_reload → Mag_reload min(max(IV18/2,2),3); default 2s when IV18 unknown.
+  return 2.f;
+}
+
 } // namespace mdaz

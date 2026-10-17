@@ -27,7 +27,7 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Bandits / bots | Реализуется | Melee+gun; markers |
 | Vehicles | Реализуется | Car/boat/bike + 4-slot trunk stash (G) |
 | Quests | Реализуется | Chain …church→military→helicrash→day2; HUD panel |
-| Map generation | Реализуется | POI sectors; atlas ground (not C2 RLE map) |
+| Map generation | Реализуется | POI counts from globals; dirt/water stamps; **multi-building POI tables** from C2 layout tags (`poi_layout.cpp`); roads Array / full tilegen still incomplete |
 | Bunker loader | Протестирована | RLE 225×74; tile atlas draw |
 | Craft | Реализуется | Core + Craft_21/22/3 firekit paths; incomplete vs full C2 |
 | Save | Протестирована | MDAZ v13 (+bunker_looted/melee mul) |

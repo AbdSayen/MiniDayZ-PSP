@@ -1,6 +1,6 @@
 # Known Issues & Limitations
 
-Last updated: 2026-10-17 (desktop playable; PSP EBOOT still unverified)
+Last updated: 2026-10-17 (molotov/bow/weather pass; PSP EBOOT still unverified)
 
 ## External / environment
 
@@ -17,10 +17,14 @@ Last updated: 2026-10-17 (desktop playable; PSP EBOOT still unverified)
 | Item numeric stats | Many food/water/heal values are placeholders (`known_stats=false`). Whiskey and some cooked meats marked known where IV literals were clear. |
 | Firearm base damage | **Sverka:** Fist **10**/range **45**, FNX IV0 **23**, sword **15**, hit variance ±25%, bleed start `random(3)>=1.5`. Other guns in `weapons.cpp` are **PLACEHOLDER** (heuristic / DayZ-like stubs). Deep IV0 scan (`tools/extract_gun_iv0_deep.js`) is noisy — do not promote candidates to sverka without event-path proof. |
 | Mag capacities | Approximate; not fully extracted from C2 reload events. |
-| Survival / weather timebase | `Day_Night_speed` / `Rain_speed` globals used; Construct timeline units ≠ wall-clock seconds — phase advance approximate. |
-| Map generation | Sector POI grid + roads/trees/water band — **not** full C2 `Map generation` / Location loader tilemaps. No real RLE `ground_lvl*` world data yet (visual tiling is procedural from atlases). |
+| Survival / weather timebase | `Timer_ALL`/`Day_Night_speed`/`Rain_speed` drive phase + rain toggle; cold globals applied when non-zero. Still approximate vs full C2 Day&Night event tree. |
+| Molotov / bow | **Sverka (partial):** molotov throw speed **300**, ~**5s** flame, **0.5s** `Molotov_damage` ticks (10/9/8/7/6 by target class). Bow **163**: **V** nocks arrow (**2s**, `Bow_reload`/`Mag_reload` path); crossbow uses mag reload. |
+| Death screen | Native `dead_screen` + stats; `last_death.txt` uses `Death_log_*` field names. Full C2 `Death_guide` tutorial overlay not ported. |
+| Map generation | POI counts from `balance_globals`; static Map-layout borders from `world_tilemaps.txt`; runtime dirt **tile 15** pads/crosses + corridors + heli water **tile 4** via `WorldTilemaps::stamp_from_mapgen`. **River:** C2 `generate_array_locations` declares locals `river_X`/`river_Y`/`river_R` (default **R=2**) and `Bridges`/`Bridges_2`, but **data.js never reads/writes them** — port stamps a seed-based horizontal/vertical **tile 4** band (`tilemap_water`) using `river_R` width only. Full C2 river path / bridge tiles (map_element IV==4 + `199,185` ranges) not decoded. POI clusters in `poi_layout.cpp`; roads Array still incomplete. |
 | Bunker | RLE load + walkable dens; typed bunker/mil/hosp loot + multi-type zeds — still not full C2 bunker event tree. |
-| Crafting | Partial recipe set (bow/arrows/bag/molotov/cook/fire/splint/rod rope+duct/fence/burlap/spinning…). Full `Craft_*` groups incomplete. |
+| Crafting | Partial recipe set. **`Craft_1`/`Craft_4`/`Craft_5`** ported (bag/pack/bow via `Spawn_drop`). Event params `[[0,308]]` etc. are **object-type table indices** (e.g. 308=`test_bullet_hit`, 389=`composite_arrows` sprite), not item IDs — see `cpp/docs_gen/craft_uid_map.json`. **`Craft_3`/`Craft_21`–`22`/`Craft_31`–`34`** still blocked (pickpile/`Crafted`/world fence; no verified `Spawn_drop` result). |
+| Reload / ammo | **Sverka:** `Mag_reload` sets `Reloading_mag`, pistol path uses `reload_pistol` when `player_weapons` IV93==0, rifle uses `Reload_rifle`; `Reloading_time=1` on many pistol paths; `+19` ticks added in `Mag_reload_body.json`. Port: R/V → `try_mag_reload`, `consume_ammo_from_bag`, pistol 1s reload. **Not ported:** `Check_ammo_pants/vest/outerwear/backpack` (clothing container slots), exact per-weapon IV0 reload ticks. |
+| Bunker zeds | `Bunker_spawn_zeds` runs on each bunker enter (budget `Zed_per_base`); loot still once per save via `bunker_looted`. Spawner XY from `bunker_zed_spawner` layout not wired — random walkable tiles. |
 | Quests | Chain zeds→…→church→military→helicrash→day2 — not full C2 tutorial tree. |
 | Farming | Seeds plant → grow (~35–50s) → E harvest; rain/night modifiers; plots in MDAZ **v8**. Not full C2 garden plots. |
 | Placed traps | Bear/barbed/fence/mine/claymore persist in MDAZ **v9**. |
@@ -59,11 +63,11 @@ Audit 2026-10-17 (`node tools/audit_port.js` + keyword search in `original_docs/
 
 | Issue | Detail |
 |-------|--------|
-| Overworld tiles | Base grass = `ground_lvl1` fill tile; the 8 tilemap instances placed in the Map layout (ground / sand / forest / water) are drawn from `cpp/data/world_tilemaps.txt` (decoded RLE via `tools/extract_world_tilemaps.js`). The interior of the map is mostly bare grass because C2 `Map_generation` (which stamps the template tilemaps at runtime) is not ported. |
+| Overworld tiles | Base grass = tile 6; static borders from `world_tilemaps.txt`; POI dirt footprints stamped at runtime (tile 15). Away from POIs/roads the interior is still mostly bare grass — C2 also plants buildings/trees via `create_map_element` / `generate_location` (partially approximated). |
 | Menu | Background is the original Menu layout (tilemaps + 149 sprites from `tools/extract_layout_sprites.js`), slow camera pan, `menu_btn_wood` buttons. Pan speed/path is a guess, not taken from C2 events. |
 | Font | 5×7 bitmap font drawn with rects, not the original `bitmap_font` sheet. |
 | Minimap | Dark square with markers; original minimap rendering not ported. |
-| Buildings | POI sprites drawn at native data.js frame size × world scale 0.55; placement comes from our mapgen, not C2 layout positions. |
+| Buildings | POI sprites drawn at native frame size × world scale; **2-building offsets** (~±150 world units from `create_map_location` ±300 SetTile windows) per `poi_layout.cpp`. Not C2 `Buildings_base` instance var placement. |
 | Clothing layers | Skin swap by worn tier + gasmask badge; not full per-piece clothing spritesheets on body. |
 | Exact HUD layout | Scaled GUI crops from original sheets; some panels approximate. |
 

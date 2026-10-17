@@ -1,41 +1,28 @@
 #pragma once
 
+#include "mdaz/types.hpp"
+
 namespace mdaz {
 
-// Quest / tutorial objectives scaffold — C2 Tutorial_events + mission strings.
-enum QuestId {
-  Quest_None = 0,
-  Quest_SurviveDay1,
-  Quest_FindBunker,
-  Quest_KillZeds10,
-  Quest_VisitHospital,
-  Quest_KillBandits3,
-  Quest_CatchFish2,
-  Quest_VisitPolice,
-  Quest_VisitFirestation,
-  Quest_VisitChurch,
-  Quest_VisitMilitary,
-  Quest_VisitHelicrash,
-  Quest_Count
-};
+class ItemDatabase;
+class Inventory;
+class Rng;
 
+// C2 quest globals: Q_task_id, Q_target_sid, Q_status (+ Generate_quest / Generate_quest_item).
+// Full Generate_quest_* event tree not ported; task 1 = fetch Q_target_sid item (check_item_exists).
 struct QuestState {
-  QuestId active;
-  bool completed[Quest_Count];
-  int progress;
-  int target;
+  int q_task_id;    // C2 Q_task_id (0 idle, 1 fetch item, 2 bandits, 3 quest case — partial)
+  int q_target_sid; // C2 Q_target_sid (item id for task 1)
+  int q_status;     // C2 Q_status (0 active panel, 1 in progress, 2 done/canceled stub)
 
   QuestState();
   void reset();
-  void start(QuestId q);
-  // Call from game loop with current stats; returns true if just completed.
-  bool tick(int days, int zeds_killed, bool near_bunker, bool near_hospital = false,
-            int bandits_killed = 0, int fish_caught = 0, bool near_police = false,
-            bool near_firestation = false, bool near_church = false,
-            bool near_military = false, bool near_helicrash = false);
-  // Next quest after completing current (chain).
-  QuestId next_after(QuestId done) const;
-  const char* label() const;
+  // C2 Generate_quest on Q_task_id==0: pick target from verified sid list, set task 1.
+  void generate_quest(Rng& rng);
+  // Returns true when task just completed (task 1: item in inventory).
+  bool tick(const Inventory& inv, const ItemDatabase& db);
+  const char* label(const ItemDatabase& db) const;
+  bool show_panel() const { return q_task_id > 0 && q_status < 2; }
 };
 
 } // namespace mdaz

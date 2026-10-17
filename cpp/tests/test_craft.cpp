@@ -81,7 +81,7 @@ int test_craft() {
     const mdaz::CraftRecipe* bag = 0;
     for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
       const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
-      if (c && c->result_id == 454) { bag = c; break; }
+      if (c && c->result_id == 454 && std::strcmp(c->name, "Craft_1") == 0) { bag = c; break; }
     }
     if (!bag || !mdaz::craft_do(inv3, *bag, db)) {
       std::printf("FAIL craft burlap+rope->bag\n");
@@ -96,12 +96,12 @@ int test_craft() {
     const mdaz::CraftRecipe* bow = 0;
     for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
       const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
-      if (c && c->result_id == 163) { bow = c; break; }
+      if (c && c->result_id == 163 && std::strcmp(c->name, "Craft_5") == 0) { bow = c; break; }
     }
     if (!bow || !mdaz::craft_do(inv4, *bow, db)) {
-      std::printf("FAIL craft bow ashwood+rope\n");
+      std::printf("FAIL craft Craft_5 bow\n");
       ++fail;
-    } else std::printf("OK   craft improvised bow\n");
+    } else std::printf("OK   craft Craft_5 bow\n");
   }
 
   {
@@ -192,6 +192,26 @@ int test_craft() {
       std::printf("FAIL craft rags->bandana\n");
       ++fail;
     } else std::printf("OK   craft rags->bandana\n");
+  }
+
+  // Craft_4: improvised bag + 3 sticks → pack
+  {
+    mdaz::ItemDatabase dbPack;
+    dbPack.load_from_json_string(
+      "{\"items\":[{\"id\":454,\"name\":\"Improvised bag\"},{\"id\":38,\"name\":\"Wood sticks\"},"
+      "{\"id\":455,\"name\":\"Improvised pack\"}]}");
+    mdaz::Inventory invPack;
+    invPack.add_item(454, 1, dbPack);
+    invPack.add_item(38, 3, dbPack);
+    const mdaz::CraftRecipe* pack = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i) {
+      const mdaz::CraftRecipe* c = mdaz::craft_recipe_at(i);
+      if (c && std::strcmp(c->name, "Craft_4") == 0) { pack = c; break; }
+    }
+    if (!pack || !mdaz::craft_do(invPack, *pack, dbPack)) {
+      std::printf("FAIL craft Craft_4 pack\n");
+      ++fail;
+    } else std::printf("OK   craft Craft_4 pack\n");
   }
 
   // Salmon → big fillet cook

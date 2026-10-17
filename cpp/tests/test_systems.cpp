@@ -2,6 +2,8 @@
 #include "mdaz/bullet.hpp"
 #include "mdaz/campfire.hpp"
 #include "mdaz/combat.hpp"
+#include "mdaz/inventory.hpp"
+#include "mdaz/item_db.hpp"
 #include "mdaz/loot.hpp"
 #include "mdaz/quest.hpp"
 #include "mdaz/rng.hpp"
@@ -47,31 +49,25 @@ int test_systems() {
     }
   }
 
+  mdaz::ItemDatabase db;
+  db.load_from_json_file("data/items.json");
+  mdaz::Inventory inv;
+  mdaz::Rng qr(99);
   mdaz::QuestState q;
-  q.start(mdaz::Quest_KillZeds10);
-  if (!q.tick(1, 10, false)) { std::printf("FAIL quest complete\n"); ++fail; }
-  else std::printf("OK   quest kill-10\n");
-  q.start(mdaz::Quest_VisitHospital);
-  if (!q.tick(1, 0, false, true)) { std::printf("FAIL quest hospital\n"); ++fail; }
-  else std::printf("OK   quest hospital\n");
-  {
-    mdaz::QuestState q2;
-    q2.start(mdaz::Quest_VisitFirestation);
-    if (!q2.tick(1, 0, false, false, 0, 0, false, true, false)) {
-      std::printf("FAIL quest firestation\n");
+  q.generate_quest(qr);
+  if (q.q_task_id != 1 || q.q_target_sid <= 0) {
+    std::printf("FAIL Generate_quest task/target\n");
+    ++fail;
+  } else if (q.tick(inv, db)) {
+    std::printf("FAIL quest completed without item\n");
+    ++fail;
+  } else {
+    inv.add_item(static_cast<mdaz::ItemId>(q.q_target_sid), 1, db);
+    if (!q.tick(inv, db)) {
+      std::printf("FAIL quest fetch item\n");
       ++fail;
-    } else std::printf("OK   quest firestation\n");
-    q2.start(mdaz::Quest_VisitChurch);
-    if (!q2.tick(1, 0, false, false, 0, 0, false, false, true)) {
-      std::printf("FAIL quest church\n");
-      ++fail;
-    } else std::printf("OK   quest church\n");
-    if (q2.next_after(mdaz::Quest_VisitPolice) != mdaz::Quest_VisitFirestation ||
-        q2.next_after(mdaz::Quest_VisitFirestation) != mdaz::Quest_VisitChurch ||
-        q2.next_after(mdaz::Quest_VisitChurch) != mdaz::Quest_SurviveDay1) {
-      std::printf("FAIL quest chain\n");
-      ++fail;
-    } else std::printf("OK   quest chain fire→church→day2\n");
+    } else
+      std::printf("OK   C2 quest task1 fetch sid %d\n", q.q_target_sid);
   }
 
   const mdaz::WeaponDef* fnx = mdaz::find_weapon(151);

@@ -104,6 +104,31 @@ int test_combat() {
     std::printf("OK   FNX mag capacity 15\n");
   }
 
+  if (!mdaz::weapon_reload_uses_pistol_anim(fnx) ||
+      mdaz::weapon_reload_duration_sec(fnx) != 1.f) {
+    std::printf("FAIL FNX reload anim/duration\n");
+    ++fail;
+  } else {
+    std::printf("OK   FNX pistol reload 1s\n");
+  }
+
+  const mdaz::WeaponDef* m4 = mdaz::find_weapon(158);
+  if (!m4 || mdaz::weapon_reload_uses_pistol_anim(m4)) {
+    std::printf("FAIL M4 should use rifle reload\n");
+    ++fail;
+  } else {
+    std::printf("OK   M4 rifle reload branch\n");
+  }
+
+  const mdaz::WeaponDef* bow = mdaz::find_weapon(163);
+  if (!bow || !mdaz::weapon_uses_bow_nock(bow) ||
+      mdaz::weapon_bow_nock_sec(bow) != 2.f) {
+    std::printf("FAIL bow nock reload\n");
+    ++fail;
+  } else {
+    std::printf("OK   bow Bow_reload nock 2s\n");
+  }
+
   {
     mdaz::ItemDatabase db;
     db.load_from_json_string(

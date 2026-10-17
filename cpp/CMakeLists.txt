@@ -19,12 +19,14 @@ set(MDAZ_CORE_SOURCES
   src/world/bunker.cpp
   src/world/loot.cpp
   src/world/mapgen.cpp
+  src/world/poi_layout.cpp
   src/world/vehicle.cpp
   src/world/campfire.cpp
   src/world/world_tilemaps.cpp
   src/world/layout_sprites.cpp
   src/inventory/item_db.cpp
   src/inventory/inventory.cpp
+  src/inventory/ammo.cpp
   src/inventory/craft.cpp
   src/combat/combat.cpp
   src/combat/weapons.cpp

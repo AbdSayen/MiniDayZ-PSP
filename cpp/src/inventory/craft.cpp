@@ -4,8 +4,8 @@ namespace mdaz {
 
 namespace {
 
-// Recipes aligned with Mini DAYZ 1.4.1 guides (Prima/GameSkinny/fandom).
-// FULL C2 Craft_N groups still incomplete — see KNOWN_ISSUES.
+// C2 Craft_* function names where Spawn_drop / call-site item checks are verified in data.js.
+// Event params [[0,308]] etc. are object-type indices (see cpp/docs_gen/craft_uid_map.json), not item IDs.
 const CraftRecipe kRecipes[] = {
   // Bandage from rags
   { "Craft_rags_bandage", 18, 1, 26, 1, 0, 0, false, 0, false },
@@ -15,7 +15,7 @@ const CraftRecipe kRecipes[] = {
   { "Craft_pile_sticks", 38, 4, 50, 1, 0, 0, false, 0, false }, // woodpile → 4 sticks
   { "Craft_sticks_ashwood", 37, 1, 38, 3, 0, 0, false, 0, true }, // 3 sticks+knife → ashwood
   // Bow: ashwood stick + rope
-  { "Craft_ashwood_bow", 163, 1, 37, 1, 41, 1, false, 0, false },
+  { "Craft_5", 163, 1, 37, 1, 41, 1, false, 0, false }, // Craft_5 Spawn_drop 163 (ashwood+rope)
   { "Craft_firekit", 23, 1, 50, 1, 24, 1, false, 0, false },
   { "Craft_fishing_rod", 87, 1, 37, 1, 39, 1, false, 0, false }, // ashwood + duct tape
   { "Craft_fishing_rod_rope", 87, 1, 37, 1, 41, 1, false, 0, false }, // C2 Craft_fishing_rod: ashwood + rope
@@ -23,8 +23,8 @@ const CraftRecipe kRecipes[] = {
   { "Craft_molotov", 102, 1, 25, 1, 26, 1, false, 0, false },
   { "Craft_composite_arrow", 52, 1, 51, 1, 37, 1, false, 0, false },
   // Improvised bag: burlap sack + rope; backpack: bag + 3 sticks
-  { "Craft_improvised_bag", 454, 1, 40, 1, 41, 1, false, 0, false },
-  { "Craft_improvised_pack", 455, 1, 454, 1, 38, 3, false, 0, false },
+  { "Craft_1", 454, 1, 40, 1, 41, 1, false, 0, false }, // Spawn_drop 454; UI checks burlap+rope
+  { "Craft_4", 455, 1, 454, 1, 38, 3, false, 0, false }, // Spawn_drop 455
   { "Cook_steak", 61, 1, 60, 1, 0, 0, true, 0, false },
   { "Cook_rabbit", 72, 1, 71, 1, 0, 0, true, 0, false },
   { "Cook_perch", 95, 1, 94, 1, 0, 0, true, 0, false },

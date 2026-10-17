@@ -1,0 +1,13 @@
+{
+  "_note": "Values in Craft_* event params [[0,N]] with action [20,536,119,...] are C2 object-type TABLE INDICES (project[3]), not l_eng_items.xml IDs.",
+  "action_context": "Object type index 536 (plugin 2, no sprite) — craft UI / family helper; param N selects which craft-tab object type to show or enable.",
+  "308": "test_bullet_hit — Craft_1 tab anchor (not an item)",
+  "309": "obst_block — Craft_5 / Craft_fishing_rod tab anchor",
+  "310": "obst_fence — Craft_21 / Craft_22 tab anchor",
+  "311": "b_military_barrack — Craft_3 / Craft_31–34 tab anchor",
+  "315": "b_city_house_4 — secondary Craft_4 UI anchor",
+  "316": "craft menu related object index (group header list)",
+  "317": "b_garage_blue — Craft_4 tab anchor",
+  "334": "loaderrunner — Craft_31 / Craft_32 fence-build UI anchor",
+  "389": "composite_arrows — world pickup template / Craft_5 secondary tab (item 52 icon, not item id 389)"
+}

@@ -1,4 +1,5 @@
 #include "mdaz/game.hpp"
+#include "mdaz/ammo.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/hud.hpp"
@@ -203,52 +204,6 @@ void draw_pine(IPlatform* p, float sx, float sy, float h) {
   p->draw_sprite_frame(name, sx - w * 0.5f, sy - h * 0.75f, w, h, 1, 1, 47, 92, 0.f, 1.f);
 }
 
-const char* poi_building_sprite(LocationType t, int variant) {
-  switch (t) {
-  case Loc_Hospital: return "b_hospital-sheet0";
-  case Loc_GasStation: return "b_gas_station-sheet0";
-  case Loc_Police: return "b_police_station-sheet0";
-  case Loc_Firestation: return "b_fire_station-sheet0";
-  case Loc_Church: return "b_church-sheet0";
-  case Loc_Military: return (variant & 1) ? "b_military_barrack-sheet0" : "b_military_shtab-sheet0";
-  case Loc_Helicrash: return "heli_crash-sheet0";
-  case Loc_BunkerEntrance: return "b_hunter_shelter-sheet0";
-  case Loc_Secret: return "b_hunter_shelter-sheet0";
-  case Loc_City: return "b_hostel-sheet0";
-  case Loc_Village:
-  default:
-    switch (variant % 4) {
-    case 0: return "b_village_brown-sheet0";
-    case 1: return "b_village_green-sheet0";
-    case 2: return "b_village_red-sheet0";
-    default: return "b_village_yellow-sheet0";
-    }
-  }
-}
-
-const char* poi_interior_sprite(LocationType t, int variant) {
-  switch (t) {
-  case Loc_Hospital: return "b_hospital_int-sheet0";
-  case Loc_GasStation: return "b_gas_station_int-sheet0";
-  case Loc_Police: return "b_police_station_int-sheet0";
-  case Loc_Firestation: return "b_fire_station_int-sheet0";
-  case Loc_Church: return "b_church_int-sheet0";
-  case Loc_Military:
-    return (variant & 1) ? "b_military_barrack_int-sheet0" : "b_military_shtab_int-sheet0";
-  case Loc_BunkerEntrance:
-  case Loc_Secret: return "b_hunter_shelter_int-sheet0";
-  case Loc_City: return "b_hostel_int-sheet0";
-  case Loc_Village:
-  default:
-    switch (variant % 4) {
-    case 0: return "b_village_brown_int-sheet0";
-    case 1: return "b_village_green_int-sheet0";
-    case 2: return "b_village_red_int-sheet0";
-    default: return "b_village_yellow_int-sheet0";
-    }
-  }
-}
-
 // Native frame sizes from data.js (sheet0 frame 0).
 void poi_native_px(const char* spr, int& nw, int& nh) {
   nw = 100; nh = 100;
@@ -266,6 +221,18 @@ void poi_native_px(const char* spr, int& nw, int& nh) {
   else if (std::strstr(spr, "b_village_green")) { nw = 137; nh = 134; }
   else if (std::strstr(spr, "b_village_red")) { nw = 175; nh = 155; }
   else if (std::strstr(spr, "b_village_yellow")) { nw = 187; nh = 120; }
+  else if (std::strstr(spr, "b_village_yard")) { nw = 120; nh = 100; }
+  else if (std::strstr(spr, "b_village_red2")) { nw = 175; nh = 155; }
+  else if (std::strstr(spr, "b_city_house_1")) { nw = 185; nh = 170; }
+  else if (std::strstr(spr, "b_city_house_2")) { nw = 190; nh = 175; }
+  else if (std::strstr(spr, "b_city_house_3")) { nw = 195; nh = 180; }
+  else if (std::strstr(spr, "b_city_house_4")) { nw = 200; nh = 185; }
+  else if (std::strstr(spr, "b_car_bus")) { nw = 220; nh = 120; }
+  else if (std::strstr(spr, "b_military_barrack2")) { nw = 282; nh = 143; }
+  else if (std::strstr(spr, "b_red_brick")) { nw = 150; nh = 140; }
+  else if (std::strstr(spr, "b_garage_blue") || std::strstr(spr, "b_garage_brown")) { nw = 110; nh = 100; }
+  else if (std::strstr(spr, "b_supermarket")) { nw = 200; nh = 160; }
+  else if (std::strstr(spr, "b_piano_house")) { nw = 170; nh = 155; }
   else if (std::strstr(spr, "heli_crash")) { nw = 240; nh = 186; }
   else if (std::strstr(spr, "car_explode")) { nw = 100; nh = 100; }
 }
@@ -297,7 +264,7 @@ Game::Game()
     trap_count_(0), crop_count_(0), howl_cd_(0.f), cough_cd_(0.f), tree_count_(0),
     blood_drip_count_(0), bleed_drip_cd_(0.f), crouching_(false), fuel_warn_cd_(0.f),
     rain_sfx_cd_(0.f), lightning_t_(0.f), thunder_cd_(0.f), cough_alert_t_(0.f),
-    wind_sfx_cd_(0.f), flare_t_(0.f), fx_count_(0), corpse_count_(0) {
+    wind_sfx_cd_(0.f), flare_t_(0.f), molotov_dmg_cd_(0.f), fx_count_(0), corpse_count_(0) {
   flare_pos_ = Vec2();
   data_dir_[0] = 0;
   last_airdrop_pos_ = Vec2();
@@ -313,11 +280,7 @@ int Game::ammo_for_equipped() const {
   if (eq.empty()) return -1;
   const WeaponDef* w = find_weapon(eq.id);
   if (!w || w->stats.is_melee || w->ammo_id <= 0) return -1;
-  int n = 0;
-  for (int i = 0; i < inventory_.slot_count(); ++i) {
-    if (inventory_.slot(i).id == w->ammo_id) n += inventory_.slot(i).count;
-  }
-  return n;
+  return count_ammo_in_bag(inventory_, w->ammo_id);
 }
 
 int Game::mag_capacity_equipped() const {
@@ -356,7 +319,15 @@ bool Game::sector_visited(int sx, int sy) const {
 
 void Game::mark_sector_visited() {
   const SectorCoord c = world_.sector_at(player_.pos);
-  visited_sectors_[c.sy * kMapSectorsX + c.sx] = true;
+  // Reveal a 3×3 neighbourhood (original fog clears nearby cells as you walk).
+  for (int dy = -1; dy <= 1; ++dy) {
+    for (int dx = -1; dx <= 1; ++dx) {
+      const int sx = c.sx + dx;
+      const int sy = c.sy + dy;
+      if (sx < 0 || sy < 0 || sx >= kMapSectorsX || sy >= kMapSectorsY) continue;
+      visited_sectors_[sy * kMapSectorsX + sx] = true;
+    }
+  }
 }
 
 bool Game::init(IPlatform* platform, const char* data_dir) {
@@ -503,7 +474,7 @@ void Game::start_new_game(Difficulty d) {
   for (int i = 0; i < kMaxFx; ++i) fx_[i].active = false;
   for (int i = 0; i < kMaxCorpses; ++i) corpses_[i].active = false;
   quest_.reset();
-  quest_.start(Quest_KillZeds10);
+  quest_.generate_quest(rng_);
   timers_.reset();
   dispersion_.reset_from_globals();
   attack_cd_ = 0.f;
@@ -520,6 +491,7 @@ void Game::start_new_game(Difficulty d) {
   rng_.seed(140u);
   mapgen_.generate_new_game(140);
   mapgen_.apply_collision(world_);
+  world_tiles_.stamp_from_mapgen(mapgen_);
   // Scatter forest tree stubs around POIs (denser near villages / church / secret)
   tree_count_ = 0;
   for (int i = 0; i < mapgen_.location_count() && tree_count_ < kMaxTrees; ++i) {
@@ -820,8 +792,14 @@ void Game::try_ranged_attack() {
         return;
       }
       mag_rounds_ -= 1;
+    } else if (weapon_uses_bow_nock(w)) {
+      if (mag_rounds_ <= 0) {
+        if (audio_) audio_->play("click", 0.45f);
+        attack_cd_ = 0.25f;
+        return;
+      }
+      mag_rounds_ -= 1;
     } else {
-      // Bow / no-mag: spend from inventory
       bool spent = false;
       for (int i = 0; i < inventory_.slot_count(); ++i) {
         if (inventory_.slot(i).id == w->ammo_id && inventory_.slot(i).count > 0) {
@@ -1117,20 +1095,83 @@ void Game::on_zed_killed(Zombie& z) {
 
 void Game::write_death_log() {
   if (!platform_) return;
-  char line[160];
+  char line[320];
   std::snprintf(line, sizeof(line),
-                "reason=%s days=%d zeds=%d bots=%d animals=%d blood=%.0f\n",
-                player_.survival.death_reason[0] ? player_.survival.death_reason : "Unknown",
+                "Death_log_reason=%s\nDay_survived=%d\nStats_Zeds_killed=%d\n"
+                "Stats_Bandits_killed=%d\nStats_blood_lost=%.0f\n",
+                player_.survival.death_reason[0] ? player_.survival.death_reason : "None",
                 player_.days_survived, player_.zeds_killed, player_.bandits_killed,
-                player_.animals_killed, player_.survival.blood);
+                100.f - player_.survival.blood);
   platform_->write_file("last_death.txt", line, std::strlen(line));
+}
+
+void Game::tick_molotov_burn(float dt) {
+  bool any_molotov = false;
+  for (int i = 0; i < campfires_.count(); ++i) {
+    const Campfire* f = campfires_.at(i);
+    if (f->active && f->molotov_burn) { any_molotov = true; break; }
+  }
+  if (!any_molotov) return;
+
+  molotov_dmg_cd_ -= dt;
+  if (molotov_dmg_cd_ > 0.f) return;
+  molotov_dmg_cd_ = 0.5f; // Molotov_damage Every 0.5s in C2
+
+  const float r2 = 48.f * 48.f;
+  auto in_flame = [&](Vec2 p) {
+    for (int i = 0; i < campfires_.count(); ++i) {
+      const Campfire* f = campfires_.at(i);
+      if (!f->active || !f->molotov_burn) continue;
+      const float dx = f->pos.x - p.x;
+      const float dy = f->pos.y - p.y;
+      if (dx * dx + dy * dy <= r2) return true;
+    }
+    return false;
+  };
+
+  if (in_flame(player_.pos)) {
+    apply_incoming_damage(10.f, false);
+    if (player_.survival.blood <= 0.f && !player_.survival.death_reason[0]) {
+      std::strncpy(player_.survival.death_reason, "Fire",
+                   sizeof(player_.survival.death_reason) - 1);
+    }
+  }
+  for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
+    if (!z->alive || !in_flame(z->pos)) continue;
+    z->hp -= 10.f;
+    if (z->hp <= 0.f) on_zed_killed(*z);
+  }
+  for (int i = 0; i < animals_.count(); ++i) {
+    Animal* a = animals_.at(i);
+    if (!a->alive || !in_flame(a->pos)) continue;
+    float dmg = 6.f;
+    if (a->type == Animal_Wolf || a->type == Animal_Dog) dmg = 9.f;
+    else if (a->type == Animal_Deer || a->type == Animal_Rabbit) dmg = 8.f;
+    a->hp -= dmg;
+    if (a->hp <= 0.f) on_animal_killed(*a);
+  }
+  for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
+    if (!bd->alive || !in_flame(bd->pos)) continue;
+    bd->hp -= 7.f;
+    if (bd->hp <= 0.f) {
+      bd->alive = false;
+      player_.bandits_killed += 1;
+      spawn_corpse(Corpse_Bandit, bd->pos, 0.f, 0);
+      spawn_fx(Fx_Hit, bd->pos, 0.f, 0.2f);
+      loot_.spawn_bandit(bd->pos, rng_);
+    }
+  }
 }
 
 void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
   const float r2 = 75.f * 75.f;
-  if (audio_) audio_->play_at(leave_fire ? "explode" : "explode", pos.x, pos.y, 1.f);
+  if (audio_) audio_->play_at("explode", pos.x, pos.y, 1.f);
   spawn_fx(Fx_Explode, pos, leave_fire ? 1.f : 0.f, 0.45f); // angle=1 marks molotov
-  if (leave_fire) campfires_.place(pos, 25.f);
+  if (leave_fire) {
+    // Molotov params: flame fade ≈5s; damage via Molotov_damage ticks, not impact splash.
+    campfires_.place_molotov(pos, 5.f);
+    return;
+  }
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
     if (dist2(z->pos, pos) > r2) continue;
@@ -1321,29 +1362,51 @@ void Game::try_mag_reload() {
   if (eq.empty()) return;
   const WeaponDef* w = find_weapon(eq.id);
   if (!w || w->stats.is_melee || w->ammo_id <= 0) return;
-  if (w->mag_capacity <= 0) {
-    // Bows: nothing to chamber
-    if (audio_) audio_->play("melee_swing", 0.2f);
+  if (weapon_uses_bow_nock(w)) {
+    if (mag_rounds_ > 0) {
+      if (audio_) audio_->play("melee_swing", 0.2f);
+      return;
+    }
+    bool has_arrow = false;
+    for (int i = 0; i < inventory_.slot_count(); ++i) {
+      if (inventory_.slot(i).id == w->ammo_id && inventory_.slot(i).count > 0) {
+        has_arrow = true;
+        break;
+      }
+    }
+    if (!has_arrow) {
+      if (audio_) audio_->play("melee_swing", 0.2f);
+      return;
+    }
+    for (int i = 0; i < inventory_.slot_count(); ++i) {
+      if (inventory_.slot(i).id != w->ammo_id || inventory_.slot(i).count <= 0) continue;
+      inventory_.remove_at(i, 1);
+      break;
+    }
+    const float rt = weapon_bow_nock_sec(w);
+    reload_cd_ = rt;
+    attack_cd_ = rt;
+    mag_rounds_ = 1;
+    if (audio_) audio_->play("gun_bow", 0.55f);
     return;
   }
-  const int need = w->mag_capacity - mag_rounds_;
+  if (w->mag_capacity <= 0) return;
+  const int cap = mag_capacity_equipped();
+  const int need = cap - mag_rounds_;
   if (need <= 0) return;
-  int loaded = 0;
-  for (int i = 0; i < inventory_.slot_count() && loaded < need; ++i) {
-    InvSlot& s = inventory_.slot(i);
-    if (s.id != w->ammo_id || s.count <= 0) continue;
-    const int take = (s.count < (need - loaded)) ? s.count : (need - loaded);
-    inventory_.remove_at(i, take);
-    loaded += take;
-  }
+  const int loaded = consume_ammo_from_bag(inventory_, w->ammo_id, need);
   if (loaded <= 0) {
     if (audio_) audio_->play("melee_swing", 0.2f);
     return;
   }
   mag_rounds_ += loaded;
-  reload_cd_ = 1.4f;
-  attack_cd_ = 1.4f;
-  if (audio_) audio_->play("reload", 0.6f);
+  const float rt = weapon_reload_duration_sec(w);
+  reload_cd_ = rt;
+  attack_cd_ = rt;
+  if (audio_) {
+    const char* cue = weapon_reload_uses_pistol_anim(w) ? "reload_pistol" : "reload_rifle";
+    audio_->play(cue, 0.65f);
+  }
 }
 
 void Game::try_throw_projectile() {
@@ -1357,7 +1420,7 @@ void Game::try_throw_projectile() {
   if (!inventory_.slot(equipped_slot_).empty()) {
     const ItemId eid = inventory_.slot(equipped_slot_).id;
     if (eid == 21) { slot = equipped_slot_; dmg_base = 55.f; speed = 180.f; life = 1.4f; }
-    else if (eid == 102) { slot = equipped_slot_; dmg_base = 40.f; speed = 160.f; life = 1.2f; is_molotov = true; }
+    else if (eid == 102) { slot = equipped_slot_; dmg_base = 40.f; speed = 300.f; life = 0.85f; is_molotov = true; }
     else if (eid == 38) { slot = equipped_slot_; }
   }
   if (slot < 0) {
@@ -1370,7 +1433,7 @@ void Game::try_throw_projectile() {
   if (slot < 0) {
     for (int i = 0; i < inventory_.slot_count(); ++i) {
       if (inventory_.slot(i).id == 102 && inventory_.slot(i).count > 0) {
-        slot = i; dmg_base = 40.f; speed = 160.f; life = 1.2f; is_molotov = true; break;
+        slot = i; dmg_base = 40.f; speed = 300.f; life = 0.85f; is_molotov = true; break;
       }
     }
   }
@@ -1750,6 +1813,27 @@ void Game::update_traps(float dt) {
   }
 }
 
+void Game::spawn_bunker_zeds() {
+  // C2 Bunker_spawn_zeds at bunker_zed_spawner XY — we pick walkable tiles (spawner layout not in RLE).
+  const int budget = static_cast<int>(balance::Zed_per_base);
+  if (budget <= 0 || bunker_.width <= 0) return;
+  static const ZedType kPool[] = {
+    Zed_Normal, Zed_Fast, Zed_Army, Zed_Buried, Zed_Screamer, Zed_ArmyShooter,
+  };
+  const int pool_n = static_cast<int>(sizeof(kPool) / sizeof(kPool[0]));
+  int placed = 0;
+  for (int attempt = 0; attempt < 80 && placed < budget; ++attempt) {
+    const int tx = 8 + rng_.next_int(0, bunker_.width - 17);
+    const int ty = 8 + rng_.next_int(0, bunker_.height - 17);
+    const Vec2 p((tx + 0.5f) * 8.f, (ty + 0.5f) * 8.f);
+    if (dist2(p, player_.pos) < 70.f * 70.f) continue;
+    if (bunker_.is_blocked_world(p.x, p.y)) continue;
+    ZedType t = kPool[placed % pool_n];
+    if (placed + 1 >= budget && rng_.next_float() < 0.35f) t = Zed_Tank;
+    if (zombies_.spawn(t, p)) ++placed;
+  }
+}
+
 void Game::try_bunker_enter_exit() {
   if (in_bunker_) {
     in_bunker_ = false;
@@ -1801,6 +1885,7 @@ void Game::try_bunker_enter_exit() {
         }
         player_.pos = Vec2((found_x + 0.5f) * 8.f, (found_y + 0.5f) * 8.f);
       }
+      spawn_bunker_zeds();
       if (!bunker_looted_) {
         bunker_looted_ = true;
         auto bunker_spot = [&](float ox, float oy) -> Vec2 {
@@ -1808,24 +1893,12 @@ void Game::try_bunker_enter_exit() {
           if (!bunker_.is_blocked_world(p.x, p.y)) return p;
           return player_.pos;
         };
-        // Dens: typed bunker caches + mixed hostiles (Zed_per_base budget)
-        const int dens = static_cast<int>(balance::Zed_per_base);
         loot_.spawn_bunker(bunker_spot(40.f, 0.f), rng_);
         loot_.spawn_bunker(bunker_spot(-50.f, 30.f), rng_);
         loot_.spawn_hospital(bunker_spot(20.f, -40.f), rng_);
         loot_.spawn_military(bunker_spot(-30.f, -60.f), rng_);
-        zombies_.spawn(Zed_Normal, bunker_spot(90.f, 0.f));
-        zombies_.spawn(Zed_Fast, bunker_spot(-70.f, 40.f));
-        zombies_.spawn(Zed_Army, bunker_spot(60.f, -50.f));
-        zombies_.spawn(Zed_Buried, bunker_spot(-20.f, 70.f));
-        if (dens >= 5) {
-          zombies_.spawn(Zed_Screamer, bunker_spot(100.f, 50.f));
-          zombies_.spawn(Zed_ArmyShooter, bunker_spot(-90.f, -20.f));
-        }
-        if (dens >= 5 && rng_.next_float() < 0.45f) {
-          zombies_.spawn(Zed_Tank, bunker_spot(30.f, 90.f));
+        if (rng_.next_float() < 0.45f)
           loot_.spawn_military(bunker_spot(70.f, 80.f), rng_);
-        }
       }
       if (audio_) audio_->play("bunker", 0.6f);
       return;
@@ -1931,9 +2004,10 @@ void Game::update_menu(float dt, const InputState& in) {
       last_airdrop_pos_ = Vec2(extras.airdrop_x, extras.airdrop_y);
       mark_sector_visited();
       quest_.reset();
-      if (qact > Quest_None && qact < Quest_Count) {
-        quest_.start(static_cast<QuestId>(qact));
-        quest_.progress = qprog;
+      if (qact > 0) {
+        quest_.q_task_id = qact;
+        quest_.q_target_sid = qprog;
+        quest_.q_status = 0;
       }
       if (vehicles_.count() == 0) {
         vehicles_.spawn(Vehicle_Car, Vec2(player_.pos.x + 90.f, player_.pos.y - 50.f));
@@ -2271,6 +2345,7 @@ void Game::update_playing(float dt, const InputState& in) {
       if (tent_warmth_t_ > 0.f && campfires_.near_fire(player_.pos, 80.f)) rain_on_fire = 0.f;
       campfires_.update(dt, rain_on_fire);
     }
+    if (!in_bunker_) tick_molotov_burn(dt);
     player_.update_survival(dt, weather_.ambient_temp, weather_.is_night && !in_bunker_,
                             !in_bunker_ && wetness_ > 50.f, insulation);
     // Rest near fire while standing still — mild blood regen + night sleep
@@ -2894,38 +2969,13 @@ void Game::update_playing(float dt, const InputState& in) {
     (void)loot_before;
   }
 
-  {
-    bool near_bunker = false;
-    bool near_hospital = false;
-    bool near_police = false;
-    bool near_fire = false;
-    bool near_church = false;
-    for (int i = 0; i < mapgen_.location_count(); ++i) {
-      const MapLocation& L = mapgen_.location(i);
-      if (L.type == Loc_BunkerEntrance && dist2(L.pos, player_.pos) < 80.f * 80.f)
-        near_bunker = true;
-      if (L.type == Loc_Hospital && dist2(L.pos, player_.pos) < 90.f * 90.f)
-        near_hospital = true;
-      if (L.type == Loc_Police && dist2(L.pos, player_.pos) < 90.f * 90.f)
-        near_police = true;
-      if (L.type == Loc_Firestation && dist2(L.pos, player_.pos) < 90.f * 90.f)
-        near_fire = true;
-      if (L.type == Loc_Church && dist2(L.pos, player_.pos) < 90.f * 90.f)
-        near_church = true;
-    }
-    const QuestId was = quest_.active;
-    if (quest_.tick(player_.days_survived, player_.zeds_killed, near_bunker || in_bunker_,
-                    near_hospital, player_.bandits_killed, player_.fish_caught, near_police,
-                    near_fire, near_church)) {
-      if (audio_) audio_->play("craft", 0.9f);
-      const QuestId nxt = quest_.next_after(was);
-      if (nxt != Quest_None && !quest_.completed[nxt]) quest_.start(nxt);
-    }
+  if (quest_.tick(inventory_, items_)) {
+    if (audio_) audio_->play("craft", 0.9f);
   }
 
-  if (in.reload_pressed) try_craft();
+  if (in.reload_pressed || in.mag_reload_pressed) try_mag_reload();
+  if (in.craft_pressed) try_craft();
   if (in.drop_pressed) try_drop_equipped();
-  if (in.mag_reload_pressed) try_mag_reload();
   if (in.throw_pressed) try_throw_projectile();
   if (in.torch_pressed) {
     // T: place campfire (kit or matches+fuel), else toggle torch/headlamp
@@ -2976,7 +3026,7 @@ void Game::update_playing(float dt, const InputState& in) {
     SaveSystem::save_file(*platform_, "save.mdaz", player_, inventory_, weather_,
                           equipped_slot_, visited_sectors_,
                           kMapSectorsX * kMapSectorsY,
-                          torch_battery_, static_cast<int>(quest_.active), quest_.progress,
+                          torch_battery_, quest_.q_task_id, quest_.q_target_sid,
                           mag_rounds_, wetness_, gasmask_filter_, player_.fish_caught,
                           &vehicles_, &crops_view, &traps_view, &extras, &fires_view);
   }
@@ -3016,9 +3066,10 @@ void Game::update_playing(float dt, const InputState& in) {
       last_airdrop_pos_ = Vec2(extras.airdrop_x, extras.airdrop_y);
       mark_sector_visited();
       quest_.reset();
-      if (qact > Quest_None && qact < Quest_Count) {
-        quest_.start(static_cast<QuestId>(qact));
-        quest_.progress = qprog;
+      if (qact > 0) {
+        quest_.q_task_id = qact;
+        quest_.q_target_sid = qprog;
+        quest_.q_status = 0;
       }
       if (vehicles_.count() == 0) {
         vehicles_.spawn(Vehicle_Car, Vec2(player_.pos.x + 90.f, player_.pos.y - 50.f));
@@ -3267,6 +3318,7 @@ void Game::update_playing(float dt, const InputState& in) {
     state_ = AppState_Dead;
     state_timer_ = 0.f;
     in_bunker_ = false;
+    show_bag_ = false;
     if (audio_) audio_->play("death", 0.8f);
   }
 }
@@ -3622,40 +3674,6 @@ void Game::render() {
         float sx = cx + (trees_[i].x - player_.pos.x) * sc;
         float sy = cy + (trees_[i].y - player_.pos.y) * sc;
         draw_pine(platform_, sx, sy, 70.f);
-      }
-
-      // Dirt roads between nearby POIs — sand atlas tiles
-      {
-        const bool has_sand = platform_->has_sprite("tilemap_sand");
-        for (int i = 0; i < mapgen_.location_count(); ++i) {
-          const MapLocation& A = mapgen_.location(i);
-          for (int j = i + 1; j < mapgen_.location_count(); ++j) {
-            const MapLocation& B = mapgen_.location(j);
-            const float dx = B.pos.x - A.pos.x;
-            const float dy = B.pos.y - A.pos.y;
-            const float d2ab = dx * dx + dy * dy;
-            if (d2ab < 200.f * 200.f || d2ab > 900.f * 900.f) continue;
-            const float len = std::sqrt(d2ab);
-            const int steps = static_cast<int>(len / 30.f);
-            if (steps < 2) continue;
-            for (int s = 1; s < steps; ++s) {
-              const float t = static_cast<float>(s) / static_cast<float>(steps);
-              const float wx = A.pos.x + dx * t;
-              const float wy = A.pos.y + dy * t;
-              if (dist2(Vec2(wx, wy), player_.pos) > 420.f * 420.f) continue;
-              float sx = cx + (wx - player_.pos.x) * sc;
-              float sy = cy + (wy - player_.pos.y) * sc;
-              const float tw = 30.f * sc;
-              if (has_sand) {
-                platform_->draw_sprite_frame("tilemap_sand",
-                  sx - tw * 0.5f, sy - tw * 0.5f, tw, tw,
-                  60, 60, 60, 60, 0.f, 0.85f);
-              } else {
-                platform_->draw_rect(sx - 4, sy - 4, 8, 8, 0.28f, 0.24f, 0.16f, 0.55f);
-              }
-            }
-          }
-        }
       }
 
       // Map POIs — interiors when standing inside, else exterior shells

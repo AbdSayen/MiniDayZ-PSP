@@ -185,6 +185,7 @@ private:
   float wind_sfx_cd_;
   float flare_t_;
   Vec2 flare_pos_;
+  float molotov_dmg_cd_;
 
   // Visual FX / corpses (presentation parity with C2)
   enum FxKind { Fx_Muzzle = 0, Fx_Hit, Fx_Explode, Fx_Shell, Fx_Blood, Fx_Fish };
@@ -219,8 +220,10 @@ private:
   void sync_mag_for_equipped();
   void try_throw_projectile();
   void try_bunker_enter_exit();
+  void spawn_bunker_zeds();
   void resolve_bullet_hits();
   void explode_at(Vec2 pos, float damage, bool leave_fire = false);
+  void tick_molotov_burn(float dt);
   void on_animal_killed(Animal& a);
   void on_zed_killed(Zombie& z);
   void apply_incoming_damage(float amount, bool can_bleed);
