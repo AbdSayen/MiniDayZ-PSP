@@ -1,9 +1,6 @@
-# Build a slim PSP deploy folder: EBOOT + data only (NO original_docs images/media).
-# Usage (from repo root):
+# Slim PSP deploy: EBOOT + data + single sprites.pak (no loose PNG tree).
+# From repo root:
 #   powershell -File tools/pack_psp_deploy.ps1
-#
-# Output: cpp/platform/psp/deploy/MINIDAYZ/
-# Copy that folder to ms0:/PSP/GAME/ or PPSSPP memstick/PSP/GAME/
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -11,9 +8,11 @@ $Psp = Join-Path $Root "cpp\platform\psp"
 $Eboot = Join-Path $Psp "EBOOT.PBP"
 $DataSrc = Join-Path $Root "cpp\data"
 $Out = Join-Path $Psp "deploy\MINIDAYZ"
+$Images = Join-Path $Root "original_docs\images"
+$PackJs = Join-Path $Root "tools\pack_psp_sprites.js"
 
 if (-not (Test-Path $Eboot)) {
-  throw "Missing EBOOT.PBP. Build first: wsl make in cpp/platform/psp"
+  throw "Missing EBOOT.PBP. Build first in cpp/platform/psp via WSL make"
 }
 
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
@@ -33,8 +32,15 @@ foreach ($u in $UiCandidates) {
   }
 }
 
+$PakOut = Join-Path $Out "data\sprites.pak"
+if (-not (Test-Path $Images)) {
+  throw "Missing original_docs/images - cannot pack sprites"
+}
+node $PackJs $Images $PakOut
+if (-not (Test-Path $PakOut)) { throw "sprites.pak not created" }
+
 $files = (Get-ChildItem $Out -Recurse -File).Count
 $mb = [math]::Round(((Get-ChildItem $Out -Recurse -File | Measure-Object Length -Sum).Sum) / 1MB, 2)
 Write-Host "Deploy ready: $Out"
-Write-Host "Files: $files  Size: $mb MB"
-Write-Host "Copy MINIDAYZ to PSP/GAME/ - do NOT add original_docs/images next to EBOOT."
+Write-Host "Files: $files  Size: $mb MB  (sprites in one sprites.pak)"
+Write-Host "Copy MINIDAYZ to PSP/GAME/ - do NOT add loose original_docs/images."

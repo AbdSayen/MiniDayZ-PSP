@@ -10,7 +10,8 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | Balance globals | **Сверена с оригиналом** | `balance_globals.hpp` |
 | Survival tick (States) | **Сверена с оригиналом** | Every 5s / bleed 1s / cold on difficulty |
 | Item catalog (200) | Протестирована | JSON + icons for all 200 IDs |
-| Item consumable numbers | **Сверена с оригиналом** (partial) | `item_activate_iv_sverka.json` + `consumable_item_activate_sverka.json` (medicals 19/28/29/46); morphine **45 blocked** (no C2 param) |
+| Item consumable numbers | **Сверена с оригиналом** (partial) | `item_activate_iv_sverka.json` wired; unknown food/drink refuse use (no invent); morphine **45 blocked** |
+| dmg_hint floating text | **Сверена с оригиналом** (partial) | Spawn/drift/color from decode; crit when IV8 second-hit exceeds roll; font size 18 not distinct on 5×7 |
 | Item ground/hotbar icons | Реализуется | `item_sprites.cpp` full ID map |
 | Map fog / visited | Реализуется | 16×16 sector visited + minimap fog |
 | Weapon defs (catalog) | Реализуется | IDs 151–187 + melee; most dmg **placeholder** |

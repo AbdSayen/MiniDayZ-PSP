@@ -98,6 +98,37 @@ float clothing_iv6_max(ItemId id);
 constexpr float kHitEffectPeakSec = 0.2f;
 constexpr float kHitEffectFadeSec = 0.35f;
 
+// C2 dmg_hint (obj529 Text on Rain layer): floating "-N" drifts toward viewer.
+// Param2==1 → red 18px (crit-style); else orange (255,196,68). See dmg_hint_decoded.txt.
+constexpr float kDmgHintLifeSec = 0.85f;
+constexpr float kDmgHintSpeedPx = 55.f;
+constexpr int kMaxDmgHints = 24;
+
+struct DmgHint {
+  Vec2 pos;
+  Vec2 vel;
+  float life;
+  int amount;
+  bool crit;
+  bool active;
+};
+
+class DmgHintSystem {
+public:
+  DmgHintSystem();
+  void clear();
+  // Spawn at target; velocity aims toward `toward` (player↔target angle in C2).
+  void spawn(Vec2 at, Vec2 toward, int amount, bool crit_style);
+  void update(float dt);
+  int count() const { return count_; }
+  const DmgHint* begin() const { return hints_; }
+  const DmgHint* end() const { return hints_ + count_; }
+
+private:
+  DmgHint hints_[kMaxDmgHints];
+  int count_;
+};
+
 // Bullets_dmg_deal IV8 branch (mosin/sks/svd/repeater/sv98/sawed mosin): second IV0 subtract
 // on zed941/847 when bullet IV8 and rolled dmg < random(0,100).
 bool weapon_bullet_iv8_armor_pierce(ItemId weapon_id);

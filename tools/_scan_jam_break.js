@@ -1,0 +1,15 @@
+const fs = require('fs');
+const t = fs.readFileSync(require('path').join(__dirname, '../original_docs/data.js'), 'utf8');
+const jam = new Set();
+const brk = new Set();
+let m;
+const reJam = /"([^"]*[Jj]am[^"]*)"/g;
+while ((m = reJam.exec(t))) jam.add(m[1]);
+const reBrk = /"([^"]*[Bb]reak[^"]*)"/g;
+while ((m = reBrk.exec(t))) brk.add(m[1]);
+console.log('jam strings:', [...jam].slice(0, 40).join(', '));
+console.log('break weapon-ish:', [...brk].filter((x) => /weapon|melee|gun|item|axe|tool/i.test(x)).slice(0, 40).join(', '));
+const craft = new Set();
+const reC = /"(Craft_[A-Za-z0-9_]+)"/g;
+while ((m = reC.exec(t))) craft.add(m[1]);
+console.log('Craft_* in data.js:', [...craft].sort().join(', '));

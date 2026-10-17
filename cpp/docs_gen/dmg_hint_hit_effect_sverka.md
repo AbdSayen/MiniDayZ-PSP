@@ -18,7 +18,9 @@ Port: `Game::hit_effect_t_` red fullscreen flash on `apply_incoming_damage` (~0.
 - Spawns obj529 (`Rain` layer) with Text `-{damage}` toward player↔target
 - Param 2==1 → red 18px font (crit-style branch)
 
-Not the same as `test_bullet_hit` (obj308) impact sprites. Floating dmg text not ported headless.
+Not the same as `test_bullet_hit` (obj308) impact sprites.
+
+**Port (2026-10-17):** `DmgHintSystem` in `combat.hpp` / `combat.cpp`; `Game` spawns on NPC hurt + player `apply_incoming_damage`; rendered in world space. Crit-style (param2==1 / red) when bullet IV8 second-hit exceeds rolled damage.
 
 ## Bullet IV2 — **partial**
 

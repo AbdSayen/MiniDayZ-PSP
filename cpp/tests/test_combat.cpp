@@ -275,5 +275,31 @@ int test_combat() {
     }
   }
 
+  {
+    mdaz::DmgHintSystem hints;
+    hints.spawn(mdaz::Vec2(10.f, 20.f), mdaz::Vec2(100.f, 20.f), 23, false);
+    hints.spawn(mdaz::Vec2(0.f, 0.f), mdaz::Vec2(0.f, -10.f), 40, true);
+    if (hints.count() < 2) {
+      std::printf("FAIL dmg_hint spawn count %d\n", hints.count());
+      ++fail;
+    } else {
+      const mdaz::DmgHint* a = hints.begin();
+      const mdaz::DmgHint* b = hints.begin() + 1;
+      if (!a->active || a->amount != 23 || a->crit ||
+          !b->active || b->amount != 40 || !b->crit) {
+        std::printf("FAIL dmg_hint fields\n");
+        ++fail;
+      } else {
+        hints.update(0.5f);
+        if (!a->active || a->life <= 0.f) {
+          std::printf("FAIL dmg_hint lifetime\n");
+          ++fail;
+        } else {
+          std::printf("OK   dmg_hint spawn/update (C2 floating -N)\n");
+        }
+      }
+    }
+  }
+
   return fail ? 1 : 0;
 }

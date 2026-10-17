@@ -422,7 +422,7 @@ Game::Game()
     melee_break_mul_(1.f), has_headlamp_(false),
     gun_jammed_(false), mag_rounds_(0), mag_weapon_id_(0),
     equipped_slot_(0), in_bunker_(false), bunker_looted_(false), bunker_reopen_t_(0.f),
-    show_bag_(false), show_craft_menu_(false), craft_menu_index_(0),
+    show_bag_(false), show_craft_menu_(false), show_controls_(false), craft_menu_index_(0),
     menu_difficulty_(Difficulty_Novice),
     trap_count_(0), crop_count_(0), howl_cd_(0.f), cough_cd_(0.f), tree_count_(0),
     map_prop_count_(0),
@@ -552,11 +552,33 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
   if (!char_anims_.load(*platform_, path))
     std::fprintf(stderr, "[mdaz] char_anims missing: %s (using UV fallback)\n", path);
 
-  // Original 1.4.1 Construct sprites (original_docs/images).
-  // PSP: never scan/load the 1000+ PNG tree — soft fb has no textures and XMB/PPSSPP
-  // can choke if that folder is shipped next to EBOOT.
-#if !defined(MDAZ_PSP)
+  // Original 1.4.1 Construct sprites.
+  // PSP: data/sprites.pak (+ absolute ms0 fallbacks). Desktop: original_docs/images.
   {
+    bool loaded = false;
+#if defined(MDAZ_PSP)
+    static const char* kPakCandidates[] = {
+      "data/sprites.pak",
+      "sprites.pak",
+      "ms0:/PSP/GAME/MINIDAYZ/data/sprites.pak",
+      "ms0:/PSP/GAME/minidayz/data/sprites.pak",
+      "ms0:/PSP/GAME/MiniDAYZ/data/sprites.pak",
+      "host0:/data/sprites.pak",
+      "umd0:/data/sprites.pak",
+      0
+    };
+    for (int i = 0; kPakCandidates[i]; ++i) {
+      if (platform_->load_sprites(kPakCandidates[i])) {
+        loaded = true;
+        break;
+      }
+    }
+    if (!loaded) {
+      char pak[600];
+      std::snprintf(pak, sizeof(pak), "%s/sprites.pak", data_dir_);
+      if (platform_->load_sprites(pak)) loaded = true;
+    }
+#else
     static const char* kImgCandidates[] = {
       "C:/Users/abdur/Desktop/MiniDayZ/original_docs/images",
       "../../original_docs/images",
@@ -565,7 +587,6 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
       "../../../original_docs/images",
       0
     };
-    bool loaded = false;
     for (int i = 0; kImgCandidates[i]; ++i) {
       if (platform_->load_sprites(kImgCandidates[i])) {
         loaded = true;
@@ -577,10 +598,10 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
       std::snprintf(img, sizeof(img), "%s/../../original_docs/images", data_dir_);
       if (platform_->load_sprites(img)) loaded = true;
     }
+#endif
     if (!loaded)
       std::printf("[mdaz] WARNING: original sprites not found — colored rects fallback\n");
   }
-#endif
 
   state_ = AppState_Menu;
   menu_cam_.reset(rng_);
@@ -991,6 +1012,12 @@ void Game::apply_incoming_damage(float amount, bool can_bleed, PlayerDamageKind 
     }
   }
   amount = player_damage_after_armor(amount, inventory_, kind);
+  // C2 dmg_hint on player UID after Player_get_hit (orange float; crit when param2==1 unused here).
+  if (amount > 0.f) {
+    const int shown = static_cast<int>(amount + 0.5f);
+    if (shown > 0)
+      dmg_hints_.spawn(player_.pos, Vec2(player_.pos.x, player_.pos.y - 40.f), shown, false);
+  }
   // Player_get_hit (decoded): SubInstanceVar IV15 (blood) by damage param;
   // bleed start: Compare random(3) >= 1.5 → ~50%, then StartTimer("Bleed", 60) + IV22=1.
   player_.survival.blood -= amount;
@@ -1005,12 +1032,8 @@ void Game::apply_incoming_damage(float amount, bool can_bleed, PlayerDamageKind 
       player_.survival.bleeding = 1.f;
     }
   }
-  // Infection chance stub (full C2 disease group not ported); gasmask+filter helps
-  if (can_bleed && !player_.survival.infected) {
-    const bool gasmask = wearing_gasmask() && gasmask_filter_ > 5.f;
-    const float chance = gasmask ? 0.015f : 0.08f;
-    if (rng_.next_float() < chance) player_.survival.infected = true;
-  }
+  // Infection (IV34): not set by Player_get_hit in export — DoT only when already infected
+  // (Update_Stats). No invented on-hit infection roll.
   if (kind == PlayerDmg_Bullet) {
     inventory_.apply_hit_armor_wear(rng_, true, false, wearing_gasmask());
   } else if (amount > 0.f) {
@@ -1090,13 +1113,9 @@ void Game::try_melee_attack() {
         spawn_fx(Fx_Hit, b->pos, 0.f, 0.1f);
     }
   }
-  // Melee durability stub: ~4% chance weapon breaks on connecting hit (duct tape reinforces)
-  if (hit_something && using_melee_item &&
-      rng_.next_float() < 0.04f * melee_break_mul_) {
-    inventory_.remove_at(equipped_slot_, 1);
-    melee_break_mul_ = 1.f;
-    if (audio_) audio_->play("hit", 0.4f);
-  }
+  // Melee durability break: no C2 string/event in 1.4.1 export — not invented.
+  (void)hit_something;
+  (void)using_melee_item;
 }
 
 void Game::try_ranged_attack() {
@@ -1106,11 +1125,8 @@ void Game::try_ranged_attack() {
   if (eq.empty()) return;
   const WeaponDef* w = find_weapon(eq.id);
   if (!w || w->stats.is_melee) return;
-  if (gun_jammed_) {
-    if (audio_) audio_->play("melee_swing", 0.3f);
-    attack_cd_ = 0.25f;
-    return;
-  }
+  // gun_jammed_: no "jam"/"misfire" events in 1.4.1 export — flag kept for save compat only.
+  gun_jammed_ = false;
 
   if (w->ammo_id > 0) {
     if (w->mag_capacity > 0) {
@@ -1143,23 +1159,6 @@ void Game::try_ranged_attack() {
         return;
       }
     }
-  }
-
-  // Jam stub: ~2% when wet or mag almost empty — clear with V
-  // Protector Case (88) keeps powder dry → half jam chance when wet
-  float jam_p = 0.02f;
-  if (wetness_ > 70.f) {
-    for (int i = 0; i < inventory_.slot_count(); ++i) {
-      if (inventory_.slot(i).id == 88) { jam_p *= 0.5f; break; }
-    }
-  }
-  if (w->mag_capacity > 0 &&
-      (wetness_ > 70.f || mag_rounds_ <= 1) &&
-      rng_.next_float() < jam_p) {
-    gun_jammed_ = true;
-    attack_cd_ = 0.4f;
-    if (audio_) audio_->play("melee_swing", 0.35f);
-    return;
   }
 
   attack_cd_ = w->stats.fire_interval;
@@ -1312,27 +1311,39 @@ void Game::spawn_fx(FxKind kind, Vec2 pos, float angle_deg, float life) {
 
 void Game::hurt_zombie(Zombie& z, float amount, ItemId killer_weapon) {
   if (!z.alive || amount <= 0.f) return;
-  npc_apply_damage(z.hp, npc_damage_kind_for_zed(z.type), amount);
+  const float applied = npc_apply_damage(z.hp, npc_damage_kind_for_zed(z.type), amount);
+  const int shown = static_cast<int>(applied + 0.5f);
+  if (shown > 0) dmg_hints_.spawn(z.pos, player_.pos, shown, false);
   if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
 }
 
 void Game::hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8,
                               ItemId killer_weapon) {
   if (!z.alive || amount <= 0.f) return;
+  const float before = z.hp;
   zed_apply_bullet_hit_damage(z.hp, npc_damage_kind_for_zed(z.type), amount, z.type,
                               armor_pierce_iv8, rng_);
+  const float applied = before - z.hp;
+  const int shown = static_cast<int>(applied + 0.5f);
+  // Crit-style (param2==1) when IV8 second-hit path applied more than the rolled shot.
+  const bool crit = armor_pierce_iv8 && applied > amount + 0.5f;
+  if (shown > 0) dmg_hints_.spawn(z.pos, player_.pos, shown, crit);
   if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
 }
 
 void Game::hurt_animal(Animal& a, float amount) {
   if (!a.alive || amount <= 0.f) return;
-  npc_apply_damage(a.hp, npc_damage_kind_for_animal(a.type), amount);
+  const float applied = npc_apply_damage(a.hp, npc_damage_kind_for_animal(a.type), amount);
+  const int shown = static_cast<int>(applied + 0.5f);
+  if (shown > 0) dmg_hints_.spawn(a.pos, player_.pos, shown, false);
   if (a.hp <= 0.f) on_animal_killed(a);
 }
 
 void Game::hurt_bandit(Bandit& b, float amount) {
   if (!b.alive || amount <= 0.f) return;
-  npc_apply_damage(b.hp, npc_damage_kind_for_bandit(b.has_gun), amount);
+  const float applied = npc_apply_damage(b.hp, npc_damage_kind_for_bandit(b.has_gun), amount);
+  const int shown = static_cast<int>(applied + 0.5f);
+  if (shown > 0) dmg_hints_.spawn(b.pos, player_.pos, shown, false);
   if (b.hp <= 0.f) {
     if (b.is_ally)
       remove_bot_friend(&b);
@@ -1678,21 +1689,8 @@ void Game::try_craft() {
     return;
   }
   const bool at_fire = campfires_.near_fire(player_.pos);
-  // Prefer cook recipes when at fire and holding pan (210)
-  bool has_pan = false;
-  for (int i = 0; i < inventory_.slot_count(); ++i) {
-    if (inventory_.slot(i).id == 210) { has_pan = true; break; }
-  }
-  if (at_fire && has_pan) {
-    for (int i = 0; i < craft_recipe_count(); ++i) {
-      const CraftRecipe* r = craft_recipe_at(i);
-      if (!r || !r->requires_fire) continue;
-      if (craft_do(inventory_, *r, items_)) {
-        if (audio_) audio_->play("craft", 0.75f);
-        return;
-      }
-    }
-  }
+  // Cooking (meat_cook / pan): inventory Cook_* recipes removed — no verified Spawn_drop.
+  (void)at_fire;
   for (int i = 0; i < craft_recipe_count(); ++i) {
     const CraftRecipe* r = craft_recipe_at(i);
     if (!r) continue;
@@ -1893,10 +1891,10 @@ void Game::try_place_campfire() {
       break;
     }
   }
+  // Hand-drill chance: still approximate (no proven C2 literals) — rain/night mods only.
   float chance = 0.25f;
   if (player_.perk_farmer) chance += 0.10f;
   if (weather_.rain < 0.3f && !weather_.is_night) chance += 0.08f;
-  if (wetness_ > 50.f) chance *= 0.5f; // wet hands / sticks
   if (rng_.next_float() < chance) {
     campfires_.place(player_.pos, 50.f);
     if (audio_) audio_->play("craft", 0.4f);
@@ -2435,8 +2433,72 @@ void Game::update_bandit_guns(float dt) {
   }
 }
 
+void Game::draw_controls_help() const {
+  if (!platform_) return;
+  platform_->draw_rect(16.f, 10.f, 448.f, 252.f, 0.04f, 0.05f, 0.07f, 0.94f);
+  platform_->draw_text(140.f, 16.f, "CONTROLS (READ ONLY)", 0.95f, 0.9f, 0.55f);
+#if defined(MDAZ_PSP)
+  static const char* kLines[] = {
+    "ANALOG / D-PAD  Move",
+    "X               Attack / Confirm / New game",
+    "O               Interact / Use",
+    "TRIANGLE        Inventory / Controls",
+    "SQUARE          Reload",
+    "R               Run (hold)",
+    "L               Crouch (hold)",
+    "R + X           Throw",
+    "R + O           Drop item",
+    "R + TRIANGLE    Torch / NVG",
+    "R + SQUARE      Craft menu",
+    "L + LEFT/RIGHT  Prev / next equip",
+    "L + X/TRI/SQ    Difficulty 1/2/3",
+    "L + SELECT      Continue (load)",
+    "L + START       Save",
+    "START           Pause / Resume",
+    "SELECT          Cancel / Quit / Back",
+    0
+  };
+#else
+  static const char* kLines[] = {
+    "WASD            Move",
+    "LMB / SPACE     Attack / Confirm",
+    "E               Interact",
+    "I / TAB         Inventory",
+    "R / V           Reload",
+    "SHIFT           Run",
+    "CTRL            Crouch",
+    "F               Throw",
+    "G               Drop",
+    "T               Torch",
+    "B               Craft menu",
+    "Q / X           Prev / next equip",
+    "1-3             Difficulty",
+    "F9              Continue (load)",
+    "F5              Save",
+    "P / ENTER       Pause",
+    "ESC             Cancel / Quit / Back",
+    0
+  };
+#endif
+  for (int i = 0; kLines[i]; ++i)
+    platform_->draw_text(28.f, 32.f + (float)i * 12.f, kLines[i], 0.82f, 0.88f, 0.78f);
+#if defined(MDAZ_PSP)
+  platform_->draw_text(120.f, 248.f, "SELECT / TRIANGLE - BACK", 0.7f, 0.75f, 0.55f);
+#else
+  platform_->draw_text(140.f, 248.f, "ESC / I - BACK", 0.7f, 0.75f, 0.55f);
+#endif
+}
+
 void Game::update_menu(float dt, const InputState& in) {
   menu_cam_.update(dt, rng_);
+  if (show_controls_) {
+    if (in.cancel || in.inventory_pressed || in.pause_pressed) show_controls_ = false;
+    return;
+  }
+  if (in.inventory_pressed) {
+    show_controls_ = true;
+    return;
+  }
   if (in.slot_digit == 1) menu_difficulty_ = Difficulty_Novice;
   if (in.slot_digit == 2) menu_difficulty_ = Difficulty_Regular;
   if (in.slot_digit == 3) menu_difficulty_ = Difficulty_Veteran;
@@ -2810,8 +2872,6 @@ void Game::update_playing(float dt, const InputState& in) {
     insulation += inventory_.clothing_insulation();
     insulation += campfires_.warmth_near(player_.pos) * 6.f; // fire warmth
     if (player_.perk_snowborn) insulation += 4.f;
-    if (wetness_ > 40.f) insulation -= 3.f; // wet clothes chill
-    if (wetness_ > 75.f) insulation -= 2.f; // soaked — worse
     if (insulation > 18.f) insulation = 18.f;
     if (insulation < 0.f) insulation = 0.f;
     // Endure freeze → unlock snowborn; thirsty → camel
@@ -3046,6 +3106,7 @@ void Game::update_playing(float dt, const InputState& in) {
     update_traps(dt);
     update_crops(dt);
     update_fx(dt);
+    dmg_hints_.update(dt);
 
     // Screamer also agitates nearby wolves
     if (zombies_.scream_active()) {
@@ -3358,14 +3419,7 @@ void Game::update_playing(float dt, const InputState& in) {
           trees_[near_tree] = trees_[tree_count_ - 1];
           tree_count_ -= 1;
           // Axe wear: ~6% break on chop (duct tape helps)
-          if (rng_.next_float() < 0.06f * melee_break_mul_) {
-            const ItemId aid = inventory_.slot(equipped_slot_).id;
-            if (aid == 202 || aid == 204 || aid == 201 || aid == 206) {
-              inventory_.remove_at(equipped_slot_, 1);
-              if (audio_) audio_->play("hit", 0.45f);
-            }
-            melee_break_mul_ = 1.f;
-          }
+          // Tool break-on-chop: no C2 evidence in 1.4.1 export — not invented.
           if (audio_) audio_->play("melee_swing", 0.55f);
         } else if (rng_.next_float() < 0.35f) {
           inventory_.add_item(38, 1, items_);
@@ -3780,19 +3834,8 @@ void Game::update_playing(float dt, const InputState& in) {
             audio_->play("melee_swing", 0.2f);
             used_special = true;
           }
-        } else if (eq.id == 39) { // Duct tape — reinforce equipped melee
-          const WeaponDef* mw = find_weapon(eq.id);
-          (void)mw;
-          bool has_melee = false;
-          for (int i = 0; i < inventory_.slot_count(); ++i) {
-            const WeaponDef* w = find_weapon(inventory_.slot(i).id);
-            if (w && w->stats.is_melee) { has_melee = true; break; }
-          }
-          if (has_melee && inventory_.remove_at(equipped_slot_, 1)) {
-            melee_break_mul_ = 0.25f;
-            used_special = true;
-            if (audio_) audio_->play("craft", 0.5f);
-          }
+        } else if (eq.id == 39) {
+          // Duct tape melee reinforce: no C2 craft/jam strings — blocked (do not invent).
         } else if (eq.id == 260) { // Headlamp — wear + enable torch
           used_special = inventory_.wear_clothing(equipped_slot_, items_);
           if (used_special) {
@@ -3932,8 +3975,17 @@ void Game::update(float dt) {
     update_playing(dt, in);
     break;
   case AppState_Paused:
+    if (show_controls_) {
+      if (in.cancel || in.inventory_pressed || in.pause_pressed) show_controls_ = false;
+      break;
+    }
+    if (in.inventory_pressed) {
+      show_controls_ = true;
+      break;
+    }
     if (in.pause_pressed || in.confirm_pressed) state_ = AppState_Playing;
     if (in.cancel) {
+      show_controls_ = false;
       menu_cam_.reset(rng_);
       state_ = AppState_Menu;
     }
@@ -3977,27 +4029,50 @@ void Game::render() {
     if (menu_difficulty_ == Difficulty_Regular) { diff = "REGULAR"; diff_frame_y = 124; }
     if (menu_difficulty_ == Difficulty_Veteran) { diff = "VETERAN"; diff_frame_y = 83; }
     char dbuf[64];
+#if defined(MDAZ_PSP)
+    std::snprintf(dbuf, sizeof(dbuf), "L+X/TRI/SQ  %s", diff);
+    struct MenuButton { const char* label; int frame_y; };
+    const MenuButton buttons[] = {
+      { "X  NEW GAME", 1 },
+      { "L+SELECT  CONTINUE", 1 },
+      { dbuf, diff_frame_y },
+      { "TRIANGLE  CONTROLS", 1 },
+      { "SELECT  QUIT", 1 },
+    };
+    const int n_btns = 5;
+#else
     std::snprintf(dbuf, sizeof(dbuf), "1-3  %s", diff);
     struct MenuButton { const char* label; int frame_y; };
     const MenuButton buttons[] = {
-      { "ENTER  NEW GAME", 1 }, { "F9  CONTINUE", 1 }, { dbuf, diff_frame_y }, { "ESC  QUIT", 1 },
+      { "ENTER  NEW GAME", 1 },
+      { "F9  CONTINUE", 1 },
+      { dbuf, diff_frame_y },
+      { "I  CONTROLS", 1 },
+      { "ESC  QUIT", 1 },
     };
-    const float bw = 150.f, bh = 30.f;
+    const int n_btns = 5;
+#endif
+    const float bw = 168.f, bh = 26.f;
     const float char_y = menu_char_select_y(72.f, c2_);
-    (void)char_y; // char_select layout anchor (no char picker on desktop yet)
-    for (int i = 0; i < 4; ++i) {
+    (void)char_y;
+    for (int i = 0; i < n_btns; ++i) {
       const float bx = cx - bw * 0.5f;
-      const float by = menu_button_y(96.f, i, c2_);
+      const float by = 78.f + (float)i * 28.f;
       if (platform_->has_sprite("menu_btn_wood-sheet0"))
         platform_->draw_sprite_frame("menu_btn_wood-sheet0", bx, by, bw, bh,
                                      1, buttons[i].frame_y, 160, 39, 0.f, 1.f);
       else
         platform_->draw_rect(bx, by, bw, bh, 0.25f, 0.18f, 0.12f, 0.95f);
-      const float tw = static_cast<float>(std::strlen(buttons[i].label)) * 9.f;
-      platform_->draw_text(cx - tw * 0.5f, by + 9.f, buttons[i].label, 0.95f, 0.92f, 0.82f);
+      const float tw = static_cast<float>(std::strlen(buttons[i].label)) * 6.f;
+      platform_->draw_text(cx - tw * 0.5f, by + 8.f, buttons[i].label, 0.95f, 0.92f, 0.82f);
     }
-    platform_->draw_rect(0.f, 256.f, 134.f, 16.f, 0.f, 0.f, 0.f, 0.55f);
-    platform_->draw_text(4.f, 259.f, "1.4.1 C++ PORT", 0.75f, 0.75f, 0.7f);
+    platform_->draw_rect(0.f, 248.f, 280.f, 24.f, 0.f, 0.f, 0.f, 0.65f);
+    platform_->draw_text(4.f, 250.f, "1.4.1 C++ PORT", 0.75f, 0.75f, 0.7f);
+    if (platform_->has_sprite("player_skin_def_1-sheet0"))
+      platform_->draw_text(4.f, 260.f, "SPRITES OK", 0.35f, 0.95f, 0.45f);
+    else
+      platform_->draw_text(4.f, 260.f, "NO SPRITES.PAK - COPY DEPLOY FOLDER", 1.f, 0.35f, 0.3f);
+    if (show_controls_) draw_controls_help();
   } else if (state_ == AppState_Playing || state_ == AppState_Paused) {
     if (in_bunker_) platform_->clear(0.08f, 0.07f, 0.06f);
     else if (weather_.is_night) platform_->clear(0.05f, 0.06f, 0.08f);
@@ -4839,6 +4914,18 @@ void Game::render() {
         }
       }
     }
+    // C2 dmg_hint — floating "-N" Text (obj529); orange default, red when crit-style.
+    for (const DmgHint* h = dmg_hints_.begin(); h != dmg_hints_.end(); ++h) {
+      if (!h->active) continue;
+      const float sx = cx + (h->pos.x - player_.pos.x) * sc;
+      const float sy = cy + (h->pos.y - player_.pos.y) * sc;
+      char buf[16];
+      std::snprintf(buf, sizeof(buf), "-%d", h->amount);
+      if (h->crit)
+        platform_->draw_text(sx - 6.f, sy - 10.f, buf, 1.f, 0.f, 0.f);
+      else
+        platform_->draw_text(sx - 6.f, sy - 10.f, buf, 1.f, 196.f / 255.f, 68.f / 255.f);
+    }
     if (hit_effect_t_ > 0.f) {
       const float a = hit_effect_t_ > kHitEffectFadeSec
                         ? 0.55f
@@ -4920,13 +5007,27 @@ void Game::render() {
     draw_weapon_unlock_toast(*platform_, *this);
     if (state_ == AppState_Paused) {
       platform_->draw_rect(0, 0, 480, 272, 0.f, 0.f, 0.f, 0.45f);
-      if (platform_->has_sprite("menu_btn_wood-sheet0"))
-        platform_->draw_sprite_frame("menu_btn_wood-sheet0", 165, 110, 150, 36,
-                                     1, 1, 160, 39, 0.f, 0.95f);
-      else
-        platform_->draw_rect(165, 110, 150, 36, 0.08f, 0.06f, 0.04f, 0.9f);
-      platform_->draw_text(213, 122, "PAUSED", 1.f, 0.95f, 0.7f);
-      platform_->draw_text(186, 160, "ESC - RESUME", 0.75f, 0.8f, 0.65f);
+      if (show_controls_) {
+        draw_controls_help();
+      } else {
+        if (platform_->has_sprite("menu_btn_wood-sheet0"))
+          platform_->draw_sprite_frame("menu_btn_wood-sheet0", 155, 88, 170, 32,
+                                       1, 1, 160, 39, 0.f, 0.95f);
+        else
+          platform_->draw_rect(155, 88, 170, 32, 0.08f, 0.06f, 0.04f, 0.9f);
+        platform_->draw_text(205, 98, "PAUSED", 1.f, 0.95f, 0.7f);
+#if defined(MDAZ_PSP)
+        platform_->draw_text(150, 130, "START / X  - RESUME", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(150, 148, "TRIANGLE   - CONTROLS", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(150, 166, "SELECT     - MAIN MENU", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(168, 200, "(CONTROLS READ ONLY)", 0.55f, 0.65f, 0.5f);
+#else
+        platform_->draw_text(150, 130, "ENTER / P  - RESUME", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(150, 148, "I          - CONTROLS", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(150, 166, "ESC        - MAIN MENU", 0.8f, 0.85f, 0.7f);
+        platform_->draw_text(168, 200, "(CONTROLS READ ONLY)", 0.55f, 0.65f, 0.5f);
+#endif
+      }
     }
   } else if (state_ == AppState_Dead) {
     platform_->clear(0.04f, 0.01f, 0.01f);
@@ -4962,7 +5063,11 @@ void Game::render() {
                   player_.days_survived, player_.zeds_killed, player_.bandits_killed,
                   player_.animals_killed);
     platform_->draw_text(80, 225, buf, 0.8f, 0.6f, 0.55f);
+#if defined(MDAZ_PSP)
+    platform_->draw_text(130, 250, "X - MENU", 0.75f, 0.55f, 0.5f);
+#else
     platform_->draw_text(120, 250, "ENTER - MENU", 0.75f, 0.55f, 0.5f);
+#endif
   }
 
   platform_->end_frame();

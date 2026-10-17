@@ -3,7 +3,7 @@
 **Baseline source:** `original_docs/` — Bohemia Interactive Mini DAYZ **1.4.1** (Construct 2 HTML5 export)  
 **Also present (not baseline):** `docs/` Plus 1.2, `reloaded_docs/` Reloaded 1.1  
 **Verified on disk:** 2026-10-17 — `original_docs/data.js` ~6.72 MB; `images/` 1137 PNGs; `media/` 207 audio; desktop `minidayz_desktop.exe` + `mdaz_tests.exe` build and pass.  
-**Parity snapshot (audit):** ~**98/175** C2 functions referenced (**56%**); gameplay globals ~**79%**; Craft_* **55%**; perks **100%**. Executable path is C++ only (does not run `c2runtime.js`). PSP EBOOT **not** verified.
+**Parity snapshot (audit 2026-10-17):** C2 function **names** **175/175**, gameplay globals **242/242**, Craft_* **11/11**, perk_* **15/15** referenced in C++ (name coverage ≠ full behavior). Executable path is C++ only (does not run `c2runtime.js`). PSP EBOOT **not** verified.
 
 ---
 
@@ -112,9 +112,9 @@ Full event-group list: `cpp/docs_gen/group_tree.json` (from `tools/extract_group
 3. Survival / inventory / combat constants ✅ (partial sverka)  
 4. World / AI / vehicles / quests / save ✅ (functional, incomplete vs C2)  
 5. Original atlases / HUD / audio tags ✅ (presentation parity improving)  
-6. Remaining: full Craft_* recipes, exact gun IV0s (beyond Fist/FNX/sword), true RLE overworld tilemaps, PSP EBOOT  
+6. Remaining (behavior, not name coverage): exact gun IV0s beyond Fist/FNX/sword; mag capacities; NPC max HP/speed; Buildings_base prefab XY; full AI trees; Craft_* Spawn_drop completeness; PSP EBOOT  
 7. Continuous behavioral tests vs extracted numbers ✅ (`mdaz_tests`)  
-8. Save format: MDAZ **v13** (+bunker_looted/melee mul); older v2–v12 load OK
+8. Save format: MDAZ **v18** loot piles; older v2–v17 load OK
 
 ---
 

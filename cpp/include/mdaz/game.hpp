@@ -65,6 +65,7 @@ public:
   bool inventory_opened() const { return inventory_ui_.opened; }
   const InventoryUiState& inventory_ui_state() const { return inventory_ui_; }
   bool show_craft_menu() const { return show_craft_menu_; }
+  bool show_controls() const { return show_controls_; }
   int craft_menu_index() const { return craft_menu_index_; }
   bool near_campfire() const { return campfires_.near_fire(player_.pos); }
   int equipped_slot() const { return equipped_slot_; }
@@ -165,8 +166,10 @@ private:
   bool show_bag_;
   InventoryUiState inventory_ui_;
   bool show_craft_menu_;
+  bool show_controls_; // READ ONLY controls help (menu / pause)
   int craft_menu_index_;
   Difficulty menu_difficulty_;
+  void draw_controls_help() const;
   Vec2 overworld_pos_;
   Vec2 last_airdrop_pos_;
   bool visited_sectors_[kMapSectorsX * kMapSectorsY];
@@ -216,6 +219,7 @@ private:
   float rain_sfx_cd_;
   float lightning_t_; // brief white flash after thunder
   float hit_effect_t_; // C2 Hit_effect layout flash after Player_get_hit
+  DmgHintSystem dmg_hints_; // C2 dmg_hint floating "-N" text
   float thunder_cd_;
   float cough_alert_t_; // brief window after cough that pulls zeds
   float fps_;

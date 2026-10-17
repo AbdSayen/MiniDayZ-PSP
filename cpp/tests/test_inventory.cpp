@@ -316,5 +316,28 @@ int test_inventory() {
     }
   }
 
+  {
+    // Cook-only / no item_activate IV restores must not invent hunger/thirst.
+    mdaz::ItemDatabase rdb;
+    rdb.load_from_json_string(
+      "{\"items\":[{\"id\":60,\"name\":\"Raw steak\"},{\"id\":97,\"name\":\"Mushroom\"},"
+      "{\"id\":999,\"name\":\"Mystery drink\"}]}");
+    mdaz::Inventory rinv;
+    mdaz::SurvivalState rs;
+    rs.food = 40.f;
+    rs.water = 40.f;
+    rinv.add_item(60, 1, rdb);
+    rinv.add_item(97, 1, rdb);
+    rinv.add_item(999, 1, rdb);
+    if (rinv.use_consumable(0, rs, rdb) || rinv.use_consumable(1, rs, rdb) ||
+        rinv.use_consumable(2, rs, rdb) || rs.food != 40.f || rs.water != 40.f) {
+      std::printf("FAIL no invented food/drink restores (food=%.1f water=%.1f)\n",
+                  rs.food, rs.water);
+      ++fail;
+    } else {
+      std::printf("OK   no invented food/drink restores without item_activate\n");
+    }
+  }
+
   return fail ? 1 : 0;
 }

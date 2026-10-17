@@ -54,8 +54,7 @@ void ItemDatabase::classify(ItemDef& d) {
              n.find("Water bottle") != std::string::npos || n.find("Energy drink") != std::string::npos ||
              n.find("drink") != std::string::npos) {
     d.category = ItemCat_Drink;
-    // PLACEHOLDER restores until extracted from C2 — marked known_stats=false
-    d.water_restore = n.find("Energy") != std::string::npos ? 20.f : 25.f;
+    // Restores only from item_activate IV literals (id overrides below) — no placeholders.
   } else if (n.find("Canned") != std::string::npos || n.find("Apple") != std::string::npos ||
              n.find("Banana") != std::string::npos || n.find("Rice") != std::string::npos ||
              n.find("bacon") != std::string::npos || n.find("steak") != std::string::npos ||
@@ -67,8 +66,8 @@ void ItemDatabase::classify(ItemDef& d) {
              n.find("Perch") != std::string::npos || n.find("fillet") != std::string::npos ||
              n.find("fish") != std::string::npos) {
     d.category = ItemCat_Food;
-    d.food_restore = 20.f;
     d.stack_max = 5;
+    // food_restore only from item_activate IV13/14 (id overrides below).
   } else {
     d.category = ItemCat_Misc;
   }

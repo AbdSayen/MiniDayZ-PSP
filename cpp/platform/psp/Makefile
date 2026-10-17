@@ -61,7 +61,7 @@ OBJS = \
   platform_psp.o
 
 # build.mak prepends -I to each INCDIR entry — do NOT also put -I$(INCDIR) in CFLAGS.
-INCDIR = $(SRC_ROOT)/include
+INCDIR = $(SRC_ROOT)/include $(SRC_ROOT)/third_party/stb
 CFLAGS = -O2 -G0 -Wall -DMDAZ_PSP=1
 CXXFLAGS = -fno-exceptions -fno-rtti -std=c++11
 ASFLAGS =

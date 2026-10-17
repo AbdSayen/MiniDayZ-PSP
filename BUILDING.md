@@ -123,13 +123,13 @@ cd /mnt/c/Users/abdur/Desktop/MiniDayZ/cpp/platform/psp
 make clean && make
 ```
 
-**Slim deploy (required):** do **not** copy the whole repo / `original_docs/images` (1000+ PNGs) next to EBOOT — PPSSPP/XMB can freeze and the old build also stack-crashed (`Game` ≈ 840KB on stack).
+**Slim deploy (required):** all C2 PNGs are packed into **one** `data/sprites.pak` (not 1000+ loose files beside EBOOT).
 
 ```powershell
 powershell -File tools/pack_psp_deploy.ps1
-# → cpp/platform/psp/deploy/MINIDAYZ/  (EBOOT.PBP + data/ only, ~1.5 MB)
+# → cpp/platform/psp/deploy/MINIDAYZ/  (EBOOT + data + sprites.pak)
 ```
 
 Copy `deploy/MINIDAYZ` to `ms0:/PSP/GAME/` or PPSSPP memstick `PSP/GAME/`.
 
-PSP uses soft 565 framebuffer (rects/text); sprites not uploaded yet. See `KNOWN_ISSUES.md`.
+PSP blits sprites from `sprites.pak` onto the soft framebuffer (same assets as PC). See `KNOWN_ISSUES.md`.

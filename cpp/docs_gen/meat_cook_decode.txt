@@ -1,0 +1,130 @@
+# Meat / fish cooking decode (Mini DAYZ 1.4.1)
+
+Source: `original_docs/data.js` → function `item_activate` (see also `functions/item_activate_decoded.txt`).
+Object type index **253** = fireplace (`images/fireplace-sheet*.png`, anims `on` / `off`).
+
+## Verdict
+
+Cooking is **not** an inventory `Cook_*` recipe and **not** in-place `SetInstanceVar` item-id swap.
+It is **`item_activate` on raw food** while overlapping a **lit fireplace (253, IV0==1)**:
+play **`meat_cook`**, wait **5s**, consume raw (`SetReturnValue -1`), then
+`CallFunction Check_space_inventory(-1, <cooked_id>)`.
+
+**No C++ cook port from this pass** — no direct `Spawn_drop` / item-id `SetInstanceVar` on the cook success branch
+(only `Check_space_inventory(-1, N)`; `Spawn_drop_from_player` appears only on the clothing-full
+`Check_space_backpack` `CompareParam 0 == -1` overflow path).
+
+---
+
+## Verified — `meat_cook` audio
+
+| Fact | Literal |
+|------|---------|
+| Action | `Audio.PlayByName` name **`meat_cook`** (not PlayAtObject) |
+| Where | Only inside `item_activate` cook-success branches |
+| Count | **6** `"meat_cook"` string hits in `data.js`, all tied to raw cook |
+| Item CompareParams that play it | **60, 71, 91, 92, 93, 94** |
+
+Not used on cooked eat branches (those use **`EatingSoft_0`**).
+
+---
+
+## Verified — campfire / fireplace cook gate
+
+Fireplace object **t253** (event type index **253**):
+
+| Step | `item_activate` CompareParam | Literals |
+|------|------------------------------|----------|
+| Place kit | **23** (Campfire kit) | `Spawn` type **253** on `items_on_ground`; **IV0=0**; anim **`off`**; **IV1=3** |
+| Light | **24** (Matches) | Require overlap **253** + **IV0==0**; then **IV0=1**; Timer **`Burn`** duration **180**; anim **`on`**; SFX **`match_burn`** + loop **`fireplace_loop`** tagged `fireplaceloop_<uid>` |
+| Cook gate (all raws) | raw ids below | Player **IsOverlapping 253**, PickRandom 253, **IV0==1** (lit). Else return `"lol"` |
+
+There is **no** separate named “campfire cook” event sheet beyond this gate inside `item_activate`.
+
+Busy / blocked:
+- Player **IV44** set → cook refused (`"lol"`, client_log 90). Meaning of IV44 **BLOCKED** (not labeled in export).
+- Player **IV21=1** during cook wait (same busy flag as other activations).
+
+---
+
+## Verified — raw → cooked conversions (`item_activate`)
+
+Shared success sequence (all six raws):
+
+1. `SetReturnValue -1` (consume activated raw)
+2. `PlayByName "meat_cook"`
+3. `IV21=1` → `Wait 5` → `IV21=0`
+4. `CallFunction "Check_space_inventory" (-1, <cooked_id>)`
+5. client_log success code **56** (green)
+
+| Raw id | Name (items_eng) | Cooked id | Name |
+|--------|------------------|-----------|------|
+| **60** | Raw steak | **61** | Cooked steak |
+| **71** | Rabbit meat | **72** | Cooked rabbit meat |
+| **91** | Herring | **95** | Small fish fillet |
+| **92** | Salmon | **96** | Big fish fillet |
+| **93** | Ruffe | **95** | Small fish fillet |
+| **94** | Perch | **96** | Big fish fillet |
+
+Fish mapping verified: herring/ruffe → **95**; salmon/perch → **96**.
+
+### `Check_space_inventory(-1, cooked_id)` (give cooked)
+
+- Primary `OnFunction Check_space_inventory` body: writes bag arrays with **param1=item id**, **param2** qty/slot arg; `Items_update`; pick SFX; `Destroy` UID from **param0** ( **-1** = no ground sprite).
+- If bag/clothing cascade fills: `Check_space_backpack` has `CompareParam 0 == -1` → **`Spawn_drop_from_player`(param1, param2)** (ground drop overflow).
+- **Not** a craft-tree `Spawn_drop` with recipe name.
+- **Not** `SetInstanceVar` changing the same instance from 60→61.
+
+---
+
+## Verified — cooked eat (`item_activate`, no fire)
+
+| Id | Audio | Wait | Restores |
+|----|-------|------|----------|
+| **61** Cooked steak | `EatingSoft_0` | 3s | IV15+**15**, IV13+**50**, IV14+**10** |
+| **72** Cooked rabbit | `EatingSoft_0` | 3s | IV15+**30**, IV13+**35**, IV14+**10** |
+| **95** Small fillet | `EatingSoft_0` | 3s | IV15+**15**, IV13+**50**, IV14+**10** |
+| **96** Big fillet | `EatingSoft_0` | 3s | IV15+**15**, IV13+**50**, IV14+**10** |
+
+Raw **60/71/91–94** have **no** eat restores in `item_activate` (cook-only or fail without fire) — matches `item_activate_iv_sverka.json` null IVs.
+
+---
+
+## Pan (210) — BLOCKED for cooking
+
+| Check | Result |
+|-------|--------|
+| `items_eng` / `items_extract` | id **210** = **Pan** |
+| `item_activate` CompareParam **210** | **Absent** (0 literals) |
+| `item_activate2` meat_cook / 210 | **Absent** |
+| Cook branches require pan / IV / overlap pan | **No** |
+| Other **210** uses | Melee (`NPC_get_damage` / weapon list), loot/`Spawn_drop` mentions, GUI — **not** cook catalyst |
+
+**BLOCKED:** any claim that pan is required to cook, speeds cook, or appears in the meat_cook tree.
+
+---
+
+## BLOCKED / open
+
+| Topic | Status |
+|-------|--------|
+| Inventory `Cook_*` recipes | **Removed / not in C2** as named craft with Spawn_drop |
+| In-place item id `SetInstanceVar` 60→61 | **Not found** |
+| Direct `Spawn_drop` on cook success | **Not found** (only CSI / overflow `Spawn_drop_from_player`) |
+| Pan role in cooking | **BLOCKED** (none) |
+| Exact meaning of player **IV44** cook block | **BLOCKED** |
+| Fireplace **Burn** OnTimer extinguish / IV0→0 full tree | Partial (light sets 180s `Burn`; full expire branch not fully decoded here) |
+| Distance/radius beyond `IsOverlapping` 253 | **BLOCKED** (collision only) |
+
+---
+
+## Port implication
+
+Safe to implement later as **use-raw-near-lit-fire**:
+
+- Gate: near active campfire
+- Map: 60→61, 71→72, 91→95, 92→96, 93→95, 94→96
+- Timing: **5** s + `meat_cook` SFX
+- Consume raw; grant cooked via inventory space / ground drop
+
+Do **not** gate on pan **210**. Do **not** invent inventory Craft/Cook recipes for these ids.

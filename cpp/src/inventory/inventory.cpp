@@ -154,6 +154,7 @@ bool Inventory::remove_at(int slot, int count) {
 }
 
 bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDatabase& db, Rng* rng) {
+  (void)rng; // reserved: C2 infection rolls on eat were not proven for cook-only raws
   if (slot_i < 0 || slot_i >= kInventorySlots) return false;
   InvSlot& s = slots_[slot_i];
   if (s.empty()) return false;
@@ -161,6 +162,8 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
   if (!def) return false;
 
   if (def->category == ItemCat_Food) {
+    // Only apply IV13/IV14 literals from item_activate — no invented restores.
+    if (def->food_restore <= 0.f && def->water_restore <= 0.f) return false;
     // Canned goods need a knife (stand-in for can opener / stone knife)
     const bool canned = def->name.find("Canned") != std::string::npos;
     if (canned) {
@@ -171,25 +174,24 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
       }
       if (!knife) return false;
     }
-    float restore = def->food_restore > 0.f ? def->food_restore : 15.f;
-    const bool raw = def->name.find("Raw") != std::string::npos ||
-                     def->name == "Perch" || def->name == "Rabbit meat" ||
-                     def->name == "Ruffe" || def->name == "Herring" ||
-                     def->name == "Salmon" || def->id == 97;
-    if (raw && def->id != 97) restore *= 0.5f;
-    survival.food += restore;
-    if (survival.food > 100.f) survival.food = 100.f;
+    if (def->food_restore > 0.f) {
+      survival.food += def->food_restore;
+      if (survival.food > 100.f) survival.food = 100.f;
+    }
     if (def->water_restore > 0.f) {
       survival.water += def->water_restore;
       if (survival.water > 100.f) survival.water = 100.f;
     }
-    const float infect_p = (def->id == 97) ? 0.55f : 0.35f; // mushrooms often bad
-    if (raw && rng && !survival.infected && rng->next_float() < infect_p) {
-      survival.infected = true;
+    if (def->heal_amount > 0.f) {
+      survival.blood += def->heal_amount;
+      if (survival.blood > 100.f) survival.blood = 100.f;
     }
   } else if (def->category == ItemCat_Drink) {
-    survival.water += def->water_restore > 0.f ? def->water_restore : 15.f;
-    if (survival.water > 100.f) survival.water = 100.f;
+    if (def->water_restore <= 0.f && def->food_restore <= 0.f) return false;
+    if (def->water_restore > 0.f) {
+      survival.water += def->water_restore;
+      if (survival.water > 100.f) survival.water = 100.f;
+    }
     if (def->food_restore > 0.f) {
       survival.food += def->food_restore;
       if (survival.food > 100.f) survival.food = 100.f;
@@ -199,7 +201,8 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
       survival.temperature += 40.f;
       if (survival.temperature > 100.f) survival.temperature = 100.f;
     }
-  } else if (def->name.find("Heatpack") != std::string::npos) {
+  } else if (def->name.find("Heatpack") != std::string::npos || def->id == 34) {
+    // item_activate id34: IV16 +25
     survival.temperature += 25.f;
     if (survival.temperature > 100.f) survival.temperature = 100.f;
   } else if (def->id == 20 || def->id == 265) {
@@ -217,12 +220,11 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
       // No CompareParam 45 in C2 item_activate export — see item_activate_medicals_sverka.json
       return false;
     } else if (def->heal_amount > 0.f) {
-      // Blood bag / saline use heal_amount from item_db
+      // Blood bag / saline use heal_amount from item_db (IV15)
       survival.blood += def->heal_amount;
       if (survival.blood > 100.f) survival.blood = 100.f;
     } else {
-      survival.blood += 10.f;
-      if (survival.blood > 100.f) survival.blood = 100.f;
+      return false; // no invented medical heal
     }
   } else if (def->category == ItemCat_Clothing || def->id == 250) {
     return wear_clothing(slot_i, db);

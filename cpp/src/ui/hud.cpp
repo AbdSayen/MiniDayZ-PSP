@@ -303,7 +303,11 @@ void draw_craft_submenu(IPlatform& p, const Game& game) {
     ++row;
   }
   if (craft_any_possible(game.inventory(), at_fire))
+#if defined(MDAZ_PSP)
+    p.draw_text(px, py + title_h + max_rows * row_h + gh(4.f), "R+SQ: craft", 0.75f, 0.85f, 0.55f);
+#else
     p.draw_text(px, py + title_h + max_rows * row_h + gh(4.f), "R: craft", 0.75f, 0.85f, 0.55f);
+#endif
 }
 
 void draw_weapon_unlock_toast_impl(IPlatform& platform, const Game& game) {

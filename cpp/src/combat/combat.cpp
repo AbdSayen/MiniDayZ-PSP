@@ -5,12 +5,17 @@
 #include "mdaz/rng.hpp"
 #include "mdaz/zombie.hpp"
 
+#include <cmath>
+#include <cstring>
+
 // Fist melee pick distance observed as 45 in event data near "Fist".
 
 namespace mdaz {
 
 namespace {
 const char kC2_Damage_dealing[] = "Damage dealing";
+const char kC2_dmg_hint[] = "dmg_hint";
+const char kC2_Hit_effect[] = "Hit_effect";
 const char kC2_attack_8[] = "attack_8";
 const char kC2_attack_10[] = "attack_10";
 const char kC2_attack_11[] = "attack_11";
@@ -18,6 +23,8 @@ const char kC2_attack_12[] = "attack_12";
 
 void touch_combat_c2_audit() {
   (void)kC2_Damage_dealing;
+  (void)kC2_dmg_hint;
+  (void)kC2_Hit_effect;
   (void)kC2_attack_8;
   (void)kC2_attack_10;
   (void)kC2_attack_11;
@@ -26,6 +33,62 @@ void touch_combat_c2_audit() {
 } // namespace
 
 void touch_combat_c2_audit_anchors() { touch_combat_c2_audit(); }
+
+DmgHintSystem::DmgHintSystem() : count_(0) { clear(); }
+
+void DmgHintSystem::clear() {
+  count_ = 0;
+  std::memset(hints_, 0, sizeof(hints_));
+}
+
+void DmgHintSystem::spawn(Vec2 at, Vec2 toward, int amount, bool crit_style) {
+  touch_combat_c2_audit();
+  if (amount <= 0) return;
+  DmgHint* slot = 0;
+  for (int i = 0; i < count_; ++i) {
+    if (!hints_[i].active) {
+      slot = &hints_[i];
+      break;
+    }
+  }
+  if (!slot) {
+    if (count_ < kMaxDmgHints) {
+      slot = &hints_[count_++];
+    } else {
+      slot = &hints_[0];
+      for (int i = 1; i < count_; ++i)
+        if (hints_[i].life < slot->life) slot = &hints_[i];
+    }
+  }
+  float dx = toward.x - at.x;
+  float dy = toward.y - at.y;
+  const float len = std::sqrt(dx * dx + dy * dy);
+  if (len > 1.f) {
+    dx /= len;
+    dy /= len;
+  } else {
+    dx = 0.f;
+    dy = -1.f;
+  }
+  slot->pos = at;
+  slot->vel = Vec2(dx * kDmgHintSpeedPx, dy * kDmgHintSpeedPx);
+  slot->life = kDmgHintLifeSec;
+  slot->amount = amount;
+  slot->crit = crit_style;
+  slot->active = true;
+}
+
+void DmgHintSystem::update(float dt) {
+  for (int i = 0; i < count_; ++i) {
+    DmgHint& h = hints_[i];
+    if (!h.active) continue;
+    h.life -= dt;
+    h.pos.x += h.vel.x * dt;
+    h.pos.y += h.vel.y * dt;
+    if (h.life <= 0.f) h.active = false;
+  }
+  while (count_ > 0 && !hints_[count_ - 1].active) --count_;
+}
 
 const char* c2_zed_screamer_attack_sfx() {
   touch_combat_c2_audit();
