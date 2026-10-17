@@ -58,6 +58,33 @@ Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_
 | 1/2/3 (menu) | Novice / Regular / Veteran |
 | Esc | Menu / quit |
 
+HUD shows **FPS** (top-left) on desktop and PSP.
+
+### Controls (PSP)
+
+Mapped in `platform/psp/platform_psp.cpp` (logical 480×272):
+
+| Button | Action |
+|--------|--------|
+| D-Pad / Analog | Move |
+| × Cross | Attack / confirm |
+| ○ Circle | Interact (loot / mount / chop / fish) |
+| △ Triangle | Use equipped item (C) |
+| □ Square | Mag reload (V) / also opens craft like desktop R |
+| R | Run |
+| L | Crouch (held alone) / modifier |
+| Start | Pause |
+| Select | Cancel / Esc / close UI |
+| **R + □** | Craft menu (B) |
+| **R + △** | Torch / campfire (T) |
+| **R + ○** | Drop (G) |
+| **R + ×** | Throw (F) |
+| **L + ←/→** | Cycle hotbar |
+| **L + Start** | Save (F5) |
+| **L + Select** | Load (F9) |
+| **L + ○** | Inventory bag (Tab) |
+| **L + ×/△/□** (menu) | Difficulty Novice / Regular / Veteran |
+
 ### Scripted screenshot run
 
 `minidayz_desktop.exe --shots <dir>` plays a fixed input script (menu → new game → walk → bag → run south-west → pause), saves BMP screenshots (`menu`, `spawn`, `walk`, `bag`, `explore1`, `explore2`, `pause`) into `<dir>` and exits. Time is fixed at 60 fps, so the run is deterministic apart from the world seed.
@@ -82,13 +109,27 @@ node tools/extract_char_anims.js
 
 Outputs land in `cpp/docs_gen/` and `cpp/include/mdaz/balance_globals.hpp`.
 
-## PSP (not verified on this machine)
+## PSP
 
-1. Install [pspdev](https://github.com/pspdev/pspdev) so `psp-config` and `psp-gcc` are on PATH.
-2. From `cpp/platform/psp/`:
+`EBOOT.PBP` lives at `cpp/platform/psp/EBOOT.PBP` (built with WSL + [pspdev](https://github.com/pspdev/pspdev)).
+
+Rebuild:
 
 ```sh
-make
+# WSL
+export PSPDEV=/root/pspdev   # or $HOME/pspdev
+export PATH="$PSPDEV/bin:$PATH"
+cd /mnt/c/Users/abdur/Desktop/MiniDayZ/cpp/platform/psp
+make clean && make
 ```
 
-See `KNOWN_ISSUES.md` — do not claim a working EBOOT until built with PSPSDK.
+**Slim deploy (required):** do **not** copy the whole repo / `original_docs/images` (1000+ PNGs) next to EBOOT — PPSSPP/XMB can freeze and the old build also stack-crashed (`Game` ≈ 840KB on stack).
+
+```powershell
+powershell -File tools/pack_psp_deploy.ps1
+# → cpp/platform/psp/deploy/MINIDAYZ/  (EBOOT.PBP + data/ only, ~1.5 MB)
+```
+
+Copy `deploy/MINIDAYZ` to `ms0:/PSP/GAME/` or PPSSPP memstick `PSP/GAME/`.
+
+PSP uses soft 565 framebuffer (rects/text); sprites not uploaded yet. See `KNOWN_ISSUES.md`.

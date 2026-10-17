@@ -95,6 +95,8 @@ public:
   const C2SessionGlobals& c2_session() const { return c2_; }
   float weapon_unlock_toast_t() const { return wpn_unlock_toast_t_; }
   ItemId weapon_unlock_toast_weapon() const { return wpn_unlock_toast_id_; }
+  // Smoothed frames-per-second (updated every ~0.5s from Game::update dt).
+  float fps() const { return fps_; }
 
   Player& player_mut() { return player_; }
   Inventory& inventory_mut() { return inventory_; }
@@ -216,6 +218,9 @@ private:
   float hit_effect_t_; // C2 Hit_effect layout flash after Player_get_hit
   float thunder_cd_;
   float cough_alert_t_; // brief window after cough that pulls zeds
+  float fps_;
+  float fps_accum_;
+  int fps_frames_;
   float wind_sfx_cd_;
   float flare_t_;
   Vec2 flare_pos_;

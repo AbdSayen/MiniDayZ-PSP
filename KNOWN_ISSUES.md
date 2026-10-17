@@ -7,7 +7,7 @@ Last updated: 2026-10-17 (Death_guide decode, MDAZ v18 loot ext, mapgen toelemen
 | Issue | Impact | Status |
 |-------|--------|--------|
 | No Construct `.capx` — only HTML5 export | Some editor-only data unavailable | Permanent for this repo |
-| PSPSDK not verified on this PC | No successful EBOOT yet | **Do not claim PSP support** |
+| PSP EBOOT device/PPSSPP run | EBOOT rebuilt: `Game` on **heap** (was ~840KB stack crash), slim tile/anim budgets, deploy = EBOOT+`data/` only (`tools/pack_psp_deploy.ps1`). Do **not** ship `original_docs/images` beside EBOOT. | Soft fb only; **re-test on PPSSPP** with slim folder |
 | Online login / DeltaDNA / ads in original | Not ported | Intentionally stubbed offline |
 
 ## Incomplete / approximate logic

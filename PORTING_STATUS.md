@@ -39,7 +39,7 @@ Executable game: **C++ only** (`minidayz_desktop.exe`) — does not run `c2runti
 | HUD / menu | Реализуется | GUI crops; bag icons; night_overlay; amenu_bg |
 | Campfire | Реализуется | Place/warmth/cook |
 | Desktop SDL host | Протестирована | SDL2 2.30.9; 480×272 |
-| Platform / PSP | Заблокирована внешним ограничением | Makefile present; EBOOT **not** verified |
+| Platform / PSP | Заблокирована внешним ограничением | Full pad map + GU fb + FPS HUD; Makefile lists all core objs; EBOOT **not** verified (no pspdev here) |
 | Full parity | Реализуется | Mechanics first; presentation improving |
 
 ## How to run (desktop)

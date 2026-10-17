@@ -23,8 +23,13 @@ struct CharAnim {
 
 class CharAnims {
 public:
+#if defined(MDAZ_PSP)
+  static const int kMaxAnims = 160;
+  static const int kMaxFrames = 1024;
+#else
   static const int kMaxAnims = 320;
   static const int kMaxFrames = 2048;
+#endif
 
   CharAnims();
   bool load(IPlatform& platform, const char* path);

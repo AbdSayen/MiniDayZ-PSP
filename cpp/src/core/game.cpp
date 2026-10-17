@@ -428,6 +428,7 @@ Game::Game()
     map_prop_count_(0),
     blood_drip_count_(0), bleed_drip_cd_(0.f), crouching_(false), fuel_warn_cd_(0.f),
     rain_sfx_cd_(0.f), lightning_t_(0.f), hit_effect_t_(0.f), thunder_cd_(0.f), cough_alert_t_(0.f),
+    fps_(0.f), fps_accum_(0.f), fps_frames_(0),
     wind_sfx_cd_(0.f), flare_t_(0.f), molotov_dmg_cd_(0.f), molotov_reload_t_(0.f),
     vss_bleed_unlock_cd_(0.f), wpn_unlock_toast_t_(0.f), wpn_unlock_toast_id_(0),
     fx_count_(0), corpse_count_(0),
@@ -527,10 +528,14 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
     items_.load_from_json_string(fallback);
   }
 
-  std::snprintf(path, sizeof(path), "%s/../../original_docs/l_eng_ui.xml", data_dir_);
+  // Prefer slim data/ next to EBOOT (PSP deploy); fall back to repo paths on desktop.
+  std::snprintf(path, sizeof(path), "%s/l_eng_ui.xml", data_dir_);
   if (!ui_strings_load(platform_, path)) {
-    std::snprintf(path, sizeof(path), "%s/../docs/l_eng_ui.xml", data_dir_);
-    ui_strings_load(platform_, path);
+    std::snprintf(path, sizeof(path), "%s/../../original_docs/l_eng_ui.xml", data_dir_);
+    if (!ui_strings_load(platform_, path)) {
+      std::snprintf(path, sizeof(path), "%s/../docs/l_eng_ui.xml", data_dir_);
+      ui_strings_load(platform_, path);
+    }
   }
 
   std::snprintf(path, sizeof(path), "%s/bunker_json", data_dir_);
@@ -547,9 +552,11 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
   if (!char_anims_.load(*platform_, path))
     std::fprintf(stderr, "[mdaz] char_anims missing: %s (using UV fallback)\n", path);
 
-  // Original 1.4.1 Construct sprites (original_docs/images)
+  // Original 1.4.1 Construct sprites (original_docs/images).
+  // PSP: never scan/load the 1000+ PNG tree — soft fb has no textures and XMB/PPSSPP
+  // can choke if that folder is shipped next to EBOOT.
+#if !defined(MDAZ_PSP)
   {
-    // Absolute-ish candidates relative to common launch cwds (repo / cpp / cpp/build)
     static const char* kImgCandidates[] = {
       "C:/Users/abdur/Desktop/MiniDayZ/original_docs/images",
       "../../original_docs/images",
@@ -573,6 +580,7 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
     if (!loaded)
       std::printf("[mdaz] WARNING: original sprites not found — colored rects fallback\n");
   }
+#endif
 
   state_ = AppState_Menu;
   menu_cam_.reset(rng_);
@@ -3896,6 +3904,16 @@ void Game::update_dead(float dt, const InputState& in) {
 
 void Game::update(float dt) {
   if (!platform_) return;
+
+  // FPS counter — average over 0.5s windows.
+  fps_frames_ += 1;
+  fps_accum_ += (dt > 0.f ? dt : 0.f);
+  if (fps_accum_ >= 0.5f) {
+    fps_ = (fps_accum_ > 1.e-4f) ? (static_cast<float>(fps_frames_) / fps_accum_) : 0.f;
+    fps_frames_ = 0;
+    fps_accum_ = 0.f;
+  }
+
   InputState in;
   if (!platform_->poll(in)) {
     quit_ = true;

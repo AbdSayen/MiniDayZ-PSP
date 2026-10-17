@@ -14,7 +14,13 @@ struct MapLocation;
 class WorldTilemaps {
 public:
   static const int kMaxMaps = 128;
+#if defined(MDAZ_PSP)
+  // PSP RAM: desktop uses 160k shorts (~320KB) ×2 tilemaps inside Game ≈ 640KB.
+  // Slim budget keeps footprints/roads; oversized stamps are skipped in alloc_map.
+  static const int kMaxTiles = 48000;
+#else
   static const int kMaxTiles = 160000;
+#endif
 
   WorldTilemaps();
   bool load(IPlatform& platform, const char* path);

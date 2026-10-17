@@ -407,6 +407,13 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
     platform.draw_text(400.f, 8.f, buf, 0.8f, 0.8f, 0.7f);
   }
 
+  // FPS (top-left, under portrait / above world) — desktop + PSP.
+  {
+    const int fps_i = static_cast<int>(game.fps() + 0.5f);
+    std::snprintf(buf, sizeof(buf), "FPS %d", fps_i);
+    platform.draw_text(4.f, 4.f, buf, 0.55f, 0.95f, 0.55f);
+  }
+
   // Torch / NVG battery strip under portrait
   if (pl.torch_on || pl.nvg_on || game.torch_battery() < 99.f) {
     const float bw = gw(70.f), bh = 4.f;
