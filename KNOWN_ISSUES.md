@@ -280,3 +280,9 @@ Open/ambiguous:
 - The port's drivable-vehicle "stash" (drop near car stores items) has no data.js source (Trunk_count is never used in events). Left as is; needs a decision.
 - **Rng::next_int bias (whole port):** LCG `next_u32() % span` uses the low bits; `next_int(0,1)`/`(1,2)` alternate per call. Affects every choose() port (berry frames, loot rolls...). Not changed globally (it would change the seed-140 map hash); needs a decision.
 - Original-vs-port gameplay screenshot not captured (the browser original needs manual play to reach a car); compared against the data.js sprites (car_loot_point-sheet0/1 white outlines, gui_btn_interact-sheet0 frame 3).
+
+
+## Rng / stash (2026-10-20 01:20)
+- RESOLVED: Rng::next_int low-bit bias (fixed globally, poi hash now 438baa57; old saves load into a different world).
+- RESOLVED: invented vehicle stash removed.
+- Trunk findings still open (next item): car frame 1 (trunk lid raised) on open via family t920; two-stage walk (wp1/wp2 nearest imagepoint IV0=7, then loot point IV0=4, speed 100); walk branch lists differ from the direct branch (frame0 list: 24 vs 26; frame1 list differs); tutorial frame 1 uses choose(2,8,9,4); sound "open" at -5 dB; ach_gta +1 when SEED_RUN=0; Spawn_drop quantity rules; save state.

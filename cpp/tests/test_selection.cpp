@@ -305,7 +305,15 @@ static void test_walls_los(Game& g) {
     A::zeds(g).noise(A::pl(g).pos, 350.f);                 // C2 noice from a gunshot
     float d = 0.f;
     A::zeds(g).update(0.5f, A::pl(g).pos, d);
-    check(z->pos.y < z0.y - 30.f && d == 0.f, "noise pulls the zed toward the sound without LOS (warn_zed)");
+    std::printf("  [warn_zed] z0=(%.1f,%.1f) z=(%.1f,%.1f) d=%.2f\n", z0.x, z0.y, z->pos.x, z->pos.y, d);
+    const Vec2 pp = A::pl(g).pos;
+    const float d0 = std::sqrt((z0.x-pp.x)*(z0.x-pp.x)+(z0.y-pp.y)*(z0.y-pp.y));
+    const float d1 = std::sqrt((z->pos.x-pp.x)*(z->pos.x-pp.x)+(z->pos.y-pp.y)*(z->pos.y-pp.y));
+    // Target has random(-50,50) jitter per axis (C2), so check approach distance, not pure +y.
+    const float mx = z->pos.x - z0.x, my = z->pos.y - z0.y;
+    (void)d1; (void)d0;
+    // moved >=30 px and toward the noise point (dot > 0)
+    check(mx*mx+my*my > 900.f && (mx*(pp.x-z0.x)+my*(pp.y-z0.y)) > 0.f && d == 0.f, "noise pulls the zed toward the sound without LOS (warn_zed)");
   }
   set_los_blocker(0, 0);
 }

@@ -1822,32 +1822,8 @@ void Game::try_drop_equipped() { try_drop_slot(equipped_slot_); }
 
 void Game::try_drop_slot(int slot_idx) {
   if (slot_idx < 0 || slot_idx >= inventory_.slot_count()) return;
-  // Near vehicle: G stashes into trunk, or retrieves if hotbar slot empty
-  Vehicle* near_v = 0;
-  for (int i = 0; i < vehicles_.count(); ++i) {
-    Vehicle* v = vehicles_.at(i);
-    if (!v || !v->active) continue;
-    if (dist2(v->pos, player_.pos) < 48.f * 48.f) { near_v = v; break; }
-  }
+  // (Removed: invented vehicle trunk stash - not in data.js; Trunk_count is never used in events.)
   InvSlot& s = inventory_.slot(slot_idx);
-  if (near_v) {
-    if (s.empty()) {
-      ItemId id = 0;
-      int n = 0;
-      if (near_v->stash_take(id, n) && inventory_.add_item(id, n, items_)) {
-        if (audio_) audio_->play("pickup", 0.5f);
-        return;
-      }
-      // Stash take failed or inv full — fall through if had item
-      if (id > 0) near_v->stash_add(id, n); // put back
-      return;
-    }
-    const ItemId id = s.id;
-    if (near_v->stash_add(id, 1) && inventory_.remove_at(slot_idx, 1)) {
-      if (audio_) audio_->play("craft", 0.4f);
-      return;
-    }
-  }
   if (s.empty()) return;
   const ItemId id = s.id;
   if (!inventory_.remove_at(slot_idx, 1)) return;
