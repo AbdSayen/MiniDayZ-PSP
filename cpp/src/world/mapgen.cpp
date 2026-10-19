@@ -1,4 +1,5 @@
 #include "mdaz/mapgen.hpp"
+#include "mdaz/c2_mapgen.hpp"
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/c2_session_globals.hpp"
 #include "mdaz/rng.hpp"
@@ -9,6 +10,7 @@
 namespace mdaz {
 
 namespace {
+C2Map g_c2map;  // ~400 KB: static, one map per process
 // C2 mapgen identifiers (generate_array_locations locals; export never reads river_X/Y/R).
 const char kC2_generate_array_locations[] = "generate_array_locations";
 const char kC2_generate_array_tomap[] = "generate_array_tomap";
@@ -138,8 +140,15 @@ float MapGenerator::reload_radius_for(LocationReloadMode mode) {
   return r + 1000.f;
 }
 
+const C2Map& MapGenerator::c2() const { return g_c2map; }
+
 void MapGenerator::generate_new_game(int seed) {
   clear();
+  {
+    // Own stream so the legacy POI list below keeps its old rolls.
+    Rng c2rng(static_cast<std::uint32_t>((seed ? seed : 140) * 2654435761u + 0x9e37u));
+    c2_generate_map(g_c2map, c2rng, static_cast<int>(balance::CurrentLevel));
+  }
   // C2: generate_array_locations → generate_array_roads_1/_2 → generate_array_tomap
   Rng rng(static_cast<std::uint32_t>(seed ? seed : 140));
 

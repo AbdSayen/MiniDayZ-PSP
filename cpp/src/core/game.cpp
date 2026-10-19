@@ -1,4 +1,5 @@
 #include "mdaz/game.hpp"
+#include "mdaz/c2_mapgen.hpp"
 #include "mdaz/building_solid.hpp"
 #include "mdaz/building_interior.hpp"
 #include "mdaz/los.hpp"
@@ -191,6 +192,29 @@ void draw_player_c2(IPlatform* p, const CharAnims* anims, float sx, float sy, fl
   if (moving) prefix = "run";
   draw_c2_char(p, 0, sx, sy, size, body_skin, facing_deg, t, prefix);
   draw_c2_char(p, 0, sx, sy, size, "player_hands_white", facing_deg, t, prefix);
+}
+
+// data.js tree objects spawned by create_map_element cat 1: frame 0 rect, hotspot and
+// Imagepoint 1 (where the Solid obst_base / big_obstacle_base is spawned).
+struct C2TreeSprite { const char* sheet; int fx, fy, fw, fh; float w, h, hx, hy, ipx, ipy; };
+const C2TreeSprite kC2Trees[7] = {
+  {"tree_pine-sheet0", 1, 1, 47, 92, 47, 92, 0.5106f, 0.5f, 0.5319f, 0.9239f},          // sub 1 t175
+  {"tree_leaves-sheet0", 1, 1, 53, 97, 53, 97, 0.5094f, 0.5052f, 0.4151f, 0.9175f},     // sub 2 t198
+  {"tree_leaves_2-sheet0", 0, 0, 57, 94, 57, 94, 0.4561f, 0.5106f, 0.4561f, 0.9149f},   // sub 3 t200
+  {"tree_pine2-sheet0", 0, 0, 50, 119, 50, 119, 0.52f, 0.5126f, 0.54f, 0.9496f},        // sub 4 t569
+  {"tree_leaves_new2-sheet0", 0, 0, 53, 117, 53, 117, 0.5094f, 0.5043f, 0.4151f, 0.9316f}, // 5 t570
+  {"tree_leaves_new3-sheet0", 0, 0, 64, 115, 64, 115, 0.5156f, 0.513f, 0.5f, 0.9217f},  // sub 6 t574
+  {"tree_block-sheet0", 152, 1, 146, 166, 146, 166, 0.5068f, 0.4759f, 0.5f, 0.5f},     // 7..10 t201
+};
+const C2TreeSprite& c2_tree_sprite(int sub) { return kC2Trees[(sub >= 1 && sub <= 6) ? sub - 1 : 6]; }
+
+// Draw a C2 tree whose trunk (Imagepoint 1) is at screen (sx, sy); sc = world->screen scale.
+void draw_c2_tree(IPlatform* p, int sub, float sx, float sy, float sc) {
+  if (!p) return;
+  const C2TreeSprite& t = c2_tree_sprite(sub);
+  if (!p->has_sprite(t.sheet)) return;
+  const float w = t.w * sc, h = t.h * sc;
+  p->draw_sprite_frame(t.sheet, sx - w * t.ipx, sy - h * t.ipy, w, h, t.fx, t.fy, t.fw, t.fh, 0.f, 1.f);
 }
 
 // Pine tree: first frame is 47×92 at 1,1 (not the whole 128 sheet).
@@ -649,19 +673,18 @@ void Game::start_new_game(Difficulty d) {
   world_.reset();
   mapgen_.apply_collision(world_);
   world_tiles_.stamp_from_mapgen(mapgen_);
-  // Scatter forest tree stubs around POIs (denser near villages / church / secret)
+  // Trees = generate_location array-518 rows with category 1 (create_map_element): subtypes
+  // 1..6 tree sprites, 7..10 tree_block. trees_[] holds the trunk point (sprite Imagepoint 1).
   tree_count_ = 0;
-  for (int i = 0; i < mapgen_.location_count() && tree_count_ < kMaxTrees; ++i) {
-    const MapLocation& L = mapgen_.location(i);
-    int n = 0;
-    if (L.type == Loc_Village || L.type == Loc_Secret || L.type == Loc_Church) n = 10;
-    else if (L.type == Loc_City) n = 6;
-    else if (L.type == Loc_Military || L.type == Loc_Helicrash) n = 4;
-    else if (L.type == Loc_Hospital || L.type == Loc_Police || L.type == Loc_Firestation) n = 3;
-    for (int t = 0; t < n && tree_count_ < kMaxTrees; ++t) {
-      float _j1x = 0.f, _j1y = 0.f;
-      rng_.range_pair(-180.f, 180.f, -180.f, 180.f, _j1x, _j1y);
-      trees_[tree_count_++] = Vec2(L.pos.x + _j1x, L.pos.y + _j1y);
+  {
+    const C2Map& cm = mapgen_.c2();
+    for (int r = 0; r < cm.row_count && tree_count_ < kMaxTrees; ++r) {
+      const C2ElementRow& e = cm.rows[r];
+      if (e.cat != 1 || e.sub < 1 || e.sub > 10) continue;
+      const C2TreeSprite& ts = c2_tree_sprite(e.sub);
+      trees_[tree_count_] = Vec2(e.x + (ts.ipx - ts.hx) * ts.w, e.y + (ts.ipy - ts.hy) * ts.h);
+      tree_sub_[tree_count_] = static_cast<unsigned char>(e.sub);
+      ++tree_count_;
     }
   }
   {
@@ -2886,6 +2909,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         const Vec2 fell = trees_[ti];
         loot_.spawn_item(fell, 38, 2 + rng_.next_int(0, 2));
         trees_[ti] = trees_[tree_count_ - 1];
+        tree_sub_[ti] = tree_sub_[tree_count_ - 1];
         tree_count_ -= 1;
         if (audio_) audio_->play("hit", 0.6f);
         break;
@@ -3597,6 +3621,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           else if (r < 0.55f) inventory_.add_item(50, 1, items_);
           else inventory_.add_item(38, 2 + (player_.perk_farmer ? 1 : 0), items_);
           trees_[near_tree] = trees_[tree_count_ - 1];
+          tree_sub_[near_tree] = tree_sub_[tree_count_ - 1];
           tree_count_ -= 1;
           // Axe wear: ~6% break on chop (duct tape helps)
           // Tool break-on-chop: no C2 evidence in 1.4.1 export — not invented.
@@ -4399,10 +4424,10 @@ void Game::render() {
 
       // Forest trees — crop first pine frame (47×92), not whole sheet
       for (int i = 0; i < tree_count_; ++i) {
-        if (!view.vis(trees_[i], sc, 72.f)) continue; // pine 47x92 frame drawn 70px tall
+        if (!view.vis(trees_[i], sc, tree_sub_[i] >= 7 ? 170.f : 120.f)) continue;
         float sx = cx + (trees_[i].x - player_.pos.x) * sc;
         float sy = cy + (trees_[i].y - player_.pos.y) * sc;
-        draw_pine(platform_, sx, sy, 70.f);
+        draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
       }
 
       // Map POIs — interiors when standing inside, else exterior shells
@@ -5063,8 +5088,22 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_) {
     static const float kTri[6] = {0.f * 15.f, -0.59f * 17.f, 0.53f * 15.f, 0.24f * 17.f,
                                   -0.47f * 15.f, 0.24f * 17.f};
+    // tree_block (sub 7..10): big_obstacle_base frame 17 (145x172, hotspot 0.414/0.5), 6-point poly.
+    static const float kBlk[12] = {-0.3172f, 0.1424f, -0.1379f, -0.0145f, 0.2569f, -0.0465f,
+                                   0.5216f, -0.0058f, 0.4759f, 0.1919f, 0.1103f, 0.4506f};
     for (int ti = 0; ti < tree_count_; ++ti) {
       const float px = b.x - trees_[ti].x, py = b.y - trees_[ti].y;
+      if (tree_sub_[ti] >= 7) {
+        if (px * px + py * py > 110.f * 110.f) continue;
+        bool in = false;
+        for (int e = 0, f = 5; e < 6; f = e++) {
+          const float xi = kBlk[e * 2] * 145.f, yi = kBlk[e * 2 + 1] * 172.f;
+          const float xj = kBlk[f * 2] * 145.f, yj = kBlk[f * 2 + 1] * 172.f;
+          if (((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) in = !in;
+        }
+        if (in) return true;
+        continue;
+      }
       if (px * px + py * py > 20.f * 20.f) continue;
       bool inside = true;
       float sign = 0.f;

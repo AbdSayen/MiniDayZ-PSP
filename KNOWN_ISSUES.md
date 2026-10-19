@@ -174,3 +174,9 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 
 ## HUD portrait
 - Always the 'White' skin frame 0; per-skin anims (Black/Yellow/...) and blinking frame 1 aren't ported. On PSP, if sprites.pak has no gui_btn_perks the old skin sprite is the fallback (same position).
+
+## Map generator (c2_mapgen)
+- Not yet wired into the game: buildings (cat 7) are still placed by the old POI list (invented types Police/Church), along with obstacles cat 4, poles cat 5, cars cat 6, bushes/pumps cat 3, zed_resp spawners and the Humvee/heli from C2Map. The tilemaps of create_map_location (roads/water/forest SetTile) aren't ported.
+- Trees overlapping helicrash/hammercrash/t426 aren't removed (C2 removes them on overlap).
+- Its own Rng stream (seed*2654435761+0x9e37); the original uses Math.random, so maps can't be compared one-to-one.
+- Tree draw order isn't sorted by Y relative to the player (same as before).

@@ -252,8 +252,11 @@ private:
   bool try_plant_seed(ItemId seed_id);
   float howl_cd_;
   float cough_cd_;
-  static const int kMaxTrees = 96;
+  // C2 create_map_element category 1 (array-518 rows of generate_location): trunk point
+  // (obst_base / big_obstacle_base at the tree's Imagepoint 1) + subtype 1..10.
+  static const int kMaxTrees = 4096;
   Vec2 trees_[kMaxTrees];
+  unsigned char tree_sub_[kMaxTrees];
   int tree_count_;
   // generate_location forest stamps (tile 0 cells) + map_element-sheet0 when exported sprite exists.
   static const int kMaxMapProps = 64;

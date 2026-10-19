@@ -6,6 +6,7 @@ namespace mdaz {
 
 class Rng;
 struct C2SessionGlobals;
+struct C2Map;
 
 // Location types inferred from Map generation / create_map_element strings.
 enum LocationType {
@@ -106,6 +107,9 @@ public:
     if (sector_x < 0 || sector_y < 0 || sector_x >= kSectorGrid || sector_y >= kSectorGrid) return 0;
     return sector_grid_[sector_y][sector_x];
   }
+
+  // Faithful data.js generator output (cells, array-518 element rows, heli/hummer sites).
+  const C2Map& c2() const;
 
   // Optional C2 global scratch (hotspotX / anotherX / Loop_secrets) during generate.
   void set_c2_scratch(C2SessionGlobals* g) { c2_scratch_ = g; }

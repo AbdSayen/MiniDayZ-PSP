@@ -1,4 +1,6 @@
 #include "mdaz/building_interior.hpp"
+#include "mdaz/c2_mapgen.hpp"
+#include "mdaz/rng.hpp"
 // Fidelity list (2026-10-19 20:40): building Solid polygons from data.js.
 #include "mdaz/building_solid.hpp"
 
@@ -114,9 +116,28 @@ static void test_interiors() {
   if (mdaz::building_interior_count() != 36) { std::printf("FAIL interior count\n"); ++g_fail; }
 }
 
+static mdaz::C2Map g_tm;
+static void test_c2_mapgen() {
+  mdaz::Rng r(140);
+  mdaz::c2_generate_map(g_tm, r, 0);
+  int trees = 0, bld = 0, villages = 0, roads = 0;
+  for (int i = 0; i < g_tm.row_count; ++i) { if (g_tm.rows[i].cat == 1) ++trees; if (g_tm.rows[i].cat == 7) ++bld; }
+  for (int i = 0; i < 256; ++i) {
+    const int t = g_tm.cells[i].type;
+    if (t == 9 || t == 4 || t == 16 || t == 17) ++villages;
+    if (t == 12 || t == 13 || t == 14) ++roads;
+  }
+  const bool ok = trees > 1000 && bld > 50 && villages > 0 && roads > 0 && g_tm.hummer_count == 1 &&
+                  g_tm.heli_count == 0 && g_tm.dropped_rows == 0;
+  std::printf("%s c2 mapgen L0: trees %d buildings %d villages %d road cells %d hummer %d\n",
+              ok ? "OK  " : "FAIL", trees, bld, villages, roads, g_tm.hummer_count);
+  if (!ok) ++g_fail;
+}
+
 int test_fidelity2_more() {
   g_fail = 0;
   test_interiors();
+  test_c2_mapgen();
   test_weapon_table();
   test_npc_stats();
   return g_fail ? 1 : 0;
