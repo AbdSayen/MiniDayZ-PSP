@@ -251,6 +251,8 @@ private:
   float melee_anim_t_;    // >0 while playing axe/melee swing
   float fire_anim_t_;     // brief pistol/twohand pose after shooting
   float use_anim_t_;      // >0 while playing using_item
+  float berry_t_ = 0.f;   // C2 bush search wait (3 s, IV21=1)
+  int berry_idx_ = -1;
   float airdrop_alert_;
   float radio_t_; // seconds to show radio HUD after use
   float torch_battery_; // 0..100 — drains while torch/NVG on; Battery (22) refills

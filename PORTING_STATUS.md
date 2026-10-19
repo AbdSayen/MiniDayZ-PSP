@@ -568,3 +568,17 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Crows: the invented ×1.15 vertical flee factor is removed.
 - Bandits (bot_enemy_bandit/puncher/shooter): Eyes LineOfSight range 360, cone 360. aggro_radius is now 360; it was 380 with a gun and 260 without.
 - Not audited: zed/animal attack damage and cooldowns, warn_zed wandering, the bandit Aim/Gun behaviours, and tank/screamer.
+
+## Berry bushes (2026-10-20, 00:27 Baku)
+- Status: Реализована, но не проверена (builds and tests pass; not exercised in play).
+- C2 behaviour (data.js):
+  - create_map_element cat 3, sub 1/3/4 places red/blue/yellow t287 bushes, frame choose(0,1); frame 1 = has berries.
+  - When the player overlaps a frame-1 bush (and IV21==0): sound "bushsearch", frame → 0, wait 3 s.
+  - Then Check_space_inventory(-1, 27 red / 73 yellow / 74 blue, perk_agronom ? 2 : 1).
+- Port:
+  - interact within 24 px of a frame-1 bush prop starts the 3 s timer;
+  - the item is added when the timer ends;
+  - perk_agronom is read from the balance globals (0; the perk is not a runtime unlock in the port).
+- Gaps:
+  - the C2 drop-to-ground when the inventory is full is not ported (add_item fails silently);
+  - bush frames are not saved.

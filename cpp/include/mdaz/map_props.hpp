@@ -30,6 +30,9 @@ public:
   // Placed instances (layout "Tutorial"): def = kPropDefs index, frame = instance frame.
   void build_list(const MapProp* in, int n);
   int count() const { return count_; }
+  void set_frame(int i, short f) { if (i >= 0 && i < count_) props_[i].frame = f; }
+  // C2 berry bush (t287) item for a prop def: red 27, blue 74, yellow 73; 0 if not a bush.
+  static int berry_item(short def) { return def == 0 ? 27 : def == 1 ? 74 : def == 2 ? 73 : 0; }
   const MapProp& at(int i) const { return props_[i]; }
   const PropFrame* frame_of(const MapProp& p) const;
   // Props whose origin lies in mapgen cell (ax, ay): [first, first + n).

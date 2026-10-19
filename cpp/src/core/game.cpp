@@ -3308,6 +3308,14 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   if (reload_cd_ > 0.f) reload_cd_ -= dt;
   if (melee_anim_t_ > 0.f) melee_anim_t_ -= dt;
   if (use_anim_t_ > 0.f) use_anim_t_ -= dt;
+  if (berry_t_ > 0.f) {
+    berry_t_ -= dt;
+    if (berry_t_ <= 0.f && berry_idx_ >= 0 && berry_idx_ < c2_props_.count()) {
+      const int item = MapProps::berry_item(c2_props_.at(berry_idx_).def);
+      if (item) inventory_.add_item(static_cast<ItemId>(item), balance::perk_agronom == 1 ? 2 : 1, items_);
+      berry_idx_ = -1;
+    }
+  }
   {
     const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
     if (spd2 > 4.f) {
@@ -3682,6 +3690,22 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
     try_pickup_loot();
     try_bunker_enter_exit();
+    if (!picked && !in_bunker_ && berry_t_ <= 0.f) {
+      // C2 berry bush: player overlaps a bush with frame 1 -> "bushsearch", frame 0, wait 3 s,
+      // Check_space_inventory(-1, 27/73/74, perk_agronom ? 2 : 1).
+      for (int k = 0; k < c2_props_.count(); ++k) {
+        const MapProp& mp = c2_props_.at(k);
+        if (MapProps::berry_item(mp.def) == 0 || mp.frame != 1) continue;
+        const float bx = mp.x - player_.pos.x, by = mp.y - player_.pos.y;
+        if (bx * bx + by * by > 24.f * 24.f) continue;
+        c2_props_.set_frame(k, 0);
+        berry_t_ = 3.f;
+        berry_idx_ = k;
+        if (audio_) audio_->play("bushsearch", 0.5f);
+        picked = true;
+        break;
+      }
+    }
     if (!picked && !in_bunker_) {
       // Fishing stub with rod
       bool has_rod = false;
@@ -3844,7 +3868,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           break;
         }
         // Removed (not in data.js): rain drinking and random bush forage.
-        // C2 berry bushes (frame 1, 3 s, items 27/73/74, x2 with perk_agronom) are not ported.
         (void)bush_chance;
         } // end non-seed interact
       }
