@@ -15,6 +15,11 @@ struct Zombie {
   bool alive;
   float attack_cooldown;
   float ambush_boost; // Buried pop-up speed burst
+  // C2 warn_zed: an idle zed that hears noice() turns toward the sound (+-50 px) and walks at
+  // its b_warn Bullet speed random(80,90) for 2 s - no line of sight needed.
+  float warn_t;
+  Vec2 warn_dir;
+  float warn_spd;
   float burn_t;       // C2 molotov 'burning' boolean: seconds left (5 s Wait in Molotov params)
 
   Zombie();
@@ -33,6 +38,8 @@ public:
   void update(float dt, Vec2 player_pos, float& damage_to_player, bool player_running = false,
               bool player_crouch = false, bool player_bleeding = false,
               bool player_coughing = false);
+  // C2 noice(x, y, r): zeds within r + 200 px get warn_zed toward (x, y).
+  void noise(Vec2 at, float radius);
   int alive_count() const;
   bool scream_active() const { return scream_active_; }
   Vec2 scream_pos() const { return scream_pos_; }

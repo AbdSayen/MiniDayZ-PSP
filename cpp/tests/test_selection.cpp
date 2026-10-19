@@ -237,6 +237,12 @@ static void test_walls_los(Game& g) {
   for (int k = 0; k < 60 && z; ++k) { float d = 0.f; A::zeds(g).update(1.f / 60.f, A::pl(g).pos, d); dmg += d; }
   check(z && dmg == 0.f && z->pos.x == z0.x && z->pos.y == z0.y,
         "zed outside the wall neither sees, chases nor hits the player inside");
+  if (z) {
+    A::zeds(g).noise(A::pl(g).pos, 350.f);                 // C2 noice from a gunshot
+    float d = 0.f;
+    A::zeds(g).update(0.5f, A::pl(g).pos, d);
+    check(z->pos.y < z0.y - 30.f && d == 0.f, "noise pulls the zed toward the sound without LOS (warn_zed)");
+  }
   set_los_blocker(0, 0);
 }
 

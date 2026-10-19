@@ -9,11 +9,12 @@ namespace mdaz {
 
 Zombie::Zombie()
   : id(0), type(Zed_Normal), pos(), hp(0), max_hp(0), speed(40.f),
-    aggro_radius(220.f), alive(false), attack_cooldown(0.f), ambush_boost(0.f), burn_t(0.f) {}
+    aggro_radius(220.f), alive(false), attack_cooldown(0.f), ambush_boost(0.f), warn_t(0.f), warn_dir(), warn_spd(0.f), burn_t(0.f) {}
 
 void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   id = eid;
   burn_t = 0.f;
+  warn_t = 0.f;
   type = t;
   pos = p;
   alive = true;
@@ -101,6 +102,11 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
   if (sees && dist < hear && dist > 1.f) {
     pos.x += (dx / dist) * move_spd * dt;
     pos.y += (dy / dist) * move_spd * dt;
+    warn_t = 0.f;
+  } else if (warn_t > 0.f) {
+    pos.x += warn_dir.x * warn_spd * dt;
+    pos.y += warn_dir.y * warn_spd * dt;
+    warn_t -= dt;
   }
 
   if (sees && dist < melee_reach && attack_cooldown <= 0.f) {
@@ -164,6 +170,28 @@ void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player, bo
     float dmg = 0.f;
     zombies_[i].update_ai(dt, player_pos, hit, dmg, aggro_mul);
     if (hit) damage_to_player += dmg;
+  }
+}
+
+void ZombieSystem::noise(Vec2 at, float radius) {
+  const float r = radius + 200.f;
+  for (int i = 0; i < count_; ++i) {
+    Zombie& z = zombies_[i];
+    if (!z.alive) continue;
+    const float dx = at.x - z.pos.x, dy = at.y - z.pos.y;
+    if (dx * dx + dy * dy > r * r) continue;
+    // Target = noise point + random(-50, 50) per axis; speed random(80, 90). Rolls from a hash
+    // of (id, noise point) to stay deterministic without an RNG argument.
+    unsigned h = static_cast<unsigned>(z.id) * 2654435761u ^ static_cast<unsigned>(at.x * 7.f + at.y * 13.f);
+    h = h * 1103515245u + 12345u; const float u1 = ((h >> 8) & 0xFFFF) / 65535.f;
+    h = h * 1103515245u + 12345u; const float u2 = ((h >> 8) & 0xFFFF) / 65535.f;
+    h = h * 1103515245u + 12345u; const float u3 = ((h >> 8) & 0xFFFF) / 65535.f;
+    const float tx = at.x + (u1 * 100.f - 50.f) - z.pos.x, ty = at.y + (u2 * 100.f - 50.f) - z.pos.y;
+    const float l = std::sqrt(tx * tx + ty * ty);
+    if (l < 1.f) continue;
+    z.warn_dir = Vec2(tx / l, ty / l);
+    z.warn_spd = 80.f + u3 * 10.f;
+    z.warn_t = 2.f;
   }
 }
 

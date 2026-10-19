@@ -936,6 +936,20 @@ void Game::try_melee_attack() {
   (void)using_melee_item;
 }
 
+// data.js "Firearm shooting": noice() radius per fired bullet type (the bullet spawned in the same
+// event). Where two radii exist for one bullet type (weapon variants) the larger is used.
+static float weapon_noise_radius(int c2_bullet) {
+  switch (c2_bullet) {
+    case 556: case 179: case 883: return 450.f;           // svd, mosin
+    case 218: case 244: case 461: case 235: return 400.f; // shotgun, sks, repeater, akm
+    case 177: case 236: case 183: case 271: case 234: case 555: case 756: case 766:
+    case 879: case 881: case 882: return 350.f;
+    case 703: case 250: return 300.f;                     // glock, colt
+    case 460: return 100.f;                               // sporter .22
+    default: return 0.f;                                  // bow/crossbow: no noice call
+  }
+}
+
 void Game::try_ranged_attack() {
   if (reload_cd_ > 0.f) return;
   sync_mag_for_equipped();
@@ -1076,6 +1090,11 @@ void Game::try_ranged_attack() {
     const float dmg = roll_bullet_damage(w->stats.damage, rng_);
     Bullet* shot = bullets_.spawn(player_.pos, a, speed, dmg, w->stats.range / speed + 0.15f, true);
     if (shot && bow) shot->is_arrow = true;
+  }
+  // C2 Firearm shooting: every shot calls noice(player x, y, r) with a per-weapon radius.
+  {
+    const float nr = weapon_noise_radius(w->c2_bullet);
+    if (nr > 0.f) zombies_.noise(player_.pos, nr);
   }
   {
     const float rad = ang * 0.01745329252f;
@@ -1453,6 +1472,7 @@ void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
     }
     return;
   }
+  zombies_.noise(pos, 500.f); // f1_grenade_active "zapal": noice(x, y, 500)
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
     if (dist2(z->pos, pos) > r2) continue;
