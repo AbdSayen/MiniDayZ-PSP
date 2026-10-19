@@ -366,3 +366,24 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 - Solid obst_base / big_obstacle_base polygons at the object's image points (per object frame where C2 conditions on it; no polygon = bounding box) block movement and bullets (Game::building_blocks).
 - Removed the invented hashed berry-bush grid. C2Map rows capacity 24000 -> 6000 (measured ~3.5k rows per map).
 - Seed 140 L0: 688 props, 525 with a Solid base. Tests: ALL TESTS PASSED (MSVC).
+
+## B2c — zombie spawners (zed_resp_point / Zed_check) + Humvee/heli wrecks (2026-10-19, 22:50 Baku)
+Статус: **Протестирована** (unit tests + desktop shots; not yet compared frame-by-frame with the original).
+- `Game::zed_check()` ports NPC_manager "Zed_check" (data.js event sheet): called at Start of layout and with
+  every Location loader reload (1 s, camera moved > 400 px, not in bunker).
+  - Cull: per zed/animal type one random instance beyond respawn_radius_npc (2000) is removed unless its
+    keep flag (eyes IV6/IV7, horde spawns) is set; its zed_resp_point IV0 -= 1. Crows: all beyond 1500.
+  - Spawn: ONE random zed_resp_point with 1500 < d <= respawn_radius_npc and IV1 false; type trees per frame
+    0/1(IV2 0..2)/3/4/5(hordes_spawns_on)/6/7/8(IV2 1..5)/9 exactly as decoded; repeat (Zed_per_base - IV0);
+    position point + random(500,-500) (frame 8: choose(750,-750)); rejected if inside a Solid.
+  - zed_resp_point IV2 is now stored by the generator (C2ZedResp::iv2).
+- Removed invented code: per-POI hostile budgets (spawn_hostiles_for_poi now a no-op), the timed
+  ZED_RESPAWN zed spawner and the timed animal packs (wolves/deer/rabbits/crows/dogs).
+- Zombie/Animal slots are reused after death/cull (was append-only, 128/64 cap filled up).
+- Humvee: hammercrash_point -> Loc_Hummer: hammer_crash frame 1 sprite, big_obstacle_base frame 26 rect
+  (w1..w2), 3 loot piles at image points 3,2,1. Heli: heli_crash frame 0 now drawn (was invisible),
+  big_obstacle_base frame 19 polygon, piles at image points 3,4,5.
+- Tests: Zed_check fill / no refill / cull; one wreck location per hammercrash/helicrash point.
+- Harness: `--shots-wreck <dir>` (test-only placement). Shots: /workspace/b2cshots/b2c_grid.png
+  (wreck_hummer.png, zr_spawn_t0.png, zr_spawn_t1.png).
+

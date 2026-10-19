@@ -185,6 +185,7 @@ void WorldTilemaps::stamp_location_footprint(const MapLocation& L) {
   auto fill_ground = [&](float wx, float wy, int cols, int rows, int tile) {
     stamp_fill("ground_lvl1_tilemap", wx, wy, cols, rows, tile);
   };
+  if (L.type == Loc_Hummer) return;  // wreck only: create_map_location stamps no pad
   int pad = 7;
   if (L.type == Loc_City || L.type == Loc_Military) pad = 15;
   else if (L.type == Loc_Hospital || L.type == Loc_Firestation) pad = 13;

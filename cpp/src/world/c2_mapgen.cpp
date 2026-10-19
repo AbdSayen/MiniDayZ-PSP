@@ -58,10 +58,10 @@ struct GenLocCtx {
     if (m->zr_count >= C2Map::kMaxZr) { zr_last = -1; return; }
     zr_last = m->zr_count++;
     C2ZedResp& z = m->zr[zr_last];
-    z.x = static_cast<float>(x); z.y = static_cast<float>(y); z.frame = 0; z.iv0 = 0;
+    z.x = static_cast<float>(x); z.y = static_cast<float>(y); z.frame = 0; z.iv0 = 0; z.iv2 = 0;
   }
   void zed_resp_frame(double f) { if (zr_last >= 0) m->zr[zr_last].frame = static_cast<std::int16_t>(f); }
-  void zed_resp_iv(int k, double v) { if (zr_last >= 0 && k == 0) m->zr[zr_last].iv0 = static_cast<std::int16_t>(v); }
+  void zed_resp_iv(int k, double v) { if (zr_last < 0) return; if (k == 0) m->zr[zr_last].iv0 = static_cast<std::int16_t>(v); else if (k == 2) m->zr[zr_last].iv2 = static_cast<std::int16_t>(v); }
 };
 
 #include "generate_location.inc"

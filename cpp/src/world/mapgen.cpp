@@ -225,6 +225,11 @@ void MapGenerator::generate_new_game(int seed) {
     const int sy = static_cast<int>((m.heli_y[i] - kC2CellOriginY) / kC2CellSize);
     add_c2(Loc_Helicrash, m.heli_x[i], m.heli_y[i], sx, sy, 0, -1, -1);
   }
+  for (int i = 0; i < m.hummer_count; ++i) {
+    const int sx = static_cast<int>((m.hummer_x[i] - kC2CellOriginX) / kC2CellSize);
+    const int sy = static_cast<int>((m.hummer_y[i] - kC2CellOriginY) / kC2CellSize);
+    add_c2(Loc_Hummer, m.hummer_x[i], m.hummer_y[i], sx, sy, 0, -1, -1);
+  }
   if (m.has_bunker) {
     const int sx = static_cast<int>((m.bunker_x - kC2CellOriginX) / kC2CellSize);
     const int sy = static_cast<int>((m.bunker_y - kC2CellOriginY) / kC2CellSize);

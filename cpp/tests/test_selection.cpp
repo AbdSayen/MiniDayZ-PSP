@@ -14,6 +14,7 @@
 #include "mdaz/map_decode_tables.hpp"
 #include "mdaz/los.hpp"
 
+#include <cmath>
 #include <cstdio>
 #include <new>
 #include <string>
@@ -61,6 +62,7 @@ struct GameTestAccess {
   static void burn_tick(Game& g, float dt) { g.tick_molotov_burn(dt); }
   static bool& in_bunker(Game& g) { return g.in_bunker_; }
   static void zcheck(Game& g) { g.zed_check_bunker(); }
+  static void zcheck_map(Game& g) { g.zed_check(); }
   static void bspawn(Game& g, Vec2 p) { g.spawn_bunker_zeds(p); }
   static bool spawner_used(Game& g, int i) { return g.bunker_spawner_used_[i]; }
   static void notify(Game& g, ItemId id) { g.notify_weapon_unlock(id); }
@@ -75,6 +77,8 @@ struct GameTestAccess {
   static int trap_kind(Game& g, int i) { return g.traps_[i].kind; }
   static void kill_z(Game& g, Zombie& z, ItemId w) { g.hurt_zombie(z, 1.0e6f, w); }
   static void stream(Game& g, LocationReloadMode m) { g.sync_location_stream(m); }
+  static short& zr_iv0(Game& g, int i) { return g.zr_iv0_[i]; }
+  static bool& zr_iv1(Game& g, int i) { return g.zr_iv1_[i]; }
   static void install_los(Game& g) { g.install_los(); }
   static bool bullet_wall(Game& g, Vec2 a, Vec2 b) { return g.bullet_hits_obstacle(a, b); }
 };
@@ -199,8 +203,43 @@ static void test_restored_step1(Game& g) {
   A::pl(g).pos = Vec2(vp.x + 1000.f, vp.y);
   A::stream(g, LocationReload_Start);
   const int loot1 = A::loot(g).count(), z1 = A::zeds(g).alive_count();
-  check(m.location(vi).active && m.location(vi).loot_seeded && loot1 >= 1 && z1 >= 1,
-        "Reload_locations_start creates a POI 1000 px away (loot + zeds)");
+  check(m.location(vi).active && m.location(vi).loot_seeded && loot1 >= 1 && z1 == 0,
+        "Reload_locations_start creates a POI 1000 px away (loot; zeds only via Zed_check)");
+  {
+    // C2 Zed_check: one random zed_resp_point in (1500, respawn_radius_npc]; frame 0 fills
+    // up to Zed_per_base (IV0 counts live zeds), each within +-500 px.
+    const C2Map& c = m.c2();
+    int zi = -1;
+    for (int i = 0; i < c.zr_count; ++i) if (c.zr[i].frame == 0) { zi = i; break; }
+    check(zi >= 0, "map has a frame-0 zed_resp_point");
+    if (zi >= 0) {
+      for (int i = 0; i < C2Map::kMaxZr; ++i) { A::zr_iv0(g, i) = 0; A::zr_iv1(g, i) = true; }
+      A::zr_iv1(g, zi) = false;
+      A::zeds(g).clear();
+      A::pl(g).pos = Vec2(c.zr[zi].x + 1700.f, c.zr[zi].y);
+      A::zcheck_map(g);
+      const int n = A::zeds(g).alive_count();
+      bool near = true;
+      for (const Zombie* z = A::zeds(g).begin(); z != A::zeds(g).end(); ++z)
+        if (z->alive && (std::fabs(z->pos.x - c.zr[zi].x) > 500.f || std::fabs(z->pos.y - c.zr[zi].y) > 500.f)) near = false;
+      check(n >= 1 && n <= 5 && n == A::zr_iv0(g, zi) && near, "Zed_check frame 0: <= Zed_per_base zeds within 500 px, IV0 = count");
+      A::zcheck_map(g);
+      check(A::zeds(g).alive_count() == n, "Zed_check does not refill a full point");
+      A::pl(g).pos = Vec2(c.zr[zi].x + 2600.f, c.zr[zi].y);
+      for (int k = 0; k < 8; ++k) A::zcheck_map(g);
+      check(A::zeds(g).alive_count() == 0 && A::zr_iv0(g, zi) == 0, "Zed_check culls beyond respawn_radius_npc, IV0 back to 0");
+    }
+    A::pl(g).pos = Vec2(vp.x + 1000.f, vp.y);
+  }
+  {
+    int nh = 0, nhe = 0;
+    for (int i = 0; i < m.location_count(); ++i) {
+      if (m.location(i).type == Loc_Hummer) ++nh;
+      if (m.location(i).type == Loc_Helicrash) ++nhe;
+    }
+    check(nh == m.c2().hummer_count && nhe == m.c2().heli_count,
+          "hammercrash_point / helicrash_point each give one wreck location");
+  }
   bool far_inactive = true;
   for (int i = 0; i < m.location_count(); ++i) {
     const float dx = m.location(i).pos.x - A::pl(g).pos.x, dy = m.location(i).pos.y - A::pl(g).pos.y;

@@ -15,6 +15,7 @@ Animal::Animal()
 
 void Animal::setup(AnimalType t, Vec2 p, EntityId eid) {
   id = eid;
+  zr_src = -1; zr_keep = false;
   burn_t = 0.f;
   type = t;
   pos = p;
@@ -56,8 +57,10 @@ AnimalSystem::AnimalSystem() : count_(0), next_id_(1) {}
 void AnimalSystem::clear() { count_ = 0; }
 
 Animal* AnimalSystem::spawn(AnimalType t, Vec2 p) {
-  if (count_ >= kMaxAnimals) return 0;
-  Animal& a = animals_[count_++];
+  int slot = -1;
+  for (int i = 0; i < count_; ++i) if (!animals_[i].alive) { slot = i; break; }
+  if (slot < 0) { if (count_ >= kMaxAnimals) return 0; slot = count_++; }
+  Animal& a = animals_[slot];
   a.setup(t, p, next_id_++);
   return &a;
 }

@@ -14,6 +14,8 @@ enum AnimalType {
 
 struct Animal {
   EntityId id;
+  short zr_src;   // C2 zed IV link to its zed_resp_point (-1 = none)
+  bool zr_keep;   // C2 eyes IV6/IV7 true: never culled by Zed_check
   AnimalType type;
   Vec2 pos;
   float hp;

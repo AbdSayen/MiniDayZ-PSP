@@ -31,6 +31,7 @@ struct C2ZedResp {
   float x, y;
   std::int16_t frame;  // zed_resp_point animation frame = spawner kind
   std::int16_t iv0;
+  std::int16_t iv2;    // zed_resp_point IV2 (sub-kind for frames 1/7/8)
 };
 
 struct C2Cell {

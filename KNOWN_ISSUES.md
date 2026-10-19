@@ -186,3 +186,15 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - B2a: b_deer_stand (cat 7 sub 1, 93 rows on seed 140) is not drawn/solid yet; loot piles inside buildings are drawn above the roof; kMaxLootPiles=96 may fill up with many active buildings; minimap sector size 1115 px vs C2 cell 1020 px.
 
 - B2b: not ported yet - car_loot_point / spawn_loot_point of props (car loot), light_tower night lights on pillars 12-14, berry-bush harvesting tied to the bush object (old bush search is still the port's random chance), trees destroyed when overlapping heli_crash / b_dot / b_dot_int (create_map_element c108 checks), layer order (props drawn under trees, no Y-sort).
+
+## B2c known issues (2026-10-19)
+- Humvee loot (C2 spawn_loot_point type 18) and heli loot (type 15) use the port's placeholder tables
+  (spawn_military / spawn_helicrash) until Trigger_spawn tables are ported (item 11 area).
+- Spawn rejection checks Solids only; water (199) / ground family 202 overlap waits for B2d tilemaps.
+- Zed_check uses CurrentLevel = 0 (tank branches need level > 1).
+- ach_heli_counter (achievement) not ported. zed_buried_hidden (1/5 per cell), crows, bot teams and
+  bandits from create_map_location are still not ported.
+- dec.py prints the event OR-block flag as "else"; real else events use condition c70. Earlier
+  hand-ports that read "else" from dec output should be re-audited.
+- Invented vehicle placements (car/boat/bike near start) remain.
+

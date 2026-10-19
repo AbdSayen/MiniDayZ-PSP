@@ -324,6 +324,47 @@ void draw_hotspot_sprite(IPlatform* p, float sx, float sy, const char* spr, int 
   p->draw_sprite(spr, sx - hx * w * sc, sy - hy * h * sc, w * sc, h * sc, 0.f, 1.f);
 }
 
+// C2 create_map_location wrecks (data.js frames):
+//  helicrash_point -> heli_crash frame 0 (240x186) + big_obstacle_base frame 19 polygon at its
+//  origin + spawn_loot_point type 15 at image points 3, 4, 5;
+//  hammercrash_point -> hammer_crash frame 1 (sheet0 71x87) + big_obstacle_base frame 26 (1x1
+//  box) at image point w1 sized to w2 - w1 + spawn_loot_point type 18 at image points 3, 2, 1.
+struct WreckDef {
+  const char* sheet; int w, h; float hx, hy;
+  float loot[3][2];   // image points (fractions of w, h)
+  int poly_n; float poly[12]; int pw, ph; float phx, phy;  // base polygon (normalized, hotspot)
+  float r0[2], r1[2]; // rect base w1..w2 (fractions) when poly_n == 0
+};
+const WreckDef kHeliWreck = {
+  "heli_crash-sheet0", 240, 186, 0.7166666f, 0.4677419f,
+  {{0.5083333f, 0.9301075f}, {0.7833334f, 0.8548387f}, {0.9875f, 0.6666667f}},
+  6, {-0.3397276f, 0.3899101f, -0.6389369f, 0.4212621f, -0.6985633f, 0.2940111f,
+      -0.3949716f, 0.0365091f, 0.0270104f, -0.0891469f, 0.1467674f, 0.0717681f},
+  240, 186, 0.7166666f, 0.4677419f, {0, 0}, {0, 0}};
+const WreckDef kHummerWreck = {
+  "hammer_crash-sheet0", 71, 87, 0.4929577f, 0.5057471f,
+  {{1.1267606f, 0.8735632f}, {1.0563381f, 0.3333333f}, {-0.1971831f, 0.5287356f}},
+  0, {0}, 0, 0, 0.f, 0.f, {0.0845070f, 0.1379310f}, {0.6760563f, 0.9195402f}};
+const WreckDef* wreck_def(LocationType t) {
+  return t == Loc_Helicrash ? &kHeliWreck : t == Loc_Hummer ? &kHummerWreck : 0;
+}
+Vec2 wreck_point(const WreckDef& d, Vec2 o, float fx, float fy) {
+  return Vec2(o.x + (fx - d.hx) * d.w, o.y + (fy - d.hy) * d.h);
+}
+bool wreck_contains(const WreckDef& d, Vec2 o, Vec2 q) {
+  if (d.poly_n == 0) {
+    const Vec2 a = wreck_point(d, o, d.r0[0], d.r0[1]), b = wreck_point(d, o, d.r1[0], d.r1[1]);
+    return q.x >= a.x && q.x <= b.x && q.y >= a.y && q.y <= b.y;
+  }
+  bool in = false;
+  for (int i = 0, j = d.poly_n - 1; i < d.poly_n; j = i++) {
+    const float xi = o.x + d.poly[i * 2] * d.pw, yi = o.y + d.poly[i * 2 + 1] * d.ph;
+    const float xj = o.x + d.poly[j * 2] * d.pw, yj = o.y + d.poly[j * 2 + 1] * d.ph;
+    if ((yi > q.y) != (yj > q.y) && q.x < (xj - xi) * (q.y - yi) / (yj - yi) + xi) in = !in;
+  }
+  return in;
+}
+
 } // namespace
 
 Game::Game()
@@ -752,6 +793,11 @@ void Game::start_new_game(Difficulty d) {
   }
   in_bunker_ = false;
   bunker_looted_ = false;
+  for (int i = 0; i < C2Map::kMaxZr; ++i) {
+    zr_iv0_[i] = i < mapgen_.c2().zr_count ? mapgen_.c2().zr[i].iv0 : 0;
+    zr_iv1_[i] = false;
+  }
+  zed_check();  // C2 Start of layout -> Zed_check
 
   state_ = AppState_Playing;
   if (audio_) audio_->play("ambient", 0.25f);
@@ -766,7 +812,7 @@ void Game::spawn_loot_for_poi(MapLocation& L) {
   if (L.loot_seeded) return;
   int piles = 1;
   if (L.shape >= 0) piles = 0;  // set below from the building's spawn_loot_point count
-  else if (L.type == Loc_Military || L.type == Loc_Helicrash) piles = 3;
+  else if (L.type == Loc_Military || L.type == Loc_Helicrash || L.type == Loc_Hummer) piles = 3;
   else if (L.type == Loc_Hospital || L.type == Loc_City || L.type == Loc_Secret ||
            L.type == Loc_Police || L.type == Loc_Church || L.type == Loc_Firestation)
     piles = 2;
@@ -784,6 +830,9 @@ void Game::spawn_loot_for_poi(MapLocation& L) {
     if (npts > 0) {
       const InteriorLoot& lp = interior_loot(*lbi, pt_order[n % npts]);
       ox = lp.x; oy = lp.y;
+    } else if (const WreckDef* wd = wreck_def(L.type)) {
+      const Vec2 q = wreck_point(*wd, Vec2(), wd->loot[n % 3][0], wd->loot[n % 3][1]);
+      ox = q.x; oy = q.y;
     } else {
       rng_.range_pair(-40.f, 40.f, -40.f, 40.f, ox, oy);
     }
@@ -794,6 +843,9 @@ void Game::spawn_loot_for_poi(MapLocation& L) {
       break;
     case Loc_Helicrash:
       loot_.spawn_helicrash(p, rng_);
+      break;
+    case Loc_Hummer:  // C2 spawn_loot_point type 18; Trigger_spawn table not ported -> military table
+      loot_.spawn_military(p, rng_, &wpn_unlocks_);
       break;
     case Loc_Hospital:
       loot_.spawn_hospital(p, rng_);
@@ -835,37 +887,152 @@ void Game::spawn_poi_loot() {
 // Recovered body (same content as the old inline start_new_game block): Zed_per_base budget
 // per POI type; skipped inside the spawn-safe radius.
 void Game::spawn_hostiles_for_poi(const MapLocation& L) {
-  // Budget stays per mapgen cell (first building) until zed_resp spawners are ported.
-  if (!L.hostile_anchor) return;
-  if (dist2(L.pos, player_.pos) < kSpawnSafeRadius * kSpawnSafeRadius) return;
-  const int zed_budget = static_cast<int>(balance::Zed_per_base);
-  float jx = 0.f, jy = 0.f;
-  if (L.type == Loc_Military) {
-    for (int k = 0; k < zed_budget; ++k) {
-      const ZedType zt = (k % 3 == 0) ? Zed_ArmyShooter : (k % 3 == 1) ? Zed_Army : Zed_Normal;
-      rng_.range_pair(-55.f, 55.f, -55.f, 55.f, jx, jy);
-      zombies_.spawn(zt, Vec2(L.pos.x + jx, L.pos.y + jy));
+  // C2 create_map_location spawns no zeds per building; zeds come from zed_resp_point via
+  // Zed_check (see zed_check()). Kept as a no-op hook for the stream code.
+  (void)L;
+}
+
+namespace {
+enum ZrKind { Zr_Normal, Zr_Fast, Zr_Army, Zr_Shooter, Zr_Screamer, Zr_Tank,
+              Zr_Wolf, Zr_Deer, Zr_Rabbit };
+const int kC2Level = 0;  // C2 CurrentLevel (single map level in this port)
+}
+
+// One a73/a94 spawn on zed_resp_point pi: IV0 += 1, place at point + random(500,-500)
+// (or choose(750,-750) for frame 8), link IV to the point; destroyed and IV0 -= 1 when
+// overlapping solids (C2 families 927/202) or water 199.
+bool Game::zr_spawn_one(int pi, int kind, bool keep, float spread, bool choose_spread) {
+  const C2ZedResp& P = mapgen_.c2().zr[pi];
+  zr_iv0_[pi] += 1;
+  float dx, dy;
+  if (choose_spread) {
+    dx = (rng_.next_int(0, 1) == 0) ? spread : -spread;
+    dy = (rng_.next_int(0, 1) == 0) ? spread : -spread;
+  } else {
+    dx = rng_.range(-spread, spread);
+    dy = rng_.range(-spread, spread);
+  }
+  const Vec2 p(P.x + dx, P.y + dy);
+  if (building_blocks(p, p)) { zr_iv0_[pi] -= 1; return false; }
+  if (kind >= Zr_Wolf) {
+    const AnimalType at = kind == Zr_Wolf ? Animal_Wolf : kind == Zr_Deer ? Animal_Deer : Animal_Rabbit;
+    Animal* a = animals_.spawn(at, p);
+    if (!a) { zr_iv0_[pi] -= 1; return false; }
+    a->zr_src = static_cast<short>(pi);
+    return true;
+  }
+  static const ZedType map[] = {Zed_Normal, Zed_Fast, Zed_Army, Zed_ArmyShooter, Zed_Screamer, Zed_Tank};
+  Zombie* z = zombies_.spawn(map[kind], p);
+  if (!z) { zr_iv0_[pi] -= 1; return false; }
+  z->zr_src = static_cast<short>(pi);
+  z->zr_keep = keep;
+  return true;
+}
+
+void Game::zed_check() {
+  if (in_bunker_) return;
+  const float rn = static_cast<float>(balance::respawn_radius_npc);
+  const C2Map& m = mapgen_.c2();
+  // Cull: per type, one random instance farther than respawn_radius_npc (c90 pick random),
+  // unless its keep flag is set; its zed_resp_point loses one IV0.
+  {
+    for (int t = 0; t < ZedType_Count; ++t) {
+      Zombie* cand[kMaxZombies]; int nc = 0;
+      for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z)
+        if (z->alive && z->type == t && dist2(z->pos, player_.pos) > rn * rn) cand[nc++] = z;
+      if (!nc) continue;
+      Zombie* z = cand[rng_.next_int(0, nc - 1)];
+      if (z->zr_keep) continue;
+      if (z->zr_src >= 0 && t != Zed_Buried) zr_iv0_[z->zr_src] -= 1;
+      z->alive = false;
     }
-    bandits_.spawn(Vec2(L.pos.x + 60.f, L.pos.y - 30.f), true);
-  } else if (L.type == Loc_City || L.type == Loc_Village) {
-    for (int k = 0; k < zed_budget; ++k) {
-      const ZedType zt = (rng_.next_float() < 0.2f) ? Zed_Buried : Zed_Normal;
-      rng_.range_pair(-50.f, 50.f, -50.f, 50.f, jx, jy);
-      zombies_.spawn(zt, Vec2(L.pos.x + jx, L.pos.y + jy));
+    for (int t = Animal_Wolf; t <= Animal_Rabbit; ++t) {
+      int cand[kMaxAnimals]; int nc = 0;
+      for (int i = 0; i < animals_.count(); ++i) {
+        Animal* a = animals_.at(i);
+        if (a->alive && a->type == t && dist2(a->pos, player_.pos) > rn * rn) cand[nc++] = i;
+      }
+      if (!nc) continue;
+      Animal* a = animals_.at(cand[rng_.next_int(0, nc - 1)]);
+      if (a->zr_src >= 0) zr_iv0_[a->zr_src] -= 1;
+      a->alive = false;
     }
-  } else if (L.type == Loc_Hospital) {
-    for (int k = 0; k < zed_budget - 1; ++k) {
-      rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
-      zombies_.spawn(Zed_Fast, Vec2(L.pos.x + jx, L.pos.y + jy));
+    for (int i = 0; i < animals_.count(); ++i) {  // crows: all beyond 1500
+      Animal* a = animals_.at(i);
+      if (a->alive && a->type == Animal_Crow && dist2(a->pos, player_.pos) > 1500.f * 1500.f) a->alive = false;
     }
-  } else if (L.type == Loc_Police || L.type == Loc_Firestation) {
-    for (int k = 0; k < zed_budget - 2; ++k) {
-      rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
-      zombies_.spawn(Zed_Normal, Vec2(L.pos.x + jx, L.pos.y + jy));
-    }
-  } else if (L.type == Loc_Church) {
-    zombies_.spawn(Zed_Normal, Vec2(L.pos.x + 15.f, L.pos.y));
-    zombies_.spawn(Zed_Buried, Vec2(L.pos.x - 20.f, L.pos.y + 10.f));
+  }
+  // Spawn: pick one random point with 1500 < d <= respawn_radius_npc and IV1 false.
+  int cand[C2Map::kMaxZr]; int nc = 0;
+  for (int i = 0; i < m.zr_count; ++i) {
+    if (zr_iv1_[i]) continue;
+    const float d2 = dist2(Vec2(m.zr[i].x, m.zr[i].y), player_.pos);
+    if (d2 > 1500.f * 1500.f && d2 <= rn * rn) cand[nc++] = i;
+  }
+  if (!nc) return;
+  const int pi = cand[rng_.next_int(0, nc - 1)];
+  const C2ZedResp& P = m.zr[pi];
+  const int per = static_cast<int>(balance::Zed_per_base);
+  auto reps = [&](int n) { const int r = n - zr_iv0_[pi]; return r > 0 ? r : 0; };
+  switch (P.frame) {
+    case 0: {
+      const int n = reps(per);
+      for (int k = 0; k < n; ++k) {
+        if (rng_.next_int(1, 15) == 1) {
+          zr_spawn_one(pi, rng_.next_int(1, 2) == 1 ? Zr_Screamer : Zr_Shooter, false, 500.f, false);
+        } else if (rng_.next_int(1, 4) <= 3) {
+          zr_spawn_one(pi, Zr_Normal, false, 500.f, false);
+        } else if (rng_.next_int(0, 49) == 1) {
+          zr_spawn_one(pi, kC2Level > 1 ? Zr_Tank : Zr_Fast, false, 500.f, false);
+        } else {
+          zr_spawn_one(pi, Zr_Fast, false, 500.f, false);
+        }
+      }
+    } break;
+    case 1: {
+      if (P.iv2 == 0) {
+        const int n = reps(per);
+        for (int k = 0; k < n; ++k)
+          zr_spawn_one(pi, rng_.next_int(1, 15) == 1 ? Zr_Shooter : Zr_Army, false, 500.f, false);
+      } else if (P.iv2 == 1) {
+        const int n = reps(per);
+        for (int k = 0; k < n; ++k) {
+          if (rng_.next_int(1, 10) == 1) zr_spawn_one(pi, Zr_Shooter, false, 500.f, false);
+          else if (rng_.next_int(0, 29) == 1) { if (kC2Level > 1) zr_spawn_one(pi, Zr_Tank, false, 500.f, false); }
+          else zr_spawn_one(pi, Zr_Army, false, 500.f, false);
+        }
+      } else if (P.iv2 == 2) {
+        const int n = reps(per + 3);
+        for (int k = 0; k < n; ++k)
+          zr_spawn_one(pi, rng_.next_int(1, 5) == 1 ? Zr_Shooter : Zr_Army, false, 500.f, false);
+      }
+    } break;
+    case 3: { const int n = reps(5); for (int k = 0; k < n; ++k) zr_spawn_one(pi, Zr_Wolf, false, 500.f, false); } break;
+    case 4: { const int n = reps(1); for (int k = 0; k < n; ++k) zr_spawn_one(pi, Zr_Deer, false, 500.f, false); } break;
+    case 5:
+      if (balance::hordes_spawns_on == 1) {
+        const int n = reps(10);
+        for (int k = 0; k < n; ++k) zr_spawn_one(pi, Zr_Normal, false, 500.f, false);
+      }
+      break;
+    case 6: { const int n = reps(1); for (int k = 0; k < n; ++k) zr_spawn_one(pi, Zr_Rabbit, false, 500.f, false); } break;
+    case 7: {
+      if (P.iv2 == 1) for (int k = 0; k < 3; ++k) zr_spawn_one(pi, Zr_Shooter, true, 500.f, false);
+      else if (P.iv2 == 2) for (int k = 0; k < 5; ++k) zr_spawn_one(pi, Zr_Army, true, 500.f, false);
+      else if (P.iv2 == 3) zr_spawn_one(pi, Zr_Tank, true, 500.f, false);
+      zr_iv1_[pi] = true;
+    } break;
+    case 8: {
+      int n = 0, kind = Zr_Normal;
+      if (P.iv2 == 1) { n = 3; kind = Zr_Shooter; }
+      else if (P.iv2 == 2) { n = 5; kind = Zr_Army; }
+      else if (P.iv2 == 3) { n = 7; kind = Zr_Fast; }
+      else if (P.iv2 == 4 || P.iv2 == 5) { n = 10; kind = Zr_Normal; }
+      for (int k = 0; k < n; ++k) zr_spawn_one(pi, kind, true, 750.f, true);
+      zr_iv1_[pi] = true;
+    } break;
+    case 9: { const int n = reps(per); for (int k = 0; k < n; ++k) zr_spawn_one(pi, Zr_Shooter, false, 500.f, false); } break;
+    default: break;
   }
 }
 
@@ -3157,43 +3324,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   }
 
   if (!in_bunker_) {
-    // Soft cap ≈ 4× Zed_per_base (global dens budget); was hard 12
-    const int zed_cap = static_cast<int>(balance::Zed_per_base) * 4;
-    if (timers_.consume_zed_respawn() && zombies_.alive_count() < zed_cap) {
-      // Prefer spawn near a distant POI; fallback ring around player
-      Vec2 spawn_at;
-      bool used_poi = false;
-      if (mapgen_.location_count() > 0) {
-        const MapLocation& L = mapgen_.location(rng_.next_int(0, mapgen_.location_count() - 1));
-        if (dist2(L.pos, player_.pos) > 180.f * 180.f) {
-          float _j6x = 0.f, _j6y = 0.f;
-          rng_.range_pair(-40.f, 40.f, -40.f, 40.f, _j6x, _j6y);
-          spawn_at = Vec2(L.pos.x + _j6x, L.pos.y + _j6y);
-          used_poi = true;
-          ZedType zt = Zed_Normal;
-          if (L.type == Loc_Military) {
-            const float r = rng_.next_float();
-            if (r < 0.15f) zt = Zed_Tank;
-            else if (r < 0.55f) zt = Zed_Army;
-            else zt = Zed_ArmyShooter;
-          } else if (L.type == Loc_Hospital) zt = Zed_Fast;
-          else if (L.type == Loc_Police) {
-            zt = (rng_.next_float() < 0.45f) ? Zed_ArmyShooter : Zed_Normal;
-          } else if (L.type == Loc_Secret) zt = Zed_Screamer;
-          else if (L.type == Loc_Village || L.type == Loc_City) {
-            zt = (rng_.next_float() < 0.2f) ? Zed_Buried : Zed_Normal;
-          } else zt = static_cast<ZedType>(rng_.next_int(0, Zed_ArmyShooter));
-          zombies_.spawn(zt, spawn_at);
-        }
-      }
-      if (!used_poi) {
-        const float ang = rng_.next_float() * 6.28318f;
-        const float dist = 220.f + rng_.next_float() * 180.f;
-        const ZedType zt = static_cast<ZedType>(rng_.next_int(0, Zed_ArmyShooter));
-        zombies_.spawn(zt, Vec2(player_.pos.x + std::cos(ang) * dist,
-                                player_.pos.y + std::sin(ang) * dist));
-      }
-    }
+    // C2 has no timed zed respawn: zeds come only from zed_resp_point via Zed_check.
     if (timers_.consume_loot_respawn()) {
       // Respawn at a random POI (typed table) + one near-player pile
       if (mapgen_.location_count() > 0) {
@@ -3382,56 +3513,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       }
       bandits_.spawn(spawn, rng_.next_float() < gun_bias);
     }
-    const int animal_cap = 10;
-    if (timers_.consume_animal_respawn() && animals_.alive_count() < animal_cap) {
-      const float ang = rng_.next_float() * 6.28318f;
-      const float dist = 260.f + rng_.next_float() * 220.f;
-      const Vec2 base(player_.pos.x + std::cos(ang) * dist,
-                      player_.pos.y + std::sin(ang) * dist);
-      const float roll = rng_.next_float();
-      const float wolf_chance = 0.45f;
-      if (roll < wolf_chance && animals_.alive_of_type(Animal_Wolf) < 7) {
-        // Wolf pack (2–3)
-        const int pack = 2 + rng_.next_int(0, 1);
-        for (int i = 0; i < pack; ++i) {
-          float _j11x = 0.f, _j11y = 0.f;
-          rng_.range_pair(-40.f, 40.f, -40.f, 40.f, _j11x, _j11y);
-          animals_.spawn(Animal_Wolf, Vec2(base.x + _j11x, base.y + _j11y));
-        }
-      } else if (roll < wolf_chance + 0.25f) {
-        // Deer pair common
-        animals_.spawn(Animal_Deer, base);
-        if (rng_.next_float() < 0.45f) {
-          float jx = 0.f, jy = 0.f;
-          rng_.range_pair(-30.f, 30.f, -30.f, 30.f, jx, jy);
-          animals_.spawn(Animal_Deer, Vec2(base.x + jx, base.y + jy));
-        }
-      } else if (roll < wolf_chance + 0.37f) {
-        // Rabbit warren (2–4)
-        const int n = 2 + rng_.next_int(0, 2);
-        for (int ri = 0; ri < n; ++ri) {
-          float _j13x = 0.f, _j13y = 0.f;
-          rng_.range_pair(-25.f, 25.f, -25.f, 25.f, _j13x, _j13y);
-          animals_.spawn(Animal_Rabbit, Vec2(base.x + _j13x, base.y + _j13y));
-        }
-      } else if (roll < wolf_chance + 0.48f) {
-        // Crow flock
-        const int n = 3 + rng_.next_int(0, 2);
-        for (int ci = 0; ci < n; ++ci) {
-          float _j14x = 0.f, _j14y = 0.f;
-          rng_.range_pair(-50.f, 50.f, -50.f, 50.f, _j14x, _j14y);
-          animals_.spawn(Animal_Crow, Vec2(base.x + _j14x, base.y + _j14y));
-        }
-      } else {
-        // Feral dogs often come in pairs
-        animals_.spawn(Animal_Dog, base);
-        if (rng_.next_float() < 0.55f) {
-          float jx = 0.f, jy = 0.f;
-          rng_.range_pair(-35.f, 35.f, -35.f, 35.f, jx, jy);
-          animals_.spawn(Animal_Dog, Vec2(base.x + jx, base.y + jy));
-        }
-      }
-    }
+    // C2 wildlife comes from zed_resp_point frames 3/4/6 (Zed_check); no timed animal spawns.
     mark_sector_visited();
     if (!in_bunker_) {
       location_reload_t_ += dt;
@@ -3439,6 +3521,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         location_reload_t_ = 0.f;
         if (dist2(player_.pos, location_reload_anchor_) > 400.f * 400.f) {
           sync_location_stream(LocationReload_Runtime);
+          zed_check();  // C2 Location loader: Reload_locations + Zed_check
           location_reload_anchor_ = player_.pos;
         }
       }
@@ -4494,6 +4577,8 @@ void Game::render() {
             draw_hotspot_sprite(platform_, sx, sy, bs->ext_sprite, bs->ext_w, bs->ext_h,
                                 bs->ext_hx, bs->ext_hy, sc);
           }
+        } else if (const WreckDef* wd = wreck_def(L.type)) {
+          draw_hotspot_sprite(platform_, sx, sy, wd->sheet, wd->w, wd->h, wd->hx, wd->hy, sc);
         } else {
           draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
         }
@@ -5108,6 +5193,14 @@ void Game::install_los() { set_los_blocker(&game_los_cb, this); }
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_ && c2_props_.blocks(a, b, 1.f)) return true;  // obst_base / big_obstacle_base
+  if (!in_bunker_) {
+    for (int i = 0; i < mapgen_.location_count(); ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      const WreckDef* wd = wreck_def(L.type);
+      if (!wd || dist2(L.pos, b) > 300.f * 300.f) continue;
+      if (wreck_contains(*wd, L.pos, b)) return true;  // wreck big_obstacle_base
+    }
+  }
   for (int i = 0; i < mapgen_.location_count(); ++i) {
     const MapLocation& L = mapgen_.location(i);
     if (!L.active) continue;
@@ -5165,6 +5258,38 @@ Vec2 Game::harness_player_rel() const {
   if (harness_loc_ < 0 || harness_loc_ >= mapgen_.location_count()) return Vec2();
   const MapLocation& L = mapgen_.location(harness_loc_);
   return Vec2(player_.pos.x - L.pos.x, player_.pos.y - L.pos.y);
+}
+
+bool Game::harness_place_at_wreck(int mode) {
+  Vec2 target;
+  bool ok = false;
+  if (mode < 2) {
+    const LocationType want = mode == 0 ? Loc_Hummer : Loc_Helicrash;
+    for (int i = 0; i < mapgen_.location_count() && !ok; ++i)
+      if (mapgen_.location(i).type == want) { target = mapgen_.location(i).pos; target.y += 90.f; ok = true; }
+  } else {
+    const C2Map& c = mapgen_.c2();
+    for (int i = 0; i < c.zr_count && !ok; ++i) {
+      if (c.zr[i].frame != 0) continue;
+      player_.pos = Vec2(c.zr[i].x + 1600.f, c.zr[i].y);
+      for (int k = 0; k < 20 && zr_iv0_[i] == 0; ++k) zed_check();
+      if (zr_iv0_[i] == 0) continue;
+      target = Vec2(c.zr[i].x, c.zr[i].y + 120.f);
+      ok = true;
+    }
+  }
+  if (!ok) return false;
+  player_.pos = target;
+  player_.vel = Vec2();
+  mapgen_.reload_locations(player_.pos, LocationReload_AfterSave);
+  mapgen_.rebuild_collision(world_);
+  if (platform_) {
+    char line[128];
+    std::snprintf(line, sizeof(line), "harness: wreck mode %d player (%.0f,%.0f) zeds %d", mode,
+                  target.x, target.y, zombies_.alive_count());
+    platform_->log_line(line);
+  }
+  return true;
 }
 
 bool Game::harness_place_at_building(int mode) {

@@ -43,8 +43,8 @@ public:
   int screen_w() const { return inner_->screen_w(); }
   int screen_h() const { return inner_->screen_h(); }
 
-  void set_game(mdaz::Game* g, bool building, bool door = false, bool intro = false) {
-    game_ = g; building_ = building; door_ = door; intro_ = intro;
+  void set_game(mdaz::Game* g, bool building, bool door = false, bool intro = false, bool wreck = false) {
+    game_ = g; building_ = building; door_ = door; intro_ = intro; wreck_ = wreck;
     if (!intro && g) g->skip_intro(); // keep the existing shot scripts' frame numbers
   }
 
@@ -54,6 +54,7 @@ public:
     ++frame_;
     if (intro_) return frame_ < 240;
     if (door_) return poll_door(in);
+    if (wreck_) return poll_wreck(in);
     if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -84,6 +85,15 @@ public:
     if (frame_ == 480 && game_) game_->harness_place_at_building(0); // inside (warmzone)
     if (frame_ > 540 && frame_ < 700) in.move_x = -1.f;              // walk west into a wall
     return frame_ < 760;
+  }
+
+  // --shots-wreck: test-only placements at a Humvee wreck, a heli wreck and a zed_resp_point.
+  bool poll_wreck(mdaz::InputState& in) {
+    if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (frame_ == 200 && game_) game_->harness_place_at_wreck(0);
+    if (frame_ == 300 && game_) game_->harness_place_at_wreck(1);
+    if (frame_ == 400 && game_) game_->harness_place_at_wreck(2);
+    return frame_ < 470;
   }
 
   // --shots-door: start south of the police station (one test placement), push north into the
@@ -124,6 +134,19 @@ public:
       inner_->end_frame();
       return;
     }
+    if (wreck_) {
+      static const struct { int frame; const char* name; } kW[] = {
+        { 250, "wreck_hummer" }, { 350, "wreck_heli" }, { 402, "zr_spawn_t0" }, { 460, "zr_spawn_t1" },
+      };
+      for (unsigned i = 0; i < sizeof(kW) / sizeof(kW[0]); ++i) {
+        if (kW[i].frame != frame_) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kW[i].name);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (building_) {
       static const struct { int frame; const char* name; } kB[] = {
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
@@ -158,6 +181,7 @@ private:
   int frame_;
   mdaz::Game* game_ = 0;
   bool building_ = false;
+  bool wreck_ = false;
   bool door_ = false;
   bool intro_ = false;
   bool shot_done_[8] = {};
@@ -172,6 +196,7 @@ int main(int argc, char** argv) {
   bool shots_building = false;
   bool shots_door = false;
   bool shots_intro = false;
+  bool shots_wreck = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -181,6 +206,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-intro") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_intro = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-wreck") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_wreck = true;
     }
     else if (std::strcmp(argv[i], "--shots-door") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -221,7 +250,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   game.set_audio(audio);
-  if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro);
+  if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro, shots_wreck);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

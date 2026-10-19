@@ -21,6 +21,7 @@ enum LocationType {
   Loc_BunkerEntrance,
   Loc_Police,
   Loc_Church,
+  Loc_Hummer,  // C2 hammercrash_point -> hammer_crash (Humvee wreck, frame 1)
   Loc_Count
 };
 

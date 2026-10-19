@@ -13,6 +13,7 @@
 #include "mdaz/item_db.hpp"
 #include "mdaz/loot.hpp"
 #include "mdaz/mapgen.hpp"
+#include "mdaz/c2_mapgen.hpp"
 #include "mdaz/menu_camera.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
@@ -51,6 +52,9 @@ public:
   // TEST HARNESS ONLY (desktop --shots-building): puts the player inside (mode 0) or just south
   // of (mode 1) the first police/other Solid building. Never called by gameplay code.
   bool harness_place_at_building(int mode);
+  // TEST HARNESS ONLY (--shots-wreck): 0 = south of the first Humvee wreck, 1 = heli wreck,
+  // 2 = Zed_check from 1600 px of a frame-0 zed_resp_point, then stand at the point.
+  bool harness_place_at_wreck(int mode);
   // Bonds Guru studio intro (from jacksmith-psp): skipped by the --shots harnesses.
   void skip_intro();
   Vec2 harness_player_rel() const;  // test-only: player pos minus harness building hotspot
@@ -384,6 +388,11 @@ private:
   void spawn_poi_loot();
   void spawn_loot_for_poi(MapLocation& L);
   void spawn_hostiles_for_poi(const MapLocation& L);
+  // C2 NPC_manager "Zed_check": cull far NPCs, then one random zed_resp_point in (1500, respawn_radius_npc].
+  void zed_check();
+  bool zr_spawn_one(int pi, int kind, bool keep, float spread, bool choose_spread);
+  short zr_iv0_[C2Map::kMaxZr];
+  bool zr_iv1_[C2Map::kMaxZr];
   void sync_location_stream(LocationReloadMode mode);
   void maybe_spawn_quest_bandits();
   int bandits_alive_near(Vec2 pos, float radius) const;

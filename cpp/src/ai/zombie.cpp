@@ -13,6 +13,7 @@ Zombie::Zombie()
 
 void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   id = eid;
+  zr_src = -1; zr_keep = false;
   burn_t = 0.f;
   warn_t = 0.f;
   type = t;
@@ -123,8 +124,10 @@ ZombieSystem::ZombieSystem() : count_(0), next_id_(1), scream_active_(false), sc
 void ZombieSystem::clear() { count_ = 0; scream_active_ = false; scream_pos_ = Vec2(); }
 
 Zombie* ZombieSystem::spawn(ZedType t, Vec2 p) {
-  if (count_ >= kMaxZombies) return 0;
-  Zombie& z = zombies_[count_++];
+  int slot = -1;
+  for (int i = 0; i < count_; ++i) if (!zombies_[i].alive) { slot = i; break; }
+  if (slot < 0) { if (count_ >= kMaxZombies) return 0; slot = count_++; }
+  Zombie& z = zombies_[slot];
   z.setup(t, p, next_id_++);
   return &z;
 }
