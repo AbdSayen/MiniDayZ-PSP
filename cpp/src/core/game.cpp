@@ -345,8 +345,16 @@ const WreckDef kHummerWreck = {
   "hammer_crash-sheet0", 71, 87, 0.4929577f, 0.5057471f,
   {{1.1267606f, 0.8735632f}, {1.0563381f, 0.3333333f}, {-0.1971831f, 0.5287356f}},
   0, {0}, 0, 0, 0.f, 0.f, {0.0845070f, 0.1379310f}, {0.6760563f, 0.9195402f}};
-const WreckDef* wreck_def(LocationType t) {
-  return t == Loc_Helicrash ? &kHeliWreck : t == Loc_Hummer ? &kHummerWreck : 0;
+// Tutorial layout places hammer_crash instances directly at frame 0 (sheet1 103x56, hotspot
+// .4951/.5) with big_obstacle_base frame 0 (110x59 poly) - MapLocation.c2_sub = -2 marks them.
+const WreckDef kHummerWreck0 = {
+  "hammer_crash-sheet1", 103, 56, 0.4951456f, 0.5f,
+  {{0.8834952f, 1.25f}, {0.4466019f, 1.2857143f}, {-0.0582524f, 1.1428572f}},
+  4, {-0.3545f, -0.2034f, 0.4909f, -0.2034f, 0.4909f, 0.2881f, -0.3545f, 0.2881f},
+  110, 59, 0.5f, 0.5f, {0, 0}, {0, 0}};
+const WreckDef* wreck_def(const MapLocation& L) {
+  if (L.type == Loc_Hummer && L.c2_sub == -2) return &kHummerWreck0;
+  return L.type == Loc_Helicrash ? &kHeliWreck : L.type == Loc_Hummer ? &kHummerWreck : 0;
 }
 Vec2 wreck_point(const WreckDef& d, Vec2 o, float fx, float fy) {
   return Vec2(o.x + (fx - d.hx) * d.w, o.y + (fy - d.hy) * d.h);
@@ -384,6 +392,10 @@ Game::Game()
     wind_sfx_cd_(0.f), flare_t_(0.f), fx_count_(0), corpse_count_(0) {
   flare_pos_ = Vec2();
   data_dir_[0] = 0;
+  std::memset(&tut_, 0, sizeof(tut_));
+  tut_.active = false;
+  tutorial_finished_ = false;
+  std::memset(tree_hp_, 2, sizeof(tree_hp_));
   last_airdrop_pos_ = Vec2();
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
   prev_scream_ = false;
@@ -627,6 +639,9 @@ void Game::load_settings() {
   if (platform_ && platform_->read_file("settings.cfg", &data, &size) && data) {
     const char* k = std::strstr(data, "half_res=");
     if (k && k + 9 < data + size) half_res_ = (k[9] == '1');
+    // C2 localStorage Tutorial_map_finished ("1" = done; missing/"0" = start the tutorial).
+    const char* tf = std::strstr(data, "tutorial_finished=");
+    if (tf && tf + 18 < data + size) tutorial_finished_ = (tf[18] == '1');
     const char* o = std::strstr(data, "perf_overlay=");
     if (o && o + 13 < data + size) perf_overlay_ = (o[13] == '1');
     delete[] data;
@@ -637,9 +652,9 @@ void Game::load_settings() {
 
 void Game::save_settings() {
   if (!platform_) return;
-  char buf[64];
-  const int n = std::snprintf(buf, sizeof(buf), "half_res=%d\nperf_overlay=%d\n", half_res_ ? 1 : 0,
-                              perf_overlay_ ? 1 : 0);
+  char buf[96];
+  const int n = std::snprintf(buf, sizeof(buf), "half_res=%d\nperf_overlay=%d\ntutorial_finished=%d\n",
+                              half_res_ ? 1 : 0, perf_overlay_ ? 1 : 0, tutorial_finished_ ? 1 : 0);
   platform_->write_file("settings.cfg", buf, (std::size_t)n);
 }
 
@@ -662,6 +677,14 @@ void Game::toggle_perf_overlay() {
 void Game::shutdown() {}
 
 void Game::start_new_game(Difficulty d) {
+  if (tut_.active && platform_) {   // tutorial left via the pause menu: restore the Map layout
+    char tpath[512];
+    std::snprintf(tpath, sizeof(tpath), "%s/world_tilemaps.txt", data_dir_);
+    world_tiles_.load(*platform_, tpath);
+    platform_->ground_cache_invalidate();
+  }
+  tut_.active = false;
+  std::memset(tree_hp_, 2, sizeof(tree_hp_));
   install_los();
   player_.reset_new_game(d);
   set_npc_damage_for_difficulty(d);
@@ -833,7 +856,7 @@ void Game::spawn_loot_for_poi(MapLocation& L) {
     if (npts > 0) {
       const InteriorLoot& lp = interior_loot(*lbi, pt_order[n % npts]);
       ox = lp.x; oy = lp.y;
-    } else if (const WreckDef* wd = wreck_def(L.type)) {
+    } else if (const WreckDef* wd = wreck_def(L)) {
       const Vec2 q = wreck_point(*wd, Vec2(), wd->loot[n % 3][0], wd->loot[n % 3][1]);
       ox = q.x; oy = q.y;
     } else {
@@ -2539,6 +2562,7 @@ void Game::apply_loot_view(const LootSaveView& in) {
 }
 
 void Game::save_game_to_disk() {
+  if (tut_.active) return;   // the Tutorial layout has no save slot
   CropSaveView crops_view;
   TrapSaveView traps_view;
   FireSaveView fires_view;
@@ -2569,7 +2593,7 @@ bool Game::load_game_from_disk() {
   if (!has_save()) return false;
   // Loading from the main menu before any world exists: build the world first
   // (save v18 stores player/inventory/world extras, not the generated map).
-  if (mapgen_.location_count() == 0) start_new_game(menu_difficulty_);
+  if (mapgen_.location_count() == 0 || tut_.active) start_new_game(menu_difficulty_);
   int qact = 0, qprog = 0;
   int mag = 0;
   float wet = 0.f;
@@ -3106,6 +3130,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         loot_.spawn_item(fell, 38, 2 + rng_.next_int(0, 2));
         trees_[ti] = trees_[tree_count_ - 1];
         tree_sub_[ti] = tree_sub_[tree_count_ - 1];
+        tree_hp_[ti] = tree_hp_[tree_count_ - 1];
         tree_count_ -= 1;
         if (audio_) audio_->play("hit", 0.6f);
         break;
@@ -3320,7 +3345,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
 
   if (!in_bunker_) {
     // C2 has no timed zed respawn: zeds come only from zed_resp_point via Zed_check.
-    if (timers_.consume_loot_respawn()) {
+    if (timers_.consume_loot_respawn() && !tut_.active) {
       // Respawn at a random POI (typed table) + one near-player pile
       if (mapgen_.location_count() > 0) {
         const MapLocation& L = mapgen_.location(rng_.next_int(0, mapgen_.location_count() - 1));
@@ -3344,7 +3369,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       loot_.spawn_random(Vec2(player_.pos.x + std::cos(ang) * dist,
                               player_.pos.y + std::sin(ang) * dist), rng_);
     }
-    if (timers_.consume_airdrop()) {
+    if (timers_.consume_airdrop() && !tut_.active) {
       float _j8x = 0.f, _j8y = 0.f;
       rng_.range_pair(-500.f, 500.f, -500.f, 500.f, _j8x, _j8y);
       last_airdrop_pos_ = Vec2(player_.pos.x + _j8x, player_.pos.y + _j8y);
@@ -3441,7 +3466,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         notify_weapon_unlock(weapon_unlock_on_bleed_second(wpn_unlocks_, player_.difficulty));
       }
     }
-    maybe_spawn_quest_bandits();
+    if (!tut_.active) maybe_spawn_quest_bandits();
     update_crops(dt);
     update_fx(dt);
     dmg_hints_.update(dt);
@@ -3484,7 +3509,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     update_army_shooters(dt);
     update_bandit_guns(dt);
 
-    if (timers_.consume_bot_respawn() && bandits_.alive_count() < 4) {
+    if (timers_.consume_bot_respawn() && bandits_.alive_count() < 4 && !tut_.active) {
       Vec2 spawn = player_.pos;
       bool near_hot = false;
       float gun_bias = 0.5f;
@@ -3510,7 +3535,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
     // C2 wildlife comes from zed_resp_point frames 3/4/6 (Zed_check); no timed animal spawns.
     mark_sector_visited();
-    if (!in_bunker_) {
+    if (!in_bunker_ && !tut_.active) {  // Tutorial: mapgen destroyed, Reload_locations no-op
       location_reload_t_ += dt;
       if (location_reload_t_ >= 1.f) {
         location_reload_t_ = 0.f;
@@ -3726,15 +3751,21 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           const float d2t = dist2(trees_[ti], player_.pos);
           if (d2t < best) { best = d2t; near_tree = ti; }
         }
-        if (near_tree >= 0) {
-          // Fell tree → sticks / piles / rare ashwood
-          const float r = rng_.next_float();
-          if (r < 0.2f) inventory_.add_item(37, 1, items_);
-          else if (r < 0.55f) inventory_.add_item(50, 1, items_);
-          else inventory_.add_item(38, 2 + (player_.perk_farmer ? 1 : 0), items_);
-          trees_[near_tree] = trees_[tree_count_ - 1];
-          tree_sub_[near_tree] = tree_sub_[tree_count_ - 1];
-          tree_count_ -= 1;
+        if (near_tree >= 0 && tree_sub_[near_tree] >= 1 && tree_sub_[near_tree] <= 6) {
+          // C2 tree IV0 = 2 hits; at 0: Spawn_drop 2x Wood sticks (38) + 1x Wood piles (50) at
+          // x +- 30, y + 40 + random(10); the tree turns into a stump (frame 1, obst_base 8).
+          // Port: the stump sprite/obstacle is not drawn, the tree is removed (KNOWN_ISSUES).
+          if (tree_hp_[near_tree] > 0) --tree_hp_[near_tree];
+          if (tree_hp_[near_tree] == 0) {
+            const Vec2 tp = trees_[near_tree];
+            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 38, 1);
+            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 38, 1);
+            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 50, 1);
+            trees_[near_tree] = trees_[tree_count_ - 1];
+            tree_sub_[near_tree] = tree_sub_[tree_count_ - 1];
+            tree_hp_[near_tree] = tree_hp_[tree_count_ - 1];
+            tree_count_ -= 1;
+          }
           // Axe wear: ~6% break on chop (duct tape helps)
           // Tool break-on-chop: no C2 evidence in 1.4.1 export — not invented.
           if (audio_) audio_->play("melee_swing", 0.55f);
@@ -3944,6 +3975,11 @@ void Game::update_playing(float dt, const InputState& in_raw) {
 
   if (in.inventory_pressed) use_equipped_item();
 
+  // Tutorial: blood <= 5 -> blood = 100, tutorDieCount + 1 (the player cannot die).
+  if (tut_.active && player_.survival.blood <= 5.f) {
+    player_.survival.blood = 100.f;
+    ++tut_.die_count;
+  }
   if (player_.survival.is_dead() && state_ != AppState_Dead) {
     // Drop inventory as corpse piles (visible until return to menu)
     Vec2 drop = player_.pos;
@@ -4204,13 +4240,18 @@ void Game::update(float dt) {
 
   switch (state_) {
   case AppState_Loading:
-    if (platform_->time_seconds() - intro_t0_ >= 3.5) state_ = AppState_Menu;
+    if (platform_->time_seconds() - intro_t0_ >= 3.5) {
+      // Menu_Events: Tutorial_map_finished missing / "0" -> go straight to layout Tutorial.
+      if (!tutorial_finished_ && !platform_->dev_skip_tutorial()) start_tutorial();
+      else state_ = AppState_Menu;
+    }
     break;
   case AppState_Menu:
     update_menu(dt, in);
     break;
   case AppState_Playing:
-    update_playing(dt, in);
+    if (tut_.active) update_tutorial(dt, in);
+    else update_playing(dt, in);
     break;
   case AppState_Paused:
     update_pause(dt, in);
@@ -4233,6 +4274,9 @@ void Game::render() {
   const float cx = static_cast<float>(platform_->screen_w()) * 0.5f;
   const float cy = static_cast<float>(platform_->screen_h()) * 0.5f;
   const float sc = world_to_screen_scale();
+  // Camera = player, except during the tutorial camera_roll (camera_aim travels to a target).
+  const Vec2 camv = render_cam();
+  const float pcx = cx + (player_.pos.x - camv.x) * sc, pcy = cy + (player_.pos.y - camv.y) * sc;
   // View-rect culling (2026-10-19): an object is drawn when its screen-space box
   // (centre +- r_px, in screen px) intersects the 480x272 logical screen.
   // Replaces the old fixed world-distance checks / fixed grid windows.
@@ -4252,7 +4296,7 @@ void Game::render() {
     }
   };
   ViewRect view;
-  view.cx = cx; view.cy = cy; view.cam = player_.pos;
+  view.cx = cx; view.cy = cy; view.cam = camv;
 
   if (state_ == AppState_Menu) {
     platform_->clear(0.12f, 0.14f, 0.18f);
@@ -4285,8 +4329,8 @@ void Game::render() {
       const float tile = 8.f;
       const float bsc = 1.0f;
       const bool has_bunk = platform_->has_sprite("tilemap_bunker");
-      const int view_x = static_cast<int>(player_.pos.x / tile) - 30;
-      const int view_y = static_cast<int>(player_.pos.y / tile) - 17;
+      const int view_x = static_cast<int>(camv.x / tile) - 30;
+      const int view_y = static_cast<int>(camv.y / tile) - 17;
       for (int ty = 0; ty < 34; ++ty) {
         for (int tx = 0; tx < 60; ++tx) {
           const int bx = view_x + tx;
@@ -4294,8 +4338,8 @@ void Game::render() {
           if (bx < 0 || by < 0 || bx >= bunker_.width || by >= bunker_.height) continue;
           const int tile_id = bunker_.tile_at(bx, by);
           if (tile_id <= 0) continue;
-          float sx = cx + (bx * tile - player_.pos.x) * bsc;
-          float sy = cy + (by * tile - player_.pos.y) * bsc;
+          float sx = cx + (bx * tile - camv.x) * bsc;
+          float sy = cy + (by * tile - camv.y) * bsc;
           if (has_bunk) {
             // C2 bunker tileset: tile 0 empty; ids 1..50 → atlas cells 0..49
             int idx = tile_id - 1;
@@ -4321,14 +4365,14 @@ void Game::render() {
       // PSP ground cache (2026-10-19): the platform keeps the ground layer in VRAM and only
       // redraws newly exposed strips; the ground camera is snapped to whole screen pixels.
       // Desktop: ground_snap_px() == 0 -> gcam == player_.pos, ground drawn every frame.
-      Vec2 gcam = player_.pos;
+      Vec2 gcam = camv;
       const int gsnap = platform_->ground_snap_px();
       if (gsnap > 0) {
         const float u = static_cast<float>(gsnap);
-        gcam.x = std::floor(player_.pos.x * sc / u + 0.5f) * u / sc;
-        gcam.y = std::floor(player_.pos.y * sc / u + 0.5f) * u / sc;
+        gcam.x = std::floor(camv.x * sc / u + 0.5f) * u / sc;
+        gcam.y = std::floor(camv.y * sc / u + 0.5f) * u / sc;
       }
-      const unsigned gkey = (weather_.is_night ? 1u : 0u);
+      const unsigned gkey = (weather_.is_night ? 1u : 0u) | (tut_.active ? 2u : 0u);
       if (platform_->ground_cache_begin(gcam.x * sc, gcam.y * sc, gkey))
 
       {
@@ -4340,6 +4384,15 @@ void Game::render() {
         const bool has_gnd = has_g1 || has_g2 || has_g3 || has_g4;
         // Each ground_lvl*: 300×300 atlas → 5×5 of 60×60 (C2 tile size).
         // Pick atlas by coarse biome hash so the map isn't one repeating sheet.
+        if (tut_.active) {
+          // Tutorial layout: its own static tilemaps, drawn in layer order
+          // ground_lvl1, sand, ground_enviroment, water, forest (Forests layer above objects).
+          world_tiles_.draw(*platform_, "ground_lvl1_tilemap", gcam, sc, cx * 2.f, cy * 2.f);
+          world_tiles_.draw(*platform_, "tilemap_sand", gcam, sc, cx * 2.f, cy * 2.f);
+          world_tiles_.draw(*platform_, "ground_enviroment_tilemap", gcam, sc, cx * 2.f, cy * 2.f);
+          world_tiles_.draw(*platform_, "tilemap_water", gcam, sc, cx * 2.f, cy * 2.f);
+          if (has_forest) world_tiles_.draw(*platform_, "tilemap_forest", gcam, sc, cx * 2.f, cy * 2.f);
+        } else {
         if (has_gnd) {
           const float step = 60.f;
           const float tile = step * sc;
@@ -4392,6 +4445,7 @@ void Game::render() {
         cell_tiles_.draw(*platform_, 1, gcam, sc, cx * 2.f, cy * 2.f);
         world_tiles_.draw(*platform_, "tilemap_water", gcam, sc, cx * 2.f, cy * 2.f);
         cell_tiles_.draw(*platform_, 2, gcam, sc, cx * 2.f, cy * 2.f);
+        }  // !tut_.active
       }
       platform_->ground_cache_end();
 
@@ -4400,8 +4454,8 @@ void Game::render() {
       for (int i = 0; i < blood_drip_count_; ++i) {
         if (blood_drips_[i].life <= 0.f) continue;
         if (!view.vis(blood_drips_[i].pos, sc, 4.f)) continue;
-        float sx = cx + (blood_drips_[i].pos.x - player_.pos.x) * sc;
-        float sy = cy + (blood_drips_[i].pos.y - player_.pos.y) * sc;
+        float sx = cx + (blood_drips_[i].pos.x - camv.x) * sc;
+        float sy = cy + (blood_drips_[i].pos.y - camv.y) * sc;
         const float a = blood_drips_[i].life / 8.f;
         if (platform_->has_sprite("blood_drop-sheet0"))
           platform_->draw_sprite("blood_drop-sheet0", sx - 3, sy - 3, 6, 6, 0.f, 0.35f + 0.5f * a);
@@ -4413,8 +4467,8 @@ void Game::render() {
       for (int i = 0; i < corpse_count_; ++i) {
         if (!corpses_[i].active) continue;
         if (!view.vis(corpses_[i].pos, sc, 24.f)) continue;
-        float sx = cx + (corpses_[i].pos.x - player_.pos.x) * sc;
-        float sy = cy + (corpses_[i].pos.y - player_.pos.y) * sc;
+        float sx = cx + (corpses_[i].pos.x - camv.x) * sc;
+        float sy = cy + (corpses_[i].pos.y - camv.y) * sc;
         const float fade = corpses_[i].life < 10.f ? corpses_[i].life / 10.f : 1.f;
         if (corpses_[i].die_anim_t > 0.f && corpses_[i].anim_base[0]) {
           const CharAnim* da = char_anims_.find(corpses_[i].anim_base,
@@ -4466,10 +4520,10 @@ void Game::render() {
       // create_map_element props (bushes, pumps, obstacles, pillars, cars, deer stands): the
       // object frame drawn with its hotspot on the map_element origin.
       {
-        const int pcx = static_cast<int>(std::floor((player_.pos.y - kC2CellOriginY) / kC2CellSize));
-        const int pcy = static_cast<int>(std::floor((player_.pos.x - kC2CellOriginX) / kC2CellSize));
-        for (int ax = pcx - 1; ax <= pcx + 1; ++ax)
-          for (int ay = pcy - 1; ay <= pcy + 1; ++ay) {
+        const int pcellx = static_cast<int>(std::floor((camv.y - kC2CellOriginY) / kC2CellSize));
+        const int pcelly = static_cast<int>(std::floor((camv.x - kC2CellOriginX) / kC2CellSize));
+        for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
+          for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
             int f0 = 0, pn = 0;
             c2_props_.cell_range(ax, ay, f0, pn);
             for (int k = f0; k < f0 + pn; ++k) {
@@ -4477,7 +4531,7 @@ void Game::render() {
               const PropFrame* pf = c2_props_.frame_of(mp);
               const float big = static_cast<float>(pf->w > pf->h ? pf->w : pf->h);
               if (!view.vis(Vec2(mp.x, mp.y), sc, big * sc)) continue;
-              const float sx = cx + (mp.x - player_.pos.x) * sc, sy = cy + (mp.y - player_.pos.y) * sc;
+              const float sx = cx + (mp.x - camv.x) * sc, sy = cy + (mp.y - camv.y) * sc;
               platform_->draw_sprite_frame(pf->sheet, sx - pf->hx * pf->w * sc, sy - pf->hy * pf->h * sc,
                                            pf->w * sc, pf->h * sc, pf->x, pf->y, pf->w, pf->h, 0.f, 1.f);
             }
@@ -4487,16 +4541,16 @@ void Game::render() {
       // Forest trees — crop first pine frame (47×92), not whole sheet
       for (int i = 0; i < tree_count_; ++i) {
         if (!view.vis(trees_[i], sc, tree_sub_[i] >= 7 ? 170.f : 120.f)) continue;
-        float sx = cx + (trees_[i].x - player_.pos.x) * sc;
-        float sy = cy + (trees_[i].y - player_.pos.y) * sc;
+        float sx = cx + (trees_[i].x - camv.x) * sc;
+        float sy = cy + (trees_[i].y - camv.y) * sc;
         draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
       }
 
       // Map POIs — interiors when standing inside, else exterior shells
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
-        float sx = cx + (L.pos.x - player_.pos.x) * sc;
-        float sy = cy + (L.pos.y - player_.pos.y) * sc;
+        float sx = cx + (L.pos.x - camv.x) * sc;
+        float sy = cy + (L.pos.y - camv.y) * sc;
         // Buildings are drawn at their native data.js frame size in world units, scaled by
         // the same world->screen factor as positions/terrain. (Bug fix 2026-10-19: this used
         // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
@@ -4519,7 +4573,7 @@ void Game::render() {
             draw_hotspot_sprite(platform_, sx, sy, bs->ext_sprite, bs->ext_w, bs->ext_h,
                                 bs->ext_hx, bs->ext_hy, sc);
           }
-        } else if (const WreckDef* wd = wreck_def(L.type)) {
+        } else if (const WreckDef* wd = wreck_def(L)) {
           draw_hotspot_sprite(platform_, sx, sy, wd->sheet, wd->w, wd->h, wd->hx, wd->hy, sc);
         } else {
           draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
@@ -4538,8 +4592,8 @@ void Game::render() {
       for (int i = 0; i < loot_.count(); ++i) {
         const LootPile* p = loot_.at(i);
         if (!p->active) continue;
-        float sx = cx + (p->pos.x - player_.pos.x) * lsc;
-        float sy = cy + (p->pos.y - player_.pos.y) * lsc;
+        float sx = cx + (p->pos.x - camv.x) * lsc;
+        float sy = cy + (p->pos.y - camv.y) * lsc;
         if (p->is_airdrop) {
           if (platform_->has_sprite("ee_pubg_drop_smoke"))
             platform_->draw_sprite("ee_pubg_drop_smoke", sx - 18, sy - 28, 36, 36, 0.f, 0.55f);
@@ -4578,8 +4632,8 @@ void Game::render() {
       for (const Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
         if (!z->alive) continue;
         if (!view.vis(z->pos, zsc, 32.f)) continue;
-        float sx = cx + (z->pos.x - player_.pos.x) * zsc;
-        float sy = cy + (z->pos.y - player_.pos.y) * zsc;
+        float sx = cx + (z->pos.x - camv.x) * zsc;
+        float sy = cy + (z->pos.y - camv.y) * zsc;
         float zsz = 30.f;
         if (z->type == Zed_Buried && z->ambush_boost <= 0.f) {
           if (platform_->has_sprite("zed_buried_hidden-sheet0"))
@@ -4628,8 +4682,8 @@ void Game::render() {
     if (!in_bunker_) {
       // Airdrop marker while alert active
       if (airdrop_alert_ > 0.f) {
-        float sx = cx + (last_airdrop_pos_.x - player_.pos.x) * sc;
-        float sy = cy + (last_airdrop_pos_.y - player_.pos.y) * sc;
+        float sx = cx + (last_airdrop_pos_.x - camv.x) * sc;
+        float sy = cy + (last_airdrop_pos_.y - camv.y) * sc;
         if (platform_->has_sprite("airdrop_parachute-sheet0"))
           platform_->draw_sprite("airdrop_parachute-sheet0", sx - 16, sy - 28, 32, 32, 0.f, 0.9f);
         else if (platform_->has_sprite("gui_airdrop_icon-sheet0"))
@@ -4641,8 +4695,8 @@ void Game::render() {
       // Screamer — subtle pulse only (no debug text)
       if (zombies_.scream_active()) {
         const Vec2 sp = zombies_.scream_pos();
-        float sx = cx + (sp.x - player_.pos.x) * sc;
-        float sy = cy + (sp.y - player_.pos.y) * sc;
+        float sx = cx + (sp.x - camv.x) * sc;
+        float sy = cy + (sp.y - camv.y) * sc;
         const float pulse = 18.f + 8.f * std::fabs(std::sin(state_timer_ * 6.f));
         platform_->draw_rect(sx - pulse, sy - pulse, pulse * 2.f, pulse * 2.f,
                              0.7f, 0.2f, 0.65f, 0.08f);
@@ -4654,8 +4708,8 @@ void Game::render() {
           const Animal* a = animals_.at(i);
           if (!a->alive) continue;
           if (!view.vis(a->pos, sc, 32.f)) continue;
-          float sx = cx + (a->pos.x - player_.pos.x) * sc;
-          float sy = cy + (a->pos.y - player_.pos.y) * sc;
+          float sx = cx + (a->pos.x - camv.x) * sc;
+          float sy = cy + (a->pos.y - camv.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - a->pos.y, player_.pos.x - a->pos.x) * 57.2957795f;
           const float d2a = dist2(a->pos, player_.pos);
           const char* aprefix = (d2a < 140.f * 140.f) ? "run" : "idle";
@@ -4691,8 +4745,8 @@ void Game::render() {
         for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
           if (!bd->alive) continue;
           if (!view.vis(bd->pos, sc, 32.f)) continue;
-          float sx = cx + (bd->pos.x - player_.pos.x) * sc;
-          float sy = cy + (bd->pos.y - player_.pos.y) * sc;
+          float sx = cx + (bd->pos.x - camv.x) * sc;
+          float sy = cy + (bd->pos.y - camv.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
           const float d2b = dist2(bd->pos, player_.pos);
           const char* bprefix = (d2b < 220.f * 220.f) ? "run" : "idle";
@@ -4715,8 +4769,8 @@ void Game::render() {
         const Vehicle* v = vehicles_.at(i);
         if (!v->active) continue;
         if (!view.vis(v->pos, sc, 48.f)) continue;
-        float sx = cx + (v->pos.x - player_.pos.x) * sc;
-        float sy = cy + (v->pos.y - player_.pos.y) * sc;
+        float sx = cx + (v->pos.x - camv.x) * sc;
+        float sy = cy + (v->pos.y - camv.y) * sc;
         if (v->type == Vehicle_Boat) {
           if (platform_->has_sprite("boat_arrive-sheet0"))
             platform_->draw_sprite("boat_arrive-sheet0", sx - 36, sy - 22, 72, 44, v->facing_deg, 1.f);
@@ -4740,8 +4794,8 @@ void Game::render() {
         const Campfire* f = campfires_.at(i);
         if (!f->active) continue;
         if (!view.vis(f->pos, sc, 40.f)) continue; // flame + glow
-        float sx = cx + (f->pos.x - player_.pos.x) * sc;
-        float sy = cy + (f->pos.y - player_.pos.y) * sc;
+        float sx = cx + (f->pos.x - camv.x) * sc;
+        float sy = cy + (f->pos.y - camv.y) * sc;
         const int flick = (static_cast<int>(state_timer_ * 8.f) + i) & 1;
         const char* fire =
           (flick && platform_->has_sprite("fireplace-sheet1")) ? "fireplace-sheet1" :
@@ -4759,8 +4813,8 @@ void Game::render() {
       for (int i = 0; i < trap_count_; ++i) {
         if (!traps_[i].active) continue;
         if (!view.vis(traps_[i].pos, sc, 16.f)) continue;
-        float sx = cx + (traps_[i].pos.x - player_.pos.x) * sc;
-        float sy = cy + (traps_[i].pos.y - player_.pos.y) * sc;
+        float sx = cx + (traps_[i].pos.x - camv.x) * sc;
+        float sy = cy + (traps_[i].pos.y - camv.y) * sc;
         if (traps_[i].kind == 0) {
           const char* ts = traps_[i].sprung ? "beartrap_deployed-sheet0" : "beartrap-sheet0";
           if (platform_->has_sprite(ts))
@@ -4795,8 +4849,8 @@ void Game::render() {
       for (int i = 0; i < crop_count_; ++i) {
         if (!crops_[i].active) continue;
         if (!view.vis(crops_[i].pos, sc, 16.f)) continue;
-        float sx = cx + (crops_[i].pos.x - player_.pos.x) * sc;
-        float sy = cy + (crops_[i].pos.y - player_.pos.y) * sc;
+        float sx = cx + (crops_[i].pos.x - camv.x) * sc;
+        float sy = cy + (crops_[i].pos.y - camv.y) * sc;
         if (crops_[i].ready) {
           platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.65f, 0.2f, 0.95f);
           if (dist2(crops_[i].pos, player_.pos) < 40.f * 40.f)
@@ -4815,8 +4869,8 @@ void Game::render() {
       for (const Bullet* b = bullets_.begin(); b != bullets_.end(); ++b) {
         if (!b->alive) continue;
         if (!view.vis(b->pos, bsc, 8.f)) continue;
-        float sx = cx + (b->pos.x - player_.pos.x) * bsc;
-        float sy = cy + (b->pos.y - player_.pos.y) * bsc;
+        float sx = cx + (b->pos.x - camv.x) * bsc;
+        float sy = cy + (b->pos.y - camv.y) * bsc;
         const float ang = std::atan2(b->vel.y, b->vel.x) * 57.2957795f;
         if (b->leaves_fire && platform_->has_sprite("molotov_fly-sheet0")) {
           platform_->draw_sprite("molotov_fly-sheet0", sx - 6, sy - 6, 12, 12, ang, 1.f);
@@ -4838,8 +4892,8 @@ void Game::render() {
       for (int i = 0; i < fx_count_; ++i) {
         if (!fx_[i].active) continue;
         if (!view.vis(fx_[i].pos, bsc, 64.f)) continue; // explosions are the largest fx
-        float sx = cx + (fx_[i].pos.x - player_.pos.x) * bsc;
-        float sy = cy + (fx_[i].pos.y - player_.pos.y) * bsc;
+        float sx = cx + (fx_[i].pos.x - camv.x) * bsc;
+        float sy = cy + (fx_[i].pos.y - camv.y) * bsc;
         const float a = fx_[i].life > 0.05f ? 1.f : fx_[i].life / 0.05f;
         if (fx_[i].kind == Fx_Muzzle) {
           const int frame = static_cast<int>(fx_[i].life * 40.f) % 3;
@@ -4990,22 +5044,22 @@ void Game::render() {
       if (headlights && vehicles_.driven()) face = vehicles_.driven()->facing_deg;
       if (headlights && platform_->has_sprite("car_light-sheet0")) {
         const float rad = face * 0.01745329252f;
-        const float bx = cx + std::cos(rad) * 36.f;
-        const float by = cy + std::sin(rad) * 36.f;
+        const float bx = pcx + std::cos(rad) * 36.f;
+        const float by = pcy + std::sin(rad) * 36.f;
         platform_->draw_sprite("car_light-sheet0", bx - 40, by - 24, 80, 48, face, 0.55f);
       } else if (player_.torch_on && platform_->has_sprite("light_sprite-sheet0")) {
-        platform_->draw_sprite("light_sprite-sheet0", cx - 48, cy - 48, 96, 96, face, 0.5f);
+        platform_->draw_sprite("light_sprite-sheet0", pcx - 48, pcy - 48, 96, 96, face, 0.5f);
       } else {
         const float glow = headlights ? 40.f : 28.f;
-        platform_->draw_rect(cx - glow, cy - glow, glow * 2.f, glow * 2.f,
+        platform_->draw_rect(pcx - glow, pcy - glow, glow * 2.f, glow * 2.f,
                              0.55f, 0.4f, 0.1f, headlights ? 0.2f : 0.25f);
         const float rad = face * 0.01745329252f;
         const int steps = headlights ? 10 : 8;
         for (int s = 2; s <= steps; ++s) {
           const float d = (headlights ? 14.f : 10.f) * static_cast<float>(s);
           const float w = 4.f + static_cast<float>(s) * (headlights ? 3.f : 2.2f);
-          const float bx = cx + std::cos(rad) * d;
-          const float by = cy + std::sin(rad) * d;
+          const float bx = pcx + std::cos(rad) * d;
+          const float by = pcy + std::sin(rad) * d;
           platform_->draw_rect(bx - w * 0.5f, by - w * 0.5f, w, w,
                                0.9f, 0.8f, 0.4f, 0.1f + 0.02f * s);
         }
@@ -5030,21 +5084,21 @@ void Game::render() {
       const InvSlot& eq = inventory_.slot(equipped_slot_);
       const WeaponDef* w = eq.empty() ? 0 : find_weapon(eq.id);
       const HoldPose hold = hold_pose_for(w);
-      platform_->draw_rect(cx - 11.f, cy + 12.f, 22.f, 4.f, 0.f, 0.f, 0.f, 0.3f);
+      platform_->draw_rect(pcx - 11.f, pcy + 12.f, 22.f, 4.f, 0.f, 0.f, 0.f, 0.3f);
       const char* body = player_body_skin(inventory_);
       char body_probe[64];
       sprite_sheet_name(body_probe, (int)sizeof(body_probe), body, 0);
       if (platform_->has_sprite(body_probe) ||
           platform_->has_sprite("player_skin_def_1-sheet0"))
-        draw_player_c2(platform_, &char_anims_, cx, cy, psz, player_.facing_deg,
+        draw_player_c2(platform_, &char_anims_, pcx, pcy, psz, player_.facing_deg,
                        player_anim_t_, melee_anim_t_, use_anim_t_,
                        moving, player_.running, hold, body);
       else
-        platform_->draw_rect(cx - 6, cy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
+        platform_->draw_rect(pcx - 6, pcy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
       // Gasmask / helmet badge overlay (inventory icon cropped small on head)
       if (wearing_gasmask() && platform_->has_sprite("gasmask-sheet0"))
         platform_->draw_sprite_frame("gasmask-sheet0",
-          cx - 6.f, cy - psz * 0.45f, 12.f, 12.f, 1, 1, 30, 30, 0.f, 0.95f);
+          pcx - 6.f, pcy - psz * 0.45f, 12.f, 12.f, 1, 1, 30, 30, 0.f, 0.95f);
 
       // Original crosshair when holding a firearm (best scope in bag)
       if (w && !w->stats.is_melee && !vehicles_.player_driving()) {
@@ -5068,8 +5122,8 @@ void Game::render() {
         else if (best == 1) { ch = "crosshair_rds-sheet0"; cw = 8; chh = 7; }
         const float rad = player_.facing_deg * 0.01745329252f;
         const float reach = crouching_ ? 48.f : 40.f;
-        const float hx = cx + std::cos(rad) * reach;
-        const float hy = cy + std::sin(rad) * reach;
+        const float hx = pcx + std::cos(rad) * reach;
+        const float hy = pcy + std::sin(rad) * reach;
         if (platform_->has_sprite(ch))
           platform_->draw_sprite(ch, hx - cw * 0.5f, hy - chh * 0.5f,
                                  static_cast<float>(cw), static_cast<float>(chh), 0.f, 0.95f);
@@ -5078,19 +5132,25 @@ void Game::render() {
       }
     }
 
+    if (tut_.active) {
+      render_tutorial_world_top(cx, cy, sc);
+      // Tutorial Forests layer (tilemap_forest|top) above the objects.
+      world_tiles_.draw_top(*platform_, "tilemap_forest", camv, sc, cx * 2.f, cy * 2.f);
+    }
     // C2 dmg_hint: "-N" Text on the Rain layer, orange (255,196,68) or red when crit, fading.
     for (const DmgHint* h = dmg_hints_.begin(); h != dmg_hints_.end(); ++h) {
       if (!h->active) continue;
       char t[16];
       std::snprintf(t, sizeof(t), "-%d", h->amount);
-      const float hx = cx + (h->pos.x - player_.pos.x) * sc;
-      const float hy = cy + (h->pos.y - player_.pos.y) * sc - 14.f;
+      const float hx = cx + (h->pos.x - camv.x) * sc;
+      const float hy = cy + (h->pos.y - camv.y) * sc - 14.f;
       if (h->crit) platform_->draw_text(hx - 6.f, hy, t, 1.f, 0.f, 0.f);
       else platform_->draw_text(hx - 6.f, hy, t, 1.f, 196.f / 255.f, 68.f / 255.f);
     }
     platform_->world_pass_end();
     platform_->profile_mark(IPlatform::Prof_Hud);
-    draw_debug_hud(*platform_, *this);
+    if (!(tut_.active && tut_.final_step > 0)) draw_debug_hud(*platform_, *this);   // final: GUI hidden
+    if (tut_.active) render_tutorial_overlay();
     if (state_ == AppState_Paused) render_pause_menu();
   } else if (state_ == AppState_Dead) {
     render_dead_screen();
@@ -5138,7 +5198,7 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_) {
     for (int i = 0; i < mapgen_.location_count(); ++i) {
       const MapLocation& L = mapgen_.location(i);
-      const WreckDef* wd = wreck_def(L.type);
+      const WreckDef* wd = wreck_def(L);
       if (!wd || dist2(L.pos, b) > 300.f * 300.f) continue;
       if (wreck_contains(*wd, L.pos, b)) return true;  // wreck big_obstacle_base
     }

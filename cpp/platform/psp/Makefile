@@ -14,7 +14,7 @@ SRC_ROOT = ../..
 SRC = $(SRC_ROOT)/src
 
 OBJS = \
-  $(SRC)/core/game.o \
+  $(SRC)/core/game.o $(SRC)/core/game_tutorial.o \
   $(SRC)/core/time.o \
   $(SRC)/core/rng.o \
   $(SRC)/core/c2_session_globals.o \
@@ -32,7 +32,7 @@ OBJS = \
   $(SRC)/world/building_solid.o \
   $(SRC)/world/building_interior.o \
   $(SRC)/world/c2_mapgen.o \
-  $(SRC)/world/map_props.o $(SRC)/world/cell_tilemaps.o \
+  $(SRC)/world/map_props.o $(SRC)/world/cell_tilemaps.o $(SRC)/world/tutorial_layout.o \
   $(SRC)/world/vehicle.o \
   $(SRC)/world/campfire.o \
   $(SRC)/world/world_tilemaps.o \

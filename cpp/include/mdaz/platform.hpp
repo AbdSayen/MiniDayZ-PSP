@@ -118,6 +118,8 @@ public:
   virtual void set_perf_overlay(bool /*on*/) {}
   virtual bool perf_overlay() const { return false; }
   // Diagnostic log line (desktop: stdout; PSP: ms0:/PSP/GAME/MINIDAYZ/log.txt).
+  // Dev benchmark (PSP autoplay.txt without "tutorial"): skip the first-launch tutorial.
+  virtual bool dev_skip_tutorial() const { return false; }
   virtual void log_line(const char* s) { std::printf("[mdaz] %s\n", s); std::fflush(stdout); }
 };
 

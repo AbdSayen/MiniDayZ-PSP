@@ -85,6 +85,11 @@ public:
   static float reload_radius_for(LocationReloadMode mode);
   MapGenerator();
   void clear();
+  // Hand-placed layout location (C2 Tutorial layout): active, no mapgen cell.
+  void add_placed(LocationType t, float x, float y, int sub, int shape) {
+    add_c2(t, x, y, 0, 0, sub, shape, -1);
+    if (count_ > 0) locs_[count_ - 1].active = true;
+  }
   void generate_new_game(int seed);
   // C2 generate_bunker_entrance when CurrentLevel >= 1.
   void ensure_bunker_entrance(Rng& rng, int current_level);

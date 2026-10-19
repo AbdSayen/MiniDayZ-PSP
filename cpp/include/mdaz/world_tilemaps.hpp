@@ -53,6 +53,9 @@ public:
   bool forest_solid_at(float wx, float wy) const;
   void draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
             float view_w, float view_h) const;
+  // Maps tagged "|top" in the data file (Tutorial "Forests" layer, drawn above the objects).
+  void draw_top(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
+                float view_w, float view_h) const;
 
 private:
   struct Map {
@@ -60,6 +63,7 @@ private:
     float x, y;
     int cols, rows, tile_w, tile_h, atlas_cols;
     int first; // offset into tiles_
+    bool top;  // data file name suffix "|top": drawn by draw_top()
   };
   Map maps_[kMaxMaps];
   int count_;
@@ -68,6 +72,8 @@ private:
   int tile_count_;
   int static_tile_count_;
 
+  void draw_maps(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
+                 float view_w, float view_h, bool top) const;
   bool alloc_map(const char* image, float x, float y, int cols, int rows,
                  int tile_w, int tile_h, int atlas_cols, int fill_id);
 };

@@ -27,6 +27,8 @@ public:
   static const int kMax = 6000;
   MapProps() : count_(0) {}
   void build(const C2Map& m, Rng& rng);
+  // Placed instances (layout "Tutorial"): def = kPropDefs index, frame = instance frame.
+  void build_list(const MapProp* in, int n);
   int count() const { return count_; }
   const MapProp& at(int i) const { return props_[i]; }
   const PropFrame* frame_of(const MapProp& p) const;

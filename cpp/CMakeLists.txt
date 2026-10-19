@@ -11,6 +11,7 @@ option(MDAZ_PSP "Configure PSP toolchain hints (does not build EBOOT alone)" OFF
 
 set(MDAZ_CORE_SOURCES
   src/core/game.cpp
+  src/core/game_tutorial.cpp
   src/core/time.cpp
   src/core/rng.cpp
   src/core/c2_session_globals.cpp
@@ -29,6 +30,7 @@ set(MDAZ_CORE_SOURCES
   src/world/building_interior.cpp
   src/world/c2_mapgen.cpp
   src/world/map_props.cpp
+  src/world/tutorial_layout.cpp
   src/world/cell_tilemaps.cpp
   src/world/vehicle.cpp
   src/world/campfire.cpp

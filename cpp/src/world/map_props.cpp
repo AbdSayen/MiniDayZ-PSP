@@ -93,6 +93,30 @@ void MapProps::build(const C2Map& m, Rng& rng) {
   count_ = n;
 }
 
+void MapProps::build_list(const MapProp* in, int n_in) {
+  // Placed layout instances (C2 layout "Tutorial"): same cell bucketing as build().
+  static MapProp tmp[kMax];
+  static unsigned short tcell[kMax];
+  int n = 0;
+  for (int i = 0; i < n_in && n < kMax; ++i) {
+    if (in[i].def < 0 || in[i].def >= static_cast<int>(sizeof(kPropDefs) / sizeof(kPropDefs[0])))
+      continue;
+    tmp[n] = in[i];
+    const PropSheet& s = kPropSheets[kPropDefs[in[i].def].sheet];
+    if (tmp[n].frame < 0 || tmp[n].frame >= s.count) tmp[n].frame = 0;
+    tcell[n] = static_cast<unsigned short>(cell_of(in[i].x, in[i].y));
+    ++n;
+  }
+  int cnt[256] = {0};
+  for (int i = 0; i < n; ++i) ++cnt[tcell[i]];
+  cell_first_[0] = 0;
+  for (int c = 0; c < 256; ++c) cell_first_[c + 1] = cell_first_[c] + cnt[c];
+  int fill[256];
+  for (int c = 0; c < 256; ++c) fill[c] = cell_first_[c];
+  for (int i = 0; i < n; ++i) props_[fill[tcell[i]]++] = tmp[i];
+  count_ = n;
+}
+
 const PropFrame* MapProps::frame_of(const MapProp& p) const {
   const PropSheet& s = kPropSheets[kPropDefs[p.def].sheet];
   return &kPropFrames[s.first + p.frame];

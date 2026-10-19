@@ -43,8 +43,9 @@ public:
   int screen_w() const { return inner_->screen_w(); }
   int screen_h() const { return inner_->screen_h(); }
 
-  void set_game(mdaz::Game* g, bool building, bool door = false, bool intro = false, bool wreck = false) {
-    game_ = g; building_ = building; door_ = door; intro_ = intro; wreck_ = wreck;
+  void set_game(mdaz::Game* g, bool building, bool door = false, bool intro = false, bool wreck = false,
+                bool tutorial = false) {
+    game_ = g; building_ = building; door_ = door; intro_ = intro; wreck_ = wreck; tutorial_ = tutorial;
     if (!intro && g) g->skip_intro(); // keep the existing shot scripts' frame numbers
   }
 
@@ -55,6 +56,7 @@ public:
     if (intro_) return frame_ < 240;
     if (door_) return poll_door(in);
     if (wreck_) return poll_wreck(in);
+    if (tutorial_) return poll_tutorial(in);
     if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -94,6 +96,94 @@ public:
     if (frame_ == 300 && game_) game_->harness_place_at_wreck(1);
     if (frame_ == 400 && game_) game_->harness_place_at_wreck(2);
     return frame_ < 470;
+  }
+
+  // --shots-tutorial: start the tutorial and walk the guides, driven by the tutorial state.
+  // Placements and the Wood piles grant are test-only shortcuts (the route is ~7000 px).
+  // Every camera_roll stop is captured as tut_roll_<text id>.bmp and dismissed.
+  void shot(const char* name) {
+    char path[512];
+    std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, name);
+    pending_shot_ = true;
+    std::snprintf(pending_path_, sizeof(pending_path_), "%s", path);
+  }
+  bool poll_tutorial(mdaz::InputState& in) {
+    if (!game_) return false;
+    if (frame_ == 1) { game_->start_tutorial(); step_ = 1; wait_ = 0; return true; }
+    const mdaz::Game::TutorialView v = game_->tutorial_view();
+    auto ok = [&]() { in.confirm = in.confirm_pressed = true; };
+    if (game_->tutorial_active() && v.camera_paused) {
+      ++roll_wait_;
+      if (roll_wait_ == 15) { char n[64]; std::snprintf(n, sizeof(n), "tut_roll_%d", v.tip_text_id); shot(n); }
+      if (roll_wait_ == 25) ok();
+      return frame_ < 5200;
+    }
+    roll_wait_ = 0;
+    if (v.camera_rolling) return frame_ < 5200;
+    // Bleeding_guide tip 13 (465) can appear whenever a zed reached the player: capture + close.
+    if (v.tip_visible && v.tip_text_id == 465) {
+      ++bleed_wait_;
+      if (bleed_wait_ == 15) shot("tut_bleeding_tip13_465");
+      if (bleed_wait_ == 25) ok();
+      return frame_ < 5200;
+    }
+    bleed_wait_ = 0;
+    ++wait_;
+    auto tip_is = [&](int id) { return v.tip_visible && v.tip_text_id == id; };
+    auto next = [&]() { ++step_; wait_ = 0; };
+    switch (step_) {
+    case 1: if (tip_is(455) && wait_ > 20) { shot("tut_01_tip3_455"); next(); } break;
+    case 2: if (wait_ == 5) { ok(); next(); } break;
+    case 3: if (tip_is(458) && wait_ > 20) { shot("tut_02_tip6_458"); next(); } break;
+    case 4: if (wait_ == 5) { ok(); next(); } break;
+    case 5: if (!v.tip_visible && wait_ > 20) { game_->harness_set_pos(1376.f, 724.f); next(); } break;
+    case 6: if (tip_is(461) && wait_ > 10) { shot("tut_03_tip0_interact_461"); next(); } break;
+    case 7: if (wait_ == 10) { in.interact = in.interact_pressed = true; next(); } break;
+    case 8: if (tip_is(453) && wait_ > 15) { shot("tut_04_tip1_inventory_453"); next(); }
+            else if (wait_ > 120) { shot("tut_04_FAILED"); next(); } break;
+    case 9: if (wait_ == 5) { in.bag = in.bag_pressed = true; next(); } break;
+    case 10: if (tip_is(454) && wait_ > 15) { shot("tut_05_tip2_hands_454"); next(); } break;
+    case 11: if (wait_ == 5) { ok(); next(); } break;
+    case 12: if (tip_is(467) && wait_ > 15) { shot("tut_06_tip12_drag_467"); next(); } break;
+    case 13: if (wait_ == 5) { ok(); next(); } break;
+    case 14: if (wait_ == 15) { in.bag = in.bag_pressed = true; next(); } break;   // close inventory
+    case 15: if (wait_ == 15) { game_->harness_set_pos(3895.f, 905.f); next(); } break;
+    case 16: if (tip_is(462)) { next(); }
+             else if (wait_ % 30 == 0 && wait_ >= 90) in.interact = in.interact_pressed = true;
+             break;
+    case 17: if (wait_ == 15) { shot("tut_07_tip7_attack_462"); next(); } break;
+    case 18: if (wait_ == 5) { in.attack = in.attack_pressed = true; next(); } break;
+    case 19: if (tip_is(463) && wait_ > 15) { shot("tut_08_tip8_reload_463"); next(); } break;
+    case 20: if (wait_ == 5) { in.reload = in.reload_pressed = true; next(); } break;
+    case 21: if (tip_is(464) && wait_ > 15) { shot("tut_09_tip9_switch_464"); next(); } break;
+    case 22: if (wait_ == 5) { in.equip_delta = 1; next(); } break;
+    case 23: if (!v.tip_visible && wait_ > 15) { game_->harness_set_pos(4950.f, 900.f); next(); } break;
+    case 24: if (wait_ == 150) { shot("tut_10_zeds"); next(); } break;
+    case 25: if (wait_ == 10) { game_->harness_set_pos(6480.f, 930.f); next(); } break;
+    case 26: if (tip_is(459)) next(); else if (wait_ > 60) in.move_x = 1.f; break;
+    case 27: if (wait_ == 15) { shot("tut_11_tip10_perks_459"); next(); } break;
+    case 28: if (wait_ == 5) { ok(); next(); } break;
+    case 29: if (tip_is(460) && wait_ > 15) { shot("tut_12_tip11_460"); next(); } break;
+    case 30: if (wait_ == 5) { ok(); next(); } break;
+    case 31: if (wait_ == 15) { game_->harness_set_pos(7480.f, 834.f); next(); } break;
+    case 32: if (v.menu_visible) next(); else if (wait_ > 90) in.move_x = 1.f; break;
+    case 33: if (wait_ == 15) { shot("tut_13_boat_no_wood_42"); next(); } break;
+    case 34: if (wait_ == 5) { ok(); game_->harness_give_item(50, 1); next(); } break;
+    case 35: if (wait_ < 30) in.move_x = -1.f; else next(); break;
+    case 36: if (v.menu_visible) next(); else in.move_x = 1.f; break;
+    case 37: if (wait_ == 15) { shot("tut_14_boat_repair_46"); next(); } break;
+    case 38: if (wait_ == 5) { ok(); next(); } break;
+    case 39:
+      if (wait_ == 240) shot("tut_15_final_125");
+      if (wait_ == 420) shot("tut_16_final_126");
+      if (wait_ == 660) shot("tut_17_final_127");
+      if (wait_ == 870) shot("tut_18_final_black");
+      if (!game_->tutorial_active() && wait_ > 900) next();
+      break;
+    case 40: if (wait_ == 30) { shot("tut_19_menu_after"); next(); } break;
+    default: return wait_ < 10;
+    }
+    return frame_ < 5200;
   }
 
   // --shots-door: start south of the police station (one test placement), push north into the
@@ -147,6 +237,14 @@ public:
       inner_->end_frame();
       return;
     }
+    if (tutorial_) {
+      if (pending_shot_) {
+        pending_shot_ = false;
+        std::printf("%s %s\n", inner_->save_screenshot(pending_path_) ? "saved" : "FAILED", pending_path_);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (building_) {
       static const struct { int frame; const char* name; } kB[] = {
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
@@ -182,6 +280,10 @@ private:
   mdaz::Game* game_ = 0;
   bool building_ = false;
   bool wreck_ = false;
+  bool tutorial_ = false;
+  int step_ = 0, wait_ = 0, roll_wait_ = 0, bleed_wait_ = 0;
+  bool pending_shot_ = false;
+  char pending_path_[512] = {0};
   bool door_ = false;
   bool intro_ = false;
   bool shot_done_[8] = {};
@@ -197,6 +299,7 @@ int main(int argc, char** argv) {
   bool shots_door = false;
   bool shots_intro = false;
   bool shots_wreck = false;
+  bool shots_tutorial = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -210,6 +313,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-wreck") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_wreck = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-tutorial") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_tutorial = true;
     }
     else if (std::strcmp(argv[i], "--shots-door") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -250,7 +357,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   game.set_audio(audio);
-  if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro, shots_wreck);
+  if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro, shots_wreck, shots_tutorial);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

@@ -6,6 +6,17 @@ Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented me
 
 ## 2026-10-19 open items
 
+### Tutorial (23:50 Baku)
+- Touch-only buttons are mapped to PSP input: tip touch = Cross (confirm); interact = Circle; inventory = bag; attack/reload/switch = their buttons. The perks button (595/598) has no port menu, so Cross on tips 10/11 stands in. The control-mode choice icons of tip 6 (457/456) are not shown; Cross closes it (stick only).
+- walk_marker button highlights are not drawn (no on-screen buttons on PSP). The camera_roll target highlight is a 44 px hole in the dark overlay instead of redrawing the target above the fade.
+- Perks/XP system is not ported: tip 10 only sets the tutorial XP value 316.
+- Car trunk loot (car_loot_point Spawn_drop) is not ported; the car encounter (id 4) still shows its hint.
+- tree_block frames 1–3 are drawn and collided as frame 0 (big_obstacle_base 17). Chopped trees vanish instead of leaving the stump frame / obst_base 8.
+- b_exit is not solid and water has no collision (the player can walk onto the boat and the sea).
+- Day_cold=1 of the tutorial start is not applied. Final-script text fade length (1 s) is an assumption; the Wait timings are from data.js.
+- Saving is disabled while the tutorial runs. The camera_roll id 8 string (476) does not exist in l_eng_ui.xml.
+- `--shots-tutorial` uses test-only placements and a Wood piles grant to reach later steps.
+
 | Issue | Impact | Status |
 |-------|--------|--------|
 | **Real PSP: black screen** (user test 2026-10-19 19:11) with `cpp/platform/psp/deploy/MINIDAYZ`: deploy EBOOT/pak were stale (17.10). Root-cause candidate found in code: `platform_psp.cpp` passed the **RAM** backbuffer pointer to `sceGuDrawBuffer/sceGuDispBuffer` (which take VRAM *offsets*) and to `sceDisplaySetFrameBuf` (display controller cannot scan out of main RAM) → black on hardware. Fix 19:14: two 512×272 RGB565 VRAM buffers at 0x44000000 (uncached) + flip via `sceDisplaySetFrameBuf(...NEXTFRAME)`, CPU frame memcpy'd each `end_frame`; GU offsets 0 / 278528; heap `PSP_HEAP_SIZE_KB(-1024)` (all-but-1MB) instead of fixed 18MB; boot log `ms0:/PSP/GAME/MINIDAYZ/log.txt` (open/append/close per line) for boot, chdir, platform init, each file read result, pak load, free memory before/after `new Game`, init ok/FAILED, first 3 frames; coloured splash with text before asset load (red splash 10 s on init failure). EBOOT rebuilt from current sources with WSL pspdev (psp-gcc 15.2.0, `make clean && make`, exit 0) and deploy/sprites.pak regenerated 19:14 | Resolved: user report 2026-10-19 20:10 — the game boots and runs on real PSP hardware | **Протестирована** (real PSP, user report) |

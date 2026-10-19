@@ -422,10 +422,22 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
   CellTilemaps are statically allocated, nothing grows at runtime). Ground and objects passes are
   active in the perf lines (ground ~1.1-1.4 ms, objects ~2.2 ms per frame, emulator timing). No OOM.
 
-## B2c fix — Zed_check uses "For each" (2026-10-19, 23:10 Baku)
+## B2c fix — Zed_check uses "For each" (2026-10-19, 23:01 Baku)
 - Condition c90 is System "For each" (confirmed by the Tutorial start-of-layout events, which give every
   tree / building instance its obst_base / interior through c90). Zed_check therefore culls EVERY
   NPC beyond respawn_radius_npc (not one random per type) and fills EVERY eligible zed_resp_point
   (not one random point). Tanks are not in the original cull list and are kept.
 - Earlier "pick random" reading of c90 elsewhere should be audited (KNOWN_ISSUES).
 
+
+## Tutorial mode — C2 layout "Tutorial" (2026-10-19, 23:50 Baku)
+
+Status: **Реализована, протестирована** (unit tests + desktop playthrough with screenshots + PPSSPP boot into the tutorial). Not yet **Сверена с оригиналом** side by side.
+
+- Entry (Menu_Events): after the intro the tutorial starts when `settings.cfg` has no `tutorial_finished=1` (C2 localStorage `Tutorial_map_finished`). Tutorial_script_final sets it to 1 and returns to the menu. PSP `autoplay.txt` benchmarks skip the tutorial unless they contain `tutorial`.
+- Layout (`tools/extract_tutorial.py` → `src/world/tutorial_layout.inc`, `data/tutorial_tilemaps.txt`): 6 buildings with interiors, 2 hammer_crash frame 0 (big_obstacle_base 0), 55 trees, 33 props, 10 ground items plus Spawn_drop 402/450, 3 zed points, crow, bots, b_exit boat, 3 pl12 zones, 8 tilemaps (Forests layer drawn above objects). mapgen is destroyed, so loot/airdrop/bandit respawn, quest bandits and location streaming are off.
+- Steps (Tutorial_events): start chain (tip 3 at 2.5 s, encounters at 4.5 s), UI_guide (tips 3/6), Inventory_guide (tips 0/1/2/12), Firearm_guide (tips 7/8/9, zeds blind), Perks_guide (zone IV0=1 → tips 10/11, XP 316, crows), Bleeding_guide (zed contact → bleeding → tip 13), Tutorial_encounter (camera_roll ids 1–11, text 469–475/451/452/468, timescale 0.1/0), death guard (blood ≤ 5 → 100), boat Level_menu (42/41 or 46/44/45), Tutorial_script_final (bots, log 125–127, fade, 3 Ak74_1 shots, tutor_death).
+- Tree chop now follows C2: 2 hits, then 2× Wood sticks (38) + 1× Wood piles (50) dropped at x±30, y+40+rand(10). Only tree types 1–6 can be chopped. The old random chop was removed.
+- Tests: `mdaz_tests` (tutorial layout counts, tip 3/6 flow, movement block, death guard) pass on Windows.
+- Desktop harness: `minidayz_desktop.exe --shots-tutorial <dir>` saved 25 shots covering every tip, 5 camera rolls, the boat menus and the final script.
+- PSP memory check: PPSSPP headless with the tutorial loaded `data/tutorial_tilemaps.txt` (19 KB) at 4.2 s. The memory probe logged "max free block 512 KB, total free 764 KB" at 1 s and 20 s in game, the same as before game init. This is a boot check only, not an FPS claim.

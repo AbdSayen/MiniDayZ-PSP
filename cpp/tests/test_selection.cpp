@@ -41,6 +41,8 @@ struct GameTestAccess {
   static void inv_ui(Game& g, const InputState& in) { g.update_inventory_ui(in); }
   // 2026-10-19 queue: restored Game bodies + debug teleport + NPC forest block.
   static MapGenerator& map(Game& g) { return g.mapgen_; }
+  static void tut_step(Game& g, float dt, const InputState& in) { g.update_tutorial(dt, in); }
+  static int tree_count(Game& g) { return g.tree_count_; }
   static Player& pl(Game& g) { return g.player_; }
   static ZombieSystem& zeds(Game& g) { return g.zombies_; }
   static AnimalSystem& animals(Game& g) { return g.animals_; }
@@ -538,6 +540,36 @@ int test_selection() {
   check(Game::next_hotbar_slot(0, 0, -1) == 7, "delta -1 wraps 0 -> 7");
   check(Game::next_hotbar_slot(42, 0, 0) == 0, "bad index clamps to 0");
   check(Game::next_hotbar_slot(3, 9, 0) == 3, "digit 9 ignored (8 quick slots)");
+
+  // 13. Tutorial layout + first guide steps (C2 Tutorial_events).
+  {
+    g.start_tutorial();
+    check(g.tutorial_active(), "tutorial active after start_tutorial");
+    check(A::map(g).location_count() == 8, "tutorial: 6 buildings + 2 hammer_crash");
+    check(A::tree_count(g) == 55, "tutorial: 55 trees");
+    check(A::zeds(g).alive_count() == 3, "tutorial: 3 zeds (zed_resp_point frame 0)");
+    check(A::pl(g).pos.x == 577.f && A::pl(g).pos.y == 1001.f, "tutorial: player start (577,1001)");
+    check(A::surv(g).food == 75.f && A::surv(g).water == 75.f && A::surv(g).temperature == 75.f,
+          "tutorial: IV13..16 = 75,75,100,75");
+    InputState none;
+    for (int i = 0; i < 160; ++i) A::tut_step(g, 1.f / 60.f, none);   // 2.67 s
+    Game::TutorialView v = g.tutorial_view();
+    check(v.tip_visible && v.tip_text_id == 455 && v.ui_step == 3, "tutorial: tip 3 (text 455) at 2.5 s");
+    const Vec2 p0 = A::pl(g).pos;
+    InputState mv; mv.move_x = 1.f;
+    for (int i = 0; i < 30; ++i) A::tut_step(g, 1.f / 60.f, mv);
+    check(A::pl(g).pos.x == p0.x, "tutorial: movement blocked while the hint is on screen");
+    InputState ok; ok.confirm = ok.confirm_pressed = true;
+    A::tut_step(g, 1.f / 60.f, ok);
+    v = g.tutorial_view();
+    check(v.tip_visible && v.tip_text_id == 458 && v.ui_step == 4, "tutorial: tip 6 (458) after tip touch");
+    A::tut_step(g, 1.f / 60.f, ok);
+    v = g.tutorial_view();
+    check(!v.tip_visible && v.ui_step == 5, "tutorial: hint closed, ui_step 5");
+    A::surv(g).blood = 3.f;
+    A::tut_step(g, 1.f / 60.f, none);
+    check(A::surv(g).blood == 100.f, "tutorial: blood <= 5 -> 100 (no death)");
+  }
 
   delete gp;
   std::printf("test_selection: %d failure(s)\n", g_fail);

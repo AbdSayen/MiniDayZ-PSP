@@ -250,6 +250,7 @@ public:
       nocache_ = std::strstr(b, "nocache") != 0;   // A/B check of the ground cache
       force_overlay_ = std::strstr(b, "overlay") != 0;
       auto_pause_ = std::strstr(b, "pause") != 0;     // open pause, focus HALF RES (menu check)
+      auto_tutorial_ = std::strstr(b, "tutorial") != 0; // benchmark the tutorial instead of a new game
       if (force_overlay_) overlay_ = true;
       mdaz_boot_log("autoplay.txt found: scripted benchmark input%s", force_hr_ ? " + half-res" : "");
       if (force_hr_) hr_ = true;
@@ -414,6 +415,8 @@ public:
     else if (leg == 2) out.move_x = -1.f;
     else out.move_y = -1.f;
   }
+
+  bool dev_skip_tutorial() const { return autoplay_ && !auto_tutorial_; }
 
   double time_seconds() {
     u64 t = 0;
@@ -1180,6 +1183,7 @@ private:
   bool overlay_, force_overlay_;
   int rf_fail_logs_;
   bool autoplay_;
+  bool auto_tutorial_ = false;
   bool auto_pause_ = false;
   bool nocache_;
   unsigned auto_frame_;

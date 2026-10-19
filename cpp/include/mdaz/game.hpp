@@ -53,6 +53,14 @@ public:
   // TEST HARNESS ONLY (desktop --shots-building): puts the player inside (mode 0) or just south
   // of (mode 1) the first police/other Solid building. Never called by gameplay code.
   bool harness_place_at_building(int mode);
+  // Test-only (--shots-tutorial): placement and an item grant to reach later tutorial steps.
+  void harness_set_pos(float x, float y) { player_.pos = Vec2(x, y); }
+  void harness_give_item(int id, int n) {   // frees the last used bag slot when the bag is full
+    if (inventory_.add_item(static_cast<ItemId>(id), n, items_)) return;
+    for (int i = inventory_.slot_count() - 1; i > 0; --i)
+      if (!inventory_.slot(i).empty()) { inventory_.remove_at(i, inventory_.slot(i).count); break; }
+    inventory_.add_item(static_cast<ItemId>(id), n, items_);
+  }
   // TEST HARNESS ONLY (--shots-wreck): 0 = south of the first Humvee wreck, 1 = heli wreck,
   // 2 = Zed_check from 1600 px of a frame-0 zed_resp_point, then stand at the point.
   bool harness_place_at_wreck(int mode);
@@ -130,9 +138,74 @@ public:
   Inventory& inventory_mut() { return inventory_; }
   void set_state(AppState s) { state_ = s; }
   void start_new_game(Difficulty d);
+  // C2 layout "Tutorial" (Tutorial_events): started on first launch until the localStorage key
+  // Tutorial_map_finished = "1" (settings.cfg tutorial_finished=1).
+  void start_tutorial();
+  bool tutorial_active() const { return tut_.active; }
+  bool tutorial_finished() const { return tutorial_finished_; }
+  void set_tutorial_finished(bool f) { tutorial_finished_ = f; }
+  // Read-only tutorial view for HUD/tests.
+  struct TutorialView {
+    bool tip_visible; bool tip_two; int tip_text_id; int tip_id; bool camera_paused; bool camera_rolling;
+    int ui_step, inv_step, perk_step, bleed_step; int final_step; bool menu_visible;
+  };
+  TutorialView tutorial_view() const;
 
 private:
   friend struct GameTestAccess; // tests/test_selection.cpp
+  // ---- C2 Tutorial (src/core/game_tutorial.cpp) ----
+  struct TutorialRun {
+    bool active;
+    float t;                 // seconds since layout start (real time)
+    int start_phase;         // layout-start Wait chain
+    // C2 globals (Tutorial_events / Game_events)
+    int moveblock, blocked_gui, onscreen;            // Tutor_hint_moveblock / _blocked_gui / _onscreen
+    int ui_step, inv_step, perk_step, bleed_step;    // tutor_*_step
+    int death;                                       // tutor_death
+    bool found[12];                                  // Tutor_*_found (camera_roll ids 1..11)
+    bool firearm_tip_done;                           // trigger once (Firearm_guide)
+    bool encounter_on; float encounter_t;            // group Tutorial_encounter, every 1 s
+    float bleed_t;                                   // Bleeding_guide every 1 s
+    int experience_points;                           // expierence_points (tip 10 sets 316)
+    int die_count;                                   // tutorDieCount
+    // tip (gui_tutor_tip_bg + text t647 + fade_sprite + walk_marker)
+    bool tip_visible; bool tip_two; bool tip_top; int tip_text; int tip_id;
+    float dark;              // fade_sprite opacity 0..1
+    int highlight;           // walk_marker target: 0 none, 1 interact, 2 inventory, 3 attack, 4 reload, 5 switch, 6 perks, 7 blood bar
+    // camera_roll / camera_roll_back
+    int roll_id; int roll_phase;   // 0 none, 1 to target, 2 paused at target, 3 back to player
+    Vec2 cam; Vec2 roll_target; int roll_kind; int roll_index;
+    float timescale;
+    bool zeds_blind;
+    // pl12 zones (IV0 1 perks, 2 final, 3 barrier)
+    bool zone_alive[4]; Vec2 zone_pos[4]; Vec2 zone_size[4];
+    // b_exit (boat) Level_menu
+    bool menu_visible; int menu_kind;   // 1 = need wood (42), 3 = repair (46)
+    int boat_frame;
+    // Tutorial_script_final
+    int final_step; float final_t; Vec2 bot[2]; int bot_anim[2]; float bot_face[2];
+    int say_id; Vec2 say_pos; float say_t; float fade; int shots;
+    bool zed_hit_prev;
+  };
+  TutorialRun tut_;
+  bool tutorial_finished_;
+  float tut_saved_aggro_[128];
+  void update_tutorial(float dt, const InputState& in);
+  void tut_show_tip(int p0, int id, int p2);
+  void tut_close_tip();
+  void tut_camera_roll(int id, Vec2 target, int kind, int index);
+  void tut_camera_roll_back();
+  void tut_set_zeds_blind(bool blind);
+  void tut_update_final(float dt);
+  void tut_start_final();
+  bool tut_los(Vec2 a) const;
+  Vec2 render_cam() const;
+  void render_tutorial_world_top(float cx, float cy, float sc) const;
+  void render_tutorial_overlay() const;
+  void tut_leave_to_menu();
+  // C2 trees: IV0 hit points (2 for tree types 1..6) -> fall at 0 (2x Wood sticks + 1 Wood piles).
+  unsigned char tree_hp_[4096];
+
   IPlatform* platform_;
   IAudio* audio_;
   AppState state_;

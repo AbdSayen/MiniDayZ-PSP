@@ -76,6 +76,8 @@ bool WorldTilemaps::load(IPlatform& platform, const char* path) {
          next_int(p, end, m.cols) && next_int(p, end, m.rows) && next_int(p, end, m.tile_w) &&
          next_int(p, end, m.tile_h) && next_int(p, end, m.atlas_cols);
     if (!ok) break;
+    m.top = false;
+    if (char* bar = std::strchr(m.image, '|')) { m.top = std::strcmp(bar, "|top") == 0; *bar = 0; }
     m.x = static_cast<float>(x);
     m.y = static_cast<float>(y);
     m.first = tile_count_;
@@ -123,6 +125,7 @@ bool WorldTilemaps::alloc_map(const char* image, float x, float y, int cols, int
   m.tile_h = tile_h;
   m.atlas_cols = atlas_cols;
   m.first = tile_count_;
+  m.top = false;
   for (int i = 0; i < cells; ++i)
     tiles_[tile_count_ + i] = static_cast<short>(fill_id);
   tile_count_ += cells;
@@ -296,11 +299,22 @@ bool WorldTilemaps::forest_solid_at(float wx, float wy) const {
 
 void WorldTilemaps::draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
                          float view_w, float view_h) const {
+  draw_maps(platform, prefix, cam, scale, view_w, view_h, false);
+}
+
+void WorldTilemaps::draw_top(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
+                             float view_w, float view_h) const {
+  draw_maps(platform, prefix, cam, scale, view_w, view_h, true);
+}
+
+void WorldTilemaps::draw_maps(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
+                              float view_w, float view_h, bool top) const {
   const std::size_t plen = std::strlen(prefix);
   const float half_w = view_w * 0.5f / scale;
   const float half_h = view_h * 0.5f / scale;
   for (int i = 0; i < count_; ++i) {
     const Map& m = maps_[i];
+    if (m.top != top) continue;
     if (std::strncmp(m.image, prefix, plen) != 0) continue;
     if (!platform.has_sprite(m.image)) continue;
     int c0 = static_cast<int>(std::floor((cam.x - half_w - m.x) / m.tile_w));

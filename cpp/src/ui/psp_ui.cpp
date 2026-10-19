@@ -101,6 +101,9 @@ int text_wrap(IPlatform& p, float x, float y, float max_w, int max_lines, const 
     while (*cur == ' ') ++cur;
     if (!*cur) break;
     int len = static_cast<int>(std::strlen(cur));
+    // Explicit line break ("\n" in l_eng_ui.xml strings) ends the line.
+    const char* nl = std::strchr(cur, '\n');
+    if (nl) len = static_cast<int>(nl - cur);
     int take = len;
     if (len > max_chars) {
       take = max_chars;
@@ -112,10 +115,11 @@ int text_wrap(IPlatform& p, float x, float y, float max_w, int max_lines, const 
     if (take > static_cast<int>(sizeof(buf)) - 1) take = static_cast<int>(sizeof(buf)) - 1;
     std::memcpy(buf, cur, static_cast<size_t>(take));
     buf[take] = 0;
-    const bool last = (lines == max_lines - 1) && cur[take] != 0;
+    const bool last = (lines == max_lines - 1) && cur[take] != 0 && cur[take] != '\n';
     if (last) text_fit(p, x, y + lines * kLineH, max_w, cur, r, g, b);
     else text(p, x, y + lines * kLineH, buf, r, g, b);
     cur += take;
+    if (*cur == '\n') ++cur;
     ++lines;
   }
   return lines;
