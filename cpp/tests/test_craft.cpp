@@ -34,6 +34,7 @@ int test_craft() {
 
   {
     mdaz::Inventory inv3;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv3.restore_worn(tw_, 4); } // test: 16 C2 slots
     inv3.add_item(40, 1, db);
     inv3.add_item(41, 1, db);
     const mdaz::CraftRecipe* bag = 0;
@@ -51,6 +52,7 @@ int test_craft() {
 
   {
     mdaz::Inventory inv4;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv4.restore_worn(tw_, 4); } // test: 16 C2 slots
     inv4.add_item(37, 1, db);
     inv4.add_item(41, 1, db);
     const mdaz::CraftRecipe* bow = 0;
@@ -68,6 +70,7 @@ int test_craft() {
 
   {
     mdaz::Inventory inv8;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv8.restore_worn(tw_, 4); } // test: 16 C2 slots
     inv8.add_item(37, 1, db);
     inv8.add_item(41, 1, db);
     const mdaz::CraftRecipe* rod = 0;
@@ -85,6 +88,7 @@ int test_craft() {
 
   {
     mdaz::Inventory invPack;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; invPack.restore_worn(tw_, 4); } // test: 16 C2 slots
     invPack.add_item(454, 1, db);
     invPack.add_item(38, 3, db);
     const mdaz::CraftRecipe* pack = 0;
@@ -102,6 +106,7 @@ int test_craft() {
 
   {
     mdaz::Inventory invCk;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; invCk.restore_worn(tw_, 4); } // test: 16 C2 slots
     if (mdaz::craft_any_possible(invCk, false)) {
       std::printf("FAIL craft_any_possible empty inv\n");
       ++fail;
@@ -135,6 +140,7 @@ int test_craft() {
     fdb.load_from_json_string(
       "{\"items\":[{\"id\":38,\"name\":\"Wood sticks\"},{\"id\":50,\"name\":\"Woodpile\"}]}");
     mdaz::Inventory f;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; f.restore_worn(tw_, 4); } // test: 16 C2 slots
     f.add_item(38, 5, fdb);
     if (!mdaz::craft_build_fence1_can(f)) {
       std::printf("FAIL craft_build_fence1_can\n");

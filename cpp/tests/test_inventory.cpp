@@ -30,11 +30,15 @@ int test_inventory() {
   }
 
   mdaz::Inventory inv;
-  if (inv.capacity() != 12) {
+  if (inv.capacity() != 1) {
     std::printf("FAIL base capacity %d\n", inv.capacity());
     ++fail;
   } else {
-    std::printf("OK   base bag capacity 12\n");
+    std::printf("OK   base capacity 1 (C2 t381)\n");
+  }
+  {
+    const mdaz::ItemId w[2] = {350, 300};
+    inv.restore_worn(w, 2);
   }
   if (!inv.add_item(1, 1, db) || inv.slot(0).id != 1) {
     std::printf("FAIL add_item\n");
@@ -148,12 +152,21 @@ int test_inventory() {
     mdaz::Inventory binv;
     binv.add_item(454, 1, bagdb);
     binv.wear_clothing(0, bagdb);
-    if (binv.capacity() != 15) {
+    if (binv.capacity() != 4 || binv.slot(0).id != 0) {
       std::printf("FAIL improvised bag cap %d\n", binv.capacity());
       ++fail;
     } else {
-      std::printf("OK   improvised bag capacity 15\n");
+      std::printf("OK   improvised bag worn: 1+3 slots, left bag\n");
     }
+    binv.add_item(450, 1, bagdb);
+    binv.wear_clothing(0, bagdb);
+    if (binv.capacity() != 4 || binv.slot(0).id != 454 || binv.worn_count() != 1) {
+      std::printf("FAIL backpack swap\n"); ++fail;
+    } else std::printf("OK   taloon swaps with improvised bag (3 slots)\n");
+    const mdaz::ItemId w2[4] = {300, 355, 402, 452};
+    binv.restore_worn(w2, 4);
+    if (binv.capacity() != 1 + 2 + 3 + 2 + 7) { std::printf("FAIL full cap %d\n", binv.capacity()); ++fail; }
+    else std::printf("OK   jeans+gorka+assault+mountain = 15 slots\n");
   }
 
   {
@@ -163,11 +176,11 @@ int test_inventory() {
     mdaz::Inventory cinv;
     const int base = cinv.capacity();
     cinv.add_item(88, 1, casedb);
-    if (cinv.capacity() != base + 3) {
-      std::printf("FAIL protector case cap %d want %d\n", cinv.capacity(), base + 3);
+    if (cinv.capacity() != base) {
+      std::printf("FAIL protector case cap %d want %d\n", cinv.capacity(), base);
       ++fail;
     } else {
-      std::printf("OK   protector case +3 capacity\n");
+      std::printf("OK   protector case adds no slots (invented bonus removed)\n");
     }
   }
 

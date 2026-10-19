@@ -18,6 +18,9 @@ struct WornSlot {
   WornSlot() : id(0), iv6(0.f) {}
 };
 
+int clothing_container_slots(ItemId id);
+int clothing_region(ItemId id);
+
 class Inventory {
 public:
   Inventory();
@@ -28,7 +31,7 @@ public:
   bool add_item(ItemId id, int count, const ItemDatabase& db);
   bool remove_at(int slot, int count);
   bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db, Rng* rng = 0);
-  // Equip clothing from inventory into worn slot (does not remove from bag — stub).
+  // Equip clothing: moves it out of the bag into its worn region (swap with old piece).
   bool wear_clothing(int slot, const ItemDatabase& db);
   void restore_worn(const ItemId* ids, int count);
   void restore_worn_iv6(const ItemId* ids, const float* iv6, int count);
@@ -47,7 +50,7 @@ public:
   InvSlot& slot(int i);
   const InvSlot& slot(int i) const;
   int slot_count() const { return kInventorySlots; }
-  // Usable bag slots (base 12 + backpack bonuses); physical array stays kInventorySlots.
+  // Usable slots: 1 base (C2 t381) + container sizes of worn pieces.
   int capacity() const;
   int worn_count() const { return worn_count_; }
   ItemId worn_at(int i) const { return (i >= 0 && i < worn_count_) ? worn_[i].id : 0; }

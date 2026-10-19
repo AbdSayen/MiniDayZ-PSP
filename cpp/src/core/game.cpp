@@ -583,40 +583,14 @@ void Game::start_new_game(Difficulty d) {
     player_.perk_hunter = true;
   }
   inventory_.clear();
-  // Approximate 1.4.1-style survival start (exact C2 seed table not extracted —
-  // see KNOWN_ISSUES). No free military guns/armor.
-  inventory_.add_item(1, 1, items_);   // canned beans
-  inventory_.add_item(6, 1, items_);   // apple
-  inventory_.add_item(18, 1, items_);  // bandage
-  inventory_.add_item(54, 1, items_);  // waterbottle
-  inventory_.add_item(42, 1, items_);  // hunter knife
-  inventory_.add_item(26, 2, items_);  // rags
-  inventory_.add_item(38, 3, items_);  // sticks
-  inventory_.add_item(24, 2, items_);  // matches
-  inventory_.add_item(350, 1, items_); // t-shirt
-  inventory_.add_item(300, 1, items_); // jeans
-  if (d == Difficulty_Novice) {
-    inventory_.add_item(18, 1, items_);  // extra bandage
-    inventory_.add_item(202, 1, items_); // hatchet
-    inventory_.add_item(453, 1, items_); // school backpack
-  } else if (d == Difficulty_Regular) {
-    inventory_.add_item(202, 1, items_); // hatchet
-  } else {
-    // Veteran: leaner — knife + food only extras already given
-    inventory_.add_item(38, 2, items_);
+  // C2 start (Player_skin_type 1, the default skin): Spawn_drop T-shirt 350 + Jeans 300,
+  // "picky" x2 equips them, then base inventory t381[0] = 42 (Hunter knife).
+  {
+    const ItemId worn[2] = {350, 300};
+    inventory_.restore_worn(worn, 2);
   }
+  inventory_.add_item(42, 1, items_);
   equipped_slot_ = 0;
-  for (int i = 0; i < inventory_.slot_count(); ++i) {
-    if (inventory_.slot(i).id == 202 || inventory_.slot(i).id == 42) {
-      equipped_slot_ = i;
-      break;
-    }
-  }
-  for (int i = 0; i < inventory_.slot_count(); ++i) {
-    const ItemId wid = inventory_.slot(i).id;
-    if (wid == 350 || wid == 300 || wid == 453)
-      inventory_.wear_clothing(i, items_);
-  }
   mag_weapon_id_ = 0;
   mag_rounds_ = 0;
   adrenaline_t_ = 0.f;
@@ -721,43 +695,6 @@ void Game::start_new_game(Difficulty d) {
   }
   in_bunker_ = false;
   bunker_looted_ = false;
-
-  // Starter craft materials so craft path is playable
-  inventory_.add_item(26, 2, items_); // rags
-  inventory_.add_item(38, 5, items_); // wood sticks (arrows craft)
-  inventory_.add_item(37, 1, items_); // ashwood
-  inventory_.add_item(41, 2, items_); // rope (bow + bag)
-  inventory_.add_item(40, 1, items_); // burlap sack
-  inventory_.add_item(42, 1, items_); // hunter knife (arrow tool)
-  inventory_.add_item(63, 1, items_); // energy drink
-  inventory_.add_item(39, 2, items_); // duct tape
-  inventory_.add_item(87, 1, items_); // fishing rod
-  inventory_.add_item(36, 1, items_); // cleaning kit
-  inventory_.add_item(35, 1, items_); // sewing kit
-  inventory_.add_item(34, 1, items_); // heatpack
-  inventory_.add_item(46, 1, items_); // tetracycline
-  inventory_.add_item(354, 1, items_); // Jacket — equip with C for insulation
-  inventory_.add_item(300, 1, items_); // Jeans
-  inventory_.add_item(353, 1, items_); // Raincoat
-  inventory_.add_item(24, 3, items_);  // Matches
-  inventory_.add_item(23, 1, items_);  // Campfire kit
-  inventory_.add_item(50, 2, items_);  // Wood piles
-  inventory_.add_item(24, 2, items_);  // Matches
-  inventory_.add_item(60, 1, items_);  // Raw steak to cook at fire
-  inventory_.add_item(53, 1, items_);  // Gasoline for car
-  inventory_.add_item(59, 1, items_);  // Car toolbox
-  inventory_.add_item(19, 1, items_);  // Blood bag
-  inventory_.add_item(28, 1, items_);  // Saline
-  inventory_.add_item(45, 1, items_);  // Morphine
-  inventory_.add_item(20, 2, items_);  // Flares
-  inventory_.add_item(265, 1, items_); // NVG
-  inventory_.add_item(21, 2, items_);  // F1 grenades
-  inventory_.add_item(85, 1, items_);  // MRE
-  inventory_.add_item(22, 2, items_);  // Batteries for torch
-  inventory_.add_item(353, 1, items_); // Raincoat
-  inventory_.add_item(456, 1, items_); // Civilian tent
-  inventory_.add_item(102, 1, items_); // Molotov
-  inventory_.add_item(250, 1, items_); // Gasmask
 
   state_ = AppState_Playing;
   if (audio_) audio_->play("ambient", 0.25f);

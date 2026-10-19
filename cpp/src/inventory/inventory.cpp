@@ -32,32 +32,34 @@ void Inventory::clear() {
 InvSlot& Inventory::slot(int i) { return slots_[i]; }
 const InvSlot& Inventory::slot(int i) const { return slots_[i]; }
 
+// C2 container sizes (data.js a198 "set size" when the piece is equipped):
+// pants t185, outerwear t219, vest t267, backpack t189. Unknown ids -> 0 slots.
+int clothing_container_slots(ItemId id) {
+  switch (id) {
+    case 300: return 2; case 301: return 3; case 302: return 1; case 303: return 3;
+    case 304: return 2; case 305: return 2; case 306: return 3;
+    case 350: return 0; case 351: case 352: return 1; case 353: return 2; case 354: return 1;
+    case 355: return 3; case 356: case 357: return 2; case 358: return 1; case 359: return 2;
+    case 360: return 2; case 361: return 1; case 362: return 1; case 363: return 2;
+    case 364: return 3; case 365: return 1;
+    case 401: return 1; case 402: return 2; case 403: return 3; case 405: return 2;
+    case 450: return 3; case 451: return 5; case 452: return 7; case 453: return 2;
+    case 454: return 3; case 455: return 5; case 456: return 0; case 457: return 6;
+    default: return 0;
+  }
+}
+
+// Worn region: one piece per region (head 25x, pants 30x, outerwear 35x, vest 40x,
+// backpack 45x); other wearables are their own region.
+int clothing_region(ItemId id) {
+  if (id >= 250 && id < 500) return id / 50;
+  return 1000 + id;
+}
+
+// C2: base "inventory" array t381 = 1 slot (hands; starter knife) + worn containers.
 int Inventory::capacity() const {
-  int cap = 12; // pants / base carry
-  auto apply_bag = [&](ItemId id) {
-    if (id == 454) { if (cap < 15) cap = 15; }       // Improvised bag
-    else if (id == 455) { if (cap < 18) cap = 18; }  // Improvised backpack
-    else if (id == 450 || id == 453) { if (cap < 18) cap = 18; }
-    else if (id == 451 || id == 452) { if (cap < 20) cap = 20; }
-    else if (id == 457) { if (cap < 22) cap = 22; }  // Tortilla
-  };
-  bool has_bandolier = false;
-  bool has_case = false;
-  for (int i = 0; i < worn_count_; ++i) {
-    apply_bag(worn_[i].id);
-    if (worn_[i].id == 83) has_bandolier = true;
-    if (worn_[i].id == 88) has_case = true; // Protector Case
-  }
-  // Bags in inventory also expand carry (wear optional stub)
-  for (int i = 0; i < kInventorySlots; ++i) {
-    if (!slots_[i].empty()) {
-      apply_bag(slots_[i].id);
-      if (slots_[i].id == 83) has_bandolier = true;
-      if (slots_[i].id == 88) has_case = true;
-    }
-  }
-  if (has_bandolier) cap += 2; // ammo belts free a couple pockets
-  if (has_case) cap += 3;      // Protector Case organized pockets
+  int cap = 1;
+  for (int i = 0; i < worn_count_; ++i) cap += clothing_container_slots(worn_[i].id);
   if (cap > kInventorySlots) cap = kInventorySlots;
   return cap;
 }
@@ -262,14 +264,25 @@ bool Inventory::wear_clothing(int slot_i, const ItemDatabase& db) {
                         def->name.find("backpack") != std::string::npos ||
                         def->name.find("Bandolier") != std::string::npos;
   if (!wearable) return false;
-  if (worn_count_ >= kMaxWorn) return false;
-  // Avoid duplicates
-  for (int i = 0; i < worn_count_; ++i) {
-    if (worn_[i].id == slots_[slot_i].id) return true;
+  const ItemId nid = slots_[slot_i].id;
+  const int reg = clothing_region(nid);
+  int wi = -1;
+  for (int i = 0; i < worn_count_; ++i)
+    if (clothing_region(worn_[i].id) == reg) { wi = i; break; }
+  if (wi < 0 && worn_count_ >= kMaxWorn) return false;
+  // Equipping moves the piece out of the bag; a piece already worn in that region
+  // goes back into the vacated slot (swap).
+  ItemId old_id = 0;
+  if (wi >= 0) old_id = worn_[wi].id; else wi = worn_count_++;
+  worn_[wi].id = nid;
+  worn_[wi].iv6 = clothing_iv6_max(nid);
+  if (slots_[slot_i].count > 1) {
+    slots_[slot_i].count -= 1;
+    if (old_id) { add_item(old_id, 1, db); }
+  } else {
+    slots_[slot_i] = InvSlot();
+    if (old_id) { slots_[slot_i].id = old_id; slots_[slot_i].count = 1; }
   }
-  worn_[worn_count_].id = slots_[slot_i].id;
-  worn_[worn_count_].iv6 = clothing_iv6_max(slots_[slot_i].id);
-  ++worn_count_;
   return true;
 }
 
