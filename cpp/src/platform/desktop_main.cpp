@@ -9,6 +9,7 @@
 #endif
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace {
@@ -122,7 +123,7 @@ public:
   // --shots-building: test-only placement next to a Solid building, then walk into its walls.
   bool poll_building(mdaz::InputState& in) {
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
-    if (frame_ == 200 && game_) game_->harness_place_at_building(1); // south of the building
+    if (frame_ == 200 && game_) game_->harness_place_at_building(std::getenv("MDAZ_HARNESS_LOOT") ? 3 : 1); // south of the building
     if (frame_ > 260 && frame_ < 420) in.move_y = -1.f;              // walk north into the wall
     if (frame_ == 480 && game_) game_->harness_place_at_building(0); // inside (warmzone)
     if (frame_ > 540 && frame_ < 700) in.move_x = -1.f;              // walk west into a wall

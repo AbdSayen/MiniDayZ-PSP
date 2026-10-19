@@ -630,3 +630,7 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - map_element IV3 = 1 + save v19 (opened-trunk bitset 751 B + ach_gta); load re-applies car frame 1 and removes the point. ach_gta +1 per open (SEED_RUN = 0).
 - Outline: the parent event sets every car_loot_point SetVisible(0) each tick, so the outline is drawn only for the current avalible_interaction = 3 point (was: stayed visible).
 - Evidence: --shots-trunk log: f220 stage 7 -> f230 stage 4 -> f240 open "walk prop 365 frame 2 -> item 12 x10", car_frame 0 -> 1, ach_gta 1; 61 opens -> 31 found; counts e.g. 45acp x12, 9x18 x15. Test "v19 opened trunks + ach_gta saved". mdaz_tests ALL TESTS PASSED. Shots cpp/shots_trunk (trunk_0_near, trunk_1_walking, trunk_2_opened, trunk_3_lid_up). Status: **проверено** (desktop); PSP not run.
+
+## Loot vs roofs / walls (item 2, 2026-10-20)
+- DONE: loot piles are now drawn in the C2 layer order: Buildings_base 17 (interior, only when the player is in the warmzone) < items_on_ground 18 < exterior shells (Buildings_bg 31 / Buildings 41). Exterior roofs cover loot inside buildings; inside, the interior is drawn and loot on top of it (House_transparenting sid1340260606749434: roof opacity 0 when player_base overlaps warmzone 337).
+- Evidence: MDAZ_HARNESS_LOOT=1 minidayz_desktop --shots-building (test-only pile in police warmzone); before shows the pile over the roof, after hides it; inside shot shows it on the interior floor.

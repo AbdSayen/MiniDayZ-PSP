@@ -295,3 +295,6 @@ Open/ambiguous:
 - walk_marker collision: player_base instance assumed 2x2 (sprite size) vs walk_marker poly 4x4 -> arrival window +-3 px.
 - No explicit walk cancel in data.js; PSP: stick/D-pad input cancels (documented adaptation).
 - Original-vs-port gameplay screenshot still not taken (browser original needs manual play); car frames compared with car_*-sheet0 frames 0/1.
+
+## House_transparenting not fully ported (found during item 2)
+C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t928): when not in the warmzone, the interior plays anim "out"; if player Y < exterior imagepoint 1 the roof goes to opacity 25 and the interior moves to Buildings_base_top with Tint + outline (t943 Outline param 3 = 1); otherwise opacity 100. Exterior layer: player Y >= imagepoint 2 -> Buildings_bg, else Buildings (above player). door#340 opacity 100/25, rain_roof/rain_loop audio swap. Leaving t928 (TriggerOnce) resets opacity 100, Buildings_bg, anim "in". The port has no exterior imagepoints 1/2 in BuildingShape yet, so the 25 % roof and the layer swap are missing; scheduled with item 7 (global depth sort).

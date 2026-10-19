@@ -4328,6 +4328,51 @@ void Game::render() {
     else if (weather_.is_night) platform_->clear(0.05f, 0.06f, 0.08f);
     else platform_->clear(0.14f, 0.18f, 0.11f);
 
+    // C2 layer order (map layout): Buildings_base 17 (interiors) < items_on_ground 18 <
+    // Buildings_bg 31 / Buildings 41 (exterior shells, House_transparenting). Loot is therefore
+    // drawn after interiors and before exterior shells, so roofs hide loot inside buildings.
+    bool loot_drawn = false;
+    auto draw_loot = [&]() {
+      loot_drawn = true;
+      {
+        const float lsc = in_bunker_ ? 1.f : sc;
+        for (int i = 0; i < loot_.count(); ++i) {
+          const LootPile* p = loot_.at(i);
+          if (!p->active) continue;
+          float sx = cx + (p->pos.x - camv.x) * lsc;
+          float sy = cy + (p->pos.y - camv.y) * lsc;
+          if (p->is_airdrop) {
+            if (platform_->has_sprite("ee_pubg_drop_smoke"))
+              platform_->draw_sprite("ee_pubg_drop_smoke", sx - 18, sy - 28, 36, 36, 0.f, 0.55f);
+            if (platform_->has_sprite("airdrop_box-sheet0"))
+              platform_->draw_sprite("airdrop_box-sheet0", sx - 10, sy - 8, 20, 16, 0.f, 1.f);
+            else
+              platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
+            continue;
+          }
+          if (!view.vis(p->pos, sc, 24.f)) continue;
+          // C2 layer items_on_ground: each pile shows its item sprites at native size.
+          // spawn_loot_point is an invisible editor marker in C2 (16x16 colour swatch) and is
+          // never drawn in game (it was the "colored stacks" placeholder).
+          int drawn = 0;
+          for (int j = 0; j < p->item_count && drawn < 3; ++j) {
+            if (p->counts[j] <= 0) continue;
+            const ItemIcon* ic = find_item_ground_icon(p->items[j]);
+            if (!ic || !platform_->has_sprite(ic->sprite)) continue;
+            // C2 on_ground frame at native size (same 1:1 scale as characters: 30px sheet -> 30px).
+            const float iw = static_cast<float>(ic->sw);
+            const float ih = static_cast<float>(ic->sh);
+            const float ox = (drawn == 1) ? 5.f : (drawn == 2 ? -5.f : 0.f);
+            const float oy = (drawn == 0) ? 0.f : 3.f;
+            platform_->draw_sprite_frame(ic->sprite, sx + ox - iw * 0.5f, sy + oy - ih * 0.5f, iw, ih,
+                                         ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
+            ++drawn;
+          }
+          if (drawn == 0 && p->item_count > 0)
+            platform_->draw_rect(sx - 3, sy - 2, 6, 4, 0.55f, 0.5f, 0.35f, 0.9f);
+        }
+      }
+    };
     if (in_bunker_ && bunker_.width > 0) {
       platform_->ground_cache_invalidate();
       // World cell 8×8 (collision); atlas tilemap_bunker 150×300 = 5×10 of 30×30
@@ -4563,6 +4608,8 @@ void Game::render() {
       }
 
       // Map POIs — interiors when standing inside, else exterior shells
+      for (int pass = 0; pass < 2; ++pass) {
+      if (pass == 1) draw_loot();
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
         float sx = cx + (L.pos.x - camv.x) * sc;
@@ -4580,6 +4627,8 @@ void Game::render() {
         if (!view.vis(L.pos, sc, max_dim + 12.f)) continue; // hotspot need not be centred
         // Indoor = C2 warmzone rect (spawned at image point w1, sized to w2).
         const bool inside = bs && building_in_warmzone(*bs, L.pos, player_.pos);
+        // pass 0 = interiors the player stands in (Buildings_base); pass 1 = everything else.
+        if ((pass == 0) != (bs && inside)) continue;
         if (bs) {
           if (inside) {
             if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
@@ -4600,47 +4649,9 @@ void Game::render() {
           platform_->draw_sprite("alife_marker-sheet0",
             sx - 6.f, sy - max_dim * 0.55f - 14.f, 12.f, 12.f, 0.f, 1.f);
       }
-    }
-
-    // Loot — near piles show first item icon (original ground pickup look)
-    {
-      const float lsc = in_bunker_ ? 1.f : sc;
-      for (int i = 0; i < loot_.count(); ++i) {
-        const LootPile* p = loot_.at(i);
-        if (!p->active) continue;
-        float sx = cx + (p->pos.x - camv.x) * lsc;
-        float sy = cy + (p->pos.y - camv.y) * lsc;
-        if (p->is_airdrop) {
-          if (platform_->has_sprite("ee_pubg_drop_smoke"))
-            platform_->draw_sprite("ee_pubg_drop_smoke", sx - 18, sy - 28, 36, 36, 0.f, 0.55f);
-          if (platform_->has_sprite("airdrop_box-sheet0"))
-            platform_->draw_sprite("airdrop_box-sheet0", sx - 10, sy - 8, 20, 16, 0.f, 1.f);
-          else
-            platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
-          continue;
-        }
-        if (!view.vis(p->pos, sc, 24.f)) continue;
-        // C2 layer items_on_ground: each pile shows its item sprites at native size.
-        // spawn_loot_point is an invisible editor marker in C2 (16x16 colour swatch) and is
-        // never drawn in game (it was the "colored stacks" placeholder).
-        int drawn = 0;
-        for (int j = 0; j < p->item_count && drawn < 3; ++j) {
-          if (p->counts[j] <= 0) continue;
-          const ItemIcon* ic = find_item_ground_icon(p->items[j]);
-          if (!ic || !platform_->has_sprite(ic->sprite)) continue;
-          // C2 on_ground frame at native size (same 1:1 scale as characters: 30px sheet -> 30px).
-          const float iw = static_cast<float>(ic->sw);
-          const float ih = static_cast<float>(ic->sh);
-          const float ox = (drawn == 1) ? 5.f : (drawn == 2 ? -5.f : 0.f);
-          const float oy = (drawn == 0) ? 0.f : 3.f;
-          platform_->draw_sprite_frame(ic->sprite, sx + ox - iw * 0.5f, sy + oy - ih * 0.5f, iw, ih,
-                                       ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
-          ++drawn;
-        }
-        if (drawn == 0 && p->item_count > 0)
-          platform_->draw_rect(sx - 3, sy - 2, 6, 4, 0.55f, 0.5f, 0.35f, 0.9f);
       }
     }
+    if (!loot_drawn) draw_loot();
 
     // Zombies — C2 idle/walk/run/attack sheets
     {
@@ -5338,6 +5349,12 @@ bool Game::harness_place_at_building(int mode) {
     target = Vec2(L.pos.x + 30.f, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);
   } else {
     target = Vec2(L.pos.x, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);
+  }
+  if (mode == 3) {
+    // Test-only (MDAZ_HARNESS_LOOT): a military pile in the middle of the warmzone, player
+    // stays south of the building -> the exterior shell must cover the pile (layer order).
+    const Vec2 c(L.pos.x + (s->wz_x0 + s->wz_x1) * 0.5f, L.pos.y + (s->wz_y0 + s->wz_y1) * 0.5f);
+    loot_.spawn_military(c, rng_, &wpn_unlocks_);
   }
   harness_loc_ = best;
   player_.pos = target;
