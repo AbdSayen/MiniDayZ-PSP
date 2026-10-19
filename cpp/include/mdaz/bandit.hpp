@@ -17,6 +17,7 @@ struct Bandit {
   float attack_cooldown;
   bool alive;
   bool has_gun;
+  float burn_t = 0.f; // C2 molotov burning seconds left
   bool is_ally; // C2 obj522 friend / team bot (Remove_bot_friend / Remove_team_bots)
   int weapon_iv14; // C2 obj522 IV14 — bot_reloading mag table key
   int weapon_iv11; // C2 obj827 IV11 — bandit827 firearm audio (data.js fire events)

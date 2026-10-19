@@ -10,10 +10,11 @@ float wolf_melee_damage() {
 }
 
 Animal::Animal()
-  : id(0), type(Animal_Deer), pos(), hp(0), speed(0), alive(false), attack_cooldown(0) {}
+  : id(0), type(Animal_Deer), pos(), hp(0), speed(0), alive(false), attack_cooldown(0), burn_t(0) {}
 
 void Animal::setup(AnimalType t, Vec2 p, EntityId eid) {
   id = eid;
+  burn_t = 0.f;
   type = t;
   pos = p;
   alive = true;

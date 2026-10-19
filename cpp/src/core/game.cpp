@@ -4,6 +4,7 @@
 #include "mdaz/hud.hpp"
 #include "mdaz/item_sprites.hpp"
 #include "mdaz/map_labels.hpp"
+#include "mdaz/map_decode_tables.hpp"
 #include "mdaz/psp_ui.hpp"
 #include "mdaz/save_game.hpp"
 #include "mdaz/weapons.hpp"
@@ -310,6 +311,8 @@ Game::Game()
   hit_effect_t_ = 0.f; fps_ = 0.f; fps_accum_ = 0.f; fps_frames_ = 0;
   molotov_dmg_cd_ = 0.f; molotov_reload_t_ = 0.f; vss_bleed_unlock_cd_ = 0.f;
   wpn_unlock_toast_t_ = 0.f; wpn_unlock_toast_id_ = 0;
+  bunker_zed_check_t_ = 0.f; molotov_tick_t_ = 0.f;
+  for (int i = 0; i < 32; ++i) bunker_spawner_used_[i] = false;
   map_prop_count_ = 0; quest_bandits_spawned_ = false; secret_spawn3_done_ = false;
   hammerspawned_ = 0; helispawned_ = 0; location_reload_anchor_ = Vec2();
   overworld_pos_ = Vec2();
@@ -1256,8 +1259,9 @@ void Game::on_animal_killed(Animal& a) {
 }
 
 void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
-  (void)killer_weapon;
   z.alive = false;
+  // Bullets_dmg_deal: zed kill with a cluster weapon bumps *_unlock_progress -> unlock_wpn_*.
+  notify_weapon_unlock(weapon_unlock_on_zed_kill(wpn_unlocks_, killer_weapon, player_.difficulty));
   player_.zeds_killed += 1;
   int variant = 0;
   if (z.type == Zed_Fast) variant = 1;
@@ -1293,11 +1297,101 @@ void Game::write_death_log() {
   platform_->write_file("last_death.txt", line, std::strlen(line));
 }
 
+static const float kMolotovBurnRadius = 92.f; // light_sprite 250 px * ~0.37 polygon
+static const float kMolotovBurnSec = 5.f;     // Wait 5 then burning = false
+static const float kMolotovTickSec = 0.5f;    // Molotov_damage: Every 0.5 seconds
+
+void Game::tick_molotov_burn(float dt) {
+  // C2 Molotov_damage group: Every 0.5 s, each burning NPC -> NPC_get_damage(type, uid, 10)
+  // (zed tank 15); burning zeds also call noice(x, y, 100) (zed noise; not modelled here).
+  for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) if (z->burn_t > 0.f) z->burn_t -= dt;
+  for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b) if (b->burn_t > 0.f) b->burn_t -= dt;
+  for (int i = 0; i < animals_.count(); ++i) if (animals_.at(i)->burn_t > 0.f) animals_.at(i)->burn_t -= dt;
+  molotov_tick_t_ += dt;
+  if (molotov_tick_t_ < kMolotovTickSec) return;
+  molotov_tick_t_ -= kMolotovTickSec;
+  if (molotov_tick_t_ > kMolotovTickSec) molotov_tick_t_ = 0.f;
+  for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z)
+    if (z->alive && z->burn_t > 0.f) hurt_zombie(*z, z->type == Zed_Tank ? 15.f : 10.f);
+  for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b)
+    if (b->alive && b->burn_t > 0.f) hurt_bandit(*b, 10.f);
+  for (int i = 0; i < animals_.count(); ++i) {
+    Animal* a = animals_.at(i);
+    if (a->alive && a->burn_t > 0.f) hurt_animal(*a, 10.f);
+  }
+}
+
+// C2 Zed_check_bunker: (layout Map) for each bunker_zed_spawner with 800 < distance(player) <= 1500
+// and its boolean unset -> Bunker_spawn_zeds(x, y), set the boolean. Called Every 3 s while inBunker.
+// The port bunker is drawn at 8 px per C2 30 px tile, so C2 distances/offsets scale by 8/30.
+static const float kBunkerC2Scale = 8.f / 30.f;
+
+void Game::zed_check_bunker() {
+  if (!in_bunker_) return;
+  const float dmin = 800.f * kBunkerC2Scale, dmax = 1500.f * kBunkerC2Scale;
+  const int n = kBunkerZedSpawnerCount < 32 ? kBunkerZedSpawnerCount : 32;
+  for (int i = 0; i < n; ++i) {
+    if (bunker_spawner_used_[i]) continue;
+    const Vec2 sp(kBunkerZedSpawners[i].x, kBunkerZedSpawners[i].y);
+    const float d2 = dist2(sp, player_.pos);
+    if (d2 > dmin * dmin && d2 <= dmax * dmax) {
+      spawn_bunker_zeds(sp);
+      bunker_spawner_used_[i] = true;
+    }
+  }
+}
+
+// C2 Bunker_spawn_zeds(x, y): generated = choose(1,2,3,4,1,2,3,4,5); then
+// 1: 5 zed_fast, 2: 7 zed_army, 3: 3 zed_shooter, 4: 1 shooter + 4 army, 5: 1 zed_tank,
+// each at (x + random(-200,200), y + random(-100,100)).
+void Game::spawn_bunker_zeds(Vec2 at) {
+  static const int kChoose[9] = {1, 2, 3, 4, 1, 2, 3, 4, 5};
+  const int g = kChoose[rng_.next_int(0, 8)];
+  auto put = [&](ZedType t, int count) {
+    for (int k = 0; k < count; ++k) {
+      float jx = 0.f, jy = 0.f;
+      rng_.range_pair(-200.f * kBunkerC2Scale, 200.f * kBunkerC2Scale,
+                      -100.f * kBunkerC2Scale, 100.f * kBunkerC2Scale, jx, jy);
+      zombies_.spawn(t, Vec2(at.x + jx, at.y + jy));
+    }
+  };
+  if (g == 1) put(Zed_Fast, 5);
+  else if (g == 2) put(Zed_Army, 7);
+  else if (g == 3) put(Zed_ArmyShooter, 3);
+  else if (g == 4) { put(Zed_ArmyShooter, 1); put(Zed_Army, 4); }
+  else put(Zed_Tank, 1);
+}
+
+// C2 Show_unlock_wpn: sound "md_achievment unlocked", toast (string 398 + blurb), Wait 0.1,
+// visible 3 s then Fade.
+void Game::notify_weapon_unlock(ItemId unlocked_loot_id) {
+  if (unlocked_loot_id <= 0) return;
+  wpn_unlock_toast_id_ = unlocked_loot_id;
+  wpn_unlock_toast_t_ = 3.1f;
+  if (audio_) audio_->play(weapon_unlock_toast_sfx_c2(), 1.f);
+}
+
 void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
   const float r2 = 75.f * 75.f;
   if (audio_) audio_->play_at(leave_fire ? "explode" : "explode", pos.x, pos.y, 1.f);
   spawn_fx(Fx_Explode, pos, leave_fire ? 1.f : 0.f, 0.45f); // angle=1 marks molotov
-  if (leave_fire) campfires_.place(pos, 25.f);
+  if (leave_fire) {
+    campfires_.place(pos, 25.f);
+    // C2 Molotov params: the shatter spawns light_sprite (template 250x250, collision polygon
+    // ~0.37 of the size => ~92 px); every zed / bandit / wolf / tank overlapping it gets the
+    // 'burning' boolean for Wait 5 s. No blast damage: the damage is Molotov_damage ticks.
+    (void)damage;
+    const float br2 = kMolotovBurnRadius * kMolotovBurnRadius;
+    for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z)
+      if (z->alive && dist2(z->pos, pos) <= br2) z->burn_t = kMolotovBurnSec;
+    for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd)
+      if (bd->alive && dist2(bd->pos, pos) <= br2) bd->burn_t = kMolotovBurnSec;
+    for (int i = 0; i < animals_.count(); ++i) {
+      Animal* a = animals_.at(i);
+      if (a->alive && a->type == Animal_Wolf && dist2(a->pos, pos) <= br2) a->burn_t = kMolotovBurnSec;
+    }
+    return;
+  }
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
     if (dist2(z->pos, pos) > r2) continue;
@@ -1701,6 +1795,45 @@ void Game::apply_fires_view(const FireSaveView& in) {
   }
 }
 
+// C2 build_fence1/2 (sub menu Craft_32/Craft_31): the stick (38) slot must hold >= 5
+// (required_count) and loses 5; the woodpile (50) slot is cleared; Building_mode(1) then
+// deploys obst_barricade (solid, no timer; only zed_tank / vehicles break it) at player.x + 50.
+bool Game::try_build_fence(int variant) {
+  if (variant != 1 && variant != 2) return false;
+  // C2 checks one stick stack >= 5; the port item db has no stick stack size yet (sticks
+  // take one slot each), so the same 5 are counted over all slots (craft_build_fence*_can).
+  int wood = -1;
+  for (int i = 0; i < inventory_.slot_count(); ++i) {
+    const InvSlot& sl = inventory_.slot(i);
+    if (sl.id == 50 && sl.count > 0 && wood < 0) wood = i;
+  }
+  const bool can = (variant == 1) ? craft_build_fence1_can(inventory_) : craft_build_fence2_can(inventory_);
+  if (!can || wood < 0) return false;
+  PlaceTrap* t = 0;
+  for (int i = 0; i < trap_count_; ++i) {
+    if (!traps_[i].active) { t = &traps_[i]; break; }
+  }
+  if (!t) {
+    if (trap_count_ >= kMaxTraps) return false;
+    t = &traps_[trap_count_++];
+  }
+  t->pos = Vec2(player_.pos.x + 50.f, player_.pos.y);
+  t->life = 1.0e9f; // no lifetime in data.js
+  t->kind = 2;
+  t->active = true;
+  t->sprung = false;
+  inventory_.remove_at(wood, inventory_.slot(wood).count);
+  int left = 5;
+  for (int i = 0; i < inventory_.slot_count() && left > 0; ++i) {
+    if (inventory_.slot(i).id != 38) continue;
+    const int take = inventory_.slot(i).count < left ? inventory_.slot(i).count : left;
+    inventory_.remove_at(i, take);
+    left -= take;
+  }
+  if (audio_) audio_->play("craft", 0.5f);
+  return true;
+}
+
 bool Game::try_place_trap(int kind) {
   // 0 bear (57), 1 barbed (70), 2 fence (50+2 sticks), 3 claymore (99), 4 landmine (56)
   int slot = -1;
@@ -1868,9 +2001,10 @@ void Game::update_traps(float dt) {
             z->pos.x = t.pos.x + (dx / len) * 38.f;
             z->pos.y = t.pos.y + (dy / len) * 38.f;
           }
-          if (rng_.next_float() < 0.01f) {
-            t.life -= 40.f; // zeds batter fence down
-            if (audio_) audio_->play("hit", 0.25f);
+          if (z->type == Zed_Tank) {
+            // C2: zed_tank overlapping obst_fence / obst_barricade destroys it (Fence_destroy_*).
+            t.active = false;
+            if (audio_) audio_->play("hit", 0.6f);
           }
         }
       }
@@ -1951,19 +2085,13 @@ void Game::try_bunker_enter_exit() {
         loot_.spawn_bunker(bunker_spot(-50.f, 30.f), rng_);
         loot_.spawn_hospital(bunker_spot(20.f, -40.f), rng_);
         loot_.spawn_military(bunker_spot(-30.f, -60.f), rng_);
-        zombies_.spawn(Zed_Normal, bunker_spot(90.f, 0.f));
-        zombies_.spawn(Zed_Fast, bunker_spot(-70.f, 40.f));
-        zombies_.spawn(Zed_Army, bunker_spot(60.f, -50.f));
-        zombies_.spawn(Zed_Buried, bunker_spot(-20.f, 70.f));
-        if (dens >= 5) {
-          zombies_.spawn(Zed_Screamer, bunker_spot(100.f, 50.f));
-          zombies_.spawn(Zed_ArmyShooter, bunker_spot(-90.f, -20.f));
-        }
-        if (dens >= 5 && rng_.next_float() < 0.45f) {
-          zombies_.spawn(Zed_Tank, bunker_spot(30.f, 90.f));
-          loot_.spawn_military(bunker_spot(70.f, 80.f), rng_);
-        }
+        // (2026-10-19) the fixed zed set that used to spawn here is gone: in data.js bunker zeds
+        // come only from bunker_zed_spawner via Zed_check_bunker -> Bunker_spawn_zeds.
+        if (dens >= 5 && rng_.next_float() < 0.45f) loot_.spawn_military(bunker_spot(70.f, 80.f), rng_);
       }
+      // Bunker_generate re-creates every bunker_zed_spawner with its boolean cleared.
+      for (int si = 0; si < 32; ++si) bunker_spawner_used_[si] = false;
+      bunker_zed_check_t_ = 0.f;
       if (audio_) audio_->play("bunker", 0.6f);
       return;
     }
@@ -2249,6 +2377,40 @@ void Game::update_pause(float dt, const InputState& in) {
     default: state_ = AppState_Menu; menu_focus_ = 0; break;
     }
   }
+}
+
+// C2 quest pad "complete" buttons (menu_btn_wood 160 / 164 / 163):
+//  task 1 item:   Check_item_inventory(Q_target_sid, 1) removes that slot, reward box, Karma(10)
+//  task 3 case:   Check_item_inventory(88, 1), reward box, Karma(10)
+//  task 2 bandits: reward box, Karma(20)
+// (expierence_points +30/+40/+50 and char_unlock_15_progress have no port system yet.)
+void Game::on_quest_completed(int task_before) {
+  ItemId remove_id = 0;
+  if (task_before == 1) remove_id = static_cast<ItemId>(quest_.q_target_sid);
+  else if (task_before == 3) remove_id = 88;
+  if (remove_id > 0) {
+    for (int i = 0; i < inventory_.slot_count(); ++i) {
+      if (inventory_.slot(i).id == remove_id && inventory_.slot(i).count > 0) {
+        inventory_.remove_at(i, inventory_.slot(i).count);
+        break;
+      }
+    }
+  }
+  quest_.karma += (task_before == 2) ? 20 : 10;
+  if (audio_) audio_->play("craft", 0.9f);
+  quest_.spawn_reward_box(loot_, player_.pos);
+  quest_.finish_reward();
+  quest_bandits_spawned_ = false;
+  quest_.generate_quest(rng_, mapgen_, 1);
+}
+
+// C2 Generate_quest_bandits: Q_task_id = 2 ... Spawn_bandit_camp(1). The port rolls the camp
+// anchor in QuestState::generate_quest_bandits, so the camp is spawned once for that anchor.
+void Game::maybe_spawn_quest_bandits() {
+  if (quest_.q_task_id != 2 || quest_.q_status >= 2 || quest_bandits_spawned_) return;
+  if (quest_.q_anchor.x == 0.f && quest_.q_anchor.y == 0.f) return;
+  spawn_bandit_camp(bandits_, quest_.q_anchor, rng_);
+  quest_bandits_spawned_ = true;
 }
 
 void Game::try_cancel_quest() {
@@ -2979,6 +3141,21 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
 
     update_traps(dt);
+    tick_molotov_burn(dt);
+    if (wpn_unlock_toast_t_ > 0.f) wpn_unlock_toast_t_ -= dt;
+    if (in_bunker_) {
+      bunker_zed_check_t_ += dt;
+      if (bunker_zed_check_t_ >= 3.f) { bunker_zed_check_t_ = 0.f; zed_check_bunker(); }
+    }
+    if (player_.survival.bleeding > 0.f) {
+      // Bleed (Veteran): vss_unlock_progress +1 per bleeding second -> unlock_wpn_vss at 6.
+      vss_bleed_unlock_cd_ += dt;
+      if (vss_bleed_unlock_cd_ >= 1.f) {
+        vss_bleed_unlock_cd_ -= 1.f;
+        notify_weapon_unlock(weapon_unlock_on_bleed_second(wpn_unlocks_, player_.difficulty));
+      }
+    }
+    maybe_spawn_quest_bandits();
     update_crops(dt);
     update_fx(dt);
     dmg_hints_.update(dt);
@@ -3456,12 +3633,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       if (L.type == Loc_Church && dist2(L.pos, player_.pos) < 90.f * 90.f)
         near_church = true;
     }
-    if (quest_.tick(inventory_, items_, bandits_alive_near(quest_.q_anchor, 300.f))) {
-      if (audio_) audio_->play("craft", 0.9f);
-      quest_.spawn_reward_box(loot_, player_.pos);
-      quest_.finish_reward();
-      quest_.generate_quest(rng_, mapgen_, 1);
-    }  }
+    if (quest_.tick(inventory_, items_, bandits_alive_near(quest_.q_anchor, 300.f)))
+      on_quest_completed(quest_.q_task_id);  }
 
   // (R used to also auto-craft the first possible recipe; crafting now goes through the
   //  craft menu only - PSP Square is reload.)
@@ -3655,8 +3828,8 @@ void Game::use_equipped_item() {
           used_special = try_place_trap(0);
         } else if (eq.id == 70) { // Barbed wire — place zone
           used_special = try_place_trap(1);
-        } else if (eq.id == 50) { // Woodpile — build fence (needs 2 sticks)
-          used_special = try_place_trap(2);
+        } else if (eq.id == 50) { // Woodpile + 5 sticks -> build_fence (Craft_31/32)
+          used_special = try_build_fence(1);
         } else if (eq.id == 99) { // Claymore — place proximity mine
           used_special = try_place_trap(3);
         } else if (eq.id == 53) { // Gasoline — boost nearby fire or splash puddle

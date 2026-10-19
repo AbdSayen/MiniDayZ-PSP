@@ -8,10 +8,11 @@ namespace mdaz {
 
 Zombie::Zombie()
   : id(0), type(Zed_Normal), pos(), hp(0), max_hp(0), speed(40.f),
-    aggro_radius(220.f), alive(false), attack_cooldown(0.f), ambush_boost(0.f) {}
+    aggro_radius(220.f), alive(false), attack_cooldown(0.f), ambush_boost(0.f), burn_t(0.f) {}
 
 void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   id = eid;
+  burn_t = 0.f;
   type = t;
   pos = p;
   alive = true;

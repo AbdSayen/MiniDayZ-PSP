@@ -160,6 +160,7 @@ const char* bot_bandit_fire_sfx(int weapon_iv14, int weapon_iv11, Rng& rng) {
 
 void Bandit::setup(Vec2 p, EntityId eid, bool gun, bool ally, int iv14, int iv11) {
   id = eid;
+  burn_t = 0.f;
   pos = p;
   alive = true;
   has_gun = gun;

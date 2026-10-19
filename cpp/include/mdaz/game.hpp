@@ -326,7 +326,8 @@ private:
   void try_craft_menu_recipe();
   void try_place_campfire();
   bool try_place_trap(int kind);
-  // build_fence1 (Craft_32): 5×38; build_fence2 (Craft_31): 5×38 + 1×50
+  // build_fence1 (Craft_32) / build_fence2 (Craft_31): both take 5 of the stick stack (38)
+  // and clear the woodpile (50) slot, then Building_mode(1) -> obst_barricade.
   bool try_build_fence(int variant);
   void try_cancel_quest();
   void on_quest_completed(int task_before);
@@ -336,8 +337,11 @@ private:
   void sync_mag_for_equipped();
   void try_throw_projectile();
   void try_bunker_enter_exit();
-  void spawn_bunker_zeds(int max_new);
-  void zed_check_bunker();
+  void spawn_bunker_zeds(Vec2 at);   // C2 Bunker_spawn_zeds(x, y)
+  void zed_check_bunker();           // C2 Zed_check_bunker (every 3 s while inBunker)
+  bool bunker_spawner_used_[32];
+  float bunker_zed_check_t_;
+  float molotov_tick_t_;
   void close_inventory();
   void sync_bag_overlay_from_ui();
   void resolve_bullet_hits();

@@ -9,6 +9,7 @@
 #include "mdaz/combat.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/balance_globals.hpp"
+#include "mdaz/map_decode_tables.hpp"
 
 #include <cstdio>
 #include <new>
@@ -52,6 +53,24 @@ struct GameTestAccess {
   static float corpse_life(Game& g, int i) { return g.corpses_[i].life; }
   static float corpse_die_t(Game& g, int i) { return g.corpses_[i].die_anim_t; }
   static const char* corpse_base(Game& g, int i) { return g.corpses_[i].anim_base; }
+  // 2026-10-19 step 1: restored bodies.
+  static void explode(Game& g, Vec2 p, float d, bool fire) { g.explode_at(p, d, fire); }
+  static void burn_tick(Game& g, float dt) { g.tick_molotov_burn(dt); }
+  static bool& in_bunker(Game& g) { return g.in_bunker_; }
+  static void zcheck(Game& g) { g.zed_check_bunker(); }
+  static void bspawn(Game& g, Vec2 p) { g.spawn_bunker_zeds(p); }
+  static bool spawner_used(Game& g, int i) { return g.bunker_spawner_used_[i]; }
+  static void notify(Game& g, ItemId id) { g.notify_weapon_unlock(id); }
+  static float toast_t(Game& g) { return g.wpn_unlock_toast_t_; }
+  static ItemId toast_id(Game& g) { return g.wpn_unlock_toast_id_; }
+  static QuestState& quest(Game& g) { return g.quest_; }
+  static void quest_done(Game& g, int task) { g.on_quest_completed(task); }
+  static void quest_bandits(Game& g) { g.maybe_spawn_quest_bandits(); }
+  static bool fence(Game& g, int v) { return g.try_build_fence(v); }
+  static int trap_count(Game& g) { return g.trap_count_; }
+  static float trap_life(Game& g, int i) { return g.traps_[i].life; }
+  static int trap_kind(Game& g, int i) { return g.traps_[i].kind; }
+  static void kill_z(Game& g, Zombie& z, ItemId w) { g.hurt_zombie(z, 1.0e6f, w); }
 };
 }
 
@@ -71,6 +90,96 @@ static void reset(Game& g) {
 }
 static void put(Game& g, int slot, ItemId id, int n) {
   A::inv(g).slot(slot).id = id; A::inv(g).slot(slot).count = n;
+}
+
+
+static int inv_count(Game& g, ItemId id) {
+  int n = 0;
+  for (int i = 0; i < A::inv(g).slot_count(); ++i)
+    if (A::inv(g).slot(i).id == id) n += A::inv(g).slot(i).count;
+  return n;
+}
+
+// 2026-10-19 step 1: Molotov_damage, Zed_check_bunker / Bunker_spawn_zeds, Show_unlock_wpn,
+// quest completion + Generate_quest_bandits camp, build_fence.
+static void test_restored_step1(Game& g) {
+  A::zeds(g).clear();
+  A::animals(g).clear();
+  A::bandits(g).clear();
+  // --- Molotov: no blast damage, 5 s burning, 10 dmg (tank 15) every 0.5 s, wolves yes, deer no.
+  Zombie* z = A::zeds(g).spawn(Zed_Normal, Vec2(5000.f, 5000.f));
+  Zombie* t = A::zeds(g).spawn(Zed_Tank, Vec2(5040.f, 5000.f));
+  Zombie* far = A::zeds(g).spawn(Zed_Normal, Vec2(5200.f, 5000.f));
+  Animal* w = A::animals(g).spawn(Animal_Wolf, Vec2(4980.f, 5010.f));
+  Animal* d = A::animals(g).spawn(Animal_Deer, Vec2(5010.f, 4990.f));
+  Bandit* b = A::bandits(g).spawn(Vec2(5000.f, 5050.f), false);
+  const float zh = z->hp, th = t->hp, fh = far->hp, wh = w->hp, dh = d->hp, bh = b->hp;
+  A::explode(g, Vec2(5000.f, 5000.f), 40.f, true);
+  check(z->hp == zh && t->hp == th && w->hp == wh && b->hp == bh, "molotov: no blast damage");
+  check(z->burn_t == 5.f && t->burn_t == 5.f && w->burn_t == 5.f && b->burn_t == 5.f,
+        "molotov: zed/tank/wolf/bandit in light_sprite get burning 5 s");
+  check(far->burn_t == 0.f && d->burn_t == 0.f, "molotov: far zed and deer do not burn");
+  A::burn_tick(g, 0.5f);
+  check(zh - z->hp == 10.f && th - t->hp == 15.f && wh - w->hp == 10.f && bh - b->hp == 10.f,
+        "Molotov_damage tick: 10 (tank 15) per 0.5 s");
+  for (int k = 0; k < 12; ++k) A::burn_tick(g, 0.5f);
+  check(z->burn_t <= 0.f && far->hp == fh && d->hp == dh, "burning ends after 5 s");
+  // --- Bunker spawners.
+  A::zeds(g).clear();
+  A::in_bunker(g) = true;
+  const Vec2 sp(kBunkerZedSpawners[0].x, kBunkerZedSpawners[0].y);
+  A::pl(g).pos = Vec2(sp.x + 300.f, sp.y); // 800..1500 C2 px = 213..400 port px
+  A::zcheck(g);
+  const int n1 = A::zeds(g).alive_count();
+  check(A::spawner_used(g, 0) && n1 >= 1, "Zed_check_bunker spawns at a spawner 800-1500 away");
+  A::zcheck(g);
+  check(A::spawner_used(g, 0), "spawner boolean stays set");
+  A::pl(g).pos = Vec2(sp.x + 10.f, sp.y);
+  bool near_ok = true;
+  { A::zeds(g).clear(); A::zcheck(g); for (Zombie* q = A::zeds(g).begin(); q != A::zeds(g).end(); ++q)
+      if (q->alive && (q->pos.x - sp.x) * (q->pos.x - sp.x) + (q->pos.y - sp.y) * (q->pos.y - sp.y) < 60.f * 60.f) near_ok = false; }
+  check(near_ok, "no spawn from a spawner closer than 800 C2 px");
+  bool sizes_ok = true;
+  for (int k = 0; k < 40; ++k) {
+    A::zeds(g).clear();
+    A::bspawn(g, Vec2(500.f, 300.f));
+    const int n = A::zeds(g).alive_count();
+    if (n != 5 && n != 7 && n != 3 && n != 1) sizes_ok = false;
+  }
+  check(sizes_ok, "Bunker_spawn_zeds groups are 5 fast / 7 army / 3 shooter / 1+4 / 1 tank");
+  A::in_bunker(g) = false;
+  A::zeds(g).clear();
+  // --- Weapon unlock toast.
+  A::notify(g, 186);
+  check(A::toast_id(g) == 186 && A::toast_t(g) > 3.f, "notify_weapon_unlock shows the toast 3 s");
+  // --- Quest completion + quest bandits.
+  A::db(g).load_from_json_file("data/items.json");
+  A::inv(g).clear();
+  A::inv(g).add_item(1, 1, A::db(g));
+  QuestState& q = A::quest(g);
+  q.q_task_id = 1; q.q_target_sid = 1; q.q_status = 2;
+  const int karma0 = q.karma;
+  A::quest_done(g, 1);
+  check(inv_count(g, 1) == 0 && q.karma == karma0 + 10, "quest item task: slot removed, Karma +10");
+  q.q_task_id = 2; q.q_status = 0; q.q_anchor = Vec2(9000.f, 9000.f);
+  A::bandits(g).clear();
+  A::quest_bandits(g);
+  const int nb = A::bandits(g).alive_count();
+  A::quest_bandits(g);
+  check(nb == 4 && A::bandits(g).alive_count() == 4, "Generate_quest_bandits camp spawned once");
+  const int karma1 = q.karma;
+  A::quest_done(g, 2);
+  check(q.karma == karma1 + 20, "quest bandit task: Karma +20");
+  // --- build_fence.
+  A::inv(g).clear();
+  A::inv(g).add_item(38, 6, A::db(g));
+  A::inv(g).add_item(50, 1, A::db(g));
+  const int tc = A::trap_count(g);
+  const bool ok = A::fence(g, 1);
+  check(ok && inv_count(g, 38) == 1 && inv_count(g, 50) == 0, "build_fence: -5 sticks, woodpile cleared");
+  check(A::trap_count(g) == tc + 1 && A::trap_kind(g, tc) == 2 && A::trap_life(g, tc) > 1.0e8f,
+        "fence placed, no lifetime");
+  check(!A::fence(g, 2), "build_fence needs 5 sticks + woodpile");
 }
 
 int test_queue_q1() {
@@ -180,6 +289,7 @@ int test_queue_q1() {
   A::apply(g, empty);
   check(A::loot(g).count() == 2, "empty loot view (old save) keeps current loot");
   delete v;
+  test_restored_step1(g);
   delete np;
   delete gp;
   std::printf("test_queue_q1: %d failure(s)\n", g_fail);

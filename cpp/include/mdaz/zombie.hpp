@@ -15,6 +15,7 @@ struct Zombie {
   bool alive;
   float attack_cooldown;
   float ambush_boost; // Buried pop-up speed burst
+  float burn_t;       // C2 molotov 'burning' boolean: seconds left (5 s Wait in Molotov params)
 
   Zombie();
   void setup(ZedType t, Vec2 p, EntityId eid);

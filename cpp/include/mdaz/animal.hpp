@@ -20,6 +20,7 @@ struct Animal {
   float speed;
   bool alive;
   float attack_cooldown;
+  float burn_t; // C2 molotov burning (wolf only in data.js)
 
   Animal();
   void setup(AnimalType t, Vec2 p, EntityId eid);
