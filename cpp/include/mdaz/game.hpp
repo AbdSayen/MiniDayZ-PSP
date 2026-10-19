@@ -50,6 +50,8 @@ public:
   // TEST HARNESS ONLY (desktop --shots-building): puts the player inside (mode 0) or just south
   // of (mode 1) the first police/other Solid building. Never called by gameplay code.
   bool harness_place_at_building(int mode);
+  // Bonds Guru studio intro (from jacksmith-psp): skipped by the --shots harnesses.
+  void skip_intro();
   Vec2 harness_player_rel() const;  // test-only: player pos minus harness building hotspot
   bool wants_quit() const { return quit_; }
 
@@ -155,6 +157,8 @@ private:
   DispersionState dispersion_;
   Rng rng_;
   float state_timer_;
+  double intro_t0_;
+  void draw_intro(float progress);
   float attack_cd_;
   float reload_cd_;
   float player_anim_t_;   // locomotion clock

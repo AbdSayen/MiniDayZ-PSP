@@ -180,3 +180,5 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Trees overlapping helicrash/hammercrash/t426 aren't removed (C2 removes them on overlap).
 - Its own Rng stream (seed*2654435761+0x9e37); the original uses Math.random, so maps can't be compared one-to-one.
 - Tree draw order isn't sorted by Y relative to the player (same as before).
+
+- Интро: на PSP до загрузки sprites.pak всё ещё показывается старый текстовый "LOADING..." boot_splash (в jacksmith сплэш виден с первого кадра GU). Ассет в паке весит ~130 KB T8 после декомпрессии; на реальном железе не проверено.

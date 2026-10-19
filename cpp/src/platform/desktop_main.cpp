@@ -43,12 +43,16 @@ public:
   int screen_w() const { return inner_->screen_w(); }
   int screen_h() const { return inner_->screen_h(); }
 
-  void set_game(mdaz::Game* g, bool building, bool door = false) { game_ = g; building_ = building; door_ = door; }
+  void set_game(mdaz::Game* g, bool building, bool door = false, bool intro = false) {
+    game_ = g; building_ = building; door_ = door; intro_ = intro;
+    if (!intro && g) g->skip_intro(); // keep the existing shot scripts' frame numbers
+  }
 
   bool poll(mdaz::InputState& in) {
     if (!inner_->poll(in)) return false;
     in = mdaz::InputState();
     ++frame_;
+    if (intro_) return frame_ < 240;
     if (door_) return poll_door(in);
     if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
@@ -99,6 +103,18 @@ public:
   }
 
   void end_frame() {
+    if (intro_) {
+      static const int kF[] = { 1, 60, 120, 200, 215, 230 };
+      for (unsigned i = 0; i < sizeof(kF) / sizeof(kF[0]); ++i) {
+        if (kF[i] != frame_ || shot_done_[i]) continue;
+        shot_done_[i] = true;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/intro_f%03d.bmp", dir_, frame_);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (door_) {
       if (frame_ >= 210 && frame_ <= 600 && (frame_ - 210) % 35 == 0) {
         char path[512];
@@ -143,6 +159,8 @@ private:
   mdaz::Game* game_ = 0;
   bool building_ = false;
   bool door_ = false;
+  bool intro_ = false;
+  bool shot_done_[8] = {};
   int door_phase_ = 0;
 };
 
@@ -153,11 +171,16 @@ int main(int argc, char** argv) {
   const char* shots_dir = 0;
   bool shots_building = false;
   bool shots_door = false;
+  bool shots_intro = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_building = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-intro") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_intro = true;
     }
     else if (std::strcmp(argv[i], "--shots-door") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -198,7 +221,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   game.set_audio(audio);
-  if (scripted) scripted->set_game(&game, shots_building, shots_door);
+  if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

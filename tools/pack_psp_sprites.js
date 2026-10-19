@@ -14,7 +14,7 @@
  *   fmt 1: RGBA5551 (alpha only 0/255), fmt 2: RGBA4444 (soft alpha); raw = stride*h*2.
  *   stride: T8 multiple of 16 texels, 16-bit multiple of 8 texels (16-byte rows for the GE).
  *
- * Usage: node tools/pack_psp_sprites.js [imagesDir] [outPak]
+ * Usage: node tools/pack_psp_sprites.js [imagesDir] [outPak] [extraDir...]
  */
 const fs = require('fs');
 const path = require('path');
@@ -134,14 +134,20 @@ function convert(img) {
 }
 
 if (!fs.existsSync(imagesDir)) { console.error('images dir missing:', imagesDir); process.exit(1); }
-const files = fs.readdirSync(imagesDir).filter((f) => f.toLowerCase().endsWith('.png')).sort();
+// Extra dirs (argv[4..]): port-only assets such as cpp/data/intro (Bonds Guru intro).
+const srcDirs = [imagesDir].concat(process.argv.slice(4).map((d) => path.resolve(d)));
+const files = [];
+for (const d of srcDirs) {
+  if (!fs.existsSync(d)) { console.warn('extra dir missing', d); continue; }
+  for (const f of fs.readdirSync(d).filter((f) => f.toLowerCase().endsWith('.png')).sort()) files.push({ d, f });
+}
 const entries = [];
 const stats = { t8: 0, a5551: 0, a4444: 0, rawBytes: 0 };
-for (const f of files) {
+for (const { d, f } of files) {
   const name = f.replace(/\.png$/i, '');
   if (name.length >= 48) { console.warn('skip long name', name); continue; }
   let img;
-  try { img = decodePng(fs.readFileSync(path.join(imagesDir, f))); }
+  try { img = decodePng(fs.readFileSync(path.join(d, f))); }
   catch (e) { console.warn('skip', f, e.message); continue; }
   if (img.w > 65535 || img.h > 65535) { console.warn('skip huge', f); continue; }
   const c = convert(img);

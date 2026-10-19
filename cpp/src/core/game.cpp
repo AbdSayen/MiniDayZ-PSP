@@ -326,7 +326,7 @@ void draw_hotspot_sprite(IPlatform* p, float sx, float sy, const char* spr, int 
 } // namespace
 
 Game::Game()
-  : platform_(0), audio_(0), state_(AppState_Loading), quit_(false),
+  : platform_(0), audio_(0), state_(AppState_Loading), quit_(false), intro_t0_(0.0),
     state_timer_(0.f), attack_cd_(0.f), reload_cd_(0.f),
     player_anim_t_(0.f), melee_anim_t_(0.f), use_anim_t_(0.f),
     airdrop_alert_(0.f), radio_t_(0.f),
@@ -464,6 +464,7 @@ void Game::mark_sector_visited() {
 bool Game::init(IPlatform* platform, const char* data_dir) {
   install_los();
   platform_ = platform;
+  intro_t0_ = platform_ ? platform_->time_seconds() : 0.0;
   if (data_dir) {
     std::strncpy(data_dir_, data_dir, sizeof(data_dir_) - 1);
     data_dir_[sizeof(data_dir_) - 1] = 0;
@@ -547,10 +548,33 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
       std::printf("[mdaz] WARNING: original sprites not found — colored rects fallback\n");
   }
 
+  // Bonds Guru intro = jacksmith-psp boot/credits screen: shown at 2% while loading,
+  // then held at 100% until 3.5 s after boot (host_psp/main.c), no skip, no sound.
+  draw_intro(0.02f);
   load_settings();
-  state_ = AppState_Menu;
+  draw_intro(1.0f);
+  state_ = AppState_Loading;
   state_timer_ = 0.f;
   return true;
+}
+
+void Game::skip_intro() {
+  if (state_ == AppState_Loading) state_ = AppState_Menu;
+}
+
+// Port of jacksmith-psp gfx_progress(): full-screen "splash" + 120x2 bar at (180,239).
+void Game::draw_intro(float f) {
+  if (!platform_) return;
+  platform_->begin_frame();
+  platform_->clear(0.f, 0.f, 0.f);
+  const float W = static_cast<float>(platform_->screen_w()), H = static_cast<float>(platform_->screen_h());
+  if (platform_->has_sprite("intro_bonds_guru")) platform_->draw_sprite("intro_bonds_guru", 0.f, 0.f, W, H);
+  if (f < 0.f) f = 0.f;
+  if (f > 1.f) f = 1.f;
+  platform_->draw_rect(180.f, 239.f, 120.f, 2.f, 0x20 / 255.f, 0x26 / 255.f, 0x2a / 255.f, 1.f);
+  if (120.f * f > 1.f)
+    platform_->draw_rect(180.f, 239.f, 120.f * f, 2.f, 0x5e / 255.f, 0xf2 / 255.f, 0xc3 / 255.f, 1.f);
+  platform_->end_frame();
 }
 
 // settings.cfg: "half_res=0|1" (PSP half-resolution world render; default OFF).
@@ -4092,7 +4116,7 @@ void Game::update(float dt) {
 
   switch (state_) {
   case AppState_Loading:
-    state_ = AppState_Menu;
+    if (platform_->time_seconds() - intro_t0_ >= 3.5) state_ = AppState_Menu;
     break;
   case AppState_Menu:
     update_menu(dt, in);
@@ -4114,6 +4138,7 @@ void Game::update(float dt) {
 
 void Game::render() {
   if (!platform_) return;
+  if (state_ == AppState_Loading) { draw_intro(1.0f); return; }
   platform_->profile_mark(IPlatform::Prof_Hud); // menus / UI-only frames bill to HUD
   platform_->begin_frame();
 

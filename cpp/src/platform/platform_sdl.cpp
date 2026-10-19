@@ -409,7 +409,16 @@ private:
 
     char* file_data = 0;
     std::size_t file_size = 0;
-    if (!read_file(path, &file_data, &file_size) || !file_data) {
+    bool got = read_file(path, &file_data, &file_size) && file_data;
+    if (!got) {
+      // Port-only assets (Bonds Guru intro) live in data/intro, not in the original images dir.
+      static const char* kExtra[] = { "data/intro", "C:/Users/abdur/Desktop/MiniDayZ/cpp/data/intro", 0 };
+      for (int k = 0; kExtra[k] && !got; ++k) {
+        std::snprintf(path, sizeof(path), std::strstr(name, ".png") ? "%s/%s" : "%s/%s.png", kExtra[k], name);
+        got = read_file(path, &file_data, &file_size) && file_data;
+      }
+    }
+    if (!got) {
       e.missing = true;
       tex_[name] = e;
       return 0;

@@ -36,7 +36,9 @@ $PakOut = Join-Path $Out "data\sprites.pak"
 if (-not (Test-Path $Images)) {
   throw "Missing original_docs/images - cannot pack sprites"
 }
-node $PackJs $Images $PakOut
+$IntroDir = Join-Path $Root "cpp\data\intro"
+node $PackJs $Images $PakOut $IntroDir
+if (Test-Path (Join-Path $Out "data\intro")) { Remove-Item (Join-Path $Out "data\intro") -Recurse -Force }
 if (-not (Test-Path $PakOut)) { throw "sprites.pak not created" }
 
 $files = (Get-ChildItem $Out -Recurse -File).Count
