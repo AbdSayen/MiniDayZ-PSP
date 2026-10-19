@@ -360,3 +360,9 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 - Minimap/road sector grid = C2 array 511.
 - Loot: one pile per spawn_loot_point of the building (item tables still the port's). Hostiles: per-cell budget on the first building only (temporary until zed_resp spawners).
 - Seed 140 L0: 233 cat-7 rows -> 136 buildings (93 b_deer_stand rows have no *_int and are not drawn yet). Tests: ALL TESTS PASSED (MSVC).
+
+## Map generator B2b: props from create_map_element categories 3/4/5/6 and 7:1 - Implemented, not verified against original
+- New MapProps (map_props.hpp/.cpp, generated map_props.inc via cpp/tools/extract_props.py + gen_props.py from data.js): berry bushes (red/blue/yellow animation, choose(0,1) frame when IV3=0), waterpump, obstacles (fence/block/trash/lavka/fence & hesco h/v by IV6, ee_* objects), pillars (frame = IV2 when sub<12, else 12), cars (frame 1 when IV3=1), b_deer_stand.
+- Solid obst_base / big_obstacle_base polygons at the object's image points (per object frame where C2 conditions on it; no polygon = bounding box) block movement and bullets (Game::building_blocks).
+- Removed the invented hashed berry-bush grid. C2Map rows capacity 24000 -> 6000 (measured ~3.5k rows per map).
+- Seed 140 L0: 688 props, 525 with a Solid base. Tests: ALL TESTS PASSED (MSVC).

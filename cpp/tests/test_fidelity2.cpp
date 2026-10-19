@@ -1,6 +1,7 @@
 #include "mdaz/building_interior.hpp"
 #include "mdaz/c2_mapgen.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/map_props.hpp"
 // Fidelity list (2026-10-19 20:40): building Solid polygons from data.js.
 #include "mdaz/building_solid.hpp"
 
@@ -132,6 +133,25 @@ static void test_c2_mapgen() {
   std::printf("%s c2 mapgen L0: trees %d buildings %d villages %d road cells %d hummer %d\n",
               ok ? "OK  " : "FAIL", trees, bld, villages, roads, g_tm.hummer_count);
   if (!ok) ++g_fail;
+  // Props: every cat 3/4/5/6 + 7:1 row resolves to a data.js object; a fence blocks a crossing.
+  static MapProps props;
+  mdaz::Rng pr(1);
+  props.build(g_tm, pr);
+  int want = 0;
+  for (int i = 0; i < g_tm.row_count; ++i) {
+    const int c = g_tm.rows[i].cat;
+    if (c == 6 && g_tm.rows[i].sub == 0) continue;  // no cat-6 sub-0 branch in create_map_element
+    if (c == 3 || c == 4 || c == 5 || c == 6 || (c == 7 && g_tm.rows[i].sub == 1)) ++want;
+  }
+  int blocked = 0;
+  for (int i = 0; i < props.count(); ++i) {
+    const MapProp& p = props.at(i);
+    if (props.blocks(Vec2(p.x, p.y - 200.f), Vec2(p.x, p.y + 4.f), 0.f)) ++blocked;
+  }
+  const bool pok = props.count() == want && props.solid_count() > 0 && blocked > 0;
+  std::printf("%s c2 props: %d/%d rows -> objects, %d with Solid base, %d block a N->S crossing\n",
+              pok ? "OK  " : "FAIL", props.count(), want, props.solid_count(), blocked);
+  if (!pok) ++g_fail;
 }
 
 int test_fidelity2_more() {

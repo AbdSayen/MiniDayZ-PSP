@@ -46,7 +46,7 @@ struct C2Cell {
 };
 
 struct C2Map {
-  static const int kMaxRows = 24000;
+  static const int kMaxRows = 6000;  // ~3.5k rows per map (L0..L3 measured)
   static const int kMaxZr = 1024;
   static const int kMaxPoints = 16;
   unsigned char arr[kC2Grid][kC2Grid];   // array 511 after roads + secret

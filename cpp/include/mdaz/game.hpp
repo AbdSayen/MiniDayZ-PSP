@@ -30,6 +30,7 @@
 #include "mdaz/weapon_unlocks.hpp"
 #include "mdaz/world.hpp"
 #include "mdaz/zombie.hpp"
+#include "mdaz/map_props.hpp"
 
 namespace mdaz {
 
@@ -147,6 +148,7 @@ private:
   WorldTimers timers_;
   LootSystem loot_;
   MapGenerator mapgen_;
+  MapProps c2_props_;  // create_map_element cats 3/4/5/6 + deer stands
   BulletSystem bullets_;
   BunkerMap bunker_;
   WorldTilemaps world_tiles_;

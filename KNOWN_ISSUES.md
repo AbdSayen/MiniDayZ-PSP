@@ -184,3 +184,5 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Интро: на PSP до загрузки sprites.pak всё ещё показывается старый текстовый "LOADING..." boot_splash (в jacksmith сплэш виден с первого кадра GU). Ассет в паке весит ~130 KB T8 после декомпрессии; на реальном железе не проверено.
 
 - B2a: b_deer_stand (cat 7 sub 1, 93 rows on seed 140) is not drawn/solid yet; loot piles inside buildings are drawn above the roof; kMaxLootPiles=96 may fill up with many active buildings; minimap sector size 1115 px vs C2 cell 1020 px.
+
+- B2b: not ported yet - car_loot_point / spawn_loot_point of props (car loot), light_tower night lights on pillars 12-14, berry-bush harvesting tied to the bush object (old bush search is still the port's random chance), trees destroyed when overlapping heli_crash / b_dot / b_dot_int (create_map_element c108 checks), layer order (props drawn under trees, no Y-sort).

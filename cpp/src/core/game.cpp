@@ -713,6 +713,11 @@ void Game::start_new_game(Difficulty d) {
     }
   }
   {
+    // Bushes / pumps / obstacles / pillars / cars / deer stands (create_map_element 3-6, 7:1).
+    Rng prng(140u * 2246822519u + 0x51u);
+    c2_props_.build(mapgen_.c2(), prng);
+  }
+  {
     Vec2 car = Vec2(player_.pos.x + 900.f, player_.pos.y);
     for (int i = 0; i < mapgen_.location_count(); ++i) {
       const MapLocation& L = mapgen_.location(i);
@@ -4433,23 +4438,25 @@ void Game::render() {
         }
       }
 
-      // Berry bushes (original berry_bush frame)
-      if (platform_->has_sprite("berry_bush-sheet0")) {
-        const float step = 90.f;
-        for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
-          for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
-            const unsigned h = static_cast<unsigned>(gx * 374761u) ^
-                               static_cast<unsigned>(gy * 6682651u);
-            if ((h % 5u) != 0u) continue;
-            const float wx = (gx + 0.5f) * step;
-            const float wy = (gy + 0.5f) * step;
-            if (!view.vis(Vec2(wx, wy), sc, 16.f)) continue;
-            float sx = cx + (wx - player_.pos.x) * sc;
-            float sy = cy + (wy - player_.pos.y) * sc;
-            platform_->draw_sprite_frame("berry_bush-sheet0",
-              sx - 14.f, sy - 9.f, 28.f, 18.f, 35, 1, 28, 18, 0.f, 1.f);
+      // create_map_element props (bushes, pumps, obstacles, pillars, cars, deer stands): the
+      // object frame drawn with its hotspot on the map_element origin.
+      {
+        const int pcx = static_cast<int>(std::floor((player_.pos.y - kC2CellOriginY) / kC2CellSize));
+        const int pcy = static_cast<int>(std::floor((player_.pos.x - kC2CellOriginX) / kC2CellSize));
+        for (int ax = pcx - 1; ax <= pcx + 1; ++ax)
+          for (int ay = pcy - 1; ay <= pcy + 1; ++ay) {
+            int f0 = 0, pn = 0;
+            c2_props_.cell_range(ax, ay, f0, pn);
+            for (int k = f0; k < f0 + pn; ++k) {
+              const MapProp& mp = c2_props_.at(k);
+              const PropFrame* pf = c2_props_.frame_of(mp);
+              const float big = static_cast<float>(pf->w > pf->h ? pf->w : pf->h);
+              if (!view.vis(Vec2(mp.x, mp.y), sc, big * sc)) continue;
+              const float sx = cx + (mp.x - player_.pos.x) * sc, sy = cy + (mp.y - player_.pos.y) * sc;
+              platform_->draw_sprite_frame(pf->sheet, sx - pf->hx * pf->w * sc, sy - pf->hy * pf->h * sc,
+                                           pf->w * sc, pf->h * sc, pf->x, pf->y, pf->w, pf->h, 0.f, 1.f);
+            }
           }
-        }
       }
 
       // Forest trees — crop first pine frame (47×92), not whole sheet
@@ -5100,6 +5107,7 @@ static bool game_los_cb(const void* ctx, Vec2 a, Vec2 b) {
 void Game::install_los() { set_los_blocker(&game_los_cb, this); }
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
+  if (!in_bunker_ && c2_props_.blocks(a, b, 1.f)) return true;  // obst_base / big_obstacle_base
   for (int i = 0; i < mapgen_.location_count(); ++i) {
     const MapLocation& L = mapgen_.location(i);
     if (!L.active) continue;
