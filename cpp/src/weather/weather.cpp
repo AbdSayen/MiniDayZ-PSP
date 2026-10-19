@@ -1,5 +1,6 @@
 #include "mdaz/weather.hpp"
 #include "mdaz/balance_globals.hpp"
+#include "mdaz/rng.hpp"
 
 namespace mdaz {
 
@@ -46,12 +47,14 @@ void WeatherState::reset() {
 }
 
 void WeatherState::sync_clock_from_timer_all() {
-  while (timer_all >= kTimerWrap) timer_all -= kTimerWrap;
+  // C2 resets Timer_ALL only when > 1440 (Timer_ALL == 1440 is shown as 24:00 for one tick).
+  while (timer_all > kTimerWrap) timer_all -= kTimerWrap;
   while (timer_all < 0.f) timer_all += kTimerWrap;
   day_phase = timer_all / kTimerWrap;
   const int h = timer_hours();
   timer_minutes = static_cast<int>(timer_all) - h * 60;
-  day_mode = hours_in_day_mode(h);
+  // Hour 24 matches neither C2 trigger (0..5 night, 6..23 day): keep Day_mode.
+  if (h <= 23) day_mode = hours_in_day_mode(h);
   is_night = !day_mode;
 }
 
@@ -67,7 +70,7 @@ int WeatherState::timer_hours() const {
 void WeatherState::advance_game_minutes(float minutes) {
   if (minutes <= 0.f) return;
   timer_all += minutes;
-  if (timer_all >= kTimerWrap) {
+  if (timer_all > kTimerWrap) {
     timer_all -= kTimerWrap;
     day_rollover_pending_ = true;
   }
@@ -82,27 +85,28 @@ bool WeatherState::consume_day_rollover() {
 
 namespace {
 
-void on_rain_speed_tick(WeatherState& w) {
-  // Rain group (Time_cyles_and_weather.json): Timer Rain_speed → toggle Rain global.
-  if (w.rains_level >= 4) w.rains_level = 0;
+void on_rain_speed_tick(WeatherState& w, Rng* rng, bool in_bunker) {
+  // C2 "Rain" timer (Rain_speed s, repeating), only while rains_level > 0:
+  //   Rain==1 -> Rain=0;
+  //   else inBunker!=1 and choose(1,2,3,4)==1 -> Rain=1.
+  // rains_level is set by the level (1 on CurrentLevel 0), never by this timer.
+  if (w.rains_level <= 0) return;
   if (w.raining) {
-    w.rains_level = 0;
     w.raining = false;
-  } else {
+  } else if (!in_bunker && rng && rng->next_int(1, 4) == 1) {
     w.raining = true;
-    if (w.rains_level < 4) w.rains_level += 1;
   }
 }
 
 } // namespace
 
-bool WeatherState::update(float dt) {
+bool WeatherState::update(float dt, Rng* rng, bool in_bunker) {
   const float rain_period = static_cast<float>(balance::Rain_speed);
   if (rain_period > 0.f) {
     rain_timer_accum_ += dt;
     while (rain_timer_accum_ >= rain_period) {
       rain_timer_accum_ -= rain_period;
-      on_rain_speed_tick(*this);
+      on_rain_speed_tick(*this, rng, in_bunker);
     }
   }
 
@@ -110,7 +114,7 @@ bool WeatherState::update(float dt) {
   while (timer_step_accum_ >= kTimerStepSec) {
     timer_step_accum_ -= kTimerStepSec;
     timer_all += 1.f;
-    if (timer_all >= kTimerWrap) {
+    if (timer_all > kTimerWrap) {
       timer_all = 0.f;
       day_rollover_pending_ = true;
     }

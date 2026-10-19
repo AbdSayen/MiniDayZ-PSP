@@ -719,6 +719,7 @@ void Game::start_new_game(Difficulty d) {
 
   world_.reset();
   weather_.reset();
+  weather_.rains_level = 1; // C2 CurrentLevel 0 start: rains_level = 1
   zombies_.clear();
   animals_.clear();
   bandits_.clear();
@@ -1100,12 +1101,7 @@ void Game::apply_incoming_damage(float amount, bool can_bleed, PlayerDamageKind 
       player_.survival.bleeding = 1.f;
     }
   }
-  // Infection chance stub (full C2 disease group not ported); gasmask+filter helps
-  if (can_bleed && !player_.survival.infected) {
-    const bool gasmask = wearing_gasmask() && gasmask_filter_ > 5.f;
-    const float chance = gasmask ? 0.015f : 0.08f;
-    if (rng_.next_float() < chance) player_.survival.infected = true;
-  }
+  // C2: zombie hits never set IV34 (sickness) — removed invented infection roll.
   if (audio_ && amount > 0.f) audio_->play("hit", 0.55f);
 }
 
@@ -3000,10 +2996,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         if (!raincoat) {
           mx *= 0.85f;
           my *= 0.85f;
-          if (!(wearing_gasmask() && gasmask_filter_ > 5.f) &&
-              !player_.survival.infected && rng_.next_float() < 0.002f) {
-            player_.survival.infected = true;
-          }
         }
       }
       // Barbed wire / barricades near military POI — slow + occasional nick
@@ -3195,9 +3187,11 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
   }
 
-  if (!in_bunker_) {
+  {
+    // C2 "Every 1.5 s" clock runs in the bunker too; only rain start is blocked there.
     const float prev_phase = weather_.day_phase;
-    weather_.update(dt);
+    weather_.update(dt, &rng_, in_bunker_);
+    if (in_bunker_) weather_.raining = false; // C2 Bunker_generate sets Rain=0
     // Day rolled over
     if (weather_.day_phase < prev_phase) {
       player_.days_survived += 1;
@@ -3280,6 +3274,20 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
     player_.update_survival(dt, weather_.ambient_temp, weather_.is_night && !in_bunker_,
                             !in_bunker_ && wetness_ > 50.f, insulation);
+    {
+      // C2 States sickness rolls (IV34), once per stats tick:
+      //   gain: IV16 <= 0 and random(50) > 28;
+      //   cure: IV14>=80, IV13>=80, IV16>=80, IV22==0, choose(1,2)==1.
+      static int last_ticks = 0;
+      SurvivalState& sv = player_.survival;
+      if (sv.stat_ticks < last_ticks) last_ticks = sv.stat_ticks;
+      while (last_ticks < sv.stat_ticks) {
+        ++last_ticks;
+        if (sv.temperature <= 0.f && rng_.next_float() * 50.f > 28.f) sv.infected = true;
+        if (sv.water >= 80.f && sv.food >= 80.f && sv.temperature >= 80.f &&
+            sv.bleeding <= 0.f && rng_.next_int(1, 2) == 1) sv.infected = false;
+      }
+    }
     // Rest near fire while standing still — mild blood regen + night sleep
     if (campfires_.near_fire(player_.pos, 55.f) &&
         player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y < 1.f) {
@@ -3728,8 +3736,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           else if (r < 0.82f) inventory_.add_item(27, 1, items_);
           else found = false;
           if (audio_) audio_->play("melee_swing", found ? 0.4f : 0.25f);
-          if (found && !player_.survival.infected && rng_.next_float() < 0.04f)
-            player_.survival.infected = true;
         }
       } else {
       // Chop wood with axe / hatchet equipped
@@ -3886,10 +3892,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           // Drink rain — dirty water
           player_.survival.water += 8.f;
           if (player_.survival.water > 100.f) player_.survival.water = 100.f;
-          if (!(wearing_gasmask() && gasmask_filter_ > 5.f) &&
-              !player_.survival.infected && rng_.next_float() < 0.2f) {
-            player_.survival.infected = true;
-          }
           if (audio_) audio_->play("drink", 0.3f);
         } else if (!searched && rng_.next_float() < bush_chance) {
           // Bush forage: sticks / berries / rags

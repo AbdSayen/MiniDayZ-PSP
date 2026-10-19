@@ -144,20 +144,19 @@ void SurvivalState::update(float dt, const SurvivalRates& rates, float weather_t
     }
 
     // Regen when food, water, temp all >= 50 and not bleeding
-    if (bleeding <= 0.f && food >= 50.f && water >= 50.f && temperature >= 50.f) {
+    if (bleeding <= 0.f && !infected && food >= 50.f && water >= 50.f && temperature >= 50.f) {
       blood += rates.regeneration;
       if (perk_regen && blood < 50.f) blood += rates.regeneration;
     }
+    // C2 States: IV34==1 (sick) -> IV14 -= 1, IV13 -= 1 each stats tick.
+    if (infected) {
+      food = clampf(food - 1.f, 0.f, 100.f);
+      water = clampf(water - 1.f, 0.f, 100.f);
+    }
+    ++stat_ticks; // Game rolls C2 sickness gain/cure on each tick
   }
 
-  if (infected && !vitamins_buff) {
-    blood -= 0.045f * dt; // infection DoT — suppressed while item_activate id29 IV32 active
-    // Fever: push temperature toward ~82 (heat stress), not freeze
-    if (temperature < 82.f) temperature += 1.2f * dt;
-    else temperature -= 0.3f * dt; // oscillate near fever peak
-    temperature = clampf(temperature, 0.f, 100.f);
-    set_reason(*this, "Infection");
-  }
+  (void)vitamins_buff;
   blood = clampf(blood, 0.f, 100.f);
 }
 

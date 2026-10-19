@@ -85,16 +85,16 @@ int test_survival() {
     std::printf("OK   perk_hamster food drain reduced\n");
   }
 
-  // item_activate id29: IV32 — infection DoT suppressed while vitamins buff active
-  s.reset_full();
-  s.infected = true;
-  const float b_inf = s.blood;
-  s.update(10.f, nov, 50.f, false, false, false, false, false, false, false, 0.f, true);
-  if (s.blood >= b_inf - 0.01f) {
-    std::printf("OK   vitamins buff suppresses infection DoT\n");
-  } else {
-    std::printf("FAIL vitamins buff blood %g -> %g\n", b_inf, s.blood);
-    ++fail;
+  // C2 States: IV34 sick -> extra -1 food/-1 water per stats tick, no blood DoT.
+  {
+    mdaz::SurvivalState a, b;
+    a.reset_full(); b.reset_full(); b.infected = true;
+    a.update(5.f, nov, 50.f, false, false, false, false, false, false, false);
+    b.update(5.f, nov, 50.f, false, false, false, false, false, false, false);
+    if (b.food > a.food - 0.99f || b.water > a.water - 0.99f || b.blood < a.blood - 0.01f ||
+        b.stat_ticks != 1) {
+      std::printf("FAIL sick tick food %g/%g water %g/%g\n", a.food, b.food, a.water, b.water); ++fail;
+    } else std::printf("OK   sick tick: -1 food, -1 water, no blood DoT\n");
   }
 
   return fail ? 1 : 0;

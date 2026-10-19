@@ -4,6 +4,8 @@
 
 namespace mdaz {
 
+class Rng;
+
 // C2 globals Timer_ALL / Timer_Hours / Timer_Minutes / Day_mode / Rain / rains_level
 // (see cpp/docs_gen/groups/Time_cyles_and_weather.json + var_assignments.json).
 struct WeatherState {
@@ -25,7 +27,8 @@ struct WeatherState {
   void sync_from_day_phase();
   void sync_clock_from_timer_all();
   // Returns true when Timer_ALL wrapped (Day_survived++ in game loop).
-  bool update(float dt);
+  // rng: choose(1,2,3,4) for the Rain timer; in_bunker blocks rain start (C2 inBunker).
+  bool update(float dt, Rng* rng = 0, bool in_bunker = false);
   int timer_hours() const;
   // Sleep-at-fire helper: advance in-game minutes (same units as Timer_ALL).
   void advance_game_minutes(float minutes);

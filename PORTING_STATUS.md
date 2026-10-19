@@ -460,3 +460,28 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Not done: Craft_21/22 "Craft arrows" (sticks + knife →51 ×Crafted). The Crafted count and the consumption expression `[5,X,[6,3,Crafted]]` are not yet resolved.
 - Not done: the C2 craft wait (3/4/5 s with IV21=1). Crafting in the port is instant.
 - Craft_fishing_rod result line not yet confirmed (port: 87).
+
+## Item 9 — sickness (IV34) + day/night/rain timebase (2026-10-19, 23:58 Baku)
+- Status: Реализована, но не проверена (unit tests only; no screenshots).
+- Sickness, from the C2 States group:
+  - While sick: −1 food and −1 water per 5 s stats tick, and no blood regeneration.
+  - Gain: temperature ≤ 0 and random(50) > 28, checked each tick.
+  - Cure: food, water and temperature all ≥ 80, not bleeding, then choose(1,2)==1.
+  - Eating raw steak 60, rabbit meat 71, or herring/salmon/ruffe/perch 91–94: 50% chance to get sick.
+  - Tetracycline 46 cures it.
+- Removed invented sickness sources:
+  - zombie-hit infection roll;
+  - heavy-rain sprint roll;
+  - digging roll;
+  - rain-drinking roll;
+  - blood DoT and fever.
+- Clock:
+  - +1 game minute every 1.5 s. Timer_ALL resets when it goes above 1440.
+  - Hour 24 keeps the current Day_mode.
+  - The clock now also runs in the bunker; C2 has no bunker condition on it.
+- Rain:
+  - The Rain_speed timer stops rain if it is raining. Otherwise, if not in the bunker and choose(1..4)==1, rain starts.
+  - The invented rains_level increment is removed. rains_level is 1 at the start of level 0.
+- Not done:
+  - rains_level → 2 after Stats_time_lived ≥ 5000 (SEED_morezeds == 0).
+  - AI event trees (zombie, animal, bandit): not audited in this step.

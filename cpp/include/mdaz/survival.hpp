@@ -27,6 +27,7 @@ struct SurvivalState {
   float temperature;   // 0..100  (IV16)
   float bleeding;      // >0 means bleeding active (IV22)
   bool infected;
+  int stat_ticks = 0;   // incremented per 5 s stats tick (C2 States)
   char death_reason[32];
 
   SurvivalState();

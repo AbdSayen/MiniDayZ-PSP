@@ -5,6 +5,14 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented mechanics removed, cross-platform RNG order fix)
 
 ## 2026-10-19 open items
+- Weather/sickness (23:58 Baku):
+  - Rain intensity mapping rain_intensity_from_level is a port invention; level 1 gives 0.45.
+  - The rain effects gated on rain > 0.7 (sprint slow, wetness soak) are not from C2 and never fire at rains_level 1.
+  - Other unverified extras found during this audit:
+    - fire-rest blood regen and sleep;
+    - rain drinking;
+    - bush and dig forage.
+  - AI event trees not audited yet.
 - Craft (23:53 Baku):
   - C2 Craft_3/31–34 clear both ingredient slots (a157 → 0); the port consumes only 1 of each.
   - The 3–5 s craft wait is missing.

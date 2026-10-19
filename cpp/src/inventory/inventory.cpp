@@ -196,9 +196,12 @@ bool Inventory::remove_at(int slot, int count) {
 }
 
 bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDatabase& db, Rng* rng) {
-  (void)rng; // reserved: C2 infection rolls on eat were not proven for cook-only raws
   if (slot_i < 0 || slot_i >= kInventorySlots) return false;
   InvSlot& s = slots_[slot_i];
+  // C2 eat: raw steak 60, rabbit meat 71, herring/salmon/ruffe/perch 91-94 ->
+  // choose(1,2)==1 sets IV34 (sick).
+  const ItemId raw_id = s.id;
+  const bool raw_sick_food = raw_id == 60 || raw_id == 71 || (raw_id >= 91 && raw_id <= 94);
   if (s.empty()) return false;
   const ItemDef* def = db.find(s.id);
   if (!def) return false;
@@ -228,6 +231,7 @@ bool Inventory::use_consumable(int slot_i, SurvivalState& survival, const ItemDa
       survival.blood += def->heal_amount;
       if (survival.blood > 100.f) survival.blood = 100.f;
     }
+    if (raw_sick_food && rng && rng->next_int(1, 2) == 1) survival.infected = true;
   } else if (def->category == ItemCat_Drink) {
     if (def->water_restore <= 0.f && def->food_restore <= 0.f) return false;
     if (def->water_restore > 0.f) {
