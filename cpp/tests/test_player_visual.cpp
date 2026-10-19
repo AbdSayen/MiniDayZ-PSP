@@ -32,6 +32,7 @@ int test_player_visual() {
     "{\"items\":[{\"id\":251,\"name\":\"Army helmet\",\"category\":\"clothing\"},"
     "{\"id\":400,\"name\":\"Molle vest\",\"category\":\"clothing\"}]}");
   mdaz::Inventory inv;
+  { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv.restore_worn(tw_, 4); } // test: 16 C2 slots
   inv.add_item(251, 1, db);
   inv.add_item(400, 1, db);
   (void)inv.wear_clothing(0, db);

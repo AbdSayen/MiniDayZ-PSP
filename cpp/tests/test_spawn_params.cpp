@@ -61,6 +61,7 @@ int test_spawn_params() {
 
   mdaz::inventory_set_item_for_remove_id(18);
   mdaz::Inventory inv;
+  { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv.restore_worn(tw_, 4); } // test: 16 C2 slots
   mdaz::ItemDatabase db;
   inv.add_item(18, 1, db);
   inv.add_item(19, 1, db);

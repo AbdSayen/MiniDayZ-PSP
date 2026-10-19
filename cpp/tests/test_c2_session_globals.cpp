@@ -16,6 +16,7 @@ int test_c2_session_globals() {
 
   mdaz::C2SessionGlobals g;
   mdaz::Inventory inv;
+  { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv.restore_worn(tw_, 4); } // test: 16 C2 slots
   mdaz::ItemDatabase db;
   db.load_from_json_file("data/items.json");
   inv.add_item(80, 1, db);

@@ -163,3 +163,11 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Not ported: C2 noise ("noice") still lets zeds walk toward a sound without LOS in the original; port aggro = hearing radius gated by LOS (zeds behind a wall stay put). Bullet bounce-off-solids for NPC Bullet movers not modelled (bullet is destroyed, as the Hitting_obstacles event does).
 - Tank rush into a wall -> stun (zed_tank_eyes vs t336/t339/t927) not ported.
 - Player melee is instant in the port (C2 melee_swing is a t910 bullet and is stopped by walls).
+
+## Noise (noice)
+- Ported: gunshots and F1. Not yet: flare 250, burning zed 100, Public enemy 1500, deer/rabbit flee, wolf move +-100, the random-angle warn variant, the idle-only (IV0==0) gate (the port warns any zed not chasing by sight).
+- For bullet types with two radii (179, 461, 177, 235) the port uses the larger; the variant mapping hasn't been researched.
+- Random rolls come from a hash, not the RNG (deterministic).
+
+## HUD hotbar
+- The cell layout is the port's own (one row, at most 8): the original groups cells by container (prototypes in GUI_layout/Rust_layer 7+3+3+3+1). The visual grouping and hider sprites aren't ported.

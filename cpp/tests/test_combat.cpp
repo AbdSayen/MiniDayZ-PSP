@@ -241,9 +241,9 @@ int test_combat() {
     mdaz::Inventory inv;
     inv.clear();
     inv.add_item(251, 1, db);
+    inv.wear_clothing(0, db);  // C2: equipping frees the bag slot
     inv.add_item(400, 1, db);
     inv.wear_clothing(0, db);
-    inv.wear_clothing(1, db);
     const float mul = inv.armor_damage_mul();
     // 0.85 * 0.65 = 0.5525
     if (mul > 0.56f || mul < 0.54f) {

@@ -9,20 +9,3 @@ Thumbs.db
 *.user
 CMakeCache.txt
 CMakeFiles/
-
-# публикация на GitHub
-cpp/build/
-cpp/rep/
-cpp/shots*/
-cpp/platform/psp/deploy/
-cpp/third_party/SDL2*
-*.obj
-*.d
-*.elf
-*.dll
-*.bmp
-*.SFO
-ppsspp_shot*.png
-*.pre_fix_bak
-*.bak_render
-*.bak_ui

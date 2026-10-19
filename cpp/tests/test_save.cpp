@@ -24,10 +24,11 @@ int test_save() {
   db.load_from_json_string(
       "{\"items\":[{\"id\":1,\"name\":\"Canned beans\"},{\"id\":251,\"name\":\"Army helmet\"}]}");
   mdaz::Inventory inv;
-  inv.add_item(1, 2, db);
   inv.add_item(251, 1, db);
   float saved_iv6 = 100.f;
-  if (inv.wear_clothing(1, db) || inv.worn_count() > 0) {
+  const bool worn_ok = inv.wear_clothing(0, db);  // frees the single base slot
+  inv.add_item(1, 2, db);
+  if (worn_ok || inv.worn_count() > 0) {
     saved_iv6 = inv.worn_iv6(0);
     mdaz::Rng wr(7);
     for (int i = 0; i < 60 && inv.worn_iv6(0) >= saved_iv6 - 0.01f; ++i)
@@ -105,6 +106,7 @@ int test_save() {
   }
   mdaz::Player p2;
   mdaz::Inventory inv2;
+  { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv2.restore_worn(tw_, 4); } // test: 16 C2 slots
   mdaz::WeatherState w2;
   mdaz::VehicleSystem vs2;
   mdaz::CropSaveView crops2;
@@ -270,6 +272,7 @@ int test_save() {
       mdaz::LootSaveView many2;
       mdaz::Player p3;
       mdaz::Inventory inv3;
+      { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv3.restore_worn(tw_, 4); } // test: 16 C2 slots
       mdaz::WeatherState w3;
       if (!mdaz::SaveSystem::read_from_buffer(blob18, p3, inv3, w3, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                               0, 0, 0, 0, 0, 0, &many2)) {

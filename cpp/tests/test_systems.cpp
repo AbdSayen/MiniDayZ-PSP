@@ -70,6 +70,7 @@ int test_systems() {
   mdaz::ItemDatabase db;
   db.load_from_json_file("data/items.json");
   mdaz::Inventory inv;
+  { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv.restore_worn(tw_, 4); } // test: 16 C2 slots
   mdaz::Rng qr(99);
   mdaz::MapGenerator mg;
   mg.generate_new_game(42);
