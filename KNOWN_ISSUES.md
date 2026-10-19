@@ -171,3 +171,6 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 
 ## HUD hotbar
 - The cell layout is the port's own (one row, at most 8): the original groups cells by container (prototypes in GUI_layout/Rust_layer 7+3+3+3+1). The visual grouping and hider sprites aren't ported.
+
+## HUD portrait
+- Always the 'White' skin frame 0; per-skin anims (Black/Yellow/...) and blinking frame 1 aren't ported. On PSP, if sprites.pak has no gui_btn_perks the old skin sprite is the fallback (same position).

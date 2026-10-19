@@ -578,8 +578,17 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   // Portrait (gui_portrait_bg frame 39x53 @ 83,1) at 2/3 scale, top-left.
   if (spr(platform, "gui_portrait_bg-sheet0"))
     platform.draw_sprite_frame("gui_portrait_bg-sheet0", kSafe, kSafe, 26.f, 35.f, 83, 1, 39, 53, 0.f, 1.f);
-  if (spr(platform, "player_skin_def_1-sheet0"))
-    platform.draw_sprite_frame("player_skin_def_1-sheet0", kSafe + 1.f, kSafe + 8.f, 24.f, 24.f, 1, 1, 30, 30, 0.f, 1.f);
+  // C2: the portrait is gui_btn_perks (29x32, anim per skin, hotspot -4,-3) pinned at the same
+  // origin as the card (gui_portrait_bg, hotspot +1,0), so it sits inside the card's dark window
+  // at card-local (5,3). Card stays below (gui_portrait_bg a63 = move to bottom).
+  {
+    const float s = 26.f / 39.f;
+    const float px = kSafe + 5.f * s, py = kSafe + 3.f * s;
+    if (spr(platform, "gui_btn_perks-sheet0"))
+      platform.draw_sprite_frame("gui_btn_perks-sheet0", px, py, 29.f * s, 32.f * s, 1, 1, 29, 32, 0.f, 1.f);
+    else if (spr(platform, "player_skin_def_1-sheet0"))
+      platform.draw_sprite_frame("player_skin_def_1-sheet0", px, py, 29.f * s, 29.f * s, 1, 1, 30, 30, 0.f, 1.f);
+  }
 
   // Vitals: blood, water, food, heat (C2 GUI_layout order; colours = the C2 1x5 bar strips).
   const float vx = kVitalX;

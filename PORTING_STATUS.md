@@ -342,3 +342,5 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 | Fidelity: noise (noice/warn_zed) | Реализована, но не проверена | ZombieSystem::noise(at, r): zeds within r+200 walk toward the point +-50 at 80-90 px/s for 2 s with no LOS. Wired: per-weapon gunshot radius (data.js Firearm shooting: 450/400/350/300/100, bow none) and F1 explosion 500. Unit test OK; not checked in play. |
 
 | Fidelity: HUD hotbar vs capacity | Реализована, но не проверена | The original has slot cells (gui_item_backpack, IV12 = index) only for the capacity the worn containers give, and hides missing containers with gui_slot_hider_*. The port hotbar now draws min(capacity, 8) cells instead of a fixed 8. Screenshot run_c: 3 cells with 3 slots. |
+
+| Fidelity: HUD portrait | Реализована, но не проверена | The original portrait is gui_btn_perks (29x32, per-skin anim, hotspot -4,-3) pinned with the gui_portrait_bg card, inside its dark window at card-local (5,3); the card is drawn below. The port drew a whole-body skin sprite that overlapped the bottom of the card. Now gui_btn_perks frame 0 (White) at 2/3 scale. Shots: portrait_before_after.png. |
