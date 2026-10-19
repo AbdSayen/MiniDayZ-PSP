@@ -738,7 +738,10 @@ void Game::start_new_game(Difficulty d) {
   location_reload_t_ = 0.f;
   world_.reset();
   mapgen_.apply_collision(world_);
-  world_tiles_.stamp_from_mapgen(mapgen_);
+  // C2 create_map_location tilemaps for every mapgen cell in Reload_locations_start range.
+  cell_tiles_.clear();
+  cell_tiles_.sync(mapgen_.c2(), player_.pos, MapGenerator::reload_radius_for(LocationReload_Start),
+                   true, 0, rng_);
   // Trees = generate_location array-518 rows with category 1 (create_map_element): subtypes
   // 1..6 tree sprites, 7..10 tree_block. trees_[] holds the trunk point (sprite Imagepoint 1).
   tree_count_ = 0;
@@ -1045,12 +1048,14 @@ void Game::sync_location_stream(LocationReloadMode mode) {
   bool was[kMaxLocations];
   for (int i = 0; i < n && i < kMaxLocations; ++i) was[i] = mapgen_.location(i).active;
   mapgen_.reload_locations(player_.pos, mode);
+  if (mode == LocationReload_AfterSave) cell_tiles_.clear();
+  cell_tiles_.sync(mapgen_.c2(), player_.pos, MapGenerator::reload_radius_for(mode),
+                   mode != LocationReload_Runtime, 0, rng_);
   bool changed = false;
   for (int i = 0; i < n && i < kMaxLocations; ++i) {
     MapLocation& L = mapgen_.location_mut(i);
     if (L.active != was[i]) changed = true;
     if (L.active && !was[i]) {
-      world_tiles_.stamp_location_footprint(L);
       if (mode != LocationReload_AfterSave) {
         spawn_loot_for_poi(L);
         spawn_hostiles_for_poi(L);
@@ -4338,14 +4343,11 @@ void Game::render() {
 
       {
         const bool has_forest = platform_->has_sprite("tilemap_forest");
-        const bool has_water = platform_->has_sprite("tilemap_water");
-        const bool has_sand = platform_->has_sprite("tilemap_sand");
         const bool has_g1 = platform_->has_sprite("ground_lvl1_tilemap");
         const bool has_g2 = platform_->has_sprite("ground_lvl2_tilemap");
         const bool has_g3 = platform_->has_sprite("ground_lvl3_tilemap");
         const bool has_g4 = platform_->has_sprite("ground_lvl4_tilemap");
         const bool has_gnd = has_g1 || has_g2 || has_g3 || has_g4;
-        const float water_w = 60.f;
         // Each ground_lvl*: 300×300 atlas → 5×5 of 60×60 (C2 tile size).
         // Pick atlas by coarse biome hash so the map isn't one repeating sheet.
         if (has_gnd) {
@@ -4386,70 +4388,20 @@ void Game::render() {
             }
           }
         }
+        // C2 Map layout bg strips (static ground_lvl1 instances) + per-cell ground tilemaps.
+        world_tiles_.draw(*platform_, "ground_lvl1_tilemap", gcam, sc, cx * 2.f, cy * 2.f);
+        cell_tiles_.draw(*platform_, 0, gcam, sc, cx * 2.f, cy * 2.f);
         // Forest: the real C2 tilemap_forest instances of the Map layout (150x150 tiles, Solid).
         // Replaces the old procedural canopy that tinted every cell of the map with forest at
         // 55% alpha (not in the original, and it had no collision).
         if (has_forest)
           world_tiles_.draw(*platform_, "tilemap_forest", gcam, sc, cx * 2.f, cy * 2.f);
-        // Water / sand fringe (finer 60×60 cells)
-        {
-          const float step = water_w;
-          const float tile = water_w * sc;
-          for (int gx = view.lo(gcam.x, cx, sc, step); gx <= view.hi(gcam.x, cx, sc, step); ++gx) {
-            for (int gy = view.lo(gcam.y, cy, sc, step); gy <= view.hi(gcam.y, cy, sc, step); ++gy) {
-              const float wx = (gx + 0.5f) * step;
-              const float wy = (gy + 0.5f) * step;
-              const float margin = 400.f;
-              const bool deep = wx < margin - 80.f || wy < margin - 80.f ||
-                wx > kMapLayoutW - margin + 80.f || wy > kMapLayoutH - margin + 80.f;
-              const bool shore = !deep && (wx < margin || wy < margin ||
-                wx > kMapLayoutW - margin || wy > kMapLayoutH - margin);
-              if (!deep && !shore) continue;
-              const float sx = cx + (wx - gcam.x) * sc;
-              const float sy = cy + (wy - gcam.y) * sc;
-              const int ux = ((gx % 3) + 3) % 3;
-              const int uy = ((gy % 5) + 5) % 5;
-              if (deep && has_water) {
-                platform_->draw_sprite_frame("tilemap_water",
-                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                  ux * 60, uy * 60, 60, 60, 0.f, 1.f);
-              } else if (shore && has_sand) {
-                platform_->draw_sprite_frame("tilemap_sand",
-                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                  ux * 60, uy * 60, 60, 60, 0.f, 1.f);
-              } else if (deep) {
-                platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                                     0.12f, 0.22f, 0.35f, 1.f);
-              }
-            }
-          }
-        }
-        // ground_enviroment_tilemap: 30×30 cells in 150×510 (5×17) — scatter props
-        if (platform_->has_sprite("ground_enviroment_tilemap")) {
-          const float step = 30.f;
-          const float tile = step * sc;
-          for (int gx = view.lo(gcam.x, cx, sc, step); gx <= view.hi(gcam.x, cx, sc, step); ++gx) {
-            for (int gy = view.lo(gcam.y, cy, sc, step); gy <= view.hi(gcam.y, cy, sc, step); ++gy) {
-              // Sparse placement: ~1/7 cells get a prop
-              const unsigned h = static_cast<unsigned>(gx * 73856093u) ^
-                                 static_cast<unsigned>(gy * 19349663u);
-              if ((h % 7u) != 0u) continue;
-              const float wx = (gx + 0.5f) * step;
-              const float wy = (gy + 0.5f) * step;
-              const float margin = 420.f;
-              if (wx < margin || wy < margin ||
-                  wx > kMapLayoutW - margin || wy > kMapLayoutH - margin) continue;
-              const float sx = cx + (wx - gcam.x) * sc;
-              const float sy = cy + (wy - gcam.y) * sc;
-              const int idx = static_cast<int>(h % 85u); // 5*17
-              const int ux = (idx % 5) * 30;
-              const int uy = (idx / 5) * 30;
-              platform_->draw_sprite_frame("ground_enviroment_tilemap",
-                sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                ux, uy, 30, 30, 0.f, 1.f);
-            }
-          }
-        }
+        // C2 layers: sand (static Map instances), ground_enviroment (per cell), Water (static Map
+        // instances + per-cell t199). Replaces the invented edge fringe and hashed prop scatter.
+        world_tiles_.draw(*platform_, "tilemap_sand", gcam, sc, cx * 2.f, cy * 2.f);
+        cell_tiles_.draw(*platform_, 1, gcam, sc, cx * 2.f, cy * 2.f);
+        world_tiles_.draw(*platform_, "tilemap_water", gcam, sc, cx * 2.f, cy * 2.f);
+        cell_tiles_.draw(*platform_, 2, gcam, sc, cx * 2.f, cy * 2.f);
       }
       platform_->ground_cache_end();
 

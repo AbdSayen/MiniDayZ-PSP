@@ -14,6 +14,7 @@
 #include "mdaz/loot.hpp"
 #include "mdaz/mapgen.hpp"
 #include "mdaz/c2_mapgen.hpp"
+#include "mdaz/cell_tilemaps.hpp"
 #include "mdaz/menu_camera.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/player.hpp"
@@ -156,6 +157,7 @@ private:
   BulletSystem bullets_;
   BunkerMap bunker_;
   WorldTilemaps world_tiles_;
+  CellTilemaps cell_tiles_;  // C2 create_map_location per-cell tilemaps
   WorldTilemaps menu_tiles_;
   LayoutSprites menu_sprites_;
   MenuCamera menu_cam_;

@@ -198,3 +198,11 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
   hand-ports that read "else" from dec output should be re-audited.
 - Invented vehicle placements (car/boat/bike near start) remain.
 
+
+## B2d known issues (2026-10-19)
+- C2 Wait 0.5 actions inside create_map_location are ignored (tilemap edits applied immediately).
+- Ground templates 681/682/771 are 17x17 (last half column empty) like the layout data; t475 is 18x18.
+- Water tilemaps are drawn but not yet used for zed spawn rejection, wading or fishing.
+- Road edge appearance not yet compared side by side with the original.
+- PSP: 40 slots x ~1.9 KB; performance on PSP not measured.
+

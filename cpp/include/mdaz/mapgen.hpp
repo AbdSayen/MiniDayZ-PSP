@@ -82,6 +82,7 @@ constexpr float kC2CropGrowSeconds = 20.f;
 // 15 = POI marker; 12/13/14 = road cells consumed by generate_array_tomap → dirt tile 15.
 class MapGenerator {
 public:
+  static float reload_radius_for(LocationReloadMode mode);
   MapGenerator();
   void clear();
   void generate_new_game(int seed);
@@ -133,7 +134,6 @@ private:
   void add_c2(LocationType t, float x, float y, int sx, int sy, int sub, int shape, int cell);
   void init_river(int seed);
   void apply_generate_array_roads();
-  static float reload_radius_for(LocationReloadMode mode);
   static float dist_to(const MapLocation& L, Vec2 p);
 };
 

@@ -1,3 +1,5 @@
+#include "mdaz/cell_tilemaps.hpp"
+#include "mdaz/rng.hpp"
 #include "mdaz/c2_mapgen.hpp"
 #include "mdaz/building_interior.hpp"
 // Selected-slot regression tests (bug 2026-10-19: USE consumed the FIRST item
@@ -239,6 +241,24 @@ static void test_restored_step1(Game& g) {
     }
     check(nh == m.c2().hummer_count && nhe == m.c2().heli_count,
           "hammercrash_point / helicrash_point each give one wreck location");
+  }
+  {
+    // C2 create_map_location tilemap pass over all 256 mapgen cells.
+    static CellTilemaps ct;
+    static CellTilemaps::Slot sl;
+    Rng tr; tr.seed(7u);
+    int made = 0, with_road = 0, with_env = 0, with_water = 0, bad = 0;
+    for (int ci = 0; ci < kC2Grid * kC2Grid; ++ci) {
+      ct.build_cell(m.c2(), ci, sl, 0, tr);
+      if (sl.gkind == 0) ++made; else if (sl.gkind != -1) ++bad;
+      bool road = false;
+      for (int k = 0; k < CellTilemaps::kG * CellTilemaps::kG; ++k) if (sl.g[k] == 15) road = true;
+      if (road) ++with_road;
+      if (sl.has_env) ++with_env;
+      if (sl.has_water) ++with_water;
+    }
+    std::printf("NOTE cml tiles: ground %d/256, road tile 15 in %d, env %d, water %d\n", made, with_road, with_env, with_water);
+    check(made > 0 && bad == 0 && with_road > 0, "create_map_location builds level-1 ground tilemaps with roads");
   }
   bool far_inactive = true;
   for (int i = 0; i < m.location_count(); ++i) {
