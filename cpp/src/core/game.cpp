@@ -2017,6 +2017,7 @@ bool Game::load_game_from_disk() {
   wetness_ = wet;
   gasmask_filter_ = gfilt;
   player_.fish_caught = fish;
+  equipped_slot_ = next_hotbar_slot(equipped_slot_, 0, 0); // clamp a bad save index
   mag_weapon_id_ = inventory_.slot(equipped_slot_).id;
   apply_crops_view(crops_view);
   apply_traps_view(traps_view);
@@ -2141,17 +2142,30 @@ void Game::try_craft_menu_recipe() {
 void Game::update_craft_menu(const InputState& in) {
   const int n = craft_recipe_count();
   if (n <= 0) { show_craft_menu_ = false; return; }
+  if (craft_menu_index_ < 0 || craft_menu_index_ >= n) craft_menu_index_ = 0;
   if (in.nav_up) craft_menu_index_ = (craft_menu_index_ + n - 1) % n;
   if (in.nav_down) craft_menu_index_ = (craft_menu_index_ + 1) % n;
   if (in.back_pressed || in.craft_pressed) { show_craft_menu_ = false; return; }
   if (in.confirm_pressed || in.attack_pressed) try_craft_menu_recipe();
 }
 
+int Game::next_hotbar_slot(int cur, int digit, int delta) {
+  // Hotbar = bag slots 0..7 (8 quick slots). Digit 1..8 selects directly, delta cycles.
+  if (cur < 0 || cur >= kQuickSlots) cur = 0;
+  if (digit >= 1 && digit <= kQuickSlots) return digit - 1;
+  if (delta != 0) {
+    int s = (cur + delta) % kQuickSlots;
+    if (s < 0) s += kQuickSlots;
+    return s;
+  }
+  return cur;
+}
+
 void Game::use_bag_slot(int slot) {
   if (slot < 0 || slot >= inventory_.slot_count() || inventory_.slot(slot).empty()) return;
   const int prev = equipped_slot_;
   equipped_slot_ = slot;
-  use_equipped_item(false);
+  use_equipped_item();
   equipped_slot_ = prev;
   sync_mag_for_equipped();
 }
@@ -2287,13 +2301,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
   }
 
-  if (in.slot_digit >= 1 && in.slot_digit <= 8) {
-    equipped_slot_ = in.slot_digit - 1;
-    sync_mag_for_equipped();
-  }
-  if (in.equip_delta != 0) {
-    equipped_slot_ = (equipped_slot_ + in.equip_delta) % 8;
-    if (equipped_slot_ < 0) equipped_slot_ += 8;
+  if ((in.slot_digit >= 1 && in.slot_digit <= 8) || in.equip_delta != 0) {
+    equipped_slot_ = next_hotbar_slot(equipped_slot_, in.slot_digit, in.equip_delta);
     sync_mag_for_equipped();
   }
 
@@ -3304,7 +3313,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     return;
   }
 
-  if (in.inventory_pressed) use_equipped_item(true);
+  if (in.inventory_pressed) use_equipped_item();
 
   if (player_.survival.is_dead() && state_ != AppState_Dead) {
     // Drop inventory as corpse piles (visible until return to menu)
@@ -3324,12 +3333,16 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   }
 }
 
-void Game::use_equipped_item(bool allow_fallback) {
+void Game::use_equipped_item() {
+    // USE always acts on the SELECTED slot only (equipped_slot_; use_bag_slot sets it
+    // temporarily for the inventory focus). Bug 2026-10-19: this used to scan the whole
+    // inventory for gasoline/toolbox and fall back to the first consumable.
+    if (equipped_slot_ < 0 || equipped_slot_ >= inventory_.slot_count()) return;
     // Gasoline (53) refuel / Car toolbox (59) repair
     bool vehicle_item = false;
-    for (int i = 0; i < inventory_.slot_count() && !vehicle_item; ++i) {
+    {
+      const int i = equipped_slot_;
       const ItemId id = inventory_.slot(i).id;
-      if (inventory_.slot(i).count <= 0) continue;
       if (id == 53) {
         Vehicle* v = vehicles_.driven();
         if (!v) {
@@ -3521,18 +3534,7 @@ void Game::use_equipped_item(bool allow_fallback) {
           else
             audio_->play("eat", 0.4f);
         };
-        if (!inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_) &&
-            allow_fallback) {
-          for (int i = 0; i < inventory_.slot_count(); ++i) {
-            const ItemId id = inventory_.slot(i).id;
-            if (inventory_.use_consumable(i, player_.survival, items_, &rng_)) {
-              if (id == 45) adrenaline_t_ = 18.f;
-              use_anim_t_ = 0.5f;
-              play_consume(id);
-              break;
-            }
-          }
-        } else {
+        if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
           use_anim_t_ = 0.5f;
           if (before == 45) adrenaline_t_ = 18.f;
           play_consume(before);

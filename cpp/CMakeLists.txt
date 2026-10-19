@@ -144,6 +144,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_tutorial.cpp
     tests/test_map_fidelity.cpp
     tests/test_player_visual.cpp
+    tests/test_selection.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

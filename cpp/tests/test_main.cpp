@@ -16,6 +16,7 @@ int test_c2_session_globals();
 int test_tutorial();
 int test_map_fidelity();
 int test_player_visual();
+int test_selection();
 
 int main() {
   int failed = 0;
@@ -35,6 +36,7 @@ int main() {
   failed += test_tutorial();
   failed += test_map_fidelity();
   failed += test_player_visual();
+  failed += test_selection();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

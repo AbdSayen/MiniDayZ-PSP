@@ -69,6 +69,10 @@ public:
   int craft_menu_index() const { return craft_menu_index_; }
   bool near_campfire() const { return campfires_.near_fire(player_.pos); }
   int equipped_slot() const { return equipped_slot_; }
+  // Hotbar quick-slot selection: digit 1..8 picks directly, delta cycles (wraps 0..7);
+  // an out-of-range current index is clamped to 0.
+  static int next_hotbar_slot(int cur, int digit, int delta);
+  static const int kQuickSlots = 8;
   float attack_cd() const { return attack_cd_; }
   float reload_cd() const { return reload_cd_; }
   float airdrop_alert() const { return airdrop_alert_; }
@@ -113,6 +117,7 @@ public:
   void start_new_game(Difficulty d);
 
 private:
+  friend struct GameTestAccess; // tests/test_selection.cpp
   IPlatform* platform_;
   IAudio* audio_;
   AppState state_;
@@ -193,7 +198,7 @@ private:
   void update_craft_menu(const InputState& in);
   bool load_game_from_disk();
   void save_game_to_disk();
-  void use_equipped_item(bool allow_fallback);
+  void use_equipped_item();
   void use_bag_slot(int slot);
   void equip_bag_slot(int slot);
   void try_drop_slot(int slot);
