@@ -56,6 +56,23 @@ const Txt kUi[] = {
   {474, "You can hunt rabbits and flay them with a knife to get meat."},
   {475, "You can gather berries from some bushes, just look around."},
 };
+// User-requested PSP wording (2026-10-20, KNOWN_ISSUES "PSP hint wording"): the original
+// lines above mention tapping / touch buttons / drag and drop, which a PSP does not have.
+// Buttons follow platform_psp.cpp poll_input: Circle interact, Cross attack/confirm,
+// Square reload, Triangle use equipped, SELECT inventory, L+Left/Right switch hand item;
+// inventory screen (Game::update_inventory_ui): D-pad focus, Cross use/wear, Triangle to
+// hand, Square drop.
+const Txt kUiPsp[] = {
+  {456, "Move with the D-pad"},
+  {457, "Movement with the analog stick"},
+  {454, "This is your hands slot, it is always available, even if you have no other gear. Use items by selecting them with the D-pad and pressing Cross."},
+  {460, "Choose one perk and press Cross to take it. It will always be active until your character dies."},
+  {461, "Use the Circle button to pick up items and interact."},
+  {462, "Now you have a ranged weapon, aiming happens automatically. Press Cross to shoot."},
+  {463, "You can reload your weapon by pressing Square. If you have suitable ammo, it will be loaded."},
+  {464, "Switch between melee and ranged weapons mode with L + Left/Right."},
+  {467, "Use the D-pad to choose items in the inventory: Cross uses, Triangle puts in hands, Square drops."},
+};
 const Txt kLog[] = {
   {125, "I'm friendly."},
   {126, "Good."},
@@ -64,6 +81,14 @@ const Txt kLog[] = {
 } // namespace
 
 const char* tut_ui_text(int id) {
+  for (int i = 0; i < MDAZ_N(kUiPsp); ++i) if (kUiPsp[i].id == id) return kUiPsp[i].s;
+  return tut_ui_text_original(id);
+}
+bool tut_ui_text_is_psp_override(int id) {
+  for (int i = 0; i < MDAZ_N(kUiPsp); ++i) if (kUiPsp[i].id == id) return true;
+  return false;
+}
+const char* tut_ui_text_original(int id) {
   for (int i = 0; i < MDAZ_N(kUi); ++i) if (kUi[i].id == id) return kUi[i].s;
   return "";
 }

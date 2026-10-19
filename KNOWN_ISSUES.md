@@ -248,3 +248,24 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 ## 2026-10-20 00:40 (Baku)
 - Dogs in the port still roam/chase like hostile animals but deal no damage; the original dog is a player companion (gui_dog_control). Not ported yet.
 - Wolf vision cone (180°) not implemented: Animal has no facing field. Zombie wandering, bandit aim/shoot timing and screamer audit still pending.
+
+## PSP hint wording (deliberate, user-requested deviation, 2026-10-20)
+The user explicitly asked that hints naming a keyboard/mouse/touch control use the PSP buttons. Original text (l_eng_ui.xml) -> port text:
+| id | Original (C2) | PSP port |
+|---|---|---|
+| 33 | Movement: By tap | Movement: analog stick / D-pad |
+| 230 | ...Shoot by using the button... | ...Shoot by pressing Cross... |
+| 454 | ...Use items by tapping. | ...Use items by selecting them with the D-pad and pressing Cross. |
+| 456 | Move by tapping/drawing | Move with the D-pad |
+| 457 | Movement with the stick | Movement with the analog stick |
+| 460 | Choose one perk and tap on the plus button. ... | Choose one perk and press Cross to take it. ... |
+| 461 | Use the interact button to pick up items and interact. | Use the Circle button to pick up items and interact. |
+| 462 | ...Use this button to shoot. | ...Press Cross to shoot. |
+| 463 | You can reload your weapon by tapping this button. ... | You can reload your weapon by pressing Square. ... |
+| 464 | Switch between melee and ranged weapons mode. | ... mode with L + Left/Right. (original named no button; the C2 tip highlighted one) |
+| 467 | Use drag and drop to manage items in the inventory. | Use the D-pad to choose items in the inventory: Cross uses, Triangle puts in hands, Square drops. |
+Open/ambiguous:
+- 422 "Push this button when ready for next wave." (wave mode) not changed: the mode is not ported, so there is no PSP button to name.
+- 458 "Choose the movement controls mode" still shown, but the port has no mode choice (Cross only closes the tip). Not reworded: it names no control. Needs a decision.
+- 460: the port has no perk-choice UI; Cross only closes the tip.
+- Desktop builds show the same PSP wording.

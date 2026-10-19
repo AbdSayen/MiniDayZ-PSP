@@ -1,7 +1,10 @@
 #include "mdaz/c2_session_globals.hpp"
 #include "mdaz/tutorial.hpp"
 
+#include "mdaz/tutorial_layout.hpp"
+
 #include <cstdio>
+#include <cstring>
 
 int test_tutorial() {
   std::printf("--- test_tutorial / movement / tutor flags ---\n");
@@ -60,6 +63,26 @@ int test_tutorial() {
     ++fail;
   } else {
     std::printf("OK   tutorMoveChoosen / tutorMovementType TAP\n");
+  }
+
+  // PSP hint wording (user-requested deviation): no shown tutorial line may name touch /
+  // mouse / keyboard controls; every override keeps an original line to compare against.
+  {
+    const char* bad[] = {"tap", "Tap", "drag", "mouse", "click", "key", "this button", "the button"};
+    int checked = 0, overrides = 0; const int fail0 = fail;
+    for (int id = 0; id < 600; ++id) {
+      const char* s = mdaz::tut_ui_text(id);
+      if (!s || !s[0]) continue;
+      ++checked;
+      if (mdaz::tut_ui_text_is_psp_override(id)) {
+        ++overrides;
+        std::printf("     hint %d\n       C2 : %s\n       PSP: %s\n", id, mdaz::tut_ui_text_original(id), s);
+      }
+      for (unsigned b = 0; b < sizeof(bad) / sizeof(bad[0]); ++b)
+        if (std::strstr(s, bad[b])) { std::printf("FAIL hint %d still says '%s': %s\n", id, bad[b], s); ++fail; }
+    }
+    if (overrides != 9) { std::printf("FAIL PSP hint overrides=%d (want 9)\n", overrides); ++fail; }
+    else if (fail == fail0) std::printf("OK   PSP hint wording: %d tutorial lines checked, %d rewritten, none name tap/drag/mouse/key\n", checked, overrides);
   }
 
   return fail;

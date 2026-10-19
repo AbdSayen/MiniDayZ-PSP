@@ -600,3 +600,8 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Wolf: battack timer 1.5 s regular, damage Zed_dmg. Cooldown was 3 s (unsourced), now 1.5 s.
 - Dog: t892/t894 is the player's companion (Dog_check_situation follows the player). It never calls Player_get_hit, so the invented dog→player damage was removed. The companion AI itself is not ported: Не исследована → Исследована.
 - Not done in this step: wolf/dog 180° cone, zombie wandering (warn_zed), bandit aiming, screamer behaviour. All Не исследована/Исследована; see KNOWN_ISSUES.
+
+## 2026-10-20 00:50 (Baku) - PSP hint wording (user request, item 1)
+- User explicitly asked for PSP wording in hints that name touch/keyboard/mouse controls. Deliberate deviation, list in KNOWN_ISSUES "PSP hint wording".
+- Port: `kUiPsp` override table in `src/world/tutorial_layout.cpp` (`tut_ui_text` returns PSP text, `tut_ui_text_original` keeps l_eng_ui.xml verbatim); `kPspOverrides` in `src/ui/ui_strings.cpp` for the same ids plus XML-only ids 33/230. Buttons taken from `platform_psp.cpp` poll_input and `Game::update_inventory_ui`.
+- Evidence: `test_tutorial` prints C2 vs PSP line for 9 ids and checks that none of the 30 tutorial lines contains tap/drag/mouse/click/key/"this button" -> OK; ALL TESTS PASSED. Shots `cpp/shots_fix1/tut_*.png` (467 shown inside inventory matches the hint bar). Status: **проверено** (desktop unit test + shot).

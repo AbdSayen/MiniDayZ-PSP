@@ -38,7 +38,9 @@ const TutMisc& tut_misc(int i);
 
 // UI strings used by the tutorial (l_eng_ui.xml ids 41..50, 451..475) and the log strings of
 // Tutorial_script_final (l_eng_log.xml ids 125..127). Verbatim English text; "" when unknown.
-const char* tut_ui_text(int id);
+const char* tut_ui_text(int id);            // PSP wording where a deviation exists
+const char* tut_ui_text_original(int id);   // l_eng_ui.xml verbatim
+bool tut_ui_text_is_psp_override(int id);
 const char* tut_log_text(int id);
 
 } // namespace mdaz

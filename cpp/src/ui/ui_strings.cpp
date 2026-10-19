@@ -38,6 +38,21 @@ const Fallback kFallbacks[] = {
   {386, "Bandits eliminated. I need to get back to survivors for my reward."},
 };
 
+// User-requested PSP wording for l_eng_ui.xml lines that name touch controls
+// (KNOWN_ISSUES "PSP hint wording"). Applied after the XML is loaded.
+const Fallback kPspOverrides[] = {
+  {33, "Movement: analog stick / D-pad"},
+  {230, "With ranged weapons, aiming takes place automatically. Shoot by pressing Cross. Shooting while running is less accurate than while standing."},
+  {454, "This is your hands slot, it is always available, even if you have no other gear. Use items by selecting them with the D-pad and pressing Cross."},
+  {456, "Move with the D-pad"},
+  {457, "Movement with the analog stick"},
+  {460, "Choose one perk and press Cross to take it. It will always be active until your character dies."},
+  {461, "Use the Circle button to pick up items and interact."},
+  {462, "Now you have a ranged weapon, aiming happens automatically. Press Cross to shoot."},
+  {463, "You can reload your weapon by pressing Square. If you have suitable ammo, it will be loaded."},
+  {467, "Use the D-pad to choose items in the inventory: Cross uses, Triangle puts in hands, Square drops."},
+};
+
 std::map<int, std::string> g_ui;
 
 const char* fallback_for(int id) {
@@ -89,6 +104,8 @@ bool ui_strings_load(IPlatform* platform, const char* path) {
       delete[] data;
     }
   }
+  for (unsigned i = 0; i < sizeof(kPspOverrides) / sizeof(kPspOverrides[0]); ++i)
+    g_ui[kPspOverrides[i].id] = kPspOverrides[i].text;
   for (unsigned i = 0; i < sizeof(kFallbacks) / sizeof(kFallbacks[0]); ++i) {
     if (g_ui.find(kFallbacks[i].id) == g_ui.end()) g_ui[kFallbacks[i].id] = kFallbacks[i].text;
   }
