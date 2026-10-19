@@ -249,6 +249,7 @@ public:
       force_hr_ = std::strstr(b, "half") != 0;
       nocache_ = std::strstr(b, "nocache") != 0;   // A/B check of the ground cache
       force_overlay_ = std::strstr(b, "overlay") != 0;
+      auto_pause_ = std::strstr(b, "pause") != 0;     // open pause, focus HALF RES (menu check)
       if (force_overlay_) overlay_ = true;
       mdaz_boot_log("autoplay.txt found: scripted benchmark input%s", force_hr_ ? " + half-res" : "");
       if (force_hr_) hr_ = true;
@@ -399,6 +400,12 @@ public:
     out = InputState();
     if (f == 90 || f == 150) { out.confirm = true; out.confirm_pressed = true; }
     if (f < 240) return;
+    if (auto_pause_ && f >= 600) {
+      if (f == 600) out.pause_pressed = out.pause = true;
+      // Down x5 -> HALF RES (index 5) on the 8-item PSP pause menu.
+      if (f >= 620 && f <= 660 && (f - 620) % 8 == 0) out.move_y = 1.f;
+      return;
+    }
     const unsigned leg = ((f - 240) / 240) % 4;
     out.run = ((f / 480) & 1) != 0;
     if (leg == 0) out.move_x = 1.f;
@@ -691,6 +698,7 @@ public:
     if (on != hr_) { hr_ = on; gc_valid_ = false; }
   }
   bool half_res() const { return hr_; }
+  void log_line(const char* s) { mdaz_boot_log("%s", s); }
   bool supports_perf_overlay() const { return true; }
   void set_perf_overlay(bool on) { overlay_ = on || force_overlay_; }
   bool perf_overlay() const { return overlay_; }
@@ -1171,6 +1179,7 @@ private:
   bool overlay_, force_overlay_;
   int rf_fail_logs_;
   bool autoplay_;
+  bool auto_pause_ = false;
   bool nocache_;
   unsigned auto_frame_;
 };

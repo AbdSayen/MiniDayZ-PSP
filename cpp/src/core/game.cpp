@@ -9,6 +9,7 @@
 #include "mdaz/weapons.hpp"
 
 #include <cmath>
+#include <new>
 #include <cstdio>
 #include <cstring>
 
@@ -366,6 +367,35 @@ bool Game::sector_visited(int sx, int sy) const {
   return visited_sectors_[sy * kMapSectorsX + sx];
 }
 
+void Game::log_helicrash_coords() {
+  if (!platform_) return;
+  int n = 0;
+  char line[128];
+  for (int i = 0; i < mapgen_.location_count(); ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    if (L.type != Loc_Helicrash) continue;
+    std::snprintf(line, sizeof(line), "helicrash #%d at world (%.0f, %.0f) sector (%d,%d)",
+                  n, L.pos.x, L.pos.y, L.sector_x, L.sector_y);
+    platform_->log_line(line);
+    ++n;
+  }
+  std::snprintf(line, sizeof(line), "new game: %d helicrash(es), %d locations", n, mapgen_.location_count());
+  platform_->log_line(line);
+}
+
+// C2: zed/wolf/dog/deer/bandit movers are Bullet behaviours with "Bounce off solids" = 1
+// (data.js instance props: attack/run/Bullet/Run = [speed,0,0,1,1,..]) and tilemap_forest is
+// Solid, so NPCs cannot enter forest tiles. Port: same per-tile polygons as the player; the
+// move is undone per axis (slide) instead of reflecting the Bullet angle.
+bool Game::npc_forest_block(Vec2& pos, Vec2 prev) const {
+  if (!world_tiles_.forest_solid_at(pos.x, pos.y)) return false;
+  if (world_tiles_.forest_solid_at(prev.x, prev.y)) return false; // spawned inside: let it walk out
+  if (!world_tiles_.forest_solid_at(pos.x, prev.y)) pos.y = prev.y;
+  else if (!world_tiles_.forest_solid_at(prev.x, pos.y)) pos.x = prev.x;
+  else pos = prev;
+  return true;
+}
+
 void Game::mark_sector_visited() {
   const SectorCoord c = world_.sector_at(player_.pos);
   // Reveal a 3×3 neighbourhood (original fog clears nearby cells as you walk).
@@ -648,6 +678,7 @@ void Game::start_new_game(Difficulty d) {
     vehicles_.spawn(Vehicle_Bike, bike);
   }
   mark_sector_visited();
+  log_helicrash_coords();
 
   spawn_poi_loot();
   // Extra hostiles around POIs — Zed_per_base (5) as density budget per site
@@ -852,34 +883,23 @@ void Game::try_melee_attack() {
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
     if (dist2(z->pos, player_.pos) <= stats.range * stats.range) {
-      z->hp -= stats.damage;
+      hurt_zombie(*z, stats.damage, equipped_id_or_zero());
       hit_something = true;
-      if (z->hp <= 0.f) on_zed_killed(*z);
     }
   }
   for (int i = 0; i < animals_.count(); ++i) {
     Animal* a = animals_.at(i);
     if (!a->alive) continue;
     if (dist2(a->pos, player_.pos) <= stats.range * stats.range) {
-      a->hp -= stats.damage;
+      hurt_animal(*a, stats.damage);
       hit_something = true;
-      if (a->hp <= 0.f) on_animal_killed(*a);
     }
   }
   for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b) {
     if (!b->alive) continue;
     if (dist2(b->pos, player_.pos) <= stats.range * stats.range) {
-      b->hp -= stats.damage;
+      hurt_bandit(*b, stats.damage);
       hit_something = true;
-      if (b->hp <= 0.f) {
-        b->alive = false;
-        player_.bandits_killed += 1;
-        spawn_corpse(Corpse_Bandit, b->pos, 0.f, 0);
-        spawn_fx(Fx_Hit, b->pos, 0.f, 0.2f);
-        loot_.spawn_bandit(b->pos, rng_);
-      } else {
-        spawn_fx(Fx_Hit, b->pos, 0.f, 0.1f);
-      }
     }
   }
   // Melee durability break: no C2 string/event in 1.4.1 export — not invented.
@@ -1130,8 +1150,65 @@ void Game::update_fx(float dt) {
   }
   for (int i = 0; i < corpse_count_; ++i) {
     if (!corpses_[i].active) continue;
+    if (corpses_[i].die_anim_t > 0.f) corpses_[i].die_anim_t -= dt;
     corpses_[i].life -= dt;
     if (corpses_[i].life <= 0.f) corpses_[i].active = false;
+  }
+}
+
+// C2 NPC_get_damage + dmg_hint: subtract from the kind's HP IV, spawn the floating "-N"
+// (obj529 Bullet aimed angle(player -> target), orange 255,196,68), kill at hp <= 0.
+const char* Game::zed_skin_base(ZedType t) {
+  switch (t) {
+  case Zed_Fast: return "zed_fast_skin1";
+  case Zed_Army: case Zed_ArmyShooter: return "zed_army_skin1";
+  case Zed_Buried: return "zed_buried_skin";
+  case Zed_Tank: return "zed_tank_skin";
+  case Zed_Screamer: return "zed_screamer_skin";
+  default: return "zed_normal_skin1";
+  }
+}
+
+static Vec2 away_from(Vec2 at, Vec2 from) { return Vec2(at.x + (at.x - from.x), at.y + (at.y - from.y)); }
+
+ItemId Game::equipped_id_or_zero() const {
+  return inventory_.slot(equipped_slot_).count > 0 ? inventory_.slot(equipped_slot_).id : 0;
+}
+
+void Game::hurt_zombie(Zombie& z, float amount, ItemId killer_weapon) {
+  if (!z.alive) return;
+  const float applied = npc_apply_damage(z.hp, npc_damage_kind_for_zed(z.type), amount);
+  dmg_hints_.spawn(z.pos, away_from(z.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
+}
+
+void Game::hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8, ItemId killer_weapon) {
+  if (!z.alive) return;
+  const float applied = zed_apply_bullet_hit_damage(z.hp, npc_damage_kind_for_zed(z.type), amount,
+                                                    z.type, armor_pierce_iv8, rng_);
+  dmg_hints_.spawn(z.pos, away_from(z.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
+}
+
+void Game::hurt_animal(Animal& a, float amount) {
+  if (!a.alive) return;
+  const float applied = npc_apply_damage(a.hp, npc_damage_kind_for_animal(a.type), amount);
+  dmg_hints_.spawn(a.pos, away_from(a.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (a.hp <= 0.f) on_animal_killed(a);
+}
+
+void Game::hurt_bandit(Bandit& b, float amount) {
+  if (!b.alive) return;
+  const float applied = npc_apply_damage(b.hp, npc_damage_kind_for_bandit(b.has_gun), amount);
+  dmg_hints_.spawn(b.pos, away_from(b.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (b.hp <= 0.f) {
+    b.alive = false;
+    player_.bandits_killed += 1;
+    spawn_corpse(Corpse_Bandit, b.pos, 0.f, 0);
+    spawn_fx(Fx_Hit, b.pos, 0.f, 0.2f);
+    loot_.spawn_bandit(b.pos, rng_);
+  } else {
+    spawn_fx(Fx_Hit, b.pos, 0.f, 0.1f);
   }
 }
 
@@ -1155,7 +1232,13 @@ void Game::on_animal_killed(Animal& a) {
     meat = 60;
     ck = Corpse_Dog;
   }
-  spawn_corpse(ck, a.pos, 0.f, 0);
+  {
+    // wolf_skin die1 (3 frames @ 8 fps) before wolf_dead; other animals have no die anim.
+    const char* base = (a.type == Animal_Wolf) ? "wolf_skin" : 0;
+    const CharAnim* da = base ? char_anims_.find(base, "die1") : 0;
+    const float die_sec = (da && da->speed > 0) ? static_cast<float>(da->frame_count) / da->speed : 0.f;
+    spawn_corpse(ck, a.pos, 0.f, 0, da ? base : 0, die_sec, 1);
+  }
   spawn_fx(Fx_Hit, a.pos, 0.f, 0.2f);
   spawn_fx(Fx_Blood, a.pos, 0.f, 0.45f);
   loot_.spawn_item(a.pos, meat, n);
@@ -1175,7 +1258,17 @@ void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
   else if (z.type == Zed_Buried) variant = 3;
   else if (z.type == Zed_Tank) variant = 4;
   else if (z.type == Zed_Screamer) variant = 5;
-  spawn_corpse(Corpse_Zed, z.pos, 0.f, variant);
+  // C2: the skin plays die1 or die2 (random pick when the skin has both; 8 fps, no loop),
+  // then the *_dead sprite stays (Fade). Frames from data/char_anims.txt.
+  const char* base = zed_skin_base(z.type);
+  int style = 1;
+  const CharAnim* d2 = char_anims_.find(base, "die2");
+  if (d2 && rng_.next_float() < 0.5f) style = 2;
+  const CharAnim* da = char_anims_.find(base, style == 2 ? "die2" : "die1");
+  const float die_sec = (da && da->speed > 0) ? static_cast<float>(da->frame_count) / da->speed : 0.f;
+  const float face = std::atan2(player_.pos.y - z.pos.y, player_.pos.x - z.pos.x) * 57.2957795f;
+  spawn_corpse(Corpse_Zed, z.pos, 0.f, variant, da ? base : 0, die_sec, style);
+  (void)face;
   spawn_fx(Fx_Hit, z.pos, 0.f, 0.22f);
   spawn_fx(Fx_Blood, z.pos, 0.f, 0.5f);
   loot_.spawn_random(z.pos, rng_);
@@ -1209,27 +1302,18 @@ void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
     if (!z->alive) continue;
     if (dist2(z->pos, pos) > r2) continue;
-    z->hp -= damage;
-    if (z->hp <= 0.f) on_zed_killed(*z);
+    hurt_zombie(*z, damage);
   }
   for (int i = 0; i < animals_.count(); ++i) {
     Animal* a = animals_.at(i);
     if (!a->alive) continue;
     if (dist2(a->pos, pos) > r2) continue;
-    a->hp -= damage * 0.8f;
-    if (a->hp <= 0.f) on_animal_killed(*a);
+    hurt_animal(*a, damage * 0.8f);
   }
   for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
     if (!bd->alive) continue;
     if (dist2(bd->pos, pos) > r2) continue;
-    bd->hp -= damage;
-    if (bd->hp <= 0.f) {
-      bd->alive = false;
-      player_.bandits_killed += 1;
-      spawn_corpse(Corpse_Bandit, bd->pos, 0.f, 0);
-      spawn_fx(Fx_Hit, bd->pos, 0.f, 0.2f);
-      loot_.spawn_bandit(bd->pos, rng_);
-    }
+    hurt_bandit(*bd, damage);
   }
 }
 
@@ -1280,10 +1364,9 @@ void Game::resolve_bullet_hits() {
     for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
       if (!z->alive) continue;
       if (dist2(b->pos, z->pos) < 18.f * 18.f) {
-        z->hp -= b->damage;
         spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
         b->alive = false;
-        if (z->hp <= 0.f) on_zed_killed(*z);
+        hurt_zombie_bullet(*z, b->damage, b->armor_pierce_iv8, b->source_weapon);
         break;
       }
     }
@@ -1292,10 +1375,9 @@ void Game::resolve_bullet_hits() {
       Animal* a = animals_.at(i);
       if (!a->alive) continue;
       if (dist2(b->pos, a->pos) < 16.f * 16.f) {
-        a->hp -= b->damage;
         spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
         b->alive = false;
-        if (a->hp <= 0.f) on_animal_killed(*a);
+        hurt_animal(*a, b->damage);
         break;
       }
     }
@@ -1303,17 +1385,8 @@ void Game::resolve_bullet_hits() {
     for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
       if (!bd->alive) continue;
       if (dist2(b->pos, bd->pos) < 16.f * 16.f) {
-        bd->hp -= b->damage;
         b->alive = false;
-        if (bd->hp <= 0.f) {
-          bd->alive = false;
-          player_.bandits_killed += 1;
-          spawn_corpse(Corpse_Bandit, bd->pos, 0.f, 0);
-          spawn_fx(Fx_Hit, bd->pos, 0.f, 0.2f);
-          loot_.spawn_bandit(bd->pos, rng_);
-        } else {
-          spawn_fx(Fx_Hit, bd->pos, 0.f, 0.1f);
-        }
+        hurt_bandit(*bd, b->damage);
         break;
       }
     }
@@ -2011,6 +2084,31 @@ void Game::show_toast(const char* msg) {
   toast_t_ = 1.6f;
 }
 
+void Game::pack_loot_view(LootSaveView& out) const {
+  // C2 Save_loot: every ground pile with items (position + up to 8 id/count pairs).
+  out.count = 0;
+  for (int i = 0; i < loot_.count() && out.count < LootSaveView::kMax; ++i) {
+    const LootPile* p = loot_.at(i);
+    if (!p->active || p->item_count <= 0 || p->quest_reward_case) continue;
+    SavedLootPile& s = out.piles[out.count++];
+    s.x = p->pos.x; s.y = p->pos.y;
+    const int n = p->item_count < 8 ? p->item_count : 8;
+    s.item_count = static_cast<unsigned char>(n);
+    s.is_airdrop = p->is_airdrop ? 1 : 0;
+    for (int k = 0; k < 8; ++k) {
+      s.items[k] = k < n ? p->items[k] : 0;
+      const int c = k < n ? p->counts[k] : 0;
+      s.counts[k] = static_cast<unsigned char>(c < 0 ? 0 : (c > 255 ? 255 : c));
+    }
+  }
+}
+
+void Game::apply_loot_view(const LootSaveView& in) {
+  // C2 Load_loot replaces the ground piles; saves without loot (count 0) keep the new world.
+  if (in.count <= 0) return;
+  loot_.load_from_save(in.piles, in.count);
+}
+
 void Game::save_game_to_disk() {
   CropSaveView crops_view;
   TrapSaveView traps_view;
@@ -2019,6 +2117,8 @@ void Game::save_game_to_disk() {
   pack_crops_view(crops_view);
   pack_traps_view(traps_view);
   pack_fires_view(fires_view);
+  LootSaveView* loot_view = &load_loot_view_;
+  pack_loot_view(*loot_view);
   extras.airdrop_t = timers_.airdrop;
   extras.airdrop_x = last_airdrop_pos_.x;
   extras.airdrop_y = last_airdrop_pos_.y;
@@ -2031,7 +2131,7 @@ void Game::save_game_to_disk() {
                         kMapSectorsX * kMapSectorsY,
                         torch_battery_, quest_.q_task_id, quest_.q_status,
                         mag_rounds_, wetness_, gasmask_filter_, player_.fish_caught,
-                        &vehicles_, &crops_view, &traps_view, &extras, &fires_view);
+                        &vehicles_, &crops_view, &traps_view, &extras, &fires_view, loot_view);
   has_save_cache_ = -1;
   show_toast(ok ? "GAME SAVED" : "SAVE FAILED");
 }
@@ -2050,13 +2150,15 @@ bool Game::load_game_from_disk() {
   TrapSaveView traps_view;
   FireSaveView fires_view;
   WorldExtras extras;
+  load_loot_view_.count = 0;
   if (!SaveSystem::load_file(*platform_, "save.mdaz", player_, inventory_, weather_,
                              &equipped_slot_, visited_sectors_,
                              kMapSectorsX * kMapSectorsY,
                              &torch_battery_, &qact, &qprog, &mag, &wet,
                              &gfilt, &fish, &vehicles_, &crops_view, &traps_view,
-                             &extras, &fires_view))
+                             &extras, &fires_view, &load_loot_view_))
     return false;
+  apply_loot_view(load_loot_view_);
   set_npc_damage_for_difficulty(player_.difficulty);
   menu_difficulty_ = player_.difficulty;
   in_bunker_ = false;
@@ -2895,8 +2997,20 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         }
       }
     }
+    Vec2 prev_animal[kMaxAnimals];
+    Vec2 prev_bandit[kMaxBandits];
+    for (int i = 0; i < animals_.count(); ++i) prev_animal[i] = animals_.at(i)->pos;
+    for (int i = 0; i < bandits_.count(); ++i) prev_bandit[i] = bandits_.at(i)->pos;
     float animal_dmg = animals_.update(dt, player_.pos, player_.survival.bleeding > 0.f);
     float bandit_dmg = bandits_.update(dt, player_.pos);
+    if (!in_bunker_) {
+      for (int i = 0; i < animals_.count(); ++i) {
+        Animal* a = animals_.at(i);
+        if (a->type == Animal_Crow) continue; // flying flock, not a Bullet mover in C2
+        npc_forest_block(a->pos, prev_animal[i]);
+      }
+      for (int i = 0; i < bandits_.count(); ++i) npc_forest_block(bandits_.at(i)->pos, prev_bandit[i]);
+    }
     apply_incoming_damage(animal_dmg + bandit_dmg,
                           animal_dmg > 0.f || bandit_dmg > 0.f);
     update_army_shooters(dt);
@@ -2977,9 +3091,19 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     const bool loud = player_.running && !in.crouch;
     // Storm (heavy rain) makes zeds slightly more aggressive
     const bool storm = !in_bunker_ && weather_.rain > 0.85f;
+    Vec2 prev_zed[kMaxZombies];
+    {
+      int zi = 0;
+      for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) prev_zed[zi++] = z->pos;
+    }
     zombies_.update(dt, player_.pos, zed_dmg, loud || storm, in.crouch,
                     player_.survival.bleeding > 0.f,
                     cough_alert_t_ > 0.f || storm);
+    if (!in_bunker_) {
+      int zi = 0;
+      for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z, ++zi)
+        if (z->alive) npc_forest_block(z->pos, prev_zed[zi]);
+    }
     // Vehicle runover (car/bike) — damages zeds/bandits/wolves + vehicle wear
     if (!in_bunker_ && vehicles_.player_driving()) {
       Vehicle* v = vehicles_.driven();
@@ -3782,18 +3906,13 @@ void Game::render() {
               // dirt/grass detail cells in rows 3..4, cells (3..4,2..4) are EMPTY (transparent).
               // Old code tiled gx%5/gy%5 over the whole atlas -> transparent holes + flat
               // stretched-looking patches. Use the seamless grass centre (1,1) with rare detail variants.
-              const unsigned ch = static_cast<unsigned>(gx * 2654435761u) ^ static_cast<unsigned>(gy * 40503u);
-              int ux = 1, uy = 1;
-              const unsigned pick = (ch >> 7) % 16u;
-              if (pick == 0) { ux = 1; uy = 4; }
-              else if (pick == 1) { ux = 2; uy = 4; }
-              else if (pick == 2) { ux = 2; uy = 3; }
-              // Coarse 4×4 cell biome → lvl 1..4
-              const int bx = gx / 4;
-              const int by = gy / 4;
-              const unsigned bh = static_cast<unsigned>(bx * 73856093u) ^
-                                  static_cast<unsigned>(by * 19349663u);
-              const int lvl = static_cast<int>(bh % 4u);
+              // C2 (data.js Map generation): one ground tilemap per map cell, type chosen by
+              // the global CurrentLevel (0 -> ground_lvl1 ... 3 -> ground_lvl4); CurrentLevel is
+              // 0 after Restart_game and only Level_change adds 1 (not ported -> always lvl1).
+              // The tilemap template (Map layout instance) is tile 6 = atlas cell (1,1) on 5975
+              // of 5985 cells, so the whole map is one uniform ground - no per-cell biome mix.
+              const int ux = 1, uy = 1;
+              const int lvl = 0; // C2 CurrentLevel
               const char* gspr = "ground_lvl1_tilemap";
               if (lvl == 1 && has_g2) gspr = "ground_lvl2_tilemap";
               else if (lvl == 2 && has_g3) gspr = "ground_lvl3_tilemap";
@@ -3897,6 +4016,25 @@ void Game::render() {
         float sx = cx + (corpses_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (corpses_[i].pos.y - player_.pos.y) * sc;
         const float fade = corpses_[i].life < 10.f ? corpses_[i].life / 10.f : 1.f;
+        if (corpses_[i].die_anim_t > 0.f && corpses_[i].anim_base[0]) {
+          const CharAnim* da = char_anims_.find(corpses_[i].anim_base,
+                                                corpses_[i].die_style == 2 ? "die2" : "die1");
+          if (da && da->speed > 0) {
+            const float total = static_cast<float>(da->frame_count) / da->speed;
+            const float t = total - corpses_[i].die_anim_t;
+            const CharAnimFrame* fr = char_anims_.sample(da, t < 0.f ? 0.f : t);
+            char sheet[64];
+            if (fr) {
+              std::snprintf(sheet, sizeof(sheet), "%s-sheet%d", corpses_[i].anim_base, fr->sheet);
+              if (platform_->has_sprite(sheet)) {
+                const float dw = static_cast<float>(fr->sw) * sc, dh = static_cast<float>(fr->sh) * sc;
+                platform_->draw_sprite_frame(sheet, sx - dw * 0.5f, sy - dh * 0.5f, dw, dh,
+                                             fr->sx, fr->sy, fr->sw, fr->sh, 0.f, 1.f);
+                continue;
+              }
+            }
+          }
+        }
         const char* spr = 0;
         int sw = 30, sh = 30;
         if (corpses_[i].kind == Corpse_Zed) {
@@ -4050,12 +4188,8 @@ void Game::render() {
             platform_->draw_rect(sx - 7, sy - 3, 14, 8, 0.32f, 0.28f, 0.18f, 0.9f);
           continue;
         }
-        const char* base = "zed_normal_skin1";
-        if (z->type == Zed_Fast) base = "zed_fast_skin1";
-        else if (z->type == Zed_Army || z->type == Zed_ArmyShooter) base = "zed_army_skin1";
-        else if (z->type == Zed_Buried) base = "zed_buried_skin";
-        else if (z->type == Zed_Tank) { base = "zed_tank_skin"; zsz = 42.f; }
-        else if (z->type == Zed_Screamer) base = "zed_screamer_skin";
+        const char* base = zed_skin_base(z->type);
+        if (z->type == Zed_Tank) zsz = 42.f;
         const float fdeg = std::atan2(player_.pos.y - z->pos.y, player_.pos.x - z->pos.x) * 57.2957795f;
         const float d2z = dist2(z->pos, player_.pos);
         const char* zprefix = "idle";
@@ -4543,6 +4677,16 @@ void Game::render() {
       }
     }
 
+    // C2 dmg_hint: "-N" Text on the Rain layer, orange (255,196,68) or red when crit, fading.
+    for (const DmgHint* h = dmg_hints_.begin(); h != dmg_hints_.end(); ++h) {
+      if (!h->active) continue;
+      char t[16];
+      std::snprintf(t, sizeof(t), "-%d", h->amount);
+      const float hx = cx + (h->pos.x - player_.pos.x) * sc;
+      const float hy = cy + (h->pos.y - player_.pos.y) * sc - 14.f;
+      if (h->crit) platform_->draw_text(hx - 6.f, hy, t, 1.f, 0.f, 0.f);
+      else platform_->draw_text(hx - 6.f, hy, t, 1.f, 196.f / 255.f, 68.f / 255.f);
+    }
     platform_->world_pass_end();
     platform_->profile_mark(IPlatform::Prof_Hud);
     draw_debug_hud(*platform_, *this);

@@ -43,6 +43,7 @@ public:
 
   bool init(IPlatform* platform, const char* data_dir);
   void set_audio(IAudio* audio) { audio_ = audio; }
+
   void shutdown();
   void update(float dt);
   void render();
@@ -308,6 +309,11 @@ private:
                     const char* anim_base = 0, float die_anim_sec = 0.f, int die_style = 1);
   void update_fx(float dt);
 
+  void log_helicrash_coords();
+  bool npc_forest_block(Vec2& pos, Vec2 prev) const;
+  ItemId equipped_id_or_zero() const;
+  static const char* zed_skin_base(ZedType t);
+  LootSaveView load_loot_view_; // scratch for load (96 piles, kept off the stack)
   void mark_sector_visited();
   void update_menu(float dt, const InputState& in);
   void update_playing(float dt, const InputState& in);

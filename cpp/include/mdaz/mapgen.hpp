@@ -92,6 +92,11 @@ public:
   // True when sector grid holds C2 road marker (12/13/14) after generate_array_roads_*.
   bool is_road_sector(int sector_x, int sector_y) const;
   int road_sector_count() const { return road_count_; }
+  // Raw C2 Array-150 cell value (0 empty, 6/9/11 POI, 12/13/14 road, 15 POI marker).
+  unsigned char sector_cell(int sector_x, int sector_y) const {
+    if (sector_x < 0 || sector_y < 0 || sector_x >= kSectorGrid || sector_y >= kSectorGrid) return 0;
+    return sector_grid_[sector_y][sector_x];
+  }
 
   // Optional C2 global scratch (hotspotX / anotherX / Loop_secrets) during generate.
   void set_c2_scratch(C2SessionGlobals* g) { c2_scratch_ = g; }

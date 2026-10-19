@@ -158,30 +158,42 @@ void draw_minimap(IPlatform& platform, const Game& game) {
   const Player& pl = game.player();
   const float mx = kScreenW - kSafe - kMiniW, my = kHintBarY - kMiniH - 4.f;
   const float mw = kMiniW, mh = kMiniH;
-  platform.draw_rect(mx - 1.f, my - 1.f, mw + 2.f, mh + 2.f, 0.08f, 0.07f, 0.05f, 0.95f);
-  const float tile = 20.f;
-  for (float ty = my; ty < my + mh - 0.5f; ty += tile) {
-    for (float tx = mx; tx < mx + mw - 0.5f; tx += tile) {
-      const float tw = (tx + tile > mx + mw) ? (mx + mw - tx) : tile;
-      const float th = (ty + tile > my + mh) ? (my + mh - ty) : tile;
-      if (spr(platform, "minimap_tile-sheet0"))
-        platform.draw_sprite_frame("minimap_tile-sheet0", tx, ty, tw, th, 1, 1,
-                                   static_cast<int>(tw), static_cast<int>(th), 0.f, 0.88f);
-      else
-        platform.draw_rect(tx, ty, tw, th, 0.22f, 0.26f, 0.16f, 0.92f);
-    }
-  }
+  // C2 draws minimap_tile on the transparent GUI_elements layer straight over the world, at
+  // 20 px per cell. Here the 16x16 map is shrunk to 56x56, so a port-side light backdrop keeps
+  // the (black/alpha) original tile icons and the marks readable; 1 px dark border.
+  platform.draw_rect(mx - 1.f, my - 1.f, mw + 2.f, mh + 2.f, 0.08f, 0.07f, 0.05f, 0.9f);
+  platform.draw_rect(mx, my, mw, mh, 0.80f, 0.78f, 0.66f, 0.80f);
+  // C2 Map generation: one minimap_tile (20x20 frames) per map cell, frame chosen from the
+  // cell value (507 IV0, filled from Array 150): 0 -> frame 0 (no event), 6 -> 6, 9 -> 4,
+  // 11 -> 8, 12 -> 2, 13 -> 1, 14 -> 3, 15 -> 9. The C2 neighbour-road overrides (511
+  // conditions -> frames 3/10-13) are not ported. There is no visited-fog in data.js: the
+  // old port darkened every unvisited sector at 82% black, which made the map look black.
+  static const short kMiniFrame[29][2] = {
+    {1,1},{23,1},{45,1},{67,1},{89,1},{1,23},{23,23},{45,23},{67,23},{89,23},
+    {1,45},{23,45},{45,45},{67,45},{1,1},{23,23},{89,45},{1,67},{23,67},{45,67},
+    {67,67},{89,67},{1,89},{23,89},{45,89},{67,89},{89,89},{1,1},{23,1}};
   const float cell_w = mw / static_cast<float>(kMapSectorsX);
   const float cell_h = mh / static_cast<float>(kMapSectorsY);
+  const bool has_tile = spr(platform, "minimap_tile-sheet0");
   for (int sy = 0; sy < kMapSectorsY; ++sy) {
     for (int sx = 0; sx < kMapSectorsX; ++sx) {
       const float cx = mx + sx * cell_w, cy = my + sy * cell_h;
-      if (!game.sector_visited(sx, sy)) {
-        platform.draw_rect(cx, cy, cell_w, cell_h, 0.04f, 0.04f, 0.05f, 0.82f);
-        continue;
+      int f = 0;
+      switch (game.mapgen().sector_cell(sx, sy)) {
+      case 6: f = 6; break;
+      case 9: f = 4; break;
+      case 11: f = 8; break;
+      case 12: f = 2; break;
+      case 13: f = 1; break;
+      case 14: f = 3; break;
+      case 15: f = 9; break;
+      default: f = 0; break;
       }
-      if (game.mapgen().is_road_sector(sx, sy))
-        platform.draw_rect(cx, cy, cell_w, cell_h, 0.42f, 0.38f, 0.28f, 0.55f);
+      if (has_tile)
+        platform.draw_sprite_frame("minimap_tile-sheet0", cx, cy, cell_w + 0.05f, cell_h + 0.05f,
+                                   kMiniFrame[f][0], kMiniFrame[f][1], 20, 20, 0.f, 1.f);
+      else
+        platform.draw_rect(cx, cy, cell_w, cell_h, 0.22f, 0.26f, 0.16f, 0.92f);
     }
   }
   auto to_mini = [&](float wx, float wy, float& ox, float& oy) {
@@ -190,7 +202,6 @@ void draw_minimap(IPlatform& platform, const Game& game) {
   };
   for (int i = 0; i < game.mapgen().location_count(); ++i) {
     const MapLocation& L = game.mapgen().location(i);
-    if (!game.sector_visited(L.sector_x, L.sector_y) && L.type != Loc_BunkerEntrance) continue;
     float px = 0.f, py = 0.f;
     to_mini(L.pos.x, L.pos.y, px, py);
     if (px < mx || py < my || px > mx + mw - 2.f || py > my + mh - 2.f) continue;

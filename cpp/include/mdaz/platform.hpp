@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mdaz/types.hpp"
+#include <cstdio>
 
 namespace mdaz {
 
@@ -116,6 +117,8 @@ public:
   virtual bool supports_perf_overlay() const { return false; }
   virtual void set_perf_overlay(bool /*on*/) {}
   virtual bool perf_overlay() const { return false; }
+  // Diagnostic log line (desktop: stdout; PSP: ms0:/PSP/GAME/MINIDAYZ/log.txt).
+  virtual void log_line(const char* s) { std::printf("[mdaz] %s\n", s); std::fflush(stdout); }
 };
 
 IPlatform* create_platform();

@@ -5,9 +5,12 @@
 #include "mdaz/craft.hpp"
 #include "mdaz/weapons.hpp"
 #include "mdaz/platform.hpp"
+#include "mdaz/platform_null.hpp"
+#include "mdaz/combat.hpp"
 
 #include <cstdio>
 #include <new>
+#include <string>
 
 namespace mdaz {
 struct GameTestAccess {
@@ -27,6 +30,25 @@ struct GameTestAccess {
   static void craft(Game& g) { g.try_craft_menu_recipe(); }
   static void craft_ui(Game& g, const InputState& in) { g.update_craft_menu(in); }
   static void inv_ui(Game& g, const InputState& in) { g.update_inventory_ui(in); }
+  // 2026-10-19 queue: restored Game bodies + debug teleport + NPC forest block.
+  static MapGenerator& map(Game& g) { return g.mapgen_; }
+  static Player& pl(Game& g) { return g.player_; }
+  static ZombieSystem& zeds(Game& g) { return g.zombies_; }
+  static AnimalSystem& animals(Game& g) { return g.animals_; }
+  static BanditSystem& bandits(Game& g) { return g.bandits_; }
+  static LootSystem& loot(Game& g) { return g.loot_; }
+  static WorldTilemaps& tiles(Game& g) { return g.world_tiles_; }
+  static CharAnims& anims(Game& g) { return g.char_anims_; }
+  static const DmgHintSystem& hints(Game& g) { return g.dmg_hints_; }
+  static void hurt_z(Game& g, Zombie& z, float d) { g.hurt_zombie(z, d); }
+  static void hurt_a(Game& g, Animal& a, float d) { g.hurt_animal(a, d); }
+  static void hurt_b(Game& g, Bandit& b, float d) { g.hurt_bandit(b, d); }
+  static bool block(Game& g, Vec2& p, Vec2 prev) { return g.npc_forest_block(p, prev); }
+  static void pack(Game& g, LootSaveView& v) { g.pack_loot_view(v); }
+  static void apply(Game& g, const LootSaveView& v) { g.apply_loot_view(v); }
+  static int corpse_count(Game& g) { return g.corpse_count_; }
+  static float corpse_die_t(Game& g, int i) { return g.corpses_[i].die_anim_t; }
+  static const char* corpse_base(Game& g, int i) { return g.corpses_[i].anim_base; }
 };
 }
 
@@ -46,6 +68,89 @@ static void reset(Game& g) {
 }
 static void put(Game& g, int slot, ItemId id, int n) {
   A::inv(g).slot(slot).id = id; A::inv(g).slot(slot).count = n;
+}
+
+int test_queue_q1() {
+  std::printf("--- test_queue_q1 ---\n");
+  g_fail = 0;
+  Game* gp = new (std::nothrow) Game();
+  if (!gp) { std::printf("FAIL alloc Game\n"); return 1; }
+  Game& g = *gp;
+  IPlatform* np = create_null_platform();
+  A::anims(g).load(*np, "data/char_anims.txt");
+  A::map(g).generate_new_game(140);
+  int heli = 0;
+  for (int i = 0; i < A::map(g).location_count(); ++i)
+    if (A::map(g).location(i).type == Loc_Helicrash) ++heli;
+  check(heli >= 1, "seed 140 map has helicrash locations");
+  // Minimap cell values are C2 Array-150 markers only.
+  bool cells_ok = true;
+  for (int y = 0; y < 16; ++y) for (int x = 0; x < 16; ++x) {
+    const int v = A::map(g).sector_cell(x, y);
+    if (!(v == 0 || v == 6 || v == 9 || v == 11 || (v >= 12 && v <= 15))) cells_ok = false;
+  }
+  check(cells_ok, "sector_cell values in {0,6,9,11,12..15}");
+  // NPC forest block (tilemap_forest Solid, tile 4 = full box).
+  A::tiles(g).stamp_fill("tilemap_forest", 3000.f, 3000.f, 2, 2, 4, 150, 150, 3);
+  Vec2 p(3010.f, 2990.f);  // step into the forest from outside (north)
+  const Vec2 prev(3010.f, 2950.f);
+  Vec2 q = Vec2(3010.f, 3010.f);
+  check(A::block(g, q, prev) && !A::tiles(g).forest_solid_at(q.x, q.y), "NPC step into forest is undone");
+  Vec2 r = p;
+  check(!A::block(g, r, prev) && r.x == p.x && r.y == p.y, "NPC outside forest moves freely");
+  Vec2 in1(3100.f, 3100.f);
+  check(!A::block(g, in1, Vec2(3090.f, 3090.f)), "NPC already inside is allowed to walk out");
+  // hurt_*: NPC_get_damage + dmg_hint + kill + die anim.
+  Zombie* z = A::zeds(g).spawn(Zed_Normal, Vec2(500.f, 500.f));
+  check(z != 0, "spawn zed");
+  if (z) {
+    const float hp0 = z->hp;
+    const int hints0 = A::hints(g).count();
+    A::hurt_z(g, *z, 1.f);
+    check(z->hp == hp0 - 1.f && z->alive, "hurt_zombie subtracts damage");
+    check(A::hints(g).count() == hints0 + 1, "hurt_zombie spawns a dmg_hint");
+    const int c0 = A::corpse_count(g);
+    A::hurt_z(g, *z, 100000.f);
+    check(!z->alive && z->hp == 0.f, "lethal hit kills zed (hp clamped to 0)");
+    check(A::corpse_count(g) == c0 + 1, "zed corpse spawned");
+    if (A::corpse_count(g) > c0) {
+      check(A::corpse_die_t(g, c0) > 0.6f && A::corpse_die_t(g, c0) < 0.65f,
+            "zed corpse plays die1/die2 (5 frames @ 8 fps = 0.625s)");
+      check(std::string(A::corpse_base(g, c0)) == "zed_normal_skin1", "die anim base = zed_normal_skin1");
+    }
+  }
+  Animal* a = A::animals(g).spawn(Animal_Wolf, Vec2(600.f, 600.f));
+  if (a) {
+    A::hurt_a(g, *a, 100000.f);
+    check(!a->alive, "hurt_animal kills wolf");
+    check(A::corpse_die_t(g, A::corpse_count(g) - 1) > 0.37f, "wolf corpse plays die1 (3 frames @ 8 fps)");
+  }
+  Bandit* b = A::bandits(g).spawn(Vec2(700.f, 700.f), false);
+  if (b) {
+    const int k0 = A::pl(g).bandits_killed;
+    A::hurt_b(g, *b, 100000.f);
+    check(!b->alive && A::pl(g).bandits_killed == k0 + 1, "hurt_bandit kills + counts bandit");
+  }
+  // Loot save view round trip (C2 Save_loot / Load_loot).
+  A::loot(g).clear();
+  A::loot(g).spawn_item(Vec2(123.f, 456.f), 6, 3);
+  A::loot(g).spawn_item(Vec2(10.f, 20.f), 42, 1);
+  LootSaveView* v = new LootSaveView();
+  A::pack(g, *v);
+  check(v->count == 2, "pack_loot_view stores both piles");
+  A::loot(g).clear();
+  A::apply(g, *v);
+  bool rt = A::loot(g).count() == 2 && A::loot(g).at(0)->pos.x == 123.f &&
+            A::loot(g).at(0)->items[0] == 6 && A::loot(g).at(0)->counts[0] == 3;
+  check(rt, "apply_loot_view restores position/item/count");
+  LootSaveView empty;
+  A::apply(g, empty);
+  check(A::loot(g).count() == 2, "empty loot view (old save) keeps current loot");
+  delete v;
+  delete np;
+  delete gp;
+  std::printf("test_queue_q1: %d failure(s)\n", g_fail);
+  return g_fail ? 1 : 0;
 }
 
 int test_selection() {

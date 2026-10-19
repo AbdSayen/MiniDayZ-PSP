@@ -17,6 +17,7 @@ int test_tutorial();
 int test_map_fidelity();
 int test_player_visual();
 int test_selection();
+int test_queue_q1();
 
 int main() {
   int failed = 0;
@@ -37,6 +38,7 @@ int main() {
   failed += test_map_fidelity();
   failed += test_player_visual();
   failed += test_selection();
+  failed += test_queue_q1();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;
