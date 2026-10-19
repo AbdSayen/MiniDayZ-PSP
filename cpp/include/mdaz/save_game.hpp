@@ -56,7 +56,8 @@ struct FireSaveView {
   FireSaveView() : count(0) {}
 };
 
-// Ground loot piles (Save_loot / Load_loot CSV in C2 — compact binary in MDAZ v14).
+// Ground loot piles (port-only persistence, MDAZ v14). C2 Save_loot/Load_loot is a different
+// thing: the player-state CSV carried across Level_change.
 struct SavedLootPile {
   float x, y;
   unsigned char item_count;

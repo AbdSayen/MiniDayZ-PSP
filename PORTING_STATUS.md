@@ -507,3 +507,17 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - Item 2's cell is set to At − 3·Crafted.
   - Output: Check_space_inventory(-1, 51, Crafted).
   - Which array holds counts vs condition for knives is unresolved, so no guess.
+
+## Item 11 — Save_loot (2026-10-20, 00:14 Baku)
+- Status: Исследована. Not applicable to the port: Level_change is not ported, and the port has a single level.
+- What C2 Save_loot is: it is called only from `Level_change` (CurrentLevel += 1). It is not a ground-loot save.
+- It builds a CSV text (pl17 t485) with:
+  - `0,0,Difficulty,`, then layout name, round(x), round(y);
+  - player IV15 blood, IV13 food, IV14 water, IV16 temperature, IV22 bleeding, IV34 sick;
+  - every equipment and backpack slot as item id, IV6 condition/count and IV3 (zeros for empty slots), plus the attachment arrays;
+  - Timer_ALL.
+- `Load_loot` on the new level:
+  - restores IV15/13/14/16/22/34 from fields 6–11;
+  - then food −10 and water −10;
+  - re-creates each item with Spawn_drop + picky at the player's position.
+- The port's ground-pile persistence (MDAZ v14 `SavedLootPile`) is a port feature. Its comments wrongly called it Save_loot; they are now corrected.

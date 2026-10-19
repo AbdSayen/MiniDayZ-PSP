@@ -2531,7 +2531,8 @@ void Game::show_toast(const char* msg) {
 }
 
 void Game::pack_loot_view(LootSaveView& out) const {
-  // C2 Save_loot: every ground pile with items (position + up to 8 id/count pairs).
+  // Port save of ground piles (position + up to 8 id/count pairs). NOT C2 Save_loot:
+  // C2 Save_loot/Load_loot is the Level_change carry-over CSV (see PORTING_STATUS item 11).
   out.count = 0;
   for (int i = 0; i < loot_.count() && out.count < LootSaveView::kMax; ++i) {
     const LootPile* p = loot_.at(i);
