@@ -26,6 +26,38 @@ void Game::init_pump_water(Rng& rng, bool tutorial) {
   }
   avail_interaction_ = 0; avail_t_ = 0.f; avail_pump_ = -1; pump_walk_ = -1;
   pump_lock_t_ = 0.f; pump_add_water_ = 0.f;
+  // Map layout only: OnLayoutStart -> Wait 0.1 -> Global_respawn (layoutname == "Map").
+  pump_respawn_start_t_ = tutorial ? -1.f : 0.1f;
+}
+
+void Game::tick_pump_respawn_start(float dt) {
+  if (pump_respawn_start_t_ < 0.f) return;
+  pump_respawn_start_t_ -= dt;
+  if (pump_respawn_start_t_ <= 0.f) { pump_respawn_start_t_ = -1.f; global_respawn_pumps(); }
+}
+
+// Global_respawn (sid388188595587361, layoutname == "Map"), sub-event sid703496838047803:
+// pick waterpumps with distance(pump, player_collision_base) >= 500, ForEach:
+// IV0 = choose(0, 25, 0, 25, 50, 75, 100, 150, 200) (choose = uniform over the 9 arguments).
+void Game::global_respawn_pumps() {
+  static const short kChoose[9] = {0, 25, 0, 25, 50, 75, 100, 150, 200};
+  for (int i = 0; i < c2_props_.count() && i < 6000; ++i) {
+    const MapProp& mp = c2_props_.at(i);
+    if (mp.def != kPumpDef) continue;
+    const float dx = mp.x - player_.pos.x, dy = mp.y - player_.pos.y;
+    if (dx * dx + dy * dy < 500.f * 500.f) continue;
+    pump_iv0_[i] = kChoose[rng_.next_int(0, 8)];
+  }
+}
+
+int Game::pump_count_for_test() const {
+  int n = 0;
+  for (int i = 0; i < c2_props_.count(); ++i) if (c2_props_.at(i).def == kPumpDef) ++n;
+  return n;
+}
+int Game::pump_index_for_test(int n) const {
+  for (int i = 0; i < c2_props_.count(); ++i) if (c2_props_.at(i).def == kPumpDef && n-- == 0) return i;
+  return -1;
 }
 
 int Game::nearest_pump(Vec2 p, float& d2) const {   // PickDistance nearest
@@ -145,4 +177,17 @@ void Game::update_avalible_interaction(float dt) {
   avail_interaction_ = ai;
 }
 
+} // namespace mdaz
+
+namespace mdaz {
+bool Game::harness_place_at_pump() {
+  float d2 = 0.f;
+  const int k = nearest_pump(player_.pos, d2);
+  if (k < 0) return false;
+  const MapProp& mp = c2_props_.at(k);
+  player_.pos = Vec2(mp.x + 60.f, mp.y);
+  player_.survival.water = 40.f;
+  pump_iv0_[k] = 150;   // test-only: a non-empty pump for the screenshot
+  return true;
+}
 } // namespace mdaz

@@ -59,5 +59,6 @@ bool interior_props_block(const BuildingInterior& bi, Vec2 o, Vec2 a, Vec2 b, fl
 namespace mdaz {
 namespace { LosBlockedFn g_los_fn = 0; const void* g_los_ctx = 0; }
 void set_los_blocker(LosBlockedFn fn, const void* ctx) { g_los_fn = fn; g_los_ctx = ctx; }
+void clear_los_blocker(const void* ctx) { if (g_los_ctx == ctx) { g_los_fn = 0; g_los_ctx = 0; } }
 bool los_blocked(Vec2 a, Vec2 b) { return g_los_fn ? g_los_fn(g_los_ctx, a, b) : false; }
 } // namespace mdaz

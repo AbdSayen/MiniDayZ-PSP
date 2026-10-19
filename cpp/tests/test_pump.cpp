@@ -57,6 +57,29 @@ int test_pump() {
   g.pump_drink_for_test(pk);
   g.tick_pump_for_test(2.1f);
   check(p.survival.water == 30.f, "empty pump: no water");
+  // Global_respawn pump part: pumps >= 500 px from the player get choose(0,25,0,25,50,75,100,150,200);
+  // closer pumps keep their IV0. Use the Map layout (new game).
+  g.start_new_game(Difficulty_Regular);
+  const int n = g.pump_count_for_test();
+  check(n > 1, "Map has waterpumps");
+  if (n > 1) {
+    const int a = g.pump_index_for_test(0);
+    const MapProp& pa = g.prop_for_test(a);
+    p.pos = Vec2(pa.x + 10.f, pa.y);
+    for (int k = 0; k < n; ++k) g.set_pump_water_for_test(g.pump_index_for_test(k), 777);
+    g.global_respawn_pumps_for_test();
+    bool near_kept = true, far_ok = true; int far = 0;
+    for (int k = 0; k < n; ++k) {
+      const int i = g.pump_index_for_test(k);
+      const MapProp& m = g.prop_for_test(i);
+      const float dx = m.x - p.pos.x, dy = m.y - p.pos.y;
+      const int w = g.pump_water(i);
+      if (dx * dx + dy * dy < 500.f * 500.f) { if (w != 777) near_kept = false; }
+      else { ++far; if (!(w == 0 || w == 25 || w == 50 || w == 75 || w == 100 || w == 150 || w == 200)) far_ok = false; }
+    }
+    check(near_kept, "Global_respawn: pumps < 500 px untouched");
+    check(far > 0 && far_ok, "Global_respawn: pumps >= 500 px in choose(0..200) set");
+  }
   delete gp;
   return g_fail;
 }

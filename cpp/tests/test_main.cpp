@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 
 int test_balance();
 int test_survival();
@@ -24,10 +25,13 @@ int test_audio();
 int test_pump();
 int test_fidelity2_more();
 
-int main() {
+int main(int argc, char** argv) {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
+  // "pump_last": run test_pump after all suites (order-independence check).
+  const bool pump_last = argc > 1 && std::strcmp(argv[1], "pump_last") == 0;
   int failed = 0;
   failed += test_audio();
+  if (!pump_last) failed += test_pump();
   failed += test_balance();
   failed += test_weather();
   failed += test_survival();
@@ -49,7 +53,7 @@ int main() {
   failed += test_queue_q1();
   failed += test_fidelity2();
   failed += test_fidelity2_more();
-  failed += test_pump();
+  if (pump_last) failed += test_pump();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

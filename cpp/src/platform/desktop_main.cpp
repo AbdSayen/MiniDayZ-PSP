@@ -146,6 +146,11 @@ public:
   // --shots-wreck: test-only placements at a Humvee wreck, a heli wreck and a zed_resp_point.
   bool poll_wreck(mdaz::InputState& in) {
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (std::getenv("MDAZ_HARNESS_PUMP")) {   // waterpump: prompt, Circle, drink
+      if (frame_ == 200 && game_) game_->harness_place_at_pump();
+      if (frame_ == 270) in.interact = in.interact_pressed = true;
+      return frame_ < 470;
+    }
     if (frame_ == 200 && game_) game_->harness_place_at_wreck(0);
     if (frame_ == 300 && game_) game_->harness_place_at_wreck(1);
     if (frame_ == 400 && game_) game_->harness_place_at_wreck(2);
@@ -282,6 +287,19 @@ public:
       static const struct { int frame; const char* name; } kW[] = {
         { 250, "wreck_hummer" }, { 350, "wreck_heli" }, { 402, "zr_spawn_t0" }, { 460, "zr_spawn_t1" },
       };
+      static const struct { int frame; const char* name; } kP[] = {
+        { 260, "pump_1_prompt" }, { 300, "pump_2_walk" }, { 330, "pump_3_drinking" }, { 450, "pump_4_drunk" },
+      };
+      if (std::getenv("MDAZ_HARNESS_PUMP")) {
+        for (unsigned i = 0; i < sizeof(kP) / sizeof(kP[0]); ++i) {
+          if (kP[i].frame != frame_) continue;
+          char path[512];
+          std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kP[i].name);
+          std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+        }
+        inner_->end_frame();
+        return;
+      }
       for (unsigned i = 0; i < sizeof(kW) / sizeof(kW[0]); ++i) {
         if (kW[i].frame != frame_) continue;
         char path[512];

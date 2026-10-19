@@ -44,6 +44,9 @@ struct FireSaveView;
 class Game {
 public:
   Game();
+  ~Game();
+  Game(const Game&) = delete;
+  Game& operator=(const Game&) = delete;
 
   bool init(IPlatform* platform, const char* data_dir);
   void set_audio(IAudio* audio) { audio_ = audio; }
@@ -89,6 +92,8 @@ public:
   // TEST HARNESS ONLY (--shots-wreck): 0 = south of the first Humvee wreck, 1 = heli wreck,
   // 2 = Zed_check from 1600 px of a frame-0 zed_resp_point, then stand at the point.
   bool harness_place_at_wreck(int mode);
+  // Test-only: stand 60 px east of the nearest waterpump (screenshot harness).
+  bool harness_place_at_pump();
   // Bonds Guru studio intro (from jacksmith-psp): skipped by the --shots harnesses.
   void skip_intro();
   Vec2 harness_player_rel() const;  // test-only: player pos minus harness building hotspot
@@ -295,6 +300,9 @@ private:
   int nearest_pump(Vec2 p, float& d2) const;
   bool pump_overlaps_player(int k) const;
   void pump_drink(int k);
+  float pump_respawn_start_t_ = -1.f;     // Start events sid6396414627891676: Wait 0.1 -> Global_respawn
+  void global_respawn_pumps();            // LOOT Respawn sid703496838047803 (pump part)
+  void tick_pump_respawn_start(float dt);
 public:
   int avalible_interaction() const { return avail_interaction_; }
   int pump_water(int k) const { return (k >= 0 && k < 6000) ? pump_iv0_[k] : 0; }
@@ -302,6 +310,10 @@ public:
   int first_pump_for_test() const;
   void pump_drink_for_test(int k) { pump_drink(k); }
   void tick_pump_for_test(float dt);
+  void global_respawn_pumps_for_test() { global_respawn_pumps(); }
+  int pump_count_for_test() const;
+  const MapProp& prop_for_test(int i) const { return c2_props_.at(i); }
+  int pump_index_for_test(int n) const;
 private:
   bool doorchecker_blocked(Vec2 a, Vec2 b) const;
 public:

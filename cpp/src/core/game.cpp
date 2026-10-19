@@ -2952,6 +2952,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
   }
   update_avalible_interaction(dt);
+  tick_pump_respawn_start(dt);
   bool pump_drive = false;
   // walk_marker IV0 = 5 (pump): OnCollision with the marker -> stop; overlapping the pump with
   // IV21 == 0 -> drink (sid7034863253908448). Stick input cancels (PSP adaptation, as trunks).
@@ -3357,6 +3358,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   if (!in_bunker_) {
     // C2 has no timed zed respawn: zeds come only from zed_resp_point via Zed_check.
     if (timers_.consume_loot_respawn() && !tut_.active) {
+      global_respawn_pumps();   // Global_respawn sid703496838047803 (pumps >= 500 px)
       // Respawn at a random POI (typed table) + one near-player pile
       if (mapgen_.location_count() > 0) {
         const MapLocation& L = mapgen_.location(rng_.next_int(0, mapgen_.location_count() - 1));
@@ -5197,6 +5199,10 @@ static bool game_los_cb(const void* ctx, Vec2 a, Vec2 b) {
 }
 
 void Game::install_los() { set_los_blocker(&game_los_cb, this); }
+
+// The LOS hook is a global (building_interior.cpp); without this the next ZombieSystem
+// user after a deleted Game read freed memory (ASan heap-use-after-free, test_combat).
+Game::~Game() { clear_los_blocker(this); }
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_ && c2_props_.blocks(a, b, 1.f)) return true;  // obst_base / big_obstacle_base
