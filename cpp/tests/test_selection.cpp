@@ -7,6 +7,8 @@
 #include "mdaz/platform.hpp"
 #include "mdaz/platform_null.hpp"
 #include "mdaz/combat.hpp"
+#include "mdaz/rng.hpp"
+#include "mdaz/balance_globals.hpp"
 
 #include <cstdio>
 #include <new>
@@ -47,6 +49,7 @@ struct GameTestAccess {
   static void pack(Game& g, LootSaveView& v) { g.pack_loot_view(v); }
   static void apply(Game& g, const LootSaveView& v) { g.apply_loot_view(v); }
   static int corpse_count(Game& g) { return g.corpse_count_; }
+  static float corpse_life(Game& g, int i) { return g.corpses_[i].life; }
   static float corpse_die_t(Game& g, int i) { return g.corpses_[i].die_anim_t; }
   static const char* corpse_base(Game& g, int i) { return g.corpses_[i].anim_base; }
 };
@@ -83,6 +86,26 @@ int test_queue_q1() {
   for (int i = 0; i < A::map(g).location_count(); ++i)
     if (A::map(g).location(i).type == Loc_Helicrash) ++heli;
   check(heli >= 1, "seed 140 map has helicrash locations");
+  {
+    // Cross-platform determinism: the POI list must not depend on argument evaluation order.
+    // Replay the first draws by hand in x-then-y order (Rng::int_pair) and compare.
+    std::printf("POI list seed 140 (%d), hash %08x:\n", A::map(g).location_count(), A::map(g).poi_hash());
+    for (int i = 0; i < A::map(g).location_count(); ++i) {
+      const MapLocation& L = A::map(g).location(i);
+      std::printf("  #%02d type %2d sector (%2d,%2d) world (%.0f,%.0f)\n", i, (int)L.type,
+                  L.sector_x, L.sector_y, L.pos.x, L.pos.y);
+    }
+    Rng r(140u);
+    r.next_int(0, 1);                    // n_helis = 2 + next_int(0,1)
+    const int ex = r.next_int(1, 14);    // first village: x drawn first
+    const int ey = r.next_int(1, 14);
+    check(A::map(g).location(0).sector_x == ex && A::map(g).location(0).sector_y == ey,
+          "first POI = (x draw, y draw) in fixed order (compiler-independent)");
+    MapGenerator m2;
+    m2.generate_new_game(140);
+    check(m2.poi_hash() == A::map(g).poi_hash(), "same seed -> same POI hash");
+  }
+  // Invented mechanics removed: zed kill spawns no crows; corpse life = Bot_corpse_stay_time.
   // Minimap cell values are C2 Array-150 markers only.
   bool cells_ok = true;
   for (int y = 0; y < 16; ++y) for (int x = 0; x < 16; ++x) {
@@ -118,6 +141,16 @@ int test_queue_q1() {
             "zed corpse plays die1/die2 (5 frames @ 8 fps = 0.625s)");
       check(std::string(A::corpse_base(g, c0)) == "zed_normal_skin1", "die anim base = zed_normal_skin1");
     }
+  }
+  if (true) {
+    const int crows0 = A::animals(g).alive_of_type(Animal_Crow);
+    for (int k = 0; k < 20; ++k) {
+      Zombie* zz = A::zeds(g).spawn(Zed_Normal, Vec2(900.f + k, 900.f));
+      if (zz) A::hurt_z(g, *zz, 100000.f);
+    }
+    check(A::animals(g).alive_of_type(Animal_Crow) == crows0, "zed kills spawn no crows (removed, not in data.js)");
+    check(A::corpse_life(g, A::corpse_count(g) - 1) == (float)balance::Bot_corpse_stay_time,
+          "zed corpse life = Bot_corpse_stay_time (1.15x removed)");
   }
   Animal* a = A::animals(g).spawn(Animal_Wolf, Vec2(600.f, 600.f));
   if (a) {

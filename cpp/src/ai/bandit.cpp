@@ -235,8 +235,9 @@ void spawn_bandit_camp(BanditSystem& bandits, Vec2 anchor, Rng& rng) {
   static const bool kCampGun[] = {false, false, true, true};
   const int n = static_cast<int>(sizeof(kCampOffsets) / sizeof(kCampOffsets[0]));
   for (int i = 0; i < n; ++i) {
-    Vec2 p(anchor.x + kCampOffsets[i].x + rng.range(-12.f, 12.f),
-           anchor.y + kCampOffsets[i].y + rng.range(-12.f, 12.f));
+    float _j1x = 0.f, _j1y = 0.f;
+    rng.range_pair(-12.f, 12.f, -12.f, 12.f, _j1x, _j1y);
+    Vec2 p(anchor.x + kCampOffsets[i].x + _j1x, anchor.y + kCampOffsets[i].y + _j1y);
     bandits.spawn(p, kCampGun[i]);
   }
 }
@@ -356,7 +357,9 @@ Bandit* spawn_friend_bot(BanditSystem& bandits, Vec2 player_pos, Vec2 marker245,
   if (d2 > kFriendBotAltRadius * kFriendBotAltRadius) return 0;
   Vec2 spawn = marker245;
   if (d2 > kFriendBotPickRadius * kFriendBotPickRadius) {
-    spawn = Vec2(player_pos.x + rng.range(-120.f, 120.f), player_pos.y + rng.range(-120.f, 120.f));
+    float _j2x = 0.f, _j2y = 0.f;
+    rng.range_pair(-120.f, 120.f, -120.f, 120.f, _j2x, _j2y);
+    spawn = Vec2(player_pos.x + _j2x, player_pos.y + _j2y);
   }
   return bandits.spawn(spawn, false, true);
 }

@@ -161,8 +161,9 @@ void MapGenerator::generate_new_game(int seed) {
     int guard = 0;
     while (placed < n && guard++ < 400) {
       const int before = count_;
-      add(t, rng.next_int(margin, kMapSectorsX - 1 - margin),
-          rng.next_int(margin, kMapSectorsY - 1 - margin));
+      int sx = 0, sy = 0; // x first, then y (see Rng::int_pair)
+      rng.int_pair(margin, kMapSectorsX - 1 - margin, margin, kMapSectorsY - 1 - margin, sx, sy);
+      add(t, sx, sy);
       if (count_ > before) ++placed;
     }
   };
@@ -188,8 +189,9 @@ void MapGenerator::ensure_bunker_entrance(Rng& rng, int current_level) {
   int guard = 0;
   while (guard++ < 250) {
     const int before = count_;
-    add(Loc_BunkerEntrance, rng.next_int(3, kMapSectorsX - 1 - 3),
-        rng.next_int(3, kMapSectorsY - 1 - 3));
+    int sx = 0, sy = 0;
+    rng.int_pair(3, kMapSectorsX - 1 - 3, 3, kMapSectorsY - 1 - 3, sx, sy);
+    add(Loc_BunkerEntrance, sx, sy);
     if (count_ > before) break;
   }
 }

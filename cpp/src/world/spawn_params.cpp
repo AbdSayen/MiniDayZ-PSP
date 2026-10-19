@@ -81,9 +81,15 @@ bool zed_resp_tick_spawn2(ZedRespawnChannels& ch, ZombieSystem& zeds, Vec2 near_
 
 void spawn3_secret_drops(LootSystem& loot, Vec2 secret_pos, Rng& rng) {
   touch_spawn_params_audit();
-  const Vec2 a(secret_pos.x + rng.range(-40.f, 40.f), secret_pos.y + rng.range(-40.f, 40.f));
-  const Vec2 b(a.x + rng.range(-25.f, 25.f), a.y + rng.range(-25.f, 25.f));
-  const Vec2 c(b.x + rng.range(-25.f, 25.f), b.y + rng.range(-25.f, 25.f));
+  float _j1x = 0.f, _j1y = 0.f;
+  rng.range_pair(-40.f, 40.f, -40.f, 40.f, _j1x, _j1y);
+  const Vec2 a(secret_pos.x + _j1x, secret_pos.y + _j1y);
+  float _j2x = 0.f, _j2y = 0.f;
+  rng.range_pair(-25.f, 25.f, -25.f, 25.f, _j2x, _j2y);
+  const Vec2 b(a.x + _j2x, a.y + _j2y);
+  float _j3x = 0.f, _j3y = 0.f;
+  rng.range_pair(-25.f, 25.f, -25.f, 25.f, _j3x, _j3y);
+  const Vec2 c(b.x + _j3x, b.y + _j3y);
   spawn_drop_pick(loot, a, rng, kSpawn3Table1,
                   static_cast<int>(sizeof(kSpawn3Table1) / sizeof(kSpawn3Table1[0])));
   spawn_drop_pick(loot, b, rng, kSpawn3Table2,

@@ -91,11 +91,13 @@ void casual_respawn_player(SurvivalState& surv, MapGenerator& mapgen, LootSystem
   surv.infected = false;
   surv.death_reason[0] = 0;
 
-  loot.spawn_civilian(Vec2(player_pos.x + rng.range(-35.f, 35.f),
-                           player_pos.y + rng.range(-35.f, 35.f)),
+  float _j1x = 0.f, _j1y = 0.f;
+  rng.range_pair(-35.f, 35.f, -35.f, 35.f, _j1x, _j1y);
+  loot.spawn_civilian(Vec2(player_pos.x + _j1x, player_pos.y + _j1y),
                       rng);
-  loot.spawn_random(Vec2(player_pos.x + rng.range(-50.f, 50.f),
-                         player_pos.y + rng.range(-50.f, 50.f)),
+  float _j2x = 0.f, _j2y = 0.f;
+  rng.range_pair(-50.f, 50.f, -50.f, 50.f, _j2x, _j2y);
+  loot.spawn_random(Vec2(player_pos.x + _j2x, player_pos.y + _j2y),
                     rng);
 }
 

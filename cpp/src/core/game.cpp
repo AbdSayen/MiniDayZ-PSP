@@ -379,7 +379,8 @@ void Game::log_helicrash_coords() {
     platform_->log_line(line);
     ++n;
   }
-  std::snprintf(line, sizeof(line), "new game: %d helicrash(es), %d locations", n, mapgen_.location_count());
+  std::snprintf(line, sizeof(line), "new game: %d helicrash(es), %d locations, poi hash %08x", n,
+                mapgen_.location_count(), mapgen_.poi_hash());
   platform_->log_line(line);
 }
 
@@ -649,8 +650,9 @@ void Game::start_new_game(Difficulty d) {
     else if (L.type == Loc_Military || L.type == Loc_Helicrash) n = 4;
     else if (L.type == Loc_Hospital || L.type == Loc_Police || L.type == Loc_Firestation) n = 3;
     for (int t = 0; t < n && tree_count_ < kMaxTrees; ++t) {
-      trees_[tree_count_++] = Vec2(L.pos.x + rng_.range(-180.f, 180.f),
-                                   L.pos.y + rng_.range(-180.f, 180.f));
+      float _j1x = 0.f, _j1y = 0.f;
+      rng_.range_pair(-180.f, 180.f, -180.f, 180.f, _j1x, _j1y);
+      trees_[tree_count_++] = Vec2(L.pos.x + _j1x, L.pos.y + _j1y);
     }
   }
   {
@@ -691,24 +693,30 @@ void Game::start_new_game(Difficulty d) {
       for (int k = 0; k < zed_budget; ++k) {
         const ZedType zt = (k % 3 == 0) ? Zed_ArmyShooter
                            : (k % 3 == 1) ? Zed_Army : Zed_Normal;
-        zombies_.spawn(zt, Vec2(L.pos.x + rng_.range(-55.f, 55.f),
-                                L.pos.y + rng_.range(-55.f, 55.f)));
+        float _j2x = 0.f, _j2y = 0.f;
+        rng_.range_pair(-55.f, 55.f, -55.f, 55.f, _j2x, _j2y);
+        zombies_.spawn(zt, Vec2(L.pos.x + _j2x, L.pos.y + _j2y));
       }
       bandits_.spawn(Vec2(L.pos.x + 60.f, L.pos.y - 30.f), true);
     } else if (L.type == Loc_City || L.type == Loc_Village) {
       for (int k = 0; k < zed_budget; ++k) {
         const ZedType zt = (rng_.next_float() < 0.2f) ? Zed_Buried : Zed_Normal;
-        zombies_.spawn(zt, Vec2(L.pos.x + rng_.range(-50.f, 50.f),
-                                L.pos.y + rng_.range(-50.f, 50.f)));
+        float _j3x = 0.f, _j3y = 0.f;
+        rng_.range_pair(-50.f, 50.f, -50.f, 50.f, _j3x, _j3y);
+        zombies_.spawn(zt, Vec2(L.pos.x + _j3x, L.pos.y + _j3y));
       }
     } else if (L.type == Loc_Hospital) {
-      for (int k = 0; k < zed_budget - 1; ++k)
-        zombies_.spawn(Zed_Fast, Vec2(L.pos.x + rng_.range(-40.f, 40.f),
-                                      L.pos.y + rng_.range(-40.f, 40.f)));
+      for (int k = 0; k < zed_budget - 1; ++k) {
+        float jx = 0.f, jy = 0.f;
+        rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
+        zombies_.spawn(Zed_Fast, Vec2(L.pos.x + jx, L.pos.y + jy));
+      }
     } else if (L.type == Loc_Police || L.type == Loc_Firestation) {
-      for (int k = 0; k < zed_budget - 2; ++k)
-        zombies_.spawn(Zed_Normal, Vec2(L.pos.x + rng_.range(-40.f, 40.f),
-                                        L.pos.y + rng_.range(-40.f, 40.f)));
+      for (int k = 0; k < zed_budget - 2; ++k) {
+        float jx = 0.f, jy = 0.f;
+        rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
+        zombies_.spawn(Zed_Normal, Vec2(L.pos.x + jx, L.pos.y + jy));
+      }
     } else if (L.type == Loc_Church) {
       zombies_.spawn(Zed_Normal, Vec2(L.pos.x + 15.f, L.pos.y));
       zombies_.spawn(Zed_Buried, Vec2(L.pos.x - 20.f, L.pos.y + 10.f));
@@ -1123,7 +1131,6 @@ void Game::spawn_corpse(CorpseKind kind, Vec2 pos, float angle_deg, int variant,
   slot->pos = pos;
   // Bot_corpse_stay_time = 90 (globals); used for all corpse kinds as sverka base
   slot->life = static_cast<float>(balance::Bot_corpse_stay_time);
-  if (kind == Corpse_Zed) slot->life *= 1.15f; // zeds linger slightly longer
   slot->angle = angle_deg;
   slot->kind = kind;
   slot->variant = variant;
@@ -1272,15 +1279,7 @@ void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
   spawn_fx(Fx_Hit, z.pos, 0.f, 0.22f);
   spawn_fx(Fx_Blood, z.pos, 0.f, 0.5f);
   loot_.spawn_random(z.pos, rng_);
-  // Crows scavenge corpse
-  if (rng_.next_float() < 0.45f) {
-    const int n = 1 + rng_.next_int(0, 2);
-    for (int i = 0; i < n; ++i) {
-      animals_.spawn(Animal_Crow,
-                     Vec2(z.pos.x + rng_.range(-40.f, 40.f),
-                          z.pos.y + rng_.range(-40.f, 40.f)));
-    }
-  }
+  // (2026-10-19) removed port-side "crows scavenge corpse" spawn: not in data.js.
 }
 
 void Game::write_death_log() {
@@ -1308,7 +1307,7 @@ void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
     Animal* a = animals_.at(i);
     if (!a->alive) continue;
     if (dist2(a->pos, pos) > r2) continue;
-    hurt_animal(*a, damage * 0.8f);
+    hurt_animal(*a, damage); // 0.8x animal factor removed (not in data.js)
   }
   for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
     if (!bd->alive) continue;
@@ -2845,7 +2844,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       if (mapgen_.location_count() > 0) {
         const MapLocation& L = mapgen_.location(rng_.next_int(0, mapgen_.location_count() - 1));
         if (dist2(L.pos, player_.pos) > 180.f * 180.f) {
-          spawn_at = Vec2(L.pos.x + rng_.range(-40.f, 40.f), L.pos.y + rng_.range(-40.f, 40.f));
+          float _j6x = 0.f, _j6y = 0.f;
+          rng_.range_pair(-40.f, 40.f, -40.f, 40.f, _j6x, _j6y);
+          spawn_at = Vec2(L.pos.x + _j6x, L.pos.y + _j6y);
           used_poi = true;
           ZedType zt = Zed_Normal;
           if (L.type == Loc_Military) {
@@ -2875,7 +2876,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       // Respawn at a random POI (typed table) + one near-player pile
       if (mapgen_.location_count() > 0) {
         const MapLocation& L = mapgen_.location(rng_.next_int(0, mapgen_.location_count() - 1));
-        const Vec2 p(L.pos.x + rng_.range(-30.f, 30.f), L.pos.y + rng_.range(-30.f, 30.f));
+        float _j7x = 0.f, _j7y = 0.f;
+        rng_.range_pair(-30.f, 30.f, -30.f, 30.f, _j7x, _j7y);
+        const Vec2 p(L.pos.x + _j7x, L.pos.y + _j7y);
         switch (L.type) {
         case Loc_Military: loot_.spawn_military(p, rng_); break;
         case Loc_Hospital: loot_.spawn_hospital(p, rng_); break;
@@ -2894,8 +2897,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
                               player_.pos.y + std::sin(ang) * dist), rng_);
     }
     if (timers_.consume_airdrop()) {
-      last_airdrop_pos_ = Vec2(player_.pos.x + rng_.range(-500.f, 500.f),
-                               player_.pos.y + rng_.range(-500.f, 500.f));
+      float _j8x = 0.f, _j8y = 0.f;
+      rng_.range_pair(-500.f, 500.f, -500.f, 500.f, _j8x, _j8y);
+      last_airdrop_pos_ = Vec2(player_.pos.x + _j8x, player_.pos.y + _j8y);
       loot_.spawn_airdrop(last_airdrop_pos_, rng_);
       airdrop_alert_ = 12.f;
       if (audio_) audio_->play("airdrop", 0.85f);
@@ -2964,8 +2968,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       }
       if (!d && blood_drip_count_ < kMaxBloodDrips) d = &blood_drips_[blood_drip_count_++];
       if (d) {
-        d->pos = Vec2(player_.pos.x + rng_.range(-4.f, 4.f),
-                      player_.pos.y + rng_.range(-4.f, 4.f));
+        float _j9x = 0.f, _j9y = 0.f;
+        rng_.range_pair(-4.f, 4.f, -4.f, 4.f, _j9x, _j9y);
+        d->pos = Vec2(player_.pos.x + _j9x, player_.pos.y + _j9y);
         d->life = 8.f;
       }
     }
@@ -3024,7 +3029,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         const MapLocation& L = mapgen_.location(i);
         if (L.type != Loc_Military && L.type != Loc_Police) continue;
         if (dist2(L.pos, player_.pos) < 700.f * 700.f) {
-          spawn = Vec2(L.pos.x + rng_.range(-80.f, 80.f), L.pos.y + rng_.range(-80.f, 80.f));
+          float _j10x = 0.f, _j10y = 0.f;
+          rng_.range_pair(-80.f, 80.f, -80.f, 80.f, _j10x, _j10y);
+          spawn = Vec2(L.pos.x + _j10x, L.pos.y + _j10y);
           near_hot = true;
           gun_bias = (L.type == Loc_Military) ? 0.7f : 0.8f; // police bandits often armed
           break;
@@ -3050,35 +3057,42 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         // Wolf pack (2–3)
         const int pack = 2 + rng_.next_int(0, 1);
         for (int i = 0; i < pack; ++i) {
-          animals_.spawn(Animal_Wolf, Vec2(base.x + rng_.range(-40.f, 40.f),
-                                           base.y + rng_.range(-40.f, 40.f)));
+          float _j11x = 0.f, _j11y = 0.f;
+          rng_.range_pair(-40.f, 40.f, -40.f, 40.f, _j11x, _j11y);
+          animals_.spawn(Animal_Wolf, Vec2(base.x + _j11x, base.y + _j11y));
         }
       } else if (roll < wolf_chance + 0.25f) {
         // Deer pair common
         animals_.spawn(Animal_Deer, base);
-        if (rng_.next_float() < 0.45f)
-          animals_.spawn(Animal_Deer, Vec2(base.x + rng_.range(-30.f, 30.f),
-                                           base.y + rng_.range(-30.f, 30.f)));
+        if (rng_.next_float() < 0.45f) {
+          float jx = 0.f, jy = 0.f;
+          rng_.range_pair(-30.f, 30.f, -30.f, 30.f, jx, jy);
+          animals_.spawn(Animal_Deer, Vec2(base.x + jx, base.y + jy));
+        }
       } else if (roll < wolf_chance + 0.37f) {
         // Rabbit warren (2–4)
         const int n = 2 + rng_.next_int(0, 2);
         for (int ri = 0; ri < n; ++ri) {
-          animals_.spawn(Animal_Rabbit, Vec2(base.x + rng_.range(-25.f, 25.f),
-                                             base.y + rng_.range(-25.f, 25.f)));
+          float _j13x = 0.f, _j13y = 0.f;
+          rng_.range_pair(-25.f, 25.f, -25.f, 25.f, _j13x, _j13y);
+          animals_.spawn(Animal_Rabbit, Vec2(base.x + _j13x, base.y + _j13y));
         }
       } else if (roll < wolf_chance + 0.48f) {
         // Crow flock
         const int n = 3 + rng_.next_int(0, 2);
         for (int ci = 0; ci < n; ++ci) {
-          animals_.spawn(Animal_Crow, Vec2(base.x + rng_.range(-50.f, 50.f),
-                                           base.y + rng_.range(-50.f, 50.f)));
+          float _j14x = 0.f, _j14y = 0.f;
+          rng_.range_pair(-50.f, 50.f, -50.f, 50.f, _j14x, _j14y);
+          animals_.spawn(Animal_Crow, Vec2(base.x + _j14x, base.y + _j14y));
         }
       } else {
         // Feral dogs often come in pairs
         animals_.spawn(Animal_Dog, base);
-        if (rng_.next_float() < 0.55f)
-          animals_.spawn(Animal_Dog, Vec2(base.x + rng_.range(-35.f, 35.f),
-                                          base.y + rng_.range(-35.f, 35.f)));
+        if (rng_.next_float() < 0.55f) {
+          float jx = 0.f, jy = 0.f;
+          rng_.range_pair(-35.f, 35.f, -35.f, 35.f, jx, jy);
+          animals_.spawn(Animal_Dog, Vec2(base.x + jx, base.y + jy));
+        }
       }
     }
     mark_sector_visited();
@@ -3499,8 +3513,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     for (int i = 0; i < inventory_.slot_count(); ++i) {
       const InvSlot& sl = inventory_.slot(i);
       if (sl.empty()) continue;
-      loot_.spawn_item(Vec2(drop.x + rng_.range(-20.f, 20.f),
-                            drop.y + rng_.range(-20.f, 20.f)),
+      float _j16x = 0.f, _j16y = 0.f;
+      rng_.range_pair(-20.f, 20.f, -20.f, 20.f, _j16x, _j16y);
+      loot_.spawn_item(Vec2(drop.x + _j16x, drop.y + _j16y),
                        sl.id, sl.count);
     }
     write_death_log();

@@ -92,6 +92,15 @@ public:
   // True when sector grid holds C2 road marker (12/13/14) after generate_array_roads_*.
   bool is_road_sector(int sector_x, int sector_y) const;
   int road_sector_count() const { return road_count_; }
+  // FNV-1a over (type, sector_x, sector_y) of every location: equal on desktop and PSP.
+  unsigned poi_hash() const {
+    unsigned hsh = 2166136261u;
+    for (int i = 0; i < count_; ++i) {
+      const int v[3] = { static_cast<int>(locs_[i].type), locs_[i].sector_x, locs_[i].sector_y };
+      for (int k = 0; k < 3; ++k) { hsh ^= static_cast<unsigned>(v[k]) & 0xffu; hsh *= 16777619u; }
+    }
+    return hsh;
+  }
   // Raw C2 Array-150 cell value (0 empty, 6/9/11 POI, 12/13/14 road, 15 POI marker).
   unsigned char sector_cell(int sector_x, int sector_y) const {
     if (sector_x < 0 || sector_y < 0 || sector_x >= kSectorGrid || sector_y >= kSectorGrid) return 0;

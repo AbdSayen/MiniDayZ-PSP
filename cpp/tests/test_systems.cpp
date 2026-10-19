@@ -73,7 +73,9 @@ int test_systems() {
   mdaz::Rng qr(99);
   mdaz::MapGenerator mg;
   mg.generate_new_game(42);
-  mg.reload_locations(mdaz::Vec2(5000.f, 5000.f), mdaz::LocationReload_Start);
+  // Probe at a real POI (layout depends on the seed; the old fixed point (5000,5000)
+  // relied on the pre-2026-10-19 compiler-specific draw order).
+  mg.reload_locations(mg.location(0).pos, mdaz::LocationReload_Start);
   int active = 0;
   for (int i = 0; i < mg.location_count(); ++i)
     if (mg.location(i).active) ++active;
