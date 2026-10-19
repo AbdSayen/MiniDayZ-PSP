@@ -206,3 +206,7 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Road edge appearance not yet compared side by side with the original.
 - PSP: 40 slots x ~1.9 KB; performance on PSP not measured.
 
+
+## c90 = For each (2026-10-19)
+- Any earlier port code that treated System c90 as "pick random instance" must be re-audited.
+

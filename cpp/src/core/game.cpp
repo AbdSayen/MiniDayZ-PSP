@@ -936,44 +936,34 @@ void Game::zed_check() {
   if (in_bunker_) return;
   const float rn = static_cast<float>(balance::respawn_radius_npc);
   const C2Map& m = mapgen_.c2();
-  // Cull: per type, one random instance farther than respawn_radius_npc (c90 pick random),
-  // unless its keep flag is set; its zed_resp_point loses one IV0.
-  {
-    for (int t = 0; t < ZedType_Count; ++t) {
-      Zombie* cand[kMaxZombies]; int nc = 0;
-      for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z)
-        if (z->alive && z->type == t && dist2(z->pos, player_.pos) > rn * rn) cand[nc++] = z;
-      if (!nc) continue;
-      Zombie* z = cand[rng_.next_int(0, nc - 1)];
-      if (z->zr_keep) continue;
-      if (z->zr_src >= 0 && t != Zed_Buried) zr_iv0_[z->zr_src] -= 1;
-      z->alive = false;
-    }
-    for (int t = Animal_Wolf; t <= Animal_Rabbit; ++t) {
-      int cand[kMaxAnimals]; int nc = 0;
-      for (int i = 0; i < animals_.count(); ++i) {
-        Animal* a = animals_.at(i);
-        if (a->alive && a->type == t && dist2(a->pos, player_.pos) > rn * rn) cand[nc++] = i;
-      }
-      if (!nc) continue;
-      Animal* a = animals_.at(cand[rng_.next_int(0, nc - 1)]);
-      if (a->zr_src >= 0) zr_iv0_[a->zr_src] -= 1;
-      a->alive = false;
-    }
-    for (int i = 0; i < animals_.count(); ++i) {  // crows: all beyond 1500
-      Animal* a = animals_.at(i);
-      if (a->alive && a->type == Animal_Crow && dist2(a->pos, player_.pos) > 1500.f * 1500.f) a->alive = false;
-    }
+  // Cull (System "For each" over every zed / animal beyond respawn_radius_npc): removed unless
+  // its keep flag (eyes IV6/IV7) is set; its zed_resp_point loses one IV0 (buried: no IV0 link).
+  for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
+    if (!z->alive || dist2(z->pos, player_.pos) <= rn * rn || z->zr_keep) continue;
+    if (z->type == Zed_Tank) continue;  // no tank in the cull list
+    if (z->zr_src >= 0 && z->type != Zed_Buried) zr_iv0_[z->zr_src] -= 1;
+    z->alive = false;
   }
-  // Spawn: pick one random point with 1500 < d <= respawn_radius_npc and IV1 false.
-  int cand[C2Map::kMaxZr]; int nc = 0;
-  for (int i = 0; i < m.zr_count; ++i) {
-    if (zr_iv1_[i]) continue;
-    const float d2 = dist2(Vec2(m.zr[i].x, m.zr[i].y), player_.pos);
-    if (d2 > 1500.f * 1500.f && d2 <= rn * rn) cand[nc++] = i;
+  for (int i = 0; i < animals_.count(); ++i) {
+    Animal* a = animals_.at(i);
+    if (!a->alive) continue;
+    const float lim = a->type == Animal_Crow ? 1500.f : rn;  // crows: all beyond 1500
+    if (dist2(a->pos, player_.pos) <= lim * lim) continue;
+    if (a->type == Animal_Dog) continue;  // no dog type in Zed_check
+    if (a->zr_src >= 0) zr_iv0_[a->zr_src] -= 1;
+    a->alive = false;
   }
-  if (!nc) return;
-  const int pi = cand[rng_.next_int(0, nc - 1)];
+  // Spawn: For each zed_resp_point with 1500 < d <= respawn_radius_npc and IV1 false.
+  for (int pi = 0; pi < m.zr_count; ++pi) {
+    if (zr_iv1_[pi]) continue;
+    const float d2 = dist2(Vec2(m.zr[pi].x, m.zr[pi].y), player_.pos);
+    if (!(d2 > 1500.f * 1500.f && d2 <= rn * rn)) continue;
+    zr_fill_point(pi);
+  }
+}
+
+void Game::zr_fill_point(int pi) {
+  const C2Map& m = mapgen_.c2();
   const C2ZedResp& P = m.zr[pi];
   const int per = static_cast<int>(balance::Zed_per_base);
   auto reps = [&](int n) { const int r = n - zr_iv0_[pi]; return r > 0 ? r : 0; };

@@ -421,3 +421,11 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
   mem in game (1 s) and (20 s): max free block 512 KB, total free 764 KB (same as after init: Game and
   CellTilemaps are statically allocated, nothing grows at runtime). Ground and objects passes are
   active in the perf lines (ground ~1.1-1.4 ms, objects ~2.2 ms per frame, emulator timing). No OOM.
+
+## B2c fix — Zed_check uses "For each" (2026-10-19, 23:10 Baku)
+- Condition c90 is System "For each" (confirmed by the Tutorial start-of-layout events, which give every
+  tree / building instance its obst_base / interior through c90). Zed_check therefore culls EVERY
+  NPC beyond respawn_radius_npc (not one random per type) and fills EVERY eligible zed_resp_point
+  (not one random point). Tanks are not in the original cull list and are kept.
+- Earlier "pick random" reading of c90 elsewhere should be audited (KNOWN_ISSUES).
+

@@ -392,6 +392,7 @@ private:
   void spawn_hostiles_for_poi(const MapLocation& L);
   // C2 NPC_manager "Zed_check": cull far NPCs, then one random zed_resp_point in (1500, respawn_radius_npc].
   void zed_check();
+  void zr_fill_point(int pi);
   bool zr_spawn_one(int pi, int kind, bool keep, float spread, bool choose_spread);
   short zr_iv0_[C2Map::kMaxZr];
   bool zr_iv1_[C2Map::kMaxZr];
