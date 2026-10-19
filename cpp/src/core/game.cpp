@@ -406,6 +406,14 @@ void Game::log_helicrash_coords() {
 // Solid, so NPCs cannot enter forest tiles. Port: same per-tile polygons as the player; the
 // move is undone per axis (slide) instead of reflecting the Bullet angle.
 bool Game::npc_forest_block(Vec2& pos, Vec2 prev) const {
+  // Building *_int objects are Solid too (fidelity #1): same bounce rule, slide per axis.
+  if (!building_blocks(prev, prev) && building_blocks(prev, pos)) {
+    const Vec2 tried = pos;
+    if (!building_blocks(prev, Vec2(tried.x, prev.y))) pos = Vec2(tried.x, prev.y);
+    else if (!building_blocks(prev, Vec2(prev.x, tried.y))) pos = Vec2(prev.x, tried.y);
+    else pos = prev;
+    return true;
+  }
   if (!world_tiles_.forest_solid_at(pos.x, pos.y)) return false;
   if (world_tiles_.forest_solid_at(prev.x, prev.y)) return false; // spawned inside: let it walk out
   if (!world_tiles_.forest_solid_at(pos.x, prev.y)) pos.y = prev.y;
@@ -1099,11 +1107,22 @@ void Game::try_ranged_attack() {
     }
   }
   const float ang = player_.facing_deg + ang_off;
-  const float dmg = roll_bullet_damage(w->stats.damage, rng_);
   const bool bow = (w->item_id == 163 || w->item_id == 164);
-  Bullet* shot = bullets_.spawn(player_.pos, ang, bow ? 380.f : 520.f, dmg,
-                                w->stats.range / 520.f + 0.15f, true);
-  if (shot && bow) shot->is_arrow = true;
+  // data.js: each projectile (5 shotgun_pellet per shot) gets its own random(-disp, disp) angle,
+  // flies at its bullet type's Bullet speed, and rolls round(IV0 +- IV0/4) on hit.
+  const int pellets = w->pellets > 1 ? w->pellets : 1;
+  const float speed = w->bullet_speed > 0.f ? w->bullet_speed : 520.f;
+  for (int pi = 0; pi < pellets; ++pi) {
+    float a = ang;
+    if (pi > 0) {
+      float off = dispersion_.sample_offset_deg(rng_) * scope_mul;
+      if (crouching_) off *= 0.55f;
+      a = player_.facing_deg + off;
+    }
+    const float dmg = roll_bullet_damage(w->stats.damage, rng_);
+    Bullet* shot = bullets_.spawn(player_.pos, a, speed, dmg, w->stats.range / speed + 0.15f, true);
+    if (shot && bow) shot->is_arrow = true;
+  }
   {
     const float rad = ang * 0.01745329252f;
     spawn_fx(Fx_Muzzle,
@@ -5004,6 +5023,46 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
     if (s && building_blocks_move(*s, L.pos, a, b, 1.f)) return true;
   }
   return false;
+}
+
+
+bool Game::harness_place_at_building(int mode) {
+  int best = -1;
+  for (int pass = 0; pass < 2 && best < 0; ++pass) {
+    for (int i = 0; i < mapgen_.location_count(); ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      if (!poi_shape(L.type, i)) continue;
+      if (pass == 0 && L.type != Loc_Police) continue;
+      best = i;
+      break;
+    }
+  }
+  if (best < 0) return false;
+  const MapLocation& L = mapgen_.location(best);
+  const BuildingShape* s = poi_shape(L.type, best);
+  Vec2 target = L.pos;
+  if (mode == 0) {
+    // First wall-free point scanning the warmzone rect (row-major, 4 px grid).
+    bool found = false;
+    for (float y = s->wz_y0 + 8.f; y < s->wz_y1 && !found; y += 4.f)
+      for (float x = s->wz_x0 + 8.f; x < s->wz_x1 && !found; x += 4.f) {
+        const Vec2 p(L.pos.x + x, L.pos.y + y);
+        if (!building_blocks_move(*s, L.pos, p, p, 2.f)) { target = p; found = true; }
+      }
+  } else {
+    target = Vec2(L.pos.x, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);
+  }
+  player_.pos = target;
+  player_.vel = Vec2();
+  mapgen_.reload_locations(player_.pos, LocationReload_AfterSave);
+  mapgen_.rebuild_collision(world_);
+  if (platform_) {
+    char line[160];
+    std::snprintf(line, sizeof(line), "harness: building %s at (%.0f,%.0f), player (%.0f,%.0f) mode %d",
+                  s->int_sprite, L.pos.x, L.pos.y, target.x, target.y, mode);
+    platform_->log_line(line);
+  }
+  return true;
 }
 
 } // namespace mdaz

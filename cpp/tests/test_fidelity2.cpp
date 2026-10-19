@@ -42,3 +42,64 @@ int test_fidelity2() {
   test_building_polygons();
   return g_fail ? 1 : 0;
 }
+
+// ---- fidelity #2 / #3 ----
+#include "mdaz/weapons.hpp"
+#include "mdaz/zombie.hpp"
+#include "mdaz/animal.hpp"
+
+static void test_weapon_table() {
+  std::printf("[fidelity2] weapon damage / magazine / reload (data.js)\n");
+  const WeaponDef* fnx = find_weapon(151);
+  CHECK(fnx && fnx->stats.damage == 23.f && fnx->mag_capacity == 15 && fnx->reload_sec == 2.f,
+        "FNX: pistol_bullet IV0 23 (event override), mag 15, Mag_reload 2s");
+  const WeaponDef* mosin = find_weapon(156);
+  CHECK(mosin && mosin->stats.damage == 90.f && mosin->mag_capacity == 5 &&
+        mosin->reload_sec == 4.f && mosin->bullet_speed == 1000.f,
+        "Mosin: mosin_bullet IV0 90, mag 5, reload 4s (no fast-mag), speed 1000");
+  const WeaponDef* izh = find_weapon(154);
+  CHECK(izh && izh->pellets == 5 && izh->stats.damage == 20.f && izh->mag_capacity == 2,
+        "IZH-43 (bm16): 5 shotgun_pellet x IV0 20, mag 2");
+  const WeaponDef* bizon = find_weapon(183);
+  CHECK(bizon && bizon->mag_capacity == 40 && bizon->stats.damage == 16.f && bizon->reload_sec == 3.5f,
+        "Bizon: mag 40 (was 64), IV0 16, reload 3.5s");
+  const WeaponDef* svd = find_weapon(168);
+  CHECK(svd && svd->stats.damage == 80.f && svd->mag_capacity == 10, "SVD: IV0 80, mag 10");
+  int placeholder = 0;
+  for (int i = 0; i < weapon_def_count(); ++i) {
+    const WeaponDef* w = weapon_def_at(i);
+    if (!w->stats.is_melee && w->c2_bullet == 0) ++placeholder;
+  }
+  CHECK(placeholder == 0, "every firearm row is tied to a C2 bullet type");
+}
+
+static void test_npc_stats() {
+  std::printf("[fidelity2] zed / animal HP and speed (data.js)\n");
+  Zombie z;
+  z.setup(Zed_Normal, Vec2(0, 0), 7);
+  CHECK(z.max_hp == 60.f && z.speed >= 90.f && z.speed <= 100.f, "normal zed: HP 60, speed 90..100");
+  z.setup(Zed_Fast, Vec2(0, 0), 8);
+  CHECK(z.max_hp == 80.f && z.speed >= 120.f && z.speed <= 140.f, "fast zed: HP 80, speed 120..140");
+  z.setup(Zed_Army, Vec2(0, 0), 9);
+  CHECK(z.max_hp == 100.f && z.speed >= 90.f && z.speed <= 100.f, "army zed: HP 100, speed 90..100");
+  z.setup(Zed_Tank, Vec2(0, 0), 10);
+  CHECK(z.max_hp == 1000.f && z.speed == 110.f, "tank: HP 1000, speed 110");
+  z.setup(Zed_Screamer, Vec2(0, 0), 11);
+  CHECK(z.max_hp == 50.f && z.speed >= 30.f && z.speed <= 40.f, "screamer: HP 50, speed 30..40");
+  Animal a;
+  a.setup(Animal_Wolf, Vec2(0, 0), 3);
+  CHECK(a.hp == 50.f && a.speed >= 90.f && a.speed <= 110.f, "wolf: HP 50, speed 90..110");
+  a.setup(Animal_Deer, Vec2(0, 0), 4);
+  CHECK(a.hp == 80.f && a.speed >= 110.f && a.speed <= 130.f, "deer: HP 80, speed 110..130");
+  a.setup(Animal_Rabbit, Vec2(0, 0), 5);
+  CHECK(a.hp == 5.f && a.speed >= 180.f, "rabbit: HP 5, speed 180..200");
+  a.setup(Animal_Dog, Vec2(0, 0), 6);
+  CHECK(a.hp == 250.f && a.speed == 140.f, "dog: HP 250, speed 140");
+}
+
+int test_fidelity2_more() {
+  g_fail = 0;
+  test_weapon_table();
+  test_npc_stats();
+  return g_fail ? 1 : 0;
+}

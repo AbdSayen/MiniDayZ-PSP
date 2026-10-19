@@ -19,27 +19,34 @@ void Animal::setup(AnimalType t, Vec2 p, EntityId eid) {
   pos = p;
   alive = true;
   attack_cooldown = 0.f;
-  switch (t) {
-  case Animal_Wolf:
-    hp = 80.f;
-    speed = 110.f;
-    break;
-  case Animal_Dog:
-    hp = 60.f;
-    speed = 100.f;
-    break;
-  case Animal_Deer:
-    hp = 70.f;
-    speed = 120.f;
-    break;
-  case Animal_Rabbit:
-    hp = 20.f;
-    speed = 90.f;
-    break;
-  case Animal_Crow:
-    hp = 10.f;
-    speed = 140.f; // flock flees fast
-    break;
+  // data.js: HP = skin default IV (wolf IV1=50, dog IV1=250, deer IV2=80, rabbit IV2=5); speed
+  // = spawn-time Bullet/run speed (wolf random(90,110), dog 140, deer random(110,130), rabbit
+  // random(180,200)). Random rolls hashed from the entity id (deterministic setup).
+  {
+    const unsigned hsh = static_cast<unsigned>(eid) * 2654435761u;
+    const float u = static_cast<float>((hsh >> 8) & 0xFFFFu) / 65535.f;
+    switch (t) {
+    case Animal_Wolf:
+      hp = 50.f;
+      speed = 90.f + 20.f * u;
+      break;
+    case Animal_Dog:
+      hp = 250.f;
+      speed = 140.f;
+      break;
+    case Animal_Deer:
+      hp = 80.f;
+      speed = 110.f + 20.f * u;
+      break;
+    case Animal_Rabbit:
+      hp = 5.f;
+      speed = 180.f + 20.f * u;
+      break;
+    case Animal_Crow:
+      hp = 10.f;   // port value: crow_skin has no HP IV (Не исследована)
+      speed = 200.f; // crow_skin Bullet speed set to 200 on take-off
+      break;
+    }
   }
 }
 

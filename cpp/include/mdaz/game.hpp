@@ -47,6 +47,9 @@ public:
   void shutdown();
   void update(float dt);
   void render();
+  // TEST HARNESS ONLY (desktop --shots-building): puts the player inside (mode 0) or just south
+  // of (mode 1) the first police/other Solid building. Never called by gameplay code.
+  bool harness_place_at_building(int mode);
   bool wants_quit() const { return quit_; }
 
   AppState state() const { return state_; }

@@ -6,13 +6,17 @@
 namespace mdaz {
 
 // Weapon item IDs from original l_eng_items.xml (1.4.1).
-// Firearm base damage: sverka only where documented (weapon_bullet_iv0_sverka.json); else kGunDmgPlaceholder.
+// Firearm base damage / magazine / reload / pellets / speed: data.js (see weapons.cpp Wf).
 struct WeaponDef {
   ItemId item_id;
   const char* name;
   WeaponStats stats;
   ItemId ammo_id; // 0 if melee / none
   int mag_capacity; // chamber size; 0 = feed straight from inventory (bows)
+  float reload_sec;  // data.js Mag_reload duration (0 = legacy estimate)
+  int pellets;       // projectiles per shot (shotgun_pellet x5)
+  float bullet_speed;// C2 Bullet behaviour speed, px/s
+  int c2_bullet;     // C2 bullet object type index (0 = none / melee)
 };
 
 const WeaponDef* find_weapon(ItemId item_id);

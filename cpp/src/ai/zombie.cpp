@@ -18,44 +18,47 @@ void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   alive = true;
   attack_cooldown = 0.f;
   ambush_boost = 0.f;
-  // Speeds / HP are stubs pending full Zeds_common extract.
-  // Aggro uses Player_Hear_radius (1000) as upper sight budget for shooters;
-  // melee types use shorter radii from observed behavior groups.
+  // HP = skin IV0 set at spawn, chase speed = eyes "attack" (Bullet) speed set at spawn
+  // (data.js Zeds sheet, 'Zed * Puncher' groups). The random(lo, hi) speed roll is taken from a
+  // hash of the entity id so setup() stays deterministic without an RNG argument.
+  // Aggro radii are still port values (MainLook/ShortLook ranges not ported yet).
+  const unsigned hsh = static_cast<unsigned>(eid) * 2654435761u;
+  const float u = static_cast<float>((hsh >> 8) & 0xFFFFu) / 65535.f;
   switch (t) {
-  case Zed_Fast:
-    max_hp = 60.f;
-    speed = 95.f;
+  case Zed_Fast:     // zed_fast_skin1..3 IV0=80, speed random(120,140)
+    max_hp = 80.f;
+    speed = 120.f + 20.f * u;
     aggro_radius = 280.f;
     break;
-  case Zed_Army:
-    max_hp = 120.f;
-    speed = 55.f;
+  case Zed_Army:     // zed_army_skin1..3 IV0=100, speed random(90,100)
+    max_hp = 100.f;
+    speed = 90.f + 10.f * u;
     aggro_radius = 300.f;
     break;
-  case Zed_ArmyShooter:
-    max_hp = 110.f;
-    speed = 50.f;
+  case Zed_ArmyShooter: // zed_shooter_skin3 IV0=100 (skin 125, skin2 175), speed 20+random(10)
+    max_hp = 100.f;
+    speed = 20.f + 10.f * u;
     aggro_radius = static_cast<float>(balance::Player_Hear_radius) * 0.45f;
     break;
-  case Zed_Tank:
-    max_hp = 400.f;
-    speed = 35.f;
+  case Zed_Tank:     // zed_tank_skin IV0=1000, attack speed 110 (200 while rushing)
+    max_hp = 1000.f;
+    speed = 110.f;
     aggro_radius = 340.f;
     break;
-  case Zed_Screamer:
-    max_hp = 80.f;
-    speed = 50.f;
-    aggro_radius = 360.f; // alerts others — scream radius TBD
+  case Zed_Screamer: // zed_screamer_skin IV2=50, speed random(30,40)
+    max_hp = 50.f;
+    speed = 30.f + 10.f * u;
+    aggro_radius = 360.f;
     break;
-  case Zed_Buried:
-    max_hp = 90.f;
-    speed = 45.f;
-    aggro_radius = 160.f; // ambush — jumps when close
+  case Zed_Buried:   // zed_buried_skin IV0=60, speed random(90,110)
+    max_hp = 60.f;
+    speed = 90.f + 20.f * u;
+    aggro_radius = 160.f;
     break;
-  case Zed_Normal:
+  case Zed_Normal:   // zed_normal_skin1..6 IV0=60 (skin7 80), speed random(90,100)
   default:
-    max_hp = 100.f;
-    speed = 48.f;
+    max_hp = 60.f;
+    speed = 90.f + 10.f * u;
     aggro_radius = 220.f;
     break;
   }
@@ -86,12 +89,9 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
 
   // Army shooter prefers standoff — slow approach, shots handled in Game.
   float move_spd = speed;
-  if (type == Zed_ArmyShooter && dist < 200.f) move_spd *= 0.35f;
-  if (type == Zed_Buried && ambush_boost > 0.f) move_spd *= 2.4f;
   // Tank: slow but hard-hitting; larger melee reach
   float melee_reach = 28.f;
   if (type == Zed_Tank) {
-    move_spd *= 0.85f;
     melee_reach = 36.f;
   }
 

@@ -43,10 +43,13 @@ public:
   int screen_w() const { return inner_->screen_w(); }
   int screen_h() const { return inner_->screen_h(); }
 
+  void set_game(mdaz::Game* g, bool building) { game_ = g; building_ = building; }
+
   bool poll(mdaz::InputState& in) {
     if (!inner_->poll(in)) return false;
     in = mdaz::InputState();
     ++frame_;
+    if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
     if (frame_ > 200 && frame_ < 420) in.move_x = 1.f;
@@ -68,7 +71,30 @@ public:
     return frame_ < 1580;
   }
 
+  // --shots-building: test-only placement next to a Solid building, then walk into its walls.
+  bool poll_building(mdaz::InputState& in) {
+    if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (frame_ == 200 && game_) game_->harness_place_at_building(1); // south of the building
+    if (frame_ > 260 && frame_ < 420) in.move_y = -1.f;              // walk north into the wall
+    if (frame_ == 480 && game_) game_->harness_place_at_building(0); // inside (warmzone)
+    if (frame_ > 540 && frame_ < 700) in.move_x = -1.f;              // walk west into a wall
+    return frame_ < 760;
+  }
+
   void end_frame() {
+    if (building_) {
+      static const struct { int frame; const char* name; } kB[] = {
+        { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
+      };
+      for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
+        if (kB[i].frame != frame_) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kB[i].name);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     static const struct { int frame; const char* name; } kShots[] = {
       { 50, "menu" }, { 180, "spawn" },
       { 220, "run_a" }, { 226, "run_b" }, { 232, "run_c" }, { 238, "run_d" },
@@ -88,6 +114,8 @@ private:
   mdaz::IPlatform* inner_;
   const char* dir_;
   int frame_;
+  mdaz::Game* game_ = 0;
+  bool building_ = false;
 };
 
 } // namespace
@@ -95,8 +123,13 @@ private:
 int main(int argc, char** argv) {
   const char* data_dir = "data";
   const char* shots_dir = 0;
+  bool shots_building = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
+    else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_building = true;
+    }
     else if (std::strcmp(argv[i], "--keys") == 0) mdaz::ui::set_keyboard_hints(true); // keyboard caps in hints
     else data_dir = argv[i];
   }
@@ -106,13 +139,15 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "Failed to create platform\n");
     return 1;
   }
-  if (shots_dir) platform = new ScriptedPlatform(platform, shots_dir);
+  ScriptedPlatform* scripted = 0;
+  if (shots_dir) platform = scripted = new ScriptedPlatform(platform, shots_dir);
 
   // 2x PSP resolution window with logical 480x272 render
   if (!platform->init("Mini DAYZ C++ (1.4.1)", mdaz::kPspWidth * 2, mdaz::kPspHeight * 2)) {
     std::fprintf(stderr, "Platform init failed — falling back to null\n");
     platform->shutdown();
     delete platform;
+    scripted = 0;
     platform = mdaz::create_null_platform();
     platform->init("Mini DAYZ C++", mdaz::kPspWidth, mdaz::kPspHeight);
   }
@@ -130,6 +165,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   game.set_audio(audio);
+  if (scripted) scripted->set_game(&game, shots_building);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

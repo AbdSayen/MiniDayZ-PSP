@@ -139,7 +139,7 @@ int test_combat() {
   }
 
   if (!mdaz::weapon_reload_uses_pistol_anim(fnx) ||
-      mdaz::weapon_reload_duration_sec(fnx) != 1.f) {
+      mdaz::weapon_reload_duration_sec(fnx) != 2.f) { // data.js Reload_* FNX: Mag_reload(2, 0)
     std::printf("FAIL FNX reload anim/duration\n");
     ++fail;
   } else {

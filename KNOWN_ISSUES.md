@@ -126,5 +126,13 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 
 ## Building walls (2026-10-19 20:50)
 
-- Solid polygons from data.js now drive building collision (fidelity #1). Open: zombies, animals and bandits do not collide with building polygons yet, so they can walk through walls. Whether the C2 z_walker / bandit movement respects Solid is Не исследована. Vehicles use only a point-in-wall test. Port guard: a player who starts a step already inside a wall polygon (for example an old save) can walk out.
+- Solid polygons from data.js now drive building collision (fidelity #1). Zombies, animals and bandits now collide with building polygons too (their C2 Bullet movers have bounce-off-solids = 1). Port slides along the wall instead of reflecting the Bullet angle. Vehicles use only a point-in-wall test. Port guard: a player who starts a step already inside a wall polygon (for example an old save) can walk out.
 - Which exterior/interior pair a POI shows still comes from the invented `poi_layout.cpp` pair layout (Buildings_base prefab XY + create_map_element is item 5) — only one building per POI (the drawn one) is collided now. The second `poi_layout` part was never drawn; its invisible cell blockers are removed.
+
+## Weapons / NPC stats (2026-10-19 21:05)
+
+- Not ported yet: headshot/crit roll (random(100) < 20 + bullet IV9 + perk bonus gives x3 damage on certain zeds), fast-mag attachment (IV18) that shortens reload, and scope-dependent IV9 values.
+- Bow and crossbow: C2 picks arrow_bullet (50) or arrow_bullet_c (75) from the loaded arrow type (IV11). The port ties bow to 50 and crossbow to 75.
+- Weapon range, fire interval and dispersion are still port values. C2 bullets carry IV3=400 (Не исследована).
+- Zed/animal speed random(lo, hi) is rolled from a hash of the entity id, not the game RNG. Warn/idle speeds (b_warn 80–90, speed /4 modifiers) and aggro radii are not ported. Crow HP 10 is a port value.
+- C2 weapon slot ids 9, 15 and 20 have reload entries but no pickup name, so they are unmapped.
