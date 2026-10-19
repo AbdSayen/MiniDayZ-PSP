@@ -341,6 +341,7 @@ private:
   void try_throw_projectile();
   void try_bunker_enter_exit();
   void spawn_bunker_zeds(Vec2 at);   // C2 Bunker_spawn_zeds(x, y)
+  void drop_gear_and_overflow(ItemId old);
   bool building_blocks(Vec2 a, Vec2 b) const; // C2 *_int Solid polygons
   void zed_check_bunker();           // C2 Zed_check_bunker (every 3 s while inBunker)
   bool bunker_spawner_used_[32];

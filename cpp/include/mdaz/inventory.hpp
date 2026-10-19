@@ -20,6 +20,7 @@ struct WornSlot {
 
 int clothing_container_slots(ItemId id);
 int clothing_region(ItemId id);
+bool is_gear_item(ItemId id);
 
 class Inventory {
 public:
@@ -30,6 +31,13 @@ public:
   bool can_add_item(ItemId id, int count, const ItemDatabase& db) const;
   bool add_item(ItemId id, int count, const ItemDatabase& db);
   bool remove_at(int slot, int count);
+  // C2 Check_space_*: write id+count into ONE empty slot within capacity (no stack merge).
+  bool add_item_new_slot(ItemId id, int count);
+  // C2 Pick_player_item: gear (ids 250..499) is worn straight from the ground; the piece
+  // previously worn in that region is returned in *old_out (C2 Drop_* puts it on the ground).
+  bool equip_gear(ItemId id, ItemId* old_out);
+  // Slots at index >= capacity() after a container was removed: take them out (to drop).
+  int take_overflow(InvSlot* out, int max);
   bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db, Rng* rng = 0);
   // Equip clothing: moves it out of the bag into its worn region (swap with old piece).
   bool wear_clothing(int slot, const ItemDatabase& db);

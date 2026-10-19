@@ -1075,6 +1075,17 @@ void Game::try_ranged_attack() {
   }
 }
 
+void Game::drop_gear_and_overflow(ItemId old) {
+  // Drop_pants/_outerwear/_vest/_backpack: the old piece goes on the ground; in C2 its
+  // container array travels with it. The port has one flat array, so items that no longer fit
+  // (index >= capacity) are dropped next to it (see KNOWN_ISSUES).
+  if (old) loot_.spawn_item(Vec2(player_.pos.x, player_.pos.y + 15.f), old, 1);
+  InvSlot over[kInventorySlots];
+  const int n = inventory_.take_overflow(over, kInventorySlots);
+  for (int k = 0; k < n && k < kInventorySlots; ++k)
+    loot_.spawn_item(Vec2(player_.pos.x + 8.f, player_.pos.y + 15.f), over[k].id, over[k].count);
+}
+
 void Game::try_pickup_loot() {
   const float reach = 40.f;
   for (int i = 0; i < loot_.count(); ++i) {
@@ -1082,9 +1093,26 @@ void Game::try_pickup_loot() {
     if (!p->active) continue;
     if (dist2(p->pos, player_.pos) > reach * reach) continue;
     int remaining = 0;
+    ItemId olds[8];
+    int nold = 0;
+    bool gear_changed = false;
     for (int j = 0; j < p->item_count; ++j) {
       if (p->counts[j] <= 0) continue;
-      if (inventory_.add_item(p->items[j], p->counts[j], items_)) {
+      // C2 picky: gear (clothes/vests/backpacks/headwear) -> Pick_player_item (worn at once,
+      // the old piece is dropped); everything else -> Pick_inventory_item -> Check_space_*
+      // (one empty slot, no stack merge).
+      bool taken = false;
+      if (is_gear_item(p->items[j])) {
+        ItemId old = 0;
+        if (inventory_.equip_gear(p->items[j], &old)) {
+          taken = true;
+          gear_changed = true;
+          if (old && nold < 8) olds[nold++] = old;
+        }
+      } else {
+        taken = inventory_.add_item_new_slot(p->items[j], p->counts[j]);
+      }
+      if (taken) {
         p->counts[j] = 0;
       } else {
         ++remaining;
@@ -1104,6 +1132,10 @@ void Game::try_pickup_loot() {
       }
       p->item_count = w;
       inv_full_flash_ = 1.5f;
+    }
+    if (gear_changed) {
+      for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k]);
+      drop_gear_and_overflow(0);
     }
     if (audio_) audio_->play("pickup", 0.5f);
     break;

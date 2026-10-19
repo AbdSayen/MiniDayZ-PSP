@@ -144,6 +144,46 @@ bool Inventory::add_item(ItemId id, int count, const ItemDatabase& db) {
   return count == 0;
 }
 
+bool is_gear_item(ItemId id) { return id >= 250 && id < 500; }
+
+bool Inventory::add_item_new_slot(ItemId id, int count) {
+  if (id <= 0 || count <= 0) return false;
+  const int cap = capacity();
+  for (int i = 0; i < cap; ++i) {
+    if (slots_[i].empty()) { slots_[i].id = id; slots_[i].count = count; return true; }
+  }
+  return false;
+}
+
+bool Inventory::equip_gear(ItemId id, ItemId* old_out) {
+  if (old_out) *old_out = 0;
+  if (!is_gear_item(id)) return false;
+  const int reg = clothing_region(id);
+  int wi = -1;
+  for (int i = 0; i < worn_count_; ++i)
+    if (clothing_region(worn_[i].id) == reg) { wi = i; break; }
+  if (wi < 0) {
+    if (worn_count_ >= kMaxWorn) return false;
+    wi = worn_count_++;
+  } else if (old_out) {
+    *old_out = worn_[wi].id;
+  }
+  worn_[wi].id = id;
+  worn_[wi].iv6 = clothing_iv6_max(id);
+  return true;
+}
+
+int Inventory::take_overflow(InvSlot* out, int max) {
+  int n = 0;
+  for (int i = capacity(); i < kInventorySlots; ++i) {
+    if (slots_[i].empty()) continue;
+    if (n < max && out) out[n] = slots_[i];
+    ++n;
+    slots_[i] = InvSlot();
+  }
+  return n;
+}
+
 bool Inventory::remove_at(int slot, int count) {
   if (slot < 0 || slot >= kInventorySlots) return false;
   if (slots_[slot].empty() || slots_[slot].count < count) return false;
