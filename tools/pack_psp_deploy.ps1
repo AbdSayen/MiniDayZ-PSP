@@ -32,6 +32,12 @@ foreach ($u in $UiCandidates) {
   }
 }
 
+# Original sounds (C2 media/*.ogg) for platform/psp/audio_psp.cpp.
+$Media = Join-Path $Root "original_docs\media"
+if (-not (Test-Path $Media)) { throw "Missing original_docs/media - cannot deploy sounds" }
+New-Item -ItemType Directory -Path (Join-Path $Out "data\media") | Out-Null
+Copy-Item (Join-Path $Media "*.ogg") (Join-Path $Out "data\media")
+
 $PakOut = Join-Path $Out "data\sprites.pak"
 if (-not (Test-Path $Images)) {
   throw "Missing original_docs/images - cannot pack sprites"

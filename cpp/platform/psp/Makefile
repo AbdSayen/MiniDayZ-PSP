@@ -63,7 +63,7 @@ OBJS = \
   $(SRC)/ui/item_sprites.o \
   $(SRC)/ui/ui_strings.o \
   $(SRC)/ui/quest.o \
-  main_psp.o \
+  main_psp.o audio_psp.o \
   platform_psp.o
 
 # build.mak prepends -I to each INCDIR entry — do NOT also put -I$(INCDIR) in CFLAGS.
@@ -73,7 +73,7 @@ CXXFLAGS = -fno-exceptions -fno-rtti -std=c++11
 ASFLAGS =
 
 LIBDIR =
-LIBS = -lpspgum -lpspgu -lm -lpspctrl -lpspdisplay -lpspge -lpsppower -lpsprtc -lstdc++
+LIBS = -lpspgum -lpspgu -lm -lpspctrl -lpspdisplay -lpspge -lpsppower -lpsprtc -lpspaudio -lstdc++
 LDFLAGS =
 
 EXTRA_TARGETS = EBOOT.PBP

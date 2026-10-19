@@ -4234,6 +4234,7 @@ void Game::update(float dt) {
     fps_accum_ = 0.f;
   }
 
+  if (audio_) audio_->set_listener(player_.pos.x, player_.pos.y);
   InputState in;
   if (!platform_->poll(in)) {
     quit_ = true;

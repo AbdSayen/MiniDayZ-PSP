@@ -656,3 +656,21 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - "bench tutorial": Tutorial, player stays at (577,1001) for 20 s. The intro tip moveblock is expected, but the screen was not inspected.
   - Memory in game at 1 s and 20 s: max free block 512 KB, total free 764 KB.
 - Not verified: pad cancel of autoplay (the headless build has no pad), and real hardware.
+
+## PSP sound (2026-10-20, 02:50 Baku)
+- New `cpp/platform/psp/audio_psp.cpp` plays the original `media/*.ogg`. The deploy carries all 207 files in `data/media`.
+- Mixer: a software mixer on one stereo sceAudio channel at 44100 Hz, in its own thread (priority 0x12, 256 KB stack for the stb_vorbis alloca buffers).
+  - 16 voices. Files above 96 KB are streamed, at most 3 at a time.
+  - Shorter files are decoded to mono s16 into an LRU cache with a 4 MB budget.
+- Tag → file: `src/platform/audio_names.inc`, the same table desktop audio_sdl.cpp now uses. Any other name maps to the lowercase file name + ".ogg" (C2 plays media by file name).
+- C2 Audio plugin from data.js (type t178, properties [0,0,0,1,1,600,600,10000,10]):
+  - panning HRTF; distance model inverse; listener Z 600; refDistance 600; maxDistance 10000; rolloff 10.
+  - play_at uses the WebAudio inverse model: gain = 600 / (600 + 10·(clamp(d,600,10000) − 600)), with d the 3D distance to the listener (the player). Equal-power pan by azimuth.
+  - Volume is capped to [0,1] like dbToLinear.
+- PPSSPPHeadless, 50 s each:
+  - bench, bench tutorial and a clean deploy all boot and play;
+  - log lines: `audio: channel 7`, `stream ambient.ogg`, `decoded akm_1.ogg / body_1.ogg / empty_click.ogg`;
+  - no assert or crash;
+  - bench player moved (8925,10000) → (8856.6,10211.3); the clean deploy starts the Tutorial.
+- Memory: kernel free dropped 764 → 508 KB (max block 256 KB) because of the mixer thread stack. The game heap is unaffected. The sound itself was not listened to: there is no audio output in headless mode.
+- Desktop build OK; mdaz_tests exit 0 (453 OK, 0 FAIL).

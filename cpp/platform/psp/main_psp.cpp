@@ -3,6 +3,7 @@
 
 #include "mdaz/game.hpp"
 #include "mdaz/platform.hpp"
+#include "mdaz/audio.hpp"
 
 #if defined(MDAZ_PSP) && defined(__PSP__)
 #include <pspkernel.h>
@@ -238,6 +239,9 @@ int main(int argc, char** argv) {
   mdaz_boot_log("Game allocated %p", (void*)game);
   log_mem("after Game alloc");
 #endif
+  mdaz::IAudio* audio = mdaz::create_psp_audio();
+  audio->set_media_dir("data/media");
+  game->set_audio(audio);
   const bool init_ok = game->init(platform, "data");
 #if defined(MDAZ_PSP) && defined(__PSP__)
   mdaz_boot_log("game init %s", init_ok ? "ok" : "FAILED");
