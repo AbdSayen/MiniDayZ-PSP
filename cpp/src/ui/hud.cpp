@@ -46,32 +46,45 @@ void touch_hud_c2_audit() {
 bool spr(IPlatform& p, const char* name) { return p.has_sprite(name); }
 
 // Layout constants (logical px).
-const float kVitalX = 38.f, kVitalY = kSafe, kVitalW = 64.f, kVitalH = 14.f, kVitalGap = 4.f;
+// gui_panel native frame 60x20 (C2 GUI_layout draws it at 2x = 120x40; PSP uses 1x).
+const float kVitalX = 38.f, kVitalY = kSafe, kVitalW = 60.f, kVitalH = 20.f, kVitalGap = 2.f;
 const float kHotSlot = 22.f, kHotGap = 2.f;
 const float kHotY = kHintBarY - kHotSlot - 3.f;
 const float kMiniW = 56.f, kMiniH = 56.f;
 
-// Original: gui_panel frame 60x20 @ (1,1); bars are 1x5 strips stretched.
-void draw_vital_bar(IPlatform& p, float x, float y, float fill01, const char* bar_sprite,
+// C2 GUI_layout: one gui_panel instance per vital, animation frame 0..4 =
+// blood(heart) / water(drop) / food(fork+knife) / heat(thermometer) / radiation.
+// Each frame already carries its icon + bar track; the 1x5 bar strip sits inside the track
+// at native (22,7), 5 px tall, 35 px at 100% (track interior x22..56, y7..11).
+struct PanelFrame { const char* sheet; int sx, sy; };
+const PanelFrame kPanelFrames[5] = {
+  { "gui_panel-sheet0", 1, 1 }, { "gui_panel-sheet0", 1, 23 },
+  { "gui_panel-sheet1", 1, 1 }, { "gui_panel-sheet1", 1, 23 },
+  { "gui_panel-sheet2", 0, 0 },
+};
+const float kBarX = 22.f, kBarY = 7.f, kBarW = 35.f, kBarH = 5.f;
+
+void draw_vital_bar(IPlatform& p, float x, float y, int frame, float fill01, const char* bar_sprite,
                     float br, float bg, float bb) {
   if (fill01 < 0.f) fill01 = 0.f;
   if (fill01 > 1.f) fill01 = 1.f;
-  if (spr(p, "gui_panel-sheet0"))
-    p.draw_sprite_frame("gui_panel-sheet0", x, y, kVitalW, kVitalH, 1, 1, 60, 20, 0.f, 0.92f);
+  const PanelFrame& f = kPanelFrames[frame];
+  if (spr(p, f.sheet))
+    p.draw_sprite_frame(f.sheet, x, y, kVitalW, kVitalH, f.sx, f.sy, 60, 20, 0.f, 1.f);
   else
-    p.draw_rect(x, y, kVitalW, kVitalH, 0.08f, 0.08f, 0.08f, 0.85f);
-  const float bx = x + 4.f, by = y + 4.f, bw = kVitalW - 8.f, bh = kVitalH - 8.f;
-  p.draw_rect(bx, by, bw, bh, 0.1f, 0.1f, 0.1f, 0.9f);
-  const float fw = bw * fill01;
-  if (fw < 0.5f) return;
-  if (spr(p, bar_sprite)) p.draw_sprite(bar_sprite, bx, by, fw, bh, 0.f, 1.f);
-  else p.draw_rect(bx, by, fw, bh, br, bg, bb, 1.f);
+    p.draw_rect(x + kBarX - 1.f, y + kBarY - 1.f, kBarW + 2.f, kBarH + 2.f, 0.2f, 0.28f, 0.36f, 0.9f);
+  const float fw = std::floor(kBarW * fill01 + 0.5f);
+  if (fw < 1.f) return;
+  if (spr(p, bar_sprite)) p.draw_sprite(bar_sprite, x + kBarX, y + kBarY, fw, kBarH, 0.f, 1.f);
+  else p.draw_rect(x + kBarX, y + kBarY, fw, kBarH, br, bg, bb, 1.f);
 }
 
-void draw_status_icon(IPlatform& p, float& x, float y, const char* name, float nw, float nh) {
-  if (!spr(p, name)) return;
-  p.draw_sprite(name, x, y, nw, nh, 0.f, 1.f);  // native C2 size
-  x += nw + 3.f;
+// C2 warning overlays (gui_starving / gui_thirsty / gui_heat / gui_sick: frame 0 blank,
+// frame 1 red silhouette) placed over their panel at the GUI_layout offsets (native px).
+void draw_warn_icon(IPlatform& p, float px, float py, const char* sheet, float ox, float oy,
+                    int sx1, int sy1, int w, int h, bool lit) {
+  if (!lit || !spr(p, sheet)) return;
+  p.draw_sprite_frame(sheet, px + ox, py + oy, (float)w, (float)h, sx1, sy1, w, h, 0.f, 1.f);
 }
 
 // Item icon fitted into a box, keeping the aspect of the C2 frame. Uses the on_ground frame
@@ -551,25 +564,30 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   if (spr(platform, "player_skin_def_1-sheet0"))
     platform.draw_sprite_frame("player_skin_def_1-sheet0", kSafe + 1.f, kSafe + 8.f, 24.f, 24.f, 1, 1, 30, 30, 0.f, 1.f);
 
-  // Vitals: blood, water, food, heat (C2 GUI_layout order).
+  // Vitals: blood, water, food, heat (C2 GUI_layout order; colours = the C2 1x5 bar strips).
   const float vx = kVitalX;
-  draw_vital_bar(platform, vx, kVitalY, pl.survival.blood / 100.f, "gui_blood_bar-sheet0", 0.75f, 0.15f, 0.12f);
-  draw_vital_bar(platform, vx + (kVitalW + kVitalGap), kVitalY, pl.survival.water / 100.f,
-                 "gui_water_bar-sheet0", 0.2f, 0.45f, 0.85f);
-  draw_vital_bar(platform, vx + 2.f * (kVitalW + kVitalGap), kVitalY, pl.survival.food / 100.f,
-                 "gui_food_bar-sheet0", 0.75f, 0.55f, 0.15f);
-  draw_vital_bar(platform, vx + 3.f * (kVitalW + kVitalGap), kVitalY, pl.survival.temperature / 100.f,
-                 "gui_heat_bar-sheet0", 0.85f, 0.35f, 0.1f);
-  // Status icons (native sizes) under the bars.
+  const float step = kVitalW + kVitalGap;
+  draw_vital_bar(platform, vx, kVitalY, 0, pl.survival.blood / 100.f, "gui_blood_bar-sheet0", 0.85f, 0.2f, 0.21f);
+  draw_vital_bar(platform, vx + step, kVitalY, 1, pl.survival.water / 100.f, "gui_water_bar-sheet0", 0.29f, 0.67f, 0.69f);
+  draw_vital_bar(platform, vx + 2.f * step, kVitalY, 2, pl.survival.food / 100.f, "gui_food_bar-sheet0", 0.31f, 0.58f, 0.27f);
+  draw_vital_bar(platform, vx + 3.f * step, kVitalY, 3, pl.survival.temperature / 100.f, "gui_heat_bar-sheet0", 0.6f, 0.54f, 0.02f);
   {
-    float ix = vx, iy = kVitalY + kVitalH + 3.f;
-    if (pl.survival.bleeding > 0.f) draw_status_icon(platform, ix, iy, "gui_bleeding-sheet0", 7.f, 11.f);
-    if (pl.survival.infected) draw_status_icon(platform, ix, iy, "gui_sick-sheet0", 13.f, 15.f);
-    if (pl.survival.food < 20.f) draw_status_icon(platform, ix, iy, "gui_starving-sheet0", 14.f, 18.f);
-    if (pl.survival.water < 20.f) draw_status_icon(platform, ix, iy, "gui_thirsty-sheet0", 11.f, 17.f);
-    if (pl.survival.temperature < 25.f) draw_status_icon(platform, ix, iy, "gui_heat-sheet0", 11.f, 18.f);
+    // Blink of the red warning silhouettes (C2 toggles frame 0/1 from events; ~2 Hz here).
+    const bool blink = (static_cast<int>(game.ui_time() * 4.f) & 1) != 0;
+    // Offsets from GUI_layout (instance top-left minus panel top-left, /2).
+    if (pl.survival.bleeding > 0.f && spr(platform, "gui_bleeding-sheet0"))
+      platform.draw_sprite("gui_bleeding-sheet0", vx + 35.f, kVitalY + 4.f, 7.f, 11.f, 0.f, 1.f);
+    draw_warn_icon(platform, vx, kVitalY, "gui_sick-sheet0", 43.f, 2.f, 16, 1, 13, 15,
+                   pl.survival.infected && blink);
+    draw_warn_icon(platform, vx + step, kVitalY, "gui_thirsty-sheet0", 8.f, 2.f, 14, 1, 11, 17,
+                   pl.survival.water < 20.f && blink);
+    draw_warn_icon(platform, vx + 2.f * step, kVitalY, "gui_starving-sheet0", 6.f, 3.f, 17, 1, 14, 18,
+                   pl.survival.food < 20.f && blink);
+    draw_warn_icon(platform, vx + 3.f * step, kVitalY, "gui_heat-sheet0", 8.f, 2.f, 14, 1, 11, 18,
+                   pl.survival.temperature < 25.f && blink);
+    float iy = kVitalY + kVitalH + 2.f;
     // Wetness / gas mask / torch battery mini-bars next to the icons.
-    float bx = vx + 2.f * (kVitalW + kVitalGap);
+    float bx = vx + 2.f * step;
     if (game.wetness() > 8.f) {
       platform.draw_rect(bx, iy, kVitalW, 3.f, 0.08f, 0.1f, 0.15f, 0.8f);
       platform.draw_rect(bx, iy, kVitalW * (game.wetness() / 100.f), 3.f, 0.25f, 0.45f, 0.85f, 0.95f);
@@ -585,7 +603,7 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       platform.draw_rect(bx, iy, kVitalW * (game.torch_battery() / 100.f), 3.f,
                          pl.nvg_on ? 0.3f : 0.9f, pl.nvg_on ? 0.85f : 0.75f, pl.nvg_on ? 0.35f : 0.2f, 1.f);
     }
-    if (game.adrenaline_t() > 0.f) text(platform, vx + 3.f * (kVitalW + kVitalGap), kVitalY + kVitalH + 3.f, "ADRENALINE", 0.5f, 0.9f, 0.55f);
+    if (game.adrenaline_t() > 0.f) text(platform, vx + 3.f * step, kVitalY + kVitalH + 3.f, "ADRENALINE", 0.5f, 0.9f, 0.55f);
   }
 
   // Day badge (gui_time_bg) top-right, FPS under it.
