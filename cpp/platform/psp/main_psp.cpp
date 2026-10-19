@@ -258,6 +258,7 @@ int main(int argc, char** argv) {
     prev = now;
     if (dt < 0.f) dt = 0.f;
     if (dt > 0.1f) dt = 0.1f;
+    platform->profile_mark(mdaz::IPlatform::Prof_Logic);
     game->update(dt);
     game->render();
 #if defined(MDAZ_PSP) && defined(__PSP__)

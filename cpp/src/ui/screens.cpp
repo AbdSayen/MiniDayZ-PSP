@@ -68,11 +68,19 @@ void Game::render_pause_menu() const {
   const float px = (kScreenW - pw) * 0.5f, py = 22.f;
   panel(p, px, py, pw, ph);
   panel_title(p, px, py, pw, "PAUSED");
-  const char* labels[6] = { "RESUME", "SAVE GAME", "LOAD GAME", "CANCEL TASK", "CONTROLS", "MAIN MENU" };
-  bool disabled[6] = { false, false, !has_save(), !quest_.show_panel(), false, false };
+  // PSP adds "HALF RES" (world at 240x136, HUD full res; saved in settings.cfg, default OFF).
+  const bool hr = p.supports_half_res();
+  const int n = hr ? 8 : 6;
+  const char* labels[8] = { "RESUME", "SAVE GAME", "LOAD GAME", "CANCEL TASK", "CONTROLS",
+                            "MAIN MENU", "MAIN MENU", "MAIN MENU" };
+  if (hr) {
+    labels[5] = half_res() ? "HALF RES: ON" : "HALF RES: OFF";
+    labels[6] = perf_overlay_on() ? "MS OVERLAY: ON" : "MS OVERLAY: OFF";
+  }
+  bool disabled[8] = { false, false, !has_save(), !quest_.show_panel(), false, false, false, false };
   ListStyle st;
-  st.w = 160.f; st.row_h = 31.f; st.x = px + (pw - st.w) * 0.5f; st.y = py + 20.f; st.wood = true;
-  list_menu(p, st, labels, 6, pause_focus_, ui_t_, disabled);
+  st.w = 160.f; st.row_h = hr ? 23.f : 31.f; st.x = px + (pw - st.w) * 0.5f; st.y = py + 20.f; st.wood = true;
+  list_menu(p, st, labels, n, pause_focus_, ui_t_, disabled);
   Hint h[4] = {
     Hint{Btn_None, Btn_DPad, "ARROWS", "Select"},
     Hint{Btn_None, Btn_Cross, "ENTER", "Confirm"},

@@ -313,6 +313,7 @@ Game::Game()
   hammerspawned_ = 0; helispawned_ = 0; location_reload_anchor_ = Vec2();
   overworld_pos_ = Vec2();
   menu_focus_ = 0; pause_focus_ = 0; ui_t_ = 0.f; toast_[0] = 0; toast_t_ = 0.f;
+  has_save_cache_ = -1; half_res_ = false; perf_overlay_ = false;
   for (int i = 0; i < 4; ++i) { nav_hold_t_[i] = 0.f; nav_prev_[i] = false; }
   for (int i = 0; i < kMaxTraps; ++i) traps_[i].active = false;
   for (int i = 0; i < kMaxFx; ++i) fx_[i].active = false;
@@ -463,9 +464,50 @@ bool Game::init(IPlatform* platform, const char* data_dir) {
       std::printf("[mdaz] WARNING: original sprites not found — colored rects fallback\n");
   }
 
+  load_settings();
   state_ = AppState_Menu;
   state_timer_ = 0.f;
   return true;
+}
+
+// settings.cfg: "half_res=0|1" (PSP half-resolution world render; default OFF).
+void Game::load_settings() {
+  half_res_ = false;
+  char* data = 0;
+  std::size_t size = 0;
+  if (platform_ && platform_->read_file("settings.cfg", &data, &size) && data) {
+    const char* k = std::strstr(data, "half_res=");
+    if (k && k + 9 < data + size) half_res_ = (k[9] == '1');
+    const char* o = std::strstr(data, "perf_overlay=");
+    if (o && o + 13 < data + size) perf_overlay_ = (o[13] == '1');
+    delete[] data;
+  }
+  if (platform_ && platform_->supports_half_res()) platform_->set_half_res(half_res_);
+  if (platform_ && platform_->supports_perf_overlay()) platform_->set_perf_overlay(perf_overlay_);
+}
+
+void Game::save_settings() {
+  if (!platform_) return;
+  char buf[64];
+  const int n = std::snprintf(buf, sizeof(buf), "half_res=%d\nperf_overlay=%d\n", half_res_ ? 1 : 0,
+                              perf_overlay_ ? 1 : 0);
+  platform_->write_file("settings.cfg", buf, (std::size_t)n);
+}
+
+void Game::toggle_half_res() {
+  if (!platform_ || !platform_->supports_half_res()) return;
+  half_res_ = !half_res_;
+  platform_->set_half_res(half_res_);
+  save_settings();
+  show_toast(half_res_ ? "HALF RES: ON" : "HALF RES: OFF");
+}
+
+void Game::toggle_perf_overlay() {
+  if (!platform_ || !platform_->supports_perf_overlay()) return;
+  perf_overlay_ = !perf_overlay_;
+  platform_->set_perf_overlay(perf_overlay_);
+  save_settings();
+  show_toast(perf_overlay_ ? "MS OVERLAY: ON" : "MS OVERLAY: OFF");
 }
 
 void Game::shutdown() {}
@@ -1951,12 +1993,17 @@ void Game::update_menu(float dt, const InputState& in) {
 }
 
 bool Game::has_save() const {
+  // Cached: the menus call this every frame and a full file read per frame was a large
+  // PSP cost (memstick open + read, 3 path probes on failure). Invalidated on save.
   if (!platform_) return false;
+  if (has_save_cache_ >= 0) return has_save_cache_ != 0;
   char* data = 0;
   std::size_t size = 0;
-  if (!platform_->read_file("save.mdaz", &data, &size)) return false;
-  delete[] data;
-  return size > 0;
+  bool ok = platform_->read_file("save.mdaz", &data, &size);
+  if (ok) delete[] data;
+  ok = ok && size > 0;
+  has_save_cache_ = ok ? 1 : 0;
+  return ok;
 }
 
 void Game::show_toast(const char* msg) {
@@ -1985,6 +2032,7 @@ void Game::save_game_to_disk() {
                         torch_battery_, quest_.q_task_id, quest_.q_status,
                         mag_rounds_, wetness_, gasmask_filter_, player_.fish_caught,
                         &vehicles_, &crops_view, &traps_view, &extras, &fires_view);
+  has_save_cache_ = -1;
   show_toast(ok ? "GAME SAVED" : "SAVE FAILED");
 }
 
@@ -2074,8 +2122,10 @@ void Game::update_pause(float dt, const InputState& in) {
       show_controls_ = false;
     return;
   }
-  // 0 RESUME, 1 SAVE, 2 LOAD, 3 CANCEL TASK, 4 CONTROLS, 5 MAIN MENU
-  const int kItems = 6;
+  // 0 RESUME, 1 SAVE, 2 LOAD, 3 CANCEL TASK, 4 CONTROLS,
+  // [PSP only: 5 HALF RES, 6 MS OVERLAY], last MAIN MENU
+  const bool hr = platform_ && platform_->supports_half_res();
+  const int kItems = hr ? 8 : 6;
   if (in.nav_up) pause_focus_ = (pause_focus_ + kItems - 1) % kItems;
   if (in.nav_down) pause_focus_ = (pause_focus_ + 1) % kItems;
   if (in.pause_pressed || in.back_pressed) { state_ = AppState_Playing; return; }
@@ -2091,6 +2141,10 @@ void Game::update_pause(float dt, const InputState& in) {
       else show_toast("NO ACTIVE TASK");
       break;
     case 4: show_controls_ = true; break;
+    case 5: if (hr) { toggle_half_res(); break; }
+            state_ = AppState_Menu; menu_focus_ = 0; break;
+    case 6: if (hr) { toggle_perf_overlay(); break; }
+            state_ = AppState_Menu; menu_focus_ = 0; break;
     default: state_ = AppState_Menu; menu_focus_ = 0; break;
     }
   }
@@ -3596,6 +3650,7 @@ void Game::update(float dt) {
 
 void Game::render() {
   if (!platform_) return;
+  platform_->profile_mark(IPlatform::Prof_Hud); // menus / UI-only frames bill to HUD
   platform_->begin_frame();
 
   const float cx = static_cast<float>(platform_->screen_w()) * 0.5f;
@@ -3641,11 +3696,14 @@ void Game::render() {
 
     render_main_menu();
   } else if (state_ == AppState_Playing || state_ == AppState_Paused) {
+    platform_->world_pass_begin();
+    platform_->profile_mark(IPlatform::Prof_Ground);
     if (in_bunker_) platform_->clear(0.08f, 0.07f, 0.06f);
     else if (weather_.is_night) platform_->clear(0.05f, 0.06f, 0.08f);
     else platform_->clear(0.14f, 0.18f, 0.11f);
 
     if (in_bunker_ && bunker_.width > 0) {
+      platform_->ground_cache_invalidate();
       // World cell 8×8 (collision); atlas tilemap_bunker 150×300 = 5×10 of 30×30
       const float tile = 8.f;
       const float bsc = 1.0f;
@@ -3683,6 +3741,18 @@ void Game::render() {
       }
     } else {
       // Ground: ground_lvl1–4 (60×60) underlay + forest 150×150 + water/sand
+      // PSP ground cache (2026-10-19): the platform keeps the ground layer in VRAM and only
+      // redraws newly exposed strips; the ground camera is snapped to whole screen pixels.
+      // Desktop: ground_snap_px() == 0 -> gcam == player_.pos, ground drawn every frame.
+      Vec2 gcam = player_.pos;
+      const int gsnap = platform_->ground_snap_px();
+      if (gsnap > 0) {
+        const float u = static_cast<float>(gsnap);
+        gcam.x = std::floor(player_.pos.x * sc / u + 0.5f) * u / sc;
+        gcam.y = std::floor(player_.pos.y * sc / u + 0.5f) * u / sc;
+      }
+      const unsigned gkey = (weather_.is_night ? 1u : 0u);
+      if (platform_->ground_cache_begin(gcam.x * sc, gcam.y * sc, gkey))
 
       {
         const bool has_forest = platform_->has_sprite("tilemap_forest");
@@ -3699,15 +3769,15 @@ void Game::render() {
         if (has_gnd) {
           const float step = 60.f;
           const float tile = step * sc;
-          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
-            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
+          for (int gx = view.lo(gcam.x, cx, sc, step); gx <= view.hi(gcam.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(gcam.y, cy, sc, step); gy <= view.hi(gcam.y, cy, sc, step); ++gy) {
               const float wx = (gx + 0.5f) * step;
               const float wy = (gy + 0.5f) * step;
               const float margin = 400.f;
               if (wx < margin || wy < margin ||
                   wx > kMapLayoutW - margin || wy > kMapLayoutH - margin) continue;
-              const float sx = cx + (wx - player_.pos.x) * sc;
-              const float sy = cy + (wy - player_.pos.y) * sc;
+              const float sx = cx + (wx - gcam.x) * sc;
+              const float sy = cy + (wy - gcam.y) * sc;
               // Atlas 5x5 of 60px: 3x3 dirt->grass autotile at (0..2,0..2), 2x2 hole at (3..4,0..1),
               // dirt/grass detail cells in rows 3..4, cells (3..4,2..4) are EMPTY (transparent).
               // Old code tiled gx%5/gy%5 over the whole atlas -> transparent holes + flat
@@ -3743,13 +3813,13 @@ void Game::render() {
         // Replaces the old procedural canopy that tinted every cell of the map with forest at
         // 55% alpha (not in the original, and it had no collision).
         if (has_forest)
-          world_tiles_.draw(*platform_, "tilemap_forest", player_.pos, sc, cx * 2.f, cy * 2.f);
+          world_tiles_.draw(*platform_, "tilemap_forest", gcam, sc, cx * 2.f, cy * 2.f);
         // Water / sand fringe (finer 60×60 cells)
         {
           const float step = water_w;
           const float tile = water_w * sc;
-          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
-            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
+          for (int gx = view.lo(gcam.x, cx, sc, step); gx <= view.hi(gcam.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(gcam.y, cy, sc, step); gy <= view.hi(gcam.y, cy, sc, step); ++gy) {
               const float wx = (gx + 0.5f) * step;
               const float wy = (gy + 0.5f) * step;
               const float margin = 400.f;
@@ -3758,8 +3828,8 @@ void Game::render() {
               const bool shore = !deep && (wx < margin || wy < margin ||
                 wx > kMapLayoutW - margin || wy > kMapLayoutH - margin);
               if (!deep && !shore) continue;
-              const float sx = cx + (wx - player_.pos.x) * sc;
-              const float sy = cy + (wy - player_.pos.y) * sc;
+              const float sx = cx + (wx - gcam.x) * sc;
+              const float sy = cy + (wy - gcam.y) * sc;
               const int ux = ((gx % 3) + 3) % 3;
               const int uy = ((gy % 5) + 5) % 5;
               if (deep && has_water) {
@@ -3781,8 +3851,8 @@ void Game::render() {
         if (platform_->has_sprite("ground_enviroment_tilemap")) {
           const float step = 30.f;
           const float tile = step * sc;
-          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
-            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
+          for (int gx = view.lo(gcam.x, cx, sc, step); gx <= view.hi(gcam.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(gcam.y, cy, sc, step); gy <= view.hi(gcam.y, cy, sc, step); ++gy) {
               // Sparse placement: ~1/7 cells get a prop
               const unsigned h = static_cast<unsigned>(gx * 73856093u) ^
                                  static_cast<unsigned>(gy * 19349663u);
@@ -3792,8 +3862,8 @@ void Game::render() {
               const float margin = 420.f;
               if (wx < margin || wy < margin ||
                   wx > kMapLayoutW - margin || wy > kMapLayoutH - margin) continue;
-              const float sx = cx + (wx - player_.pos.x) * sc;
-              const float sy = cy + (wy - player_.pos.y) * sc;
+              const float sx = cx + (wx - gcam.x) * sc;
+              const float sy = cy + (wy - gcam.y) * sc;
               const int idx = static_cast<int>(h % 85u); // 5*17
               const int ux = (idx % 5) * 30;
               const int uy = (idx / 5) * 30;
@@ -3804,7 +3874,9 @@ void Game::render() {
           }
         }
       }
+      platform_->ground_cache_end();
 
+      platform_->profile_mark(IPlatform::Prof_World);
       // Blood drips
       for (int i = 0; i < blood_drip_count_; ++i) {
         if (blood_drips_[i].life <= 0.f) continue;
@@ -4471,6 +4543,8 @@ void Game::render() {
       }
     }
 
+    platform_->world_pass_end();
+    platform_->profile_mark(IPlatform::Prof_Hud);
     draw_debug_hud(*platform_, *this);
     if (state_ == AppState_Paused) render_pause_menu();
   } else if (state_ == AppState_Dead) {

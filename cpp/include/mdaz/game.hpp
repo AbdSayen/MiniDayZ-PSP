@@ -110,6 +110,8 @@ public:
   // Short label for the Circle/interact action available right now (0 = none).
   const char* interact_hint() const;
   bool has_save() const;
+  bool half_res() const { return half_res_; }
+  bool perf_overlay_on() const { return perf_overlay_; }
 
   Player& player_mut() { return player_; }
   Inventory& inventory_mut() { return inventory_; }
@@ -198,6 +200,13 @@ private:
   void update_craft_menu(const InputState& in);
   bool load_game_from_disk();
   void save_game_to_disk();
+  void load_settings();
+  void save_settings();
+  void toggle_half_res();
+  void toggle_perf_overlay();
+  bool perf_overlay_;          // settings.cfg perf_overlay (PSP only)
+  mutable int has_save_cache_; // -1 unknown, 0/1 cached has_save()
+  bool half_res_;              // settings.cfg half_res (PSP only)
   void use_equipped_item();
   void use_bag_slot(int slot);
   void equip_bag_slot(int slot);

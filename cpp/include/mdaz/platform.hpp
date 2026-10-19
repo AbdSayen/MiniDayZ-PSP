@@ -91,6 +91,31 @@ public:
   virtual bool write_file(const char* path, const void* data, std::size_t size) = 0;
   virtual int screen_w() const { return kPspWidth; }
   virtual int screen_h() const { return kPspHeight; }
+
+  // ---- Optional PSP performance hooks (2026-10-19). Defaults are no-ops, so the desktop
+  // ---- (SDL) build renders exactly as before.
+  // Frame profiling: marks the START of a stage; time until the next mark is billed to it.
+  enum ProfileStage { Prof_Logic = 0, Prof_Ground, Prof_World, Prof_Hud, Prof_Present, Prof_Count };
+  virtual void profile_mark(int /*stage*/) {}
+  // Ground-layer cache. ground_snap_px() > 0 means the platform caches the ground layer and
+  // the game must snap the ground camera to multiples of that many screen px.
+  // ground_cache_begin returns true when the game must issue the ground draws this frame
+  // (the platform clips them to the newly exposed strips); always pair with ground_cache_end.
+  virtual int ground_snap_px() const { return 0; }
+  virtual bool ground_cache_begin(float /*cam_px_x*/, float /*cam_px_y*/, unsigned /*key*/) { return true; }
+  virtual void ground_cache_end() {}
+  virtual void ground_cache_invalidate() {}
+  // World pass (ground + objects, before the HUD). With half-res enabled the platform renders
+  // the world at 240x136 and upscales; the HUD after world_pass_end stays at full res.
+  virtual void world_pass_begin() {}
+  virtual void world_pass_end() {}
+  virtual bool supports_half_res() const { return false; }
+  virtual void set_half_res(bool /*on*/) {}
+  virtual bool half_res() const { return false; }
+  // On-screen frame-time overlay (per-stage ms), PSP only.
+  virtual bool supports_perf_overlay() const { return false; }
+  virtual void set_perf_overlay(bool /*on*/) {}
+  virtual bool perf_overlay() const { return false; }
 };
 
 IPlatform* create_platform();
