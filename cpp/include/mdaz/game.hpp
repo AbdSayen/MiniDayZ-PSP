@@ -281,6 +281,28 @@ private:
   bool tut_car_trunk_opened_ = false;  // C2 global tutorCarTrunkOpened
   int ach_gta_ = 0;          // C2 ach_gta IV2 (trunks opened, SEED_RUN = 0)
   bool try_trunk_interact();
+  // ---- C2 waterpump (t435) + avalible_interaction (loot_checker2 sid1430881814617229) ----
+  static const int kPumpDef = 3;          // kPropDefs index of the waterpump
+  short pump_iv0_[6000];                  // waterpump IV0 (water units) per c2_props_ index
+  int avail_interaction_ = 0;             // global avalible_interaction (gui_btn_interact frame)
+  float avail_t_ = 0.f;                   // Every 0.5 s
+  int avail_pump_ = -1;                   // nearest pump picked for frame 4
+  int pump_walk_ = -1;                    // walk_marker IV0 = 5 target pump
+  float pump_lock_t_ = 0.f;               // player_collision_base IV21 = 1 for Wait 2
+  float pump_add_water_ = 0.f;            // IV14 added after the Wait
+  void init_pump_water(Rng& rng, bool tutorial);
+  void update_avalible_interaction(float dt);
+  int nearest_pump(Vec2 p, float& d2) const;
+  bool pump_overlaps_player(int k) const;
+  void pump_drink(int k);
+public:
+  int avalible_interaction() const { return avail_interaction_; }
+  int pump_water(int k) const { return (k >= 0 && k < 6000) ? pump_iv0_[k] : 0; }
+  void set_pump_water_for_test(int k, int v) { if (k >= 0 && k < 6000) pump_iv0_[k] = (short)v; }
+  int first_pump_for_test() const;
+  void pump_drink_for_test(int k) { pump_drink(k); }
+  void tick_pump_for_test(float dt);
+private:
   bool doorchecker_blocked(Vec2 a, Vec2 b) const;
 public:
   bool trunk_available() const { return trunk_avail_ >= 0; }

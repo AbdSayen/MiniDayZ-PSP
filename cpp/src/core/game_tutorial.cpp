@@ -148,6 +148,7 @@ void Game::start_tutorial() {
       ++n;
     }
     c2_props_.build_list(props, n);
+    init_pump_water(rng_, true);
   }
   // items_on_ground instances + Spawn_drop 402 (Assault vest) and 450 (Taloon backpack).
   for (int i = 0; i < tut_item_count(); ++i) {

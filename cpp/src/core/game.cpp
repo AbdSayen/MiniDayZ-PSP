@@ -787,6 +787,7 @@ void Game::start_new_game(Difficulty d) {
     // Bushes / pumps / obstacles / pillars / cars / deer stands (create_map_element 3-6, 7:1).
     Rng prng(140u * 2246822519u + 0x51u);
     c2_props_.build(mapgen_.c2(), prng);
+    init_pump_water(prng, false);
   }
   {
     Vec2 car = Vec2(player_.pos.x + 900.f, player_.pos.y);
@@ -2880,6 +2881,7 @@ void Game::update_inventory_ui(const InputState& in) {
 const char* Game::interact_hint() const {
   if (vehicles_.player_driving()) return "EXIT CAR";
   if (trunk_avail_ >= 0) return "TRUNK";
+  if (avail_interaction_ == 4) return "PUMP";   // gui_btn_interact frame 4
   for (int i = 0; i < loot_.count(); ++i) {
     const LootPile* p = loot_.at(i);
     if (p->active && p->item_count > 0 && dist2(p->pos, player_.pos) < 40.f * 40.f) return "LOOT";
@@ -2949,7 +2951,28 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       c2_props_.trunk_show(tk);
     }
   }
-  trunk_walk_drive_ = false;
+  update_avalible_interaction(dt);
+  bool pump_drive = false;
+  // walk_marker IV0 = 5 (pump): OnCollision with the marker -> stop; overlapping the pump with
+  // IV21 == 0 -> drink (sid7034863253908448). Stick input cancels (PSP adaptation, as trunks).
+  if (pump_walk_ >= 0) {
+    if (in.move_x != 0.f || in.move_y != 0.f || pump_walk_ >= c2_props_.count()) {
+      pump_walk_ = -1;
+    } else {
+      const MapProp& mp = c2_props_.at(pump_walk_);
+      const float dx = mp.x - player_.pos.x, dy = mp.y - player_.pos.y;
+      if (std::fabs(dx) <= 3.f && std::fabs(dy) <= 3.f) {
+        const int k = pump_walk_;
+        pump_walk_ = -1;
+        if (pump_overlaps_player(k) && pump_lock_t_ <= 0.f) pump_drink(k);
+      } else {
+        const float l = std::sqrt(dx * dx + dy * dy);
+        in.move_x = dx / l; in.move_y = dy / l; in.run = false;
+        pump_drive = true;
+      }
+    }
+  }
+  trunk_walk_drive_ = pump_drive;   // AltMove SetSpeed 100 (pump walk_marker too)
   if (trunk_walk_ >= 0) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
       trunk_walk_ = -1;
@@ -3666,6 +3689,19 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     try_pickup_loot();
     try_bunker_enter_exit();
     if (!picked && !in_bunker_ && try_trunk_interact()) picked = true;
+    // gui_btn_interact frame 4 (sid4607048545045343): nearest waterpump <= 100 px -> walk_marker
+    // IV0 = 5 at the pump, AltMove toward it (sid2275976933384145).
+    if (!picked && !in_bunker_ && avail_interaction_ == 4 && pump_lock_t_ <= 0.f) {
+      float pd2 = 0.f;
+      const int pk = nearest_pump(player_.pos, pd2);
+      if (pk >= 0 && pd2 <= 100.f * 100.f) {
+        pump_walk_ = pk;
+        trunk_walk_ = -1;
+        const MapProp& mp = c2_props_.at(pk);
+        player_.facing_deg = std::atan2(mp.y - player_.pos.y, mp.x - player_.pos.x) * 57.2957795f;
+        picked = true;
+      }
+    }
     if (!picked && !in_bunker_ && berry_t_ <= 0.f) {
       // C2 berry bush: player overlaps a bush with frame 1 -> "bushsearch", frame 0, wait 3 s,
       // Check_space_inventory(-1, 27/73/74, perk_agronom ? 2 : 1).

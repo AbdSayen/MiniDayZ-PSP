@@ -21,9 +21,11 @@ int test_car_hitbox();
 int test_queue_q1();
 int test_fidelity2();
 int test_audio();
+int test_pump();
 int test_fidelity2_more();
 
 int main() {
+  std::setvbuf(stdout, nullptr, _IONBF, 0);
   int failed = 0;
   failed += test_audio();
   failed += test_balance();
@@ -47,6 +49,7 @@ int main() {
   failed += test_queue_q1();
   failed += test_fidelity2();
   failed += test_fidelity2_more();
+  failed += test_pump();
   if (failed == 0) {
     std::printf("ALL TESTS PASSED\n");
     return 0;

@@ -13,6 +13,7 @@ set(MDAZ_CORE_SOURCES
   src/core/game.cpp
   src/core/game_tutorial.cpp
   src/core/game_audio.cpp
+  src/core/game_pump.cpp
   src/core/time.cpp
   src/core/rng.cpp
   src/core/c2_session_globals.cpp
@@ -158,6 +159,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_selection.cpp
     tests/test_fidelity2.cpp
     tests/test_audio.cpp
+    tests/test_pump.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD
