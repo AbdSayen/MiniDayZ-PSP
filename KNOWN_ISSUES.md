@@ -182,3 +182,5 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Tree draw order isn't sorted by Y relative to the player (same as before).
 
 - Интро: на PSP до загрузки sprites.pak всё ещё показывается старый текстовый "LOADING..." boot_splash (в jacksmith сплэш виден с первого кадра GU). Ассет в паке весит ~130 KB T8 после декомпрессии; на реальном железе не проверено.
+
+- B2a: b_deer_stand (cat 7 sub 1, 93 rows on seed 140) is not drawn/solid yet; loot piles inside buildings are drawn above the roof; kMaxLootPiles=96 may fill up with many active buildings; minimap sector size 1115 px vs C2 cell 1020 px.

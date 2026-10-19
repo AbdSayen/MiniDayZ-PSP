@@ -353,3 +353,10 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 - Реализация: Game::draw_intro / AppState_Loading (game.cpp), desktop берёт PNG из data/intro, PSP — из sprites.pak (pack_psp_sprites.js принимает доп. каталоги, pack_psp_deploy.ps1 передаёт cpp/data/intro).
 - Харнесс: --shots-intro <dir> (кадры intro_f001/060/120/200, меню f215/230); остальные --shots режимы пропускают интро (номера кадров скриптов не меняются).
 - PPSSPP headless: boot ok, sprites.pak 1138 entries, game init ok @665 ms, меню (save.mdaz probe) @3936 ms. Это только boot-check, не FPS.
+
+## Map generator B2a: buildings from create_map_element category 7 - Implemented, not verified against original
+- MapGenerator::generate_new_game no longer uses the invented POI list (place() of villages/cities/Police/Church at sector centres). One MapLocation per cat-7 row of the C2 generator (c2_mapgen), at the row position, with its *_int shape (subtype -> building_interior.inc -> building_solid.inc).
+- Helicrash / bunker entrance locations come from C2Map heli/bunker points (L0: 0 helis, as in generate_helicrashes).
+- Minimap/road sector grid = C2 array 511.
+- Loot: one pile per spawn_loot_point of the building (item tables still the port's). Hostiles: per-cell budget on the first building only (temporary until zed_resp spawners).
+- Seed 140 L0: 233 cat-7 rows -> 136 buildings (93 b_deer_stand rows have no *_int and are not drawn yet). Tests: ALL TESTS PASSED (MSVC).

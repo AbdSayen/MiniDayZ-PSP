@@ -312,9 +312,10 @@ void draw_poi_sprite(IPlatform* p, float sx, float sy, const char* spr, float wo
 
 // C2: map_element spawns <b>_int (Buildings_base, Solid) at its origin, and the interior spawns
 // the exterior roof (Buildings) at its image point 0, so both sprites share the hotspot point.
-const BuildingShape* poi_shape(LocationType t, int variant) {
-  if (t == Loc_Helicrash) return 0; // heli_crash (t237) has no Solid behaviour
-  return building_shape_by_int_sprite(poi_interior_sprite(t, variant));
+// Each location is one create_map_element category-7 row; its *_int shape comes from the
+// generator (MapLocation::shape). Helicrash / bunker entrance have none.
+const BuildingShape* loc_shape(const MapLocation& L) {
+  return L.shape >= 0 ? building_shape(L.shape) : 0;
 }
 
 void draw_hotspot_sprite(IPlatform* p, float sx, float sy, const char* spr, int w, int h,
@@ -759,16 +760,18 @@ void Game::start_new_game(Difficulty d) {
 void Game::spawn_loot_for_poi(MapLocation& L) {
   if (L.loot_seeded) return;
   int piles = 1;
-  if (L.type == Loc_Military || L.type == Loc_Helicrash) piles = 3;
+  if (L.shape >= 0) piles = 0;  // set below from the building's spawn_loot_point count
+  else if (L.type == Loc_Military || L.type == Loc_Helicrash) piles = 3;
   else if (L.type == Loc_Hospital || L.type == Loc_City || L.type == Loc_Secret ||
            L.type == Loc_Police || L.type == Loc_Church || L.type == Loc_Firestation)
     piles = 2;
   // C2 create_map_element: loot sits at the building's spawn_loot_point image points.
   // Pile count + item tables are still the port's (Trigger_spawn tables not ported yet).
-  const BuildingShape* lbs = poi_shape(L.type, static_cast<int>(&L - &mapgen_.location_mut(0)));
+  const BuildingShape* lbs = loc_shape(L);
   const BuildingInterior* lbi = lbs ? building_interior_by_int_type(lbs->c2_type) : 0;
   int pt_order[32];
   int npts = (lbi && lbi->loot_count > 0) ? (lbi->loot_count < 32 ? lbi->loot_count : 32) : 0;
+  if (L.shape >= 0) piles = npts;  // one pile per spawn_loot_point (C2 Trigger_spawn per point)
   for (int k = 0; k < npts; ++k) pt_order[k] = k;
   for (int k = npts - 1; k > 0; --k) { const int j = rng_.next_int(0, k); const int t = pt_order[k]; pt_order[k] = pt_order[j]; pt_order[j] = t; }
   for (int n = 0; n < piles; ++n) {
@@ -827,6 +830,8 @@ void Game::spawn_poi_loot() {
 // Recovered body (same content as the old inline start_new_game block): Zed_per_base budget
 // per POI type; skipped inside the spawn-safe radius.
 void Game::spawn_hostiles_for_poi(const MapLocation& L) {
+  // Budget stays per mapgen cell (first building) until zed_resp spawners are ported.
+  if (!L.hostile_anchor) return;
   if (dist2(L.pos, player_.pos) < kSpawnSafeRadius * kSpawnSafeRadius) return;
   const int zed_budget = static_cast<int>(balance::Zed_per_base);
   float jx = 0.f, jy = 0.f;
@@ -4465,7 +4470,7 @@ void Game::render() {
         // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
         // ~100x and covered the screen with flat colour squares.)
         const char* ext_spr = poi_building_sprite(L.type, i);
-        const BuildingShape* bs = poi_shape(L.type, i);
+        const BuildingShape* bs = loc_shape(L);
         int nat_w = 100, nat_h = 100;
         poi_native_px(ext_spr, nat_w, nat_h);
         if (bs) { nat_w = bs->ext_w; nat_h = bs->ext_h; }
@@ -5079,7 +5084,7 @@ bool Game::los_blocked_world(Vec2 a, Vec2 b) const {
     if (!L.active) continue;
     const float mx = (a.x + b.x) * 0.5f - L.pos.x, my = (a.y + b.y) * 0.5f - L.pos.y;
     if (mx * mx + my * my > 900.f * 900.f) continue;
-    const BuildingShape* s = poi_shape(L.type, i);
+    const BuildingShape* s = loc_shape(L);
     if (!s) continue;
     if (building_blocks_move(*s, L.pos, a, b, 0.f)) return true;
     const BuildingInterior* bi = building_interior_by_int_type(s->c2_type);
@@ -5100,7 +5105,7 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
     if (!L.active) continue;
     const float dx = b.x - L.pos.x, dy = b.y - L.pos.y;
     if (dx * dx + dy * dy > 700.f * 700.f) continue;
-    const BuildingShape* s = poi_shape(L.type, i);
+    const BuildingShape* s = loc_shape(L);
     if (s && building_blocks_move(*s, L.pos, a, b, 1.f)) return true;
     if (s) {
       const BuildingInterior* bi = building_interior_by_int_type(s->c2_type);
@@ -5159,7 +5164,7 @@ bool Game::harness_place_at_building(int mode) {
   for (int pass = 0; pass < 2 && best < 0; ++pass) {
     for (int i = 0; i < mapgen_.location_count(); ++i) {
       const MapLocation& L = mapgen_.location(i);
-      if (!poi_shape(L.type, i)) continue;
+      if (!loc_shape(L)) continue;
       if (pass == 0 && L.type != Loc_Police) continue;
       best = i;
       break;
@@ -5167,7 +5172,7 @@ bool Game::harness_place_at_building(int mode) {
   }
   if (best < 0) return false;
   const MapLocation& L = mapgen_.location(best);
-  const BuildingShape* s = poi_shape(L.type, best);
+  const BuildingShape* s = loc_shape(L);
   Vec2 target = L.pos;
   if (mode == 0) {
     // First wall-free point scanning the warmzone rect (row-major, 4 px grid).

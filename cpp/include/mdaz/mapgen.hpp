@@ -31,6 +31,12 @@ struct MapLocation {
   int sector_y;
   bool active;       // C2 map_element IV3 (1 = create_map_location loaded)
   bool loot_seeded;  // Spawn_drop / POI piles spawned while loaded
+  // C2 create_map_element category 7 row: map_element IV2 (building subtype), index into the
+  // building_solid shape table (-1 = no *_int Solid object) and the owning mapgen cell.
+  short c2_sub;
+  short shape;
+  short c2_cell;
+  bool hostile_anchor;  // first building of its cell: carries the port's per-POI hostile budget
 };
 
 // C2 Reload_locations / Reload_locations_start / Reload_locations_aftersave
@@ -40,7 +46,7 @@ enum LocationReloadMode {
   LocationReload_AfterSave
 };
 
-static const int kMaxLocations = 128;
+static const int kMaxLocations = 512;
 
 // C2 generate_array_locations locals: river_X, river_Y, river_R (default R=2), River_ready, Bridges.
 // Export never reads/writes these; we derive a deterministic river from seed for tile 4 stamps.
@@ -123,6 +129,7 @@ private:
   unsigned char sector_grid_[kSectorGrid][kSectorGrid];
   int road_count_;
   void add(LocationType t, int sx, int sy);
+  void add_c2(LocationType t, float x, float y, int sx, int sy, int sub, int shape, int cell);
   void init_river(int seed);
   void apply_generate_array_roads();
   static float reload_radius_for(LocationReloadMode mode);

@@ -1,3 +1,5 @@
+#include "mdaz/c2_mapgen.hpp"
+#include "mdaz/building_interior.hpp"
 // Selected-slot regression tests (bug 2026-10-19: USE consumed the FIRST item
 // instead of the selected hotbar / inventory slot). Each check drives the real
 // Game methods through GameTestAccess (friend of mdaz::Game).
@@ -246,6 +248,12 @@ static void test_walls_los(Game& g) {
   set_los_blocker(0, 0);
 }
 
+static bool sub_has_int(int sub) {
+  for (int i = 0; i < building_interior_count(); ++i)
+    if (building_interior(i)->subtype == sub) return true;
+  return false;
+}
+
 int test_queue_q1() {
   std::printf("--- test_queue_q1 ---\n");
   g_fail = 0;
@@ -258,7 +266,7 @@ int test_queue_q1() {
   int heli = 0;
   for (int i = 0; i < A::map(g).location_count(); ++i)
     if (A::map(g).location(i).type == Loc_Helicrash) ++heli;
-  check(heli >= 1, "seed 140 map has helicrash locations");
+  check(heli == A::map(g).c2().heli_count, "helicrash locations = C2 generate_helicrashes sites (L0: 0)");
   {
     // Cross-platform determinism: the POI list must not depend on argument evaluation order.
     // Replay the first draws by hand in x-then-y order (Rng::int_pair) and compare.
@@ -268,12 +276,14 @@ int test_queue_q1() {
       std::printf("  #%02d type %2d sector (%2d,%2d) world (%.0f,%.0f)\n", i, (int)L.type,
                   L.sector_x, L.sector_y, L.pos.x, L.pos.y);
     }
-    Rng r(140u);
-    r.next_int(0, 1);                    // n_helis = 2 + next_int(0,1)
-    const int ex = r.next_int(1, 14);    // first village: x drawn first
-    const int ey = r.next_int(1, 14);
-    check(A::map(g).location(0).sector_x == ex && A::map(g).location(0).sector_y == ey,
-          "first POI = (x draw, y draw) in fixed order (compiler-independent)");
+    // Location 0 = first create_map_element category-7 row in mapgen spawn order.
+    const C2Map& cm = A::map(g).c2();
+    float fx = -1.f, fy = -1.f;
+    for (int ci = 0; ci < 256 && fx < 0.f; ++ci)
+      for (int r = cm.cells[ci].row_first; r < cm.cells[ci].row_first + cm.cells[ci].row_count; ++r)
+        if (cm.rows[r].cat == 7 && sub_has_int(cm.rows[r].sub)) { fx = cm.rows[r].x; fy = cm.rows[r].y; break; }
+    check(A::map(g).location(0).pos.x == fx && A::map(g).location(0).pos.y == fy,
+          "first location = first category-7 map_element row");
     MapGenerator m2;
     m2.generate_new_game(140);
     check(m2.poi_hash() == A::map(g).poi_hash(), "same seed -> same POI hash");
@@ -283,9 +293,9 @@ int test_queue_q1() {
   bool cells_ok = true;
   for (int y = 0; y < 16; ++y) for (int x = 0; x < 16; ++x) {
     const int v = A::map(g).sector_cell(x, y);
-    if (!(v == 0 || v == 6 || v == 9 || v == 11 || (v >= 12 && v <= 15))) cells_ok = false;
+    if (!(v == 0 || v == 2 || v == 5 || v == 6 || v == 9 || v == 11 || (v >= 12 && v <= 15))) cells_ok = false;
   }
-  check(cells_ok, "sector_cell values in {0,6,9,11,12..15}");
+  check(cells_ok, "sector_cell = C2 array 511 codes {0,2,5,6,9,11,12..15}");
   // NPC forest block (tilemap_forest Solid, tile 4 = full box).
   A::tiles(g).stamp_fill("tilemap_forest", 3000.f, 3000.f, 2, 2, 4, 150, 150, 3);
   Vec2 p(3010.f, 2990.f);  // step into the forest from outside (north)

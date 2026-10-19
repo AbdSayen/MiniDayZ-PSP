@@ -4,6 +4,8 @@
 #include "mdaz/c2_session_globals.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/world.hpp"
+#include "mdaz/building_interior.hpp"
+#include "mdaz/building_solid.hpp"
 
 #include <cmath>
 
@@ -121,6 +123,10 @@ void MapGenerator::add(LocationType t, int sx, int sy) {
   L.pos.y = (static_cast<float>(sy) + 0.5f) * (kMapLayoutH / kMapSectorsY);
   L.active = false;
   L.loot_seeded = false;
+  L.c2_sub = 0;
+  L.shape = -1;
+  L.c2_cell = -1;
+  L.hostile_anchor = true;
   if (c2_scratch_) {
     mapgen_note_location_hotspot(*c2_scratch_, sx, sy, L.pos.x, L.pos.y);
     if (t == Loc_Secret) c2_scratch_->Loop_secrets += 1.0;
@@ -142,53 +148,96 @@ float MapGenerator::reload_radius_for(LocationReloadMode mode) {
 
 const C2Map& MapGenerator::c2() const { return g_c2map; }
 
+namespace {
+// Building shape for create_map_element category 7, subtype `sub` (map_element IV2):
+// building_interior.inc gives the *_int object type, building_solid.inc its polygon/sprites.
+int shape_for_sub(int sub) {
+  for (int i = 0; i < building_interior_count(); ++i) {
+    const BuildingInterior* bi = building_interior(i);
+    if (!bi || bi->subtype != sub) continue;
+    for (int k = 0; k < building_shape_count(); ++k)
+      if (building_shape(k)->c2_type == bi->int_type) return k;
+  }
+  return -1;
+}
+// Port location type (drives the port's loot/hostile tables) from the building subtype and the
+// mapgen cell program (generate_array_tomap codes).
+LocationType loc_type_for(int cell_type, int sub) {
+  switch (sub) {
+  case 16: return Loc_Church;
+  case 19: return Loc_Police;
+  case 20: return Loc_Firestation;
+  case 21: return Loc_Hospital;
+  case 36: case 37: return Loc_GasStation;
+  case 24: case 25: case 26: case 34: case 40: return Loc_Military;
+  default: break;
+  }
+  if (cell_type == 6 || cell_type == 21) return Loc_City;
+  if (cell_type == 5 || cell_type == 22) return Loc_Military;
+  if (cell_type == 11) return Loc_Hospital;
+  if (cell_type == 15) return Loc_Firestation;
+  if (cell_type == 30 || cell_type == 31) return Loc_GasStation;
+  if (cell_type >= 23 && cell_type <= 49) return Loc_Secret;
+  return Loc_Village;
+}
+} // namespace
+
+void MapGenerator::add_c2(LocationType t, float x, float y, int sx, int sy, int sub, int shape, int cell) {
+  if (count_ >= kMaxLocations) return;
+  MapLocation& L = locs_[count_++];
+  L.type = t;
+  L.sector_x = sx;
+  L.sector_y = sy;
+  L.pos = Vec2(x, y);
+  L.active = false;
+  L.loot_seeded = false;
+  L.c2_sub = static_cast<short>(sub);
+  L.shape = static_cast<short>(shape);
+  L.c2_cell = static_cast<short>(cell);
+  L.hostile_anchor = true;
+  if (c2_scratch_) mapgen_note_location_hotspot(*c2_scratch_, sx, sy, x, y);
+}
+
 void MapGenerator::generate_new_game(int seed) {
   clear();
-  {
-    // Own stream so the legacy POI list below keeps its old rolls.
-    Rng c2rng(static_cast<std::uint32_t>((seed ? seed : 140) * 2654435761u + 0x9e37u));
-    c2_generate_map(g_c2map, c2rng, static_cast<int>(balance::CurrentLevel));
-  }
-  // C2: generate_array_locations → generate_array_roads_1/_2 → generate_array_tomap
-  Rng rng(static_cast<std::uint32_t>(seed ? seed : 140));
-
-  // Counts from balance_globals (C2 globals villages/cities/…).
-  const int n_villages = static_cast<int>(balance::villages);
-  const int n_cities = static_cast<int>(balance::cities);
-  const int n_militaries = static_cast<int>(balance::militaries);
-  const int n_gas = static_cast<int>(balance::gas_stations);
-  const int n_hospitals = static_cast<int>(balance::hospitals);
-  const int n_fire = static_cast<int>(balance::firestations);
-  // C2 helispawned IV max 3
-  const int n_helis = 2 + rng.next_int(0, 1);
+  Rng c2rng(static_cast<std::uint32_t>((seed ? seed : 140) * 2654435761u + 0x9e37u));
+  c2_generate_map(g_c2map, c2rng, static_cast<int>(balance::CurrentLevel));
+  const C2Map& m = g_c2map;
   (void)kC2_generate_helicrashes;
   (void)kC2_helispawned;
   (void)kC2_hammerspawned;
-
-  auto place = [&](LocationType t, int n, int margin) {
-    int placed = 0;
-    int guard = 0;
-    while (placed < n && guard++ < 400) {
-      const int before = count_;
-      int sx = 0, sy = 0; // x first, then y (see Rng::int_pair)
-      rng.int_pair(margin, kMapSectorsX - 1 - margin, margin, kMapSectorsY - 1 - margin, sx, sy);
-      add(t, sx, sy);
-      if (count_ > before) ++placed;
+  // Buildings = create_map_element category-7 rows (one per *_int object), in spawn order.
+  for (int ci = 0; ci < kC2Grid * kC2Grid; ++ci) {
+    const C2Cell& c = m.cells[ci];
+    bool first = true;
+    for (int r = c.row_first; r < c.row_first + c.row_count; ++r) {
+      const C2ElementRow& row = m.rows[r];
+      if (row.cat != 7) continue;
+      const int shape = shape_for_sub(row.sub);
+      if (shape < 0) continue;  // sub 1 b_deer_stand (no *_int) / subs without an object
+      add_c2(loc_type_for(c.type, row.sub), row.x, row.y, c.ay, c.ax, row.sub, shape, ci);
+      locs_[count_ - 1].hostile_anchor = first;
+      first = false;
     }
-  };
-
-  place(Loc_Village, n_villages, 1);
-  place(Loc_City, n_cities, 2);
-  place(Loc_Military, n_militaries, 1);
-  place(Loc_GasStation, n_gas, 1);
-  place(Loc_Hospital, n_hospitals, 1);
-  place(Loc_Firestation, n_fire, 1);
-  place(Loc_Helicrash, n_helis, 0);
-  place(Loc_Police, 1 + rng.next_int(0, 1), 1);
-  place(Loc_Church, 1, 1);
-  place(Loc_Secret, 1, 0);
+  }
+  for (int i = 0; i < m.heli_count; ++i) {
+    const int sx = static_cast<int>((m.heli_x[i] - kC2CellOriginX) / kC2CellSize);
+    const int sy = static_cast<int>((m.heli_y[i] - kC2CellOriginY) / kC2CellSize);
+    add_c2(Loc_Helicrash, m.heli_x[i], m.heli_y[i], sx, sy, 0, -1, -1);
+  }
+  if (m.has_bunker) {
+    const int sx = static_cast<int>((m.bunker_x - kC2CellOriginX) / kC2CellSize);
+    const int sy = static_cast<int>((m.bunker_y - kC2CellOriginY) / kC2CellSize);
+    add_c2(Loc_BunkerEntrance, m.bunker_x, m.bunker_y, sx, sy, 0, -1, -1);
+  }
   init_river(seed);
-  apply_generate_array_roads();
+  // Minimap / road queries read the C2 array 511 (after roads + tomap), [ax][ay] -> [y][x].
+  road_count_ = 0;
+  for (int ax = 0; ax < kSectorGrid; ++ax)
+    for (int ay = 0; ay < kSectorGrid; ++ay) {
+      sector_grid_[ax][ay] = m.arr[ax][ay];
+      if (sector_is_road_marker(m.arr[ax][ay])) ++road_count_;
+    }
 }
 
 void MapGenerator::ensure_bunker_entrance(Rng& rng, int current_level) {

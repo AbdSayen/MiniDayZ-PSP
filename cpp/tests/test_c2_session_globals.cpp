@@ -66,15 +66,12 @@ int test_c2_session_globals() {
   g.Loop_secrets = 0;
   mg.set_c2_scratch(&g);
   mg.generate_new_game(99);
-  if (g.Loop_secrets < 1.0) {
-    std::printf("FAIL mapgen hotspots Loop_secrets=%g\n", g.Loop_secrets);
+  // Legacy port scratch (Loop_secrets / anotherX from the invented POI list) is gone: the
+  // C2 generator (c2_mapgen) now builds the location list from create_map_element rows.
+  if (mg.location_count() < 50) {
+    std::printf("FAIL c2 mapgen locations=%d\n", mg.location_count());
     ++fail;
-  } else std::printf("OK   mapgen hotspot / Loop_secrets\n");
-
-  if (g.anotherX < 0 && g.anotherX2 < 0) {
-    std::printf("FAIL anotherX pair not set\n");
-    ++fail;
-  } else std::printf("OK   anotherX/anotherX2 road scratch\n");
+  } else std::printf("OK   c2 mapgen buildings -> %d locations\n", mg.location_count());
 
   const float rad = mdaz::compute_rad_dist(mdaz::Vec2(5000.f, 5000.f), mg);
   if (rad <= 0.f || !std::isfinite(rad)) {
