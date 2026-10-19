@@ -26,6 +26,7 @@ set(MDAZ_CORE_SOURCES
   src/world/mapgen.cpp
   src/world/poi_layout.cpp
   src/world/building_solid.cpp
+  src/world/building_interior.cpp
   src/world/vehicle.cpp
   src/world/campfire.cpp
   src/world/world_tilemaps.cpp

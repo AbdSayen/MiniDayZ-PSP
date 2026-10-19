@@ -30,6 +30,7 @@ OBJS = \
   $(SRC)/world/mapgen.o \
   $(SRC)/world/poi_layout.o \
   $(SRC)/world/building_solid.o \
+  $(SRC)/world/building_interior.o \
   $(SRC)/world/vehicle.o \
   $(SRC)/world/campfire.o \
   $(SRC)/world/world_tilemaps.o \

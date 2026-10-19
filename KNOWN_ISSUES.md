@@ -147,3 +147,13 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Trunk collider uses obst_base frame 10 at its natural 15x17 size. C2 created objects take the size of the layout template instance (placed obst_base instances are 61x93 = frame 9 size); if that applies, the real collider is ~4x larger. Unverified.
 - Bag screen still draws the port's ClothingContainers grids (4 invented sub-slots per region); capacity counter (e.g. 1/3) is the C2 value.
 - Tree placement still invented (scatter around POIs), pending item 5 (map_element types).
+
+## Pickup / gear (2026-10-19 21:20)
+- Port keeps one flat slot array: on gear swap the items beyond the new capacity drop next to the old piece instead of staying inside it (C2 per-item container arrays). Re-wearing does not restore them.
+- Gear already in the bag (old saves) can still be worn via wear_clothing (swap into the bag slot).
+
+## Building interiors / location loader (2026-10-19 21:20)
+- Done: per-building Solid props + spawn_loot_point positions (36 building subtypes).
+- Not done: create_map_location element program (array 518) -> real building/tree/obstacle/Humvee (hammercrash_point) placement; port world gen (location types/counts) is still its own model, so prefab XY and tree placement remain port-made. Needs generate_array_locations port first.
+- Loot per point: Trigger_spawn tables (per spawn_loot_point IV0) not ported; pile count still the port's.
+- Bench (autoplay) draw times drop to 0 at ~42 s because the bench character is killed (last_death.txt: reason=Bullet) -> death screen. Not a renderer bug.

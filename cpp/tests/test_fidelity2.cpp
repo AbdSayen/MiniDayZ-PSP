@@ -1,3 +1,4 @@
+#include "mdaz/building_interior.hpp"
 // Fidelity list (2026-10-19 20:40): building Solid polygons from data.js.
 #include "mdaz/building_solid.hpp"
 
@@ -97,8 +98,25 @@ static void test_npc_stats() {
   CHECK(a.hp == 250.f && a.speed == 140.f, "dog: HP 250, speed 140");
 }
 
+static void test_interiors() {
+  const mdaz::BuildingInterior* pol = mdaz::building_interior_by_int_type(291);
+  if (!pol || pol->loot_count != 4) { std::printf("FAIL police interior loot\n"); ++g_fail; }
+  else std::printf("OK   police_station_int: 4 spawn_loot_points\n");
+  const mdaz::BuildingInterior* hos = mdaz::building_interior_by_int_type(294);
+  bool blocked = false;
+  if (hos && hos->prop_count > 0) {
+    const mdaz::InteriorProp& pr = mdaz::interior_prop(*hos, 0);
+    const mdaz::Vec2 o(1000.f, 1000.f), c(o.x + pr.x, o.y + pr.y);
+    blocked = mdaz::interior_props_block(*hos, o, mdaz::Vec2(c.x - 60.f, c.y), c, 1.f);
+  }
+  if (!blocked) { std::printf("FAIL hospital prop Solid\n"); ++g_fail; }
+  else std::printf("OK   hospital prop blocks movement (Solid obst_base)\n");
+  if (mdaz::building_interior_count() != 36) { std::printf("FAIL interior count\n"); ++g_fail; }
+}
+
 int test_fidelity2_more() {
   g_fail = 0;
+  test_interiors();
   test_weapon_table();
   test_npc_stats();
   return g_fail ? 1 : 0;

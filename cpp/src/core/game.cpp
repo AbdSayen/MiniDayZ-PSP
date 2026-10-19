@@ -1,5 +1,6 @@
 #include "mdaz/game.hpp"
 #include "mdaz/building_solid.hpp"
+#include "mdaz/building_interior.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/hud.hpp"
@@ -712,9 +713,22 @@ void Game::spawn_loot_for_poi(MapLocation& L) {
   else if (L.type == Loc_Hospital || L.type == Loc_City || L.type == Loc_Secret ||
            L.type == Loc_Police || L.type == Loc_Church || L.type == Loc_Firestation)
     piles = 2;
+  // C2 create_map_element: loot sits at the building's spawn_loot_point image points.
+  // Pile count + item tables are still the port's (Trigger_spawn tables not ported yet).
+  const BuildingShape* lbs = poi_shape(L.type, static_cast<int>(&L - &mapgen_.location_mut(0)));
+  const BuildingInterior* lbi = lbs ? building_interior_by_int_type(lbs->c2_type) : 0;
+  int pt_order[32];
+  int npts = (lbi && lbi->loot_count > 0) ? (lbi->loot_count < 32 ? lbi->loot_count : 32) : 0;
+  for (int k = 0; k < npts; ++k) pt_order[k] = k;
+  for (int k = npts - 1; k > 0; --k) { const int j = rng_.next_int(0, k); const int t = pt_order[k]; pt_order[k] = pt_order[j]; pt_order[j] = t; }
   for (int n = 0; n < piles; ++n) {
     float ox = 0.f, oy = 0.f;
-    rng_.range_pair(-40.f, 40.f, -40.f, 40.f, ox, oy);
+    if (npts > 0) {
+      const InteriorLoot& lp = interior_loot(*lbi, pt_order[n % npts]);
+      ox = lp.x; oy = lp.y;
+    } else {
+      rng_.range_pair(-40.f, 40.f, -40.f, 40.f, ox, oy);
+    }
     const Vec2 p(L.pos.x + ox, L.pos.y + oy);
     switch (L.type) {
     case Loc_Military:
@@ -4980,6 +4994,10 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
     if (dx * dx + dy * dy > 700.f * 700.f) continue;
     const BuildingShape* s = poi_shape(L.type, i);
     if (s && building_blocks_move(*s, L.pos, a, b, 1.f)) return true;
+    if (s) {
+      const BuildingInterior* bi = building_interior_by_int_type(s->c2_type);
+      if (bi && interior_props_block(*bi, L.pos, a, b, 1.f)) return true;
+    }
   }
   // Tree trunks: create_map_element spawns obst_base (t336, Solid) at the tree's Imagepoint 1
   // and sets it to frame 10 (15x17, hotspot 0.47/0.65, triangle collision poly). trees_[] are
