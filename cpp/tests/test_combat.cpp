@@ -25,11 +25,11 @@ int test_combat() {
   } else std::printf("OK   wolf player dmg=9 (Zed_dmg)\n");
 
   if (mdaz::wolf_attack_melee_range() != 50.f ||
-      mdaz::wolf_attack_cooldown_sec() != 3.f) {
+      mdaz::wolf_attack_cooldown_sec() != 1.5f) {
     std::printf("FAIL wolf attack range/cooldown\n");
     ++fail;
   } else {
-    std::printf("OK   wolf attack range 50 cooldown 3s\n");
+    std::printf("OK   wolf attack range 50 cooldown 1.5s (battack timer, regular)\n");
   }
 
   mdaz::set_npc_damage_for_difficulty(mdaz::Difficulty_Novice);

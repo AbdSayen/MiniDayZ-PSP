@@ -244,3 +244,7 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 ## c90 = For each (2026-10-19)
 - Any earlier port code that treated System c90 as "pick random instance" must be re-audited.
 
+
+## 2026-10-20 00:40 (Baku)
+- Dogs in the port still roam/chase like hostile animals but deal no damage; the original dog is a player companion (gui_dog_control). Not ported yet.
+- Wolf vision cone (180°) not implemented: Animal has no facing field. Zombie wandering, bandit aim/shoot timing and screamer audit still pending.

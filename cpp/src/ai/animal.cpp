@@ -110,9 +110,9 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
         if (a.type == Animal_Wolf) {
           dmg += wolf_melee_damage();
           if (wolf_melee_hit) *wolf_melee_hit = true;
-        } else {
-          dmg += wolf_melee_damage() * 0.7f; // dog — no C2 wolf_attack SFX path
         }
+        // C2 dog (t892/t894, gui_dog_control) is the player's companion (Dog_check_situation
+        // follows the player); it never calls Player_get_hit. Invented dog damage removed.
         a.attack_cooldown = wolf_cd;
       }
     } else if (a.type == Animal_Crow) {

@@ -149,9 +149,8 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
   if (sees && dist < melee_reach && attack_cooldown <= 0.f) {
     out_hit_player = true;
     out_damage = zed_melee_damage(type);
-    if (type == Zed_Fast) attack_cooldown = 0.7f;
-    else if (type == Zed_Tank) attack_cooldown = 1.4f;
-    else attack_cooldown = 1.0f;
+    // C2: zed skins (pl19) and zed_tank_skin bPunch timer 1 s, regular, for every type.
+    attack_cooldown = 1.0f;
   }
 }
 

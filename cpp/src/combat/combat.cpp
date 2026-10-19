@@ -232,7 +232,7 @@ float wolf_player_melee_damage() {
 
 float wolf_attack_melee_range() { return 50.f; }
 
-float wolf_attack_cooldown_sec() { return 3.f; }
+float wolf_attack_cooldown_sec() { return 1.5f; } // C2 wolf_skin battack timer 1.5 s, regular
 
 float npc_bandit_melee_damage(bool has_gun) {
   return has_gun ? g_bandit_gun_melee : g_bandit_melee;
@@ -246,8 +246,8 @@ float zed_melee_damage(ZedType type) {
   case Zed_ArmyShooter:
     return g_zed_army_dmg;
   case Zed_Tank:
-    // Zed_tank_dmg_deal group exists; exact multiplier still extracting — use army as floor
-    return g_zed_army_dmg * 1.5f;
+    // C2 zed_tank_skin "punch": Player_get_hit("zed_normal", Zed_dmg * 2).
+    return g_zed_dmg * 2.f;
   case Zed_Screamer:
   case Zed_Buried:
   case Zed_Normal:

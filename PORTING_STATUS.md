@@ -593,3 +593,10 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - the bandit spread +4 and the crouch sprite size/reach;
   - zed loudness.
 - The PSP L button keeps its other combo uses.
+
+## 2026-10-20 00:40 (Baku) — Attack audit (item 3, partial)
+- Zed punch: all types fire on a regular 1 s bPunch timer (pl19 skins and zed_tank_skin). Port cooldowns 0.7/1.4 s replaced with 1.0 s. Status: Реализована, но не проверена.
+- Tank damage = Zed_dmg×2 (data.js 46163/46222); it was army×1.5 (invented). Status: Сверена с оригиналом (code-level).
+- Wolf: battack timer 1.5 s regular, damage Zed_dmg. Cooldown was 3 s (unsourced), now 1.5 s.
+- Dog: t892/t894 is the player's companion (Dog_check_situation follows the player). It never calls Player_get_hit, so the invented dog→player damage was removed. The companion AI itself is not ported: Не исследована → Исследована.
+- Not done in this step: wolf/dog 180° cone, zombie wandering (warn_zed), bandit aiming, screamer behaviour. All Не исследована/Исследована; see KNOWN_ISSUES.
