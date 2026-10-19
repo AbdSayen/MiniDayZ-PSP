@@ -303,3 +303,5 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 - Hatchbacks (subs 15..17) did not spawn on the seed used by --shots-carhit, so their in-game screenshot is missing; they are covered by test_car_hitbox only.
 - Other SetSize obstacles not from c1/c2 still use native size: obst_barricade (SetSize from its own image points 1/2, expression not evaluated by gen_base_sizes.js), b_gas_station_fueling_int (constant 21x100), door SetWidth. Not cars; to check in the KNOWN_ISSUES pass.
 - Player is drawn over the car sprite when south of it: depth sort is item 7.
+
+| **PSP: analog stick dead + Map instead of Tutorial (user report 2026-10-20 02:25/02:31)** | Probable cause: a leftover autoplay.txt on the memory stick. Scripted input replaced the pad, and dev_skip_tutorial skipped the Tutorial. Fixed: a banner is shown and any pad input cancels autoplay. The Makefile also lacked header deps, which left a stale game_tutorial.o in the 02:17 EBOOT. walk_marker (trunk) checked: any stick/D-pad input cancels it, so it cannot latch. If it happens again with no autoplay.txt, unconfirmed transient: send log.txt | Fixed, not confirmed on hardware |

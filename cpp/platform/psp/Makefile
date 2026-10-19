@@ -68,7 +68,7 @@ OBJS = \
 
 # build.mak prepends -I to each INCDIR entry — do NOT also put -I$(INCDIR) in CFLAGS.
 INCDIR = $(SRC_ROOT)/include $(SRC_ROOT)/third_party/stb
-CFLAGS = -O2 -G0 -Wall -DMDAZ_PSP=1
+CFLAGS = -O2 -G0 -Wall -DMDAZ_PSP=1 -MMD -MP
 CXXFLAGS = -fno-exceptions -fno-rtti -std=c++11
 ASFLAGS =
 
@@ -87,3 +87,5 @@ $(error PSPSDK not found — install pspdev and ensure psp-config is on PATH)
 endif
 
 include $(PSPSDK)/lib/build.mak
+# Header dependencies (stale objects after a header change broke the Game layout, 2026-10-20).
+-include $(OBJS:.o=.d)

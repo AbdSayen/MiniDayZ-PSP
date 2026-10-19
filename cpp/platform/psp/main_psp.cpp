@@ -272,6 +272,8 @@ int main(int argc, char** argv) {
         if (play_t0 < 0.0) play_t0 = now_s;
         if ((play_logs == 0 && now_s - play_t0 > 1.0) || (play_logs == 1 && now_s - play_t0 > 20.0)) {
           log_mem(play_logs == 0 ? "in game (1 s)" : "in game (20 s)");
+          mdaz_boot_log("player pos (%.1f, %.1f) tutorial=%d", game->player().pos.x, game->player().pos.y,
+                        game->tutorial_active() ? 1 : 0);   // movement check (analog / scripted input)
           ++play_logs;
         }
       }

@@ -398,6 +398,13 @@ public:
     if (l && (pressed & PSP_CTRL_CROSS)) out.slot_digit = 1;
     if (l && (pressed & PSP_CTRL_TRIANGLE)) out.slot_digit = 2;
     if (l && (pressed & PSP_CTRL_SQUARE)) out.slot_digit = 3;
+    // A leftover autoplay.txt on the memory stick (dev benchmark) used to replace the pad
+    // silently and skip the tutorial (user report 2026-10-20 02:31: stick dead, map instead of
+    // Tutorial). Any real button or stick deflection now cancels it for the rest of the run.
+    if (autoplay_ && (b != 0 || out.move_x != 0.f || out.move_y != 0.f)) {
+      autoplay_ = false;
+      mdaz_boot_log("autoplay cancelled by pad input (frame %u)", auto_frame_);
+    }
     if (autoplay_) scripted_input(out);
     return true;
   }
@@ -480,6 +487,10 @@ public:
     if (!inited_) return;
     if (in_world_) world_pass_end();
     if (overlay_) draw_overlay();
+    if (autoplay_) {   // never invisible: the scripted benchmark owns the pad
+      draw_rect(0.f, 0.f, 480.f, 11.f, 0.f, 0.f, 0.f, 0.7f);
+      draw_text(4.f, 2.f, "AUTOPLAY BENCH (autoplay.txt) - press any button", 1.f, 0.85f, 0.2f);
+    }
     flush();
     profile_mark(Prof_Present);              // GU finish + sync (GE work still pending)
     sceKernelDcacheWritebackAll();

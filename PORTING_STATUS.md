@@ -642,3 +642,17 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Opened trunk (car frame 1) keeps the same Solid (mframe -1).
 - Tests: test_car_hitbox (17 models x frames 0/1): polygon bbox == data.js; player (building_blocks) and zombie (npc_forest_block) stop at all 4 sides and are free outside; bullet segment (bullet_hits_obstacle) stops at the polygon and passes 6 px below. With the old map_props.inc the test fails 6 checks (hatch bbox 1x1).
 - Debug overlay (test-only Game::debug_hitbox_, desktop --shots-carhit DIR): red = Solid polygon, yellow = sprite frame. Harness walk north from 20 px below: player stops 2 px below the polygon for subs 1, 2, 8, 13, 14 (r = 1 collision + one step).
+
+## PSP build + PPSSPP check, stick / tutorial report (2026-10-20, 02:40 Baku)
+- **Stale objects:** the PSP Makefile had no header dependencies. The 02:17 EBOOT linked game_tutorial.o from 00:13, compiled against an older game.hpp (Game layout mismatch).
+  - Fix: `-MMD -MP` plus `-include $(OBJS:.o=.d)`. Clean rebuild done; make exit 0.
+  - EBOOT.PBP 02:36 is 2 564 680 bytes. The deploy has 12 files, 4.5 MB, with no autoplay.txt and no settings.cfg.
+- **autoplay.txt left on the memory stick:** it silently replaced the pad and skipped the tutorial. This matches both user symptoms: the dead stick, and the map loading instead of the Tutorial.
+  - It now draws a visible "AUTOPLAY BENCH" banner.
+  - Any real button press or stick deflection cancels it (logged).
+- **PPSSPPHeadless results** (box build from hrydgard/ppsspp master, software GPU, 45 s; a boot check, not FPS):
+  - Clean deploy (no autoplay.txt, no settings.cfg): Tutorial on first launch. Log shows `tutorial=1`, pos (577,1001).
+  - "bench": new game, 137 locations, poi hash 438baa57. Scripted move input moves the player (8925.0,10000.0) at 1 s → (8896.6,10198.2) at 20 s.
+  - "bench tutorial": Tutorial, player stays at (577,1001) for 20 s. The intro tip moveblock is expected, but the screen was not inspected.
+  - Memory in game at 1 s and 20 s: max free block 512 KB, total free 764 KB.
+- Not verified: pad cancel of autoplay (the headless build has no pad), and real hardware.
