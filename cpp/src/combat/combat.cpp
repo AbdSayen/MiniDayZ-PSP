@@ -1,3 +1,4 @@
+#include "mdaz/c2_sfx.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/animal.hpp"
 #include "mdaz/balance_globals.hpp"
@@ -97,10 +98,7 @@ const char* c2_zed_screamer_attack_sfx() {
 
 const char* pick_zed_player_hit_sfx(Rng& rng) {
   touch_combat_c2_audit();
-  static const char* kPool[] = {"attack_0",  "attack_1",  "attack_9",  "attack_10",
-                                "attack_11", "attack_12", "attack_13"};
-  const int n = static_cast<int>(sizeof(kPool) / sizeof(kPool[0]));
-  return kPool[rng.next_int(0, n - 1)];
+  return c2_choose_zed_attack(rng);   // Zed_common_dmg_deal pool (no attack_9)
 }
 
 WeaponStats default_melee_stats() {

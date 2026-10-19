@@ -23,6 +23,10 @@ struct Animal {
   bool alive;
   float attack_cooldown;
   float burn_t; // C2 molotov burning (wolf only in data.js)
+  // Audio event latches (game_audio.cpp): eyes Turret has a target, hit landed this tick,
+  // crow took off (crow_fly once), crow_fly Wait random(2) countdown.
+  bool snd_target = false, snd_seen = false, hit_tick = false, flown = false, flew_evt = false;
+  float crow_snd_t = 0.f;
 
   Animal();
   void setup(AnimalType t, Vec2 p, EntityId eid);

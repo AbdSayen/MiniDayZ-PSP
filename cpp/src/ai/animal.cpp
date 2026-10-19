@@ -102,6 +102,7 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
       const float range = a.type == Animal_Dog ? 200.f : 335.f;
       const float spd = a.speed;
       const bool sees = !los_blocked(a.pos, player_pos); // wolf/dog LineOfSight t927+t339
+      a.snd_target = sees && dist < range;
       if (sees && dist > 1.f && dist < range) {
         a.pos.x += (dx / dist) * spd * dt;
         a.pos.y += (dy / dist) * spd * dt;
@@ -110,6 +111,7 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
         if (a.type == Animal_Wolf) {
           dmg += wolf_melee_damage();
           if (wolf_melee_hit) *wolf_melee_hit = true;
+          a.hit_tick = true;
         }
         // C2 dog (t892/t894, gui_dog_control) is the player's companion (Dog_check_situation
         // follows the player); it never calls Player_get_hit. Invented dog damage removed.
@@ -117,6 +119,7 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
       }
     } else if (a.type == Animal_Crow) {
       // Crows scatter farther / faster
+      if (dist < 320.f && !a.flown) { a.flown = true; a.flew_evt = true; }
       if (dist < 320.f && dist > 1.f) {
         a.pos.x -= (dx / dist) * a.speed * dt;
         a.pos.y -= (dy / dist) * a.speed * dt;

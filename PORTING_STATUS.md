@@ -674,3 +674,13 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - bench player moved (8925,10000) → (8856.6,10211.3); the clean deploy starts the Tutorial.
 - Memory: kernel free dropped 764 → 508 KB (max block 256 KB) because of the mixer thread stack. The game heap is unaffected. The sound itself was not listened to: there is no audio output in headless mode.
 - Desktop build OK; mdaz_tests exit 0 (453 OK, 0 FAIL).
+
+## Звук 1:1 с data.js (2026-10-20)
+- Новый IAudio (play/play_at с loop, dB, tag; stop/stop_all; set_paused/muted/silent; playback rate; is_tag_playing; listener) и общий микшер C2Mixer для SDL и PSP.
+- Все места вызова в game.cpp / game_tutorial.cpp переведены на таблицы C2 (src/combat/c2_sfx.cpp), новые события собраны в src/core/game_audio.cpp. Выдуманные звуки удалены. Подробности в docs/AUDIO_AUDIT.md.
+- Петли дня и ночи (TriggerOnce по часам), дождь (rain_loop + rain_roof с паузой внутри/снаружи), костры, вспышка и двигатель машины зациклены, как в оригинале.
+- Тесты: tests/test_audio.cpp (dB, теги, пауза, silent, StopAll, петля стрима 30 с, таблицы).
+- Стек потока микшера PSP уменьшен с 256 до 64 KB: stb_vorbis декодирует все 207 файлов на стеке 20 KB и падает на 16 KB.
+
+- PSP-сборка (чистая, EBOOT 03:29) и деплой без autoplay.txt/settings.cfg. PPSSPPHeadless "bench", "bench tutorial" и чистый деплой: всё загружается, стрим ambient → md_winter_amb (Day&Night при CurrentLevel 0), bench: игрок движется (8925,10000) → (8873,10197), туториал стартует.
+- Память (1 с / 20 с): ядро — max block 512 KB, total free 700 KB (было 508 при стеке 256 KB). Куча newlib занята на 5046 / 5174 KB (bench) и 4118 / 4630 KB (туториал). Кэш звука (бюджет 4 MB) и текстуры живут в куче, а не в этих 700 KB. Проба «largest malloc» в PPSSPP вернула 256 MB, что невозможно на PSP, поэтому она удалена из лога как недостоверная. Реальный запас на железе не измерен.

@@ -14,7 +14,7 @@ SRC_ROOT = ../..
 SRC = $(SRC_ROOT)/src
 
 OBJS = \
-  $(SRC)/core/game.o $(SRC)/core/game_tutorial.o \
+  $(SRC)/core/game.o $(SRC)/core/game_tutorial.o $(SRC)/core/game_audio.o \
   $(SRC)/core/time.o \
   $(SRC)/core/rng.o \
   $(SRC)/core/c2_session_globals.o \
@@ -48,6 +48,7 @@ OBJS = \
   $(SRC)/inventory/craft.o \
   $(SRC)/combat/combat.o \
   $(SRC)/combat/weapons.o \
+  $(SRC)/combat/c2_sfx.o \
   $(SRC)/combat/weapon_unlocks.o \
   $(SRC)/combat/bullet.o \
   $(SRC)/ai/zombie.o \
@@ -63,6 +64,7 @@ OBJS = \
   $(SRC)/ui/item_sprites.o \
   $(SRC)/ui/ui_strings.o \
   $(SRC)/ui/quest.o \
+  $(SRC)/platform/audio_mixer.o \
   main_psp.o audio_psp.o \
   platform_psp.o
 

@@ -1,3 +1,4 @@
+#include "mdaz/c2_sfx.hpp"
 #include "mdaz/weapons.hpp"
 #include "mdaz/rng.hpp"
 
@@ -198,65 +199,8 @@ float weapon_bow_nock_sec(const WeaponDef* w) {
 
 const char* weapon_fire_sfx_tag(ItemId weapon_id, Rng& rng) {
   touch_weapon_c2_audit();
-  auto pick2 = [&rng](const char* a, const char* b) {
-    return rng.next_int(0, 1) ? b : a;
-  };
-  switch (weapon_id) {
-  case 175: // fncal — fn_fal_single_1_impl.json (choose + muzzle on player_weapons)
-    return pick2(kC2_fn_fal_single_1, kC2_fn_fal_single_2);
-  case 159:
-  case 174:
-    return pick2("akm_3", "akm_5");
-  case 160:
-  case 161:
-    return pick2("Ak74_1", "Ak74_3");
-  case 151:
-    return pick2("FNX_1", "FNX_2");
-  case 152:
-  case 176:
-    return pick2("colt_1", "colt_2");
-  case 170:
-    return pick2("glock19_single_1", "glock19_single_2");
-  case 163:
-  case 164:
-    return "Bow_1";
-  case 154:
-  case 155:
-  case 171:
-    return pick2("izh_1", "izh_2");
-  case 178:
-    return "saiga12";
-  case 156:
-  case 172:
-    return pick2("mosin_1", "mosin_2");
-  case 158:
-  case 162:
-  case 177:
-    return pick2("m4_single_1", "m4_single_2");
-  case 169:
-  case 173:
-    return pick2("mp5k_single_0", "mp5k_single_1");
-  case 179:
-    return pick2("mac10_1", "mac10_2");
-  case 168:
-  case 186:
-    return pick2("svd_single_0", "svd_single_1");
-  case 181:
-    return "pm_shot";
-  case 182:
-    return pick2("pb_shot_1", "pb_shot_2");
-  case 184:
-    return pick2("groza_shot_1", "groza_shot_2");
-  case 185:
-    return "vss_shot_3";
-  case 187:
-    return "madsen_shot";
-  case 183:
-    return "bizon_shot_1";
-  default:
-    break;
-  }
-  return "gunshot";
+  // Delegates to the data.js "Firearm shooting" table (c2_sfx.cpp); null = no C2 sound.
+  return c2_player_fire_sfx(weapon_id, false, rng).name;
 }
 
 } // namespace mdaz

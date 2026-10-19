@@ -23,6 +23,8 @@ struct Zombie {
   // C2 eyes IV0 "attacking" + LineOfSight behaviours (data.js instance props):
   // MainLook range 335 (shooter 350) cone 180, ShortLook range 70 cone 360. Re-checked every 1 s.
   bool c2_aggro = false;
+  bool snd_aggro = false;  // audio latch: spotted_* played for this aggro
+  bool hit_tick = false;   // audio: the attack landed this tick (attack_* sound)
   float look_t = 0.f;
   Vec2 facing = Vec2(0.f, 1.f);
   Vec2 warn_dir;

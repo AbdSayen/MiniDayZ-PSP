@@ -187,6 +187,7 @@ void Game::start_tutorial() {
   }
   for (int i = 0; i < kMaxZombies; ++i) tut_saved_aggro_[i] = 0.f;
   state_ = AppState_Playing;
+  audio_layout_start();
 }
 
 void Game::tut_leave_to_menu() {
@@ -226,7 +227,7 @@ void Game::tut_show_tip(int p0, int id, int p2) {
   case 9: t.highlight = 5; t.inv_step = 6; tut_set_zeds_blind(true); break;
   case 10:
     t.experience_points = 316; t.highlight = 6; t.perk_step = 1;
-    if (audio_) audio_->play("MD_Perk_1", 0.6f);
+    sfx2d("MD_Perk_1", 0.f);   // GUI_show_tutorial_tip
     break;
   case 11: t.tip_top = true; t.perk_step = 2; break;
   case 13: t.highlight = 7; t.bleed_step = 1; t.dark = 0.65f; break;
@@ -313,8 +314,8 @@ void Game::tut_update_final(float dt) {
   if (crossed(10.3f)) { t.say_id = 127; t.say_t = 0.f; }
   if (crossed(14.3f)) { t.say_id = 0; t.fade = 1.f; }
   for (int s = 0; s < 3; ++s)
-    if (crossed(14.3f + 0.1f * s) && audio_) audio_->play("Ak74_1", 0.8f);
-  if (crossed(14.5f) && audio_) audio_->play("tutor_death", 0.8f);
+    if (crossed(14.3f + 0.1f * s)) sfx_at("Ak74_1", 0.f, Vec2(t.bot[0].x, t.bot[0].y), "m4");   // Tutorial_script_final
+  if (crossed(14.5f)) sfx2d("tutor_death", 0.f, "tutor");
   if (crossed(14.5f)) { tutorial_finished_ = true; save_settings(); }
   t.say_t += dt;
   if (ft >= 15.5f) tut_leave_to_menu();

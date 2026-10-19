@@ -1,4 +1,5 @@
 #include "mdaz/game.hpp"
+#include "mdaz/c2_sfx.hpp"
 #include "mdaz/c2_mapgen.hpp"
 #include "mdaz/building_solid.hpp"
 #include "mdaz/building_interior.hpp"
@@ -829,7 +830,7 @@ void Game::start_new_game(Difficulty d) {
   zed_check();  // C2 Start of layout -> Zed_check
 
   state_ = AppState_Playing;
-  if (audio_) audio_->play("ambient", 0.25f);
+  audio_layout_start();   // Game_events OnLayoutStart (StopAll); loops via Day&Night
 }
 
 // Port body recovered from the pre-loss game.cpp (agent transcripts, 2026-10-19), reviewed
@@ -1103,7 +1104,7 @@ void Game::apply_incoming_damage(float amount, bool can_bleed, PlayerDamageKind 
     }
   }
   // C2: zombie hits never set IV34 (sickness) — removed invented infection roll.
-  if (audio_ && amount > 0.f) audio_->play("hit", 0.55f);
+  // (No generic hit sound: C2 plays attack_* at the zed / body_* per source, game_audio.cpp.)
 }
 
 bool Game::wearing_gasmask() const {
@@ -1146,7 +1147,8 @@ void Game::try_melee_attack() {
   }
   attack_cd_ = stats.fire_interval;
   melee_anim_t_ = 0.35f; // C2 axe_* ~3 frames @ speed 10
-  if (audio_) audio_->play_at("melee_swing", player_.pos.x, player_.pos.y, 0.6f);
+  // C2 Punch_Swipes_0/1 [zmb] at the player only for fists (player_weapons IV4 == 0).
+  if (!using_melee_item) sfx_at(c2_choose_punch(sfx_rng_), 0.f, player_.pos, "zmb");
 
   bool hit_something = false;
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
@@ -1204,7 +1206,7 @@ void Game::try_ranged_attack() {
     if (w->mag_capacity > 0) {
       // Chambered magazine
       if (mag_rounds_ <= 0) {
-        if (audio_) audio_->play("click", 0.55f); // dry fire — press V
+        sfx2d("empty_click", 0.f); // C2 empty mag: empty_click
         attack_cd_ = 0.25f;
         return;
       }
@@ -1220,7 +1222,7 @@ void Game::try_ranged_attack() {
         }
       }
       if (!spent) {
-        if (audio_) audio_->play("melee_swing", 0.25f);
+        sfx2d("empty_click", 0.f);
         attack_cd_ = 0.2f;
         return;
       }
@@ -1241,26 +1243,8 @@ void Game::try_ranged_attack() {
     if (has_545 && (ammo == 15 || ammo == 14)) silenced = true;
     if (has_556 && ammo == 11) silenced = true;
   }
-  if (audio_) {
-    const char* shot = "gunshot";
-    if (silenced) shot = "gunshot_silent";
-    else {
-      const ItemId wid = inventory_.slot(equipped_slot_).id;
-      if (wid == 159 || wid == 174) shot = "gun_akm";
-      else if (wid == 160 || wid == 161) shot = "gun_ak74";
-      else if (wid == 151) shot = "gun_fnx";
-      else if (wid == 152 || wid == 176) shot = "gun_colt";
-      else if (wid == 170) shot = "gun_glock";
-      else if (wid == 163 || wid == 164) shot = "gun_bow";
-      else if (wid == 154 || wid == 155 || wid == 171) shot = "gun_shotgun";
-      else if (wid == 178) shot = "gun_saiga";
-      else if (wid == 156 || wid == 172) shot = "gun_mosin";
-      else if (wid == 158 || wid == 162 || wid == 177) shot = "gun_m4";
-      else if (wid == 169 || wid == 173 || wid == 179) shot = "gun_mp5";
-      else if (wid == 168 || wid == 186) shot = "gun_svd";
-    }
-    audio_->play_at(shot, player_.pos.x, player_.pos.y, silenced ? 0.45f : 0.8f);
-  }
+  // Group "Firearm shooting": per-weapon PlayAtObject at the player (c2_sfx.cpp table).
+  sfx_play(c2_player_fire_sfx(inventory_.slot(equipped_slot_).id, silenced, sfx_rng_), player_.pos);
   {
     // Player_Hear_radius = 1000 (globals); gunshot pull uses a fraction; silencer quieter
     const float hear_r = silenced ? 90.f
@@ -1290,7 +1274,7 @@ void Game::try_ranged_attack() {
         a->pos.y += (dy / len) * push;
       }
     }
-    if (deer_ran && audio_ && !silenced) audio_->play("deer", 0.4f);
+    (void)deer_ran;   // no deer sound on shots in data.js (removed)
   }
   dispersion_.on_shot(player_.running && !crouching_);
   float ang_off = dispersion_.sample_offset_deg(rng_);
@@ -1371,6 +1355,7 @@ void Game::try_pickup_loot() {
     int remaining = 0;
     ItemId olds[8];
     int nold = 0;
+    ItemId snd_pick_id = 0;
     bool gear_changed = false;
     for (int j = 0; j < p->item_count; ++j) {
       if (p->counts[j] <= 0) continue;
@@ -1389,6 +1374,7 @@ void Game::try_pickup_loot() {
         taken = inventory_.add_item_new_slot(p->items[j], p->counts[j]);
       }
       if (taken) {
+        snd_pick_id = p->items[j];
         p->counts[j] = 0;
       } else {
         ++remaining;
@@ -1413,7 +1399,8 @@ void Game::try_pickup_loot() {
       for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k]);
       drop_gear_and_overflow(0);
     }
-    if (audio_) audio_->play("pickup", 0.5f);
+    // Pick_player_item / Check_space_*: per-item pick sound (c2_pickup_sfx).
+    if (snd_pick_id) sfx_play(c2_pickup_sfx(snd_pick_id, is_gear_item(snd_pick_id), sfx_rng_), player_.pos);
     break;
   }
 }
@@ -1685,12 +1672,14 @@ void Game::notify_weapon_unlock(ItemId unlocked_loot_id) {
   if (unlocked_loot_id <= 0) return;
   wpn_unlock_toast_id_ = unlocked_loot_id;
   wpn_unlock_toast_t_ = 3.1f;
-  if (audio_) audio_->play(weapon_unlock_toast_sfx_c2(), 1.f);
+  sfx2d(weapon_unlock_toast_sfx_c2(), 0.f);
 }
 
 void Game::explode_at(Vec2 pos, float damage, bool leave_fire) {
   const float r2 = 75.f * 75.f;
-  if (audio_) audio_->play_at(leave_fire ? "explode" : "explode", pos.x, pos.y, 1.f);
+  // C2: grenade / mine f1_explode +10 dB; molotov bottle_break_0 at the flame.
+  if (leave_fire) sfx_at("bottle_break_0", 0.f, pos);
+  else sfx_at("f1_explode", 10.f, pos);
   spawn_fx(Fx_Explode, pos, leave_fire ? 1.f : 0.f, 0.45f); // angle=1 marks molotov
   if (leave_fire) {
     campfires_.place(pos, 25.f);
@@ -1743,6 +1732,7 @@ void Game::resolve_bullet_hits() {
       if (dist2(b->pos, player_.pos) < 14.f * 14.f) {
         apply_incoming_damage(b->damage, true);
         spawn_fx(Fx_Hit, player_.pos, 0.f, 0.15f);
+        sfx_at(c2_choose_body(sfx_rng_), -5.f, player_.pos, "zmb");   // Player_get_hit "bullet"
         if (player_.survival.blood <= 0.f) {
           std::strncpy(player_.survival.death_reason, "Bullet",
                        sizeof(player_.survival.death_reason) - 1);
@@ -1813,8 +1803,7 @@ void Game::try_craft() {
     if (!r) continue;
     if (r->requires_fire && !at_fire) continue;
     if (craft_do(inventory_, *r, items_)) {
-      if (audio_) audio_->play("craft", 0.7f);
-      return;
+      return;   // no C2 craft sound
     }
   }
 }
@@ -1829,7 +1818,7 @@ void Game::try_drop_slot(int slot_idx) {
   const ItemId id = s.id;
   if (!inventory_.remove_at(slot_idx, 1)) return;
   loot_.spawn_item(Vec2(player_.pos.x + 12.f, player_.pos.y), id, 1);
-  if (audio_) audio_->play("pickup", 0.45f);
+  sfx_play(c2_drop_sfx(is_gear_item(id), sfx_rng_), player_.pos);   // Drop_* drop1/2 | geardrop1/2
 }
 
 void Game::try_mag_reload() {
@@ -1839,7 +1828,6 @@ void Game::try_mag_reload() {
     gun_jammed_ = false;
     reload_cd_ = 1.0f;
     attack_cd_ = 1.0f;
-    if (audio_) audio_->play("craft", 0.5f);
     return;
   }
   const InvSlot& eq = inventory_.slot(equipped_slot_);
@@ -1848,7 +1836,6 @@ void Game::try_mag_reload() {
   if (!w || w->stats.is_melee || w->ammo_id <= 0) return;
   if (w->mag_capacity <= 0) {
     // Bows: nothing to chamber
-    if (audio_) audio_->play("melee_swing", 0.2f);
     return;
   }
   const int need = w->mag_capacity - mag_rounds_;
@@ -1862,13 +1849,14 @@ void Game::try_mag_reload() {
     loaded += take;
   }
   if (loaded <= 0) {
-    if (audio_) audio_->play("melee_swing", 0.2f);
     return;
   }
   mag_rounds_ += loaded;
   reload_cd_ = 1.4f;
   attack_cd_ = 1.4f;
-  if (audio_) audio_->play("reload", 0.6f);
+  // Mag_reload: reload_pistol -5 dB at the player, Wait param0, Reload_rifle -5 dB at the player.
+  sfx_at("reload_pistol", -5.f, player_.pos);
+  sfx_later(reload_cd_, "Reload_rifle", -5.f, true, player_.pos, 1, false, "");
 }
 
 void Game::try_throw_projectile() {
@@ -1910,7 +1898,9 @@ void Game::try_throw_projectile() {
   attack_cd_ = is_nade ? 0.9f : 0.55f;
   const float dmg = roll_bullet_damage(dmg_base, rng_);
   bullets_.spawn(player_.pos, player_.facing_deg, speed, dmg, life, true, is_nade, is_molotov);
-  if (audio_) audio_->play(is_nade ? "gunshot" : "melee_swing", 0.55f);
+  // item_activate 21 "gren pin"; molotov create punch_swipes_0 +10 dB (throw mechanics untouched).
+  if (is_nade) sfx2d("gren pin", 0.f);
+  else if (is_molotov) sfx_at("punch_swipes_0", 10.f, player_.pos);
 }
 
 void Game::try_place_campfire() {
@@ -1919,7 +1909,6 @@ void Game::try_place_campfire() {
     if (inventory_.slot(i).id != 23 || inventory_.slot(i).count <= 0) continue;
     if (!campfires_.place(player_.pos, 240.f)) return;
     inventory_.remove_at(i, 1);
-    if (audio_) audio_->play("craft", 0.5f);
     return;
   }
   int match_i = -1, fuel_i = -1;
@@ -1934,13 +1923,13 @@ void Game::try_place_campfire() {
                          indoor_t_ <= 0.f && tent_warmth_t_ <= 0.f;
     if (wet_out) {
       inventory_.remove_at(match_i, 1); // waste a match
-      if (audio_) audio_->play("melee_swing", 0.25f);
+      sfx2d("match_burn", 0.f);   // item_activate 24
       return;
     }
     if (!campfires_.place(player_.pos, 90.f)) return;
     inventory_.remove_at(match_i, 1);
     inventory_.remove_at(fuel_i, 1);
-    if (audio_) audio_->play("craft", 0.45f);
+    sfx2d("match_burn", 0.f);   // item_activate 24
     return;
   }
   // Hand-drill: ≥2 sticks; base ~25% (farmer perk +10%; dry weather better)
@@ -1966,9 +1955,6 @@ void Game::try_place_campfire() {
   if (weather_.rain < 0.3f && !weather_.is_night) chance += 0.08f;
   if (rng_.next_float() < chance) {
     campfires_.place(player_.pos, 50.f);
-    if (audio_) audio_->play("craft", 0.4f);
-  } else if (audio_) {
-    audio_->play("melee_swing", 0.25f);
   }
 }
 
@@ -1997,7 +1983,7 @@ bool Game::try_plant_seed(ItemId seed_id) {
   slot->grow_t = grow;
   slot->ready = false;
   slot->active = true;
-  if (audio_) audio_->play("craft", 0.4f);
+  sfx2d("planting_seeds", 0.f);   // item_activate seeds
   return true;
 }
 
@@ -2124,7 +2110,6 @@ bool Game::try_build_fence(int variant) {
     inventory_.remove_at(i, take);
     left -= take;
   }
-  if (audio_) audio_->play("craft", 0.5f);
   return true;
 }
 
@@ -2163,7 +2148,6 @@ bool Game::try_place_trap(int kind) {
   t->sprung = false;
   inventory_.remove_at(slot, 1);
   if (kind == 2) inventory_.remove_at(stick_slot, 2);
-  if (audio_) audio_->play("craft", 0.5f);
   return true;
 }
 
@@ -2181,7 +2165,7 @@ void Game::update_traps(float dt) {
         hp -= dmg;
         t.sprung = true;
         t.life = 8.f; // leave marker briefly
-        if (audio_) audio_->play("hit", 0.7f);
+        sfx_at("trap_bear_0", 0.f, t.pos);
         return true;
       };
       for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
@@ -2220,7 +2204,7 @@ void Game::update_traps(float dt) {
         apply_incoming_damage(18.f, true);
         t.sprung = true;
         t.life = 8.f;
-        if (audio_) audio_->play("hit", 0.8f);
+        sfx_at("trap_bear_0", 0.f, t.pos);
       }
     } else if (t.kind == 1) {
       // Barbed wire zone: slow + nick enemies and player
@@ -2258,7 +2242,6 @@ void Game::update_traps(float dt) {
         t.sprung = true;
         t.life = 0.4f;
         explode_at(t.pos, 70.f, false);
-        if (audio_) audio_->play("gunshot", 0.9f);
       }
     } else if (t.kind == 4 && !t.sprung) {
       // Landmine: pressure plate — zeds/bandits/wolves/player
@@ -2280,7 +2263,6 @@ void Game::update_traps(float dt) {
         t.sprung = true;
         t.life = 0.35f;
         explode_at(t.pos, 95.f, true); // bigger boom + fire
-        if (audio_) audio_->play("gunshot", 1.f);
       }
     } else if (t.kind == 2) {
       // Wood fence: block/push zeds and animals; soft player collision
@@ -2298,7 +2280,7 @@ void Game::update_traps(float dt) {
           if (z->type == Zed_Tank) {
             // C2: zed_tank overlapping obst_fence / obst_barricade destroys it (Fence_destroy_*).
             t.active = false;
-            if (audio_) audio_->play("hit", 0.6f);
+            sfx_at(c2_choose_fence_destroy(sfx_rng_), 0.f, t.pos);
           }
         }
       }
@@ -2334,7 +2316,7 @@ void Game::try_bunker_enter_exit() {
         p->active = false;
     }
     bullets_.clear();
-    if (audio_) audio_->play("bunker", 0.6f);
+    audio_bunker_exit();
     return;
   }
   // Enter when near bunker entrance POI
@@ -2386,7 +2368,7 @@ void Game::try_bunker_enter_exit() {
       // Bunker_generate re-creates every bunker_zed_spawner with its boolean cleared.
       for (int si = 0; si < 32; ++si) bunker_spawner_used_[si] = false;
       bunker_zed_check_t_ = 0.f;
-      if (audio_) audio_->play("bunker", 0.6f);
+      audio_bunker_enter();
       return;
     }
   }
@@ -2443,7 +2425,9 @@ void Game::update_bandit_guns(float dt) {
                ang, 0.07f);
     }
     b->attack_cooldown = 1.15f;
-    if (audio_) audio_->play("gunshot", 0.35f);
+    // Friend t522 (IV14) / bandit t827 (IV11) firing events: PlayAtObject at the bot.
+    sfx_play(b->is_ally ? c2_friend_fire_sfx(b->weapon_iv14, sfx_rng_)
+                        : c2_bandit_fire_sfx(b->weapon_iv11, sfx_rng_), b->pos);
   }
 }
 
@@ -2643,6 +2627,7 @@ bool Game::load_game_from_disk() {
   show_bag_ = false;
   show_craft_menu_ = false;
   state_ = AppState_Playing;
+  audio_layout_start();
   show_toast("GAME LOADED");
   return true;
 }
@@ -2719,7 +2704,6 @@ void Game::on_quest_completed(int task_before) {
     }
   }
   quest_.karma += (task_before == 2) ? 20 : 10;
-  if (audio_) audio_->play("craft", 0.9f);
   quest_.spawn_reward_box(loot_, player_.pos);
   quest_.finish_reward();
   quest_bandits_spawned_ = false;
@@ -2740,7 +2724,6 @@ void Game::try_cancel_quest() {
   // like after a finished reward (Generate_quest).
   if (!quest_.cancel()) return;
   quest_bandits_spawned_ = false;
-  if (audio_) audio_->play("craft", 0.4f);
   quest_.generate_quest(rng_, mapgen_, 1);
 }
 
@@ -2770,7 +2753,6 @@ void Game::try_craft_menu_recipe() {
   const bool at_fire = campfires_.near_fire(player_.pos);
   if (r->requires_fire && !at_fire) { show_toast("NEED A FIRE"); return; }
   if (craft_do(inventory_, *r, items_)) {
-    if (audio_) audio_->play("craft", 0.7f);
     show_toast("CRAFTED");
   } else {
     inv_full_flash_ = 0.6f;
@@ -2820,7 +2802,8 @@ void Game::equip_bag_slot(int slot) {
     inventory_.slot(equipped_slot_) = tmp;
   }
   sync_mag_for_equipped();
-  if (audio_) audio_->play("pickup", 0.3f);
+  { const ItemId hid = inventory_.slot(equipped_slot_).id;
+    if (hid) sfx_play(c2_pickup_sfx(hid, false, sfx_rng_), player_.pos); }
 }
 
 void Game::update_inventory_ui(const InputState& in) {
@@ -2860,7 +2843,7 @@ void Game::update_inventory_ui(const InputState& in) {
     if (in.confirm_pressed || in.attack_pressed) {
       const PickPlayerItemResult res =
           pick_player_item(inventory_, items_, ui.focus_cloth_region, ui.focus_cloth_sub);
-      if (res == PickPlayer_Ok) { if (audio_) audio_->play("pickup", 0.4f); }
+      if (res == PickPlayer_Ok) sfx2d("gearpick", 0.f);   // Pick_player_item wearable
       else if (res == PickPlayer_NoSpace) inv_full_flash_ = 1.f;
     }
     return;
@@ -3110,24 +3093,12 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
       player_.facing_deg = std::atan2(in.move_y, in.move_x) * 57.2957795f;
     }
-    // Footsteps — forest / sand / bunker / default run clips
+    // Footsteps: C2 Animations group (game_audio.cpp audio_footsteps), not while driving.
     {
       const float speed2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
-      if (speed2 > 8.f * 8.f && audio_) {
-        const bool sprinting = speed2 > 55.f * 55.f;
-        footstep_t_ -= dt;
-        if (footstep_t_ <= 0.f) {
-          footstep_t_ = sprinting ? 0.28f : 0.42f;
-          const float margin = 420.f;
-          const bool shore = player_.pos.x < margin || player_.pos.y < margin ||
-            player_.pos.x > kMapLayoutW - margin || player_.pos.y > kMapLayoutH - margin;
-          const char* step = in_bunker_ ? "step_concrete" :
-                             shore ? "step_sand" : "step_forest";
-          audio_->play_at(step, player_.pos.x, player_.pos.y, sprinting ? 0.35f : 0.22f);
-        }
-      } else {
-        footstep_t_ = 0.f;
-      }
+      const bool moving = speed2 > 1.f && !vehicles_.player_driving() && !in_bunker_;
+      if (!moving) snd_step_t_ = 0.f;
+      audio_footsteps(dt, moving);
     }
     // Crash into blocked cells / Solid forest tiles while driving
     if (world_.is_blocked(player_.pos.x, player_.pos.y) ||
@@ -3140,8 +3111,11 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         v->hp -= 8.f * dt * 60.f;
         if (v->hp < 0.f) v->hp = 0.f;
         apply_incoming_damage(2.f * dt * 10.f, false);
-        if (audio_ && rng_.next_float() < 0.05f) audio_->play("hit", 0.4f);
+        if (!snd_crash_latch_) sfx_at(c2_choose_car_crash(sfx_rng_), 0.f, player_.pos);
       }
+      snd_crash_latch_ = true;
+    } else {
+      snd_crash_latch_ = false;
     }
     // Hit a tree while driving — damage vehicle + fell tree
     if (vehicles_.player_driving()) {
@@ -3160,7 +3134,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         tree_sub_[ti] = tree_sub_[tree_count_ - 1];
         tree_hp_[ti] = tree_hp_[tree_count_ - 1];
         tree_count_ -= 1;
-        if (audio_) audio_->play("hit", 0.6f);
+        sfx_at(c2_choose_treefall(sfx_rng_), -5.f, fell);
         break;
       }
     }
@@ -3171,15 +3145,10 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       vehicles_.driven()->type != Vehicle_Bike &&
       vehicles_.driven()->fuel < 20.f && fuel_warn_cd_ <= 0.f) {
     fuel_warn_cd_ = 4.f;
-    if (audio_) audio_->play("melee_swing", 0.35f);
   }
   if (rain_sfx_cd_ > 0.f) rain_sfx_cd_ -= dt;
   if (thunder_cd_ > 0.f) thunder_cd_ -= dt;
   if (lightning_t_ > 0.f) lightning_t_ -= dt;
-  if (!in_bunker_ && weather_.rain > 0.85f && rain_sfx_cd_ <= 0.f && audio_) {
-    audio_->play("rain", 0.3f);
-    rain_sfx_cd_ = 3.5f;
-  }
   if (wind_sfx_cd_ > 0.f) wind_sfx_cd_ -= dt;
   if (flare_t_ > 0.f) {
     flare_t_ -= dt;
@@ -3196,27 +3165,11 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       if (z->aggro_radius < 380.f) z->aggro_radius = 380.f;
     }
   }
-  if (!in_bunker_ && weather_.is_night && weather_.rain < 0.4f &&
-      wind_sfx_cd_ <= 0.f && audio_ && rng_.next_float() < 0.008f) {
-    audio_->play("wind", 0.25f);
-    wind_sfx_cd_ = 12.f + rng_.next_float() * 18.f;
-  }
-  // Nearby crow call
-  if (!in_bunker_ && audio_ && wind_sfx_cd_ <= 0.f && rng_.next_float() < 0.01f) {
-    for (int i = 0; i < animals_.count(); ++i) {
-      const Animal* a = animals_.at(i);
-      if (!a->alive || a->type != Animal_Crow) continue;
-      if (dist2(a->pos, player_.pos) > 220.f * 220.f) continue;
-      audio_->play_at("crow", a->pos.x, a->pos.y, 0.35f);
-      wind_sfx_cd_ = 6.f + rng_.next_float() * 10.f;
-      break;
-    }
-  }
+  // (Removed: invented wind one-shots and random crow calls; crows play crow_* on take-off.)
   if (!in_bunker_ && weather_.rain > 0.9f && thunder_cd_ <= 0.f &&
       rng_.next_float() < 0.015f) {
     thunder_cd_ = 8.f + rng_.next_float() * 14.f;
     lightning_t_ = 0.12f;
-    if (audio_) audio_->play("thunder", 0.7f);
     // Thunder startles nearby zeds — brief aggro enlarge
     for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
       if (!z->alive) continue;
@@ -3333,7 +3286,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         if (inventory_.slot(i).id != 34 || inventory_.slot(i).count <= 0) continue;
         if (inventory_.use_consumable(i, player_.survival, items_, &rng_)) {
           use_anim_t_ = 0.5f; // C2 using_item ~4 frames @ speed 8
-          if (audio_) audio_->play("craft", 0.35f);
           break;
         }
       }
@@ -3411,7 +3363,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       last_airdrop_pos_ = Vec2(player_.pos.x + _j8x, player_.pos.y + _j8y);
       loot_.spawn_airdrop(last_airdrop_pos_, rng_);
       airdrop_alert_ = 12.f;
-      if (audio_) audio_->play("airdrop", 0.85f);
     }
     if (airdrop_alert_ > 0.f) airdrop_alert_ -= dt;
     if (radio_t_ > 0.f) radio_t_ -= dt;
@@ -3427,7 +3378,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         if (dist2(a->pos, player_.pos) < 220.f * 220.f) { near_wolf = true; break; }
       }
       if (near_wolf) {
-        audio_->play("howl", 0.55f);
         howl_cd_ = 14.f + rng_.next_float() * 10.f;
       }
     }
@@ -3436,7 +3386,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     if (cough_cd_ > 0.f) cough_cd_ -= dt;
     if (cough_alert_t_ > 0.f) cough_alert_t_ -= dt;
     if (player_.survival.infected && cough_cd_ <= 0.f && audio_) {
-      audio_->play("cough", 0.4f);
       cough_cd_ = 8.f + rng_.next_float() * 10.f;
       cough_alert_t_ = 2.5f;
       // Cough noise: nudge nearby zeds + wolves/dogs (blood/scent)
@@ -3617,7 +3566,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         if (v) { v->hp -= 4.f * dt; if (v->hp < 0.f) v->hp = 0.f; }
         if (z->hp <= 0.f) {
           on_zed_killed(*z);
-          if (audio_) audio_->play("hit", 0.5f);
+          sfx_at(c2_choose_body(sfx_rng_), -5.f, z->pos);   // car hits zed: body -5 dB
         }
       }
       for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b) {
@@ -3630,7 +3579,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           player_.bandits_killed += 1;
           spawn_corpse(Corpse_Bandit, b->pos, 0.f, 0);
           loot_.spawn_bandit(b->pos, rng_);
-          if (audio_) audio_->play("hit", 0.55f);
         }
       }
       for (int ai = 0; ai < animals_.count(); ++ai) {
@@ -3659,17 +3607,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         }
       }
     }
-    // Buried ambush pop SFX
-    for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
-      if (!z->alive || z->type != Zed_Buried) continue;
-      if (z->ambush_boost > 1.55f && audio_) {
-        audio_->play("hit", 0.65f);
-        break;
-      }
-    }
-    if (zombies_.scream_active() && !prev_scream_ && audio_) {
-      audio_->play("hit", 0.95f);
-    }
+    // Buried / screamer sounds: game_audio.cpp (deerrun every 3 s, attack_8 [screamer]).
     prev_scream_ = zombies_.scream_active();
     apply_incoming_damage(zed_dmg, zed_dmg > 0.f);
   }
@@ -3739,7 +3677,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         c2_props_.set_frame(k, 0);
         berry_t_ = 3.f;
         berry_idx_ = k;
-        if (audio_) audio_->play("bushsearch", 0.5f);
+        sfx2d("bushsearch", 0.f);
         picked = true;
         break;
       }
@@ -3776,6 +3714,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           // C2 tree IV0 = 2 hits; at 0: Spawn_drop 2x Wood sticks (38) + 1x Wood piles (50) at
           // x +- 30, y + 40 + random(10); the tree turns into a stump (frame 1, obst_base 8).
           // Port: the stump sprite/obstacle is not drawn, the tree is removed (KNOWN_ISSUES).
+          const Vec2 chop_pos = trees_[near_tree];
+          sfx_at(c2_choose_chop(sfx_rng_), 0.f, chop_pos);   // tree hit: chop*
           if (tree_hp_[near_tree] > 0) --tree_hp_[near_tree];
           if (tree_hp_[near_tree] == 0) {
             const Vec2 tp = trees_[near_tree];
@@ -3786,13 +3726,12 @@ void Game::update_playing(float dt, const InputState& in_raw) {
             tree_sub_[near_tree] = tree_sub_[tree_count_ - 1];
             tree_hp_[near_tree] = tree_hp_[tree_count_ - 1];
             tree_count_ -= 1;
+            sfx_at(c2_choose_treefall(sfx_rng_), -5.f, chop_pos);
           }
           // Axe wear: ~6% break on chop (duct tape helps)
           // Tool break-on-chop: no C2 evidence in 1.4.1 export — not invented.
-          if (audio_) audio_->play("melee_swing", 0.55f);
         } else if (rng_.next_float() < 0.35f) {
           inventory_.add_item(38, 1, items_);
-          if (audio_) audio_->play("melee_swing", 0.4f);
         }
       } else if (has_rod) {
         // Fishing only near map-edge water band
@@ -3840,9 +3779,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           player_.fish_caught += 1;
           spawn_fx(Fx_Fish,
                    Vec2(player_.pos.x + 10.f, player_.pos.y + 4.f), 0.f, 0.7f);
-          if (audio_) audio_->play("pickup", 0.4f);
-        } else if (!near_water && audio_) {
-          audio_->play("melee_swing", 0.15f); // cast on dry land — nothing
         }
       } else if (!has_rod && !has_axe) {
         // Harvest ready crop if standing on it
@@ -3857,7 +3793,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           player_.forage_count += 1;
           if (player_.forage_count >= 8) player_.perk_farmer = true;
           harvested = true;
-          if (audio_) audio_->play("pickup", 0.45f);
           break;
         }
         const ItemId seed_eq = inventory_.slot(equipped_slot_).id;
@@ -3902,7 +3837,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
             if (has_crowbar && rng_.next_float() < 0.35f)
               inventory_.add_item(rng_.next_float() < 0.5f ? 59 : 36, 1, items_); // toolbox / cleaning
           }
-          if (audio_) audio_->play(has_crowbar ? "hit" : "pickup", has_crowbar ? 0.45f : 0.35f);
           break;
         }
         // Removed (not in data.js): rain drinking and random bush forage.
@@ -3965,9 +3899,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       player_.torch_on = false;
     } else if (torch_battery_ > 1.f) {
       player_.torch_on = true;
+      sfx2d("torch_on", 0.f);
       (void)has_headlamp_;
-    } else if (audio_) {
-      audio_->play("melee_swing", 0.2f);
     }
   }
   sync_bag_overlay_from_ui();
@@ -4000,7 +3933,6 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     state_ = AppState_Dead;
     state_timer_ = 0.f;
     in_bunker_ = false;
-    if (audio_) audio_->play("death", 0.8f);
   }
 }
 
@@ -4027,13 +3959,13 @@ void Game::use_equipped_item() {
           v->fuel += 40.f;
           if (v->fuel > 100.f) v->fuel = 100.f;
           inventory_.remove_at(i, 1);
-          if (audio_) audio_->play("craft", 0.5f);
+          sfx_play(c2_item_activate_sfx(53), player_.pos);   // action_refuel_0
           vehicle_item = true;
         }
       } else if (id == 59) {
         if (vehicles_.try_repair(player_.pos, 35.f)) {
           inventory_.remove_at(i, 1);
-          if (audio_) audio_->play("craft", 0.55f);
+          sfx_play(c2_item_activate_sfx(59), player_.pos);   // action_repair_0
           vehicle_item = true;
         }
       }
@@ -4049,10 +3981,6 @@ void Game::use_equipped_item() {
           } else if (torch_battery_ > 1.f) {
             player_.nvg_on = true;
             used_special = true;
-            if (audio_) audio_->play("craft", 0.4f);
-          } else if (audio_) {
-            audio_->play("melee_swing", 0.2f);
-            used_special = true;
           }
         } else if (eq.id == 20) { // Flare — bright short beacon (longer at night)
           if (inventory_.remove_at(equipped_slot_, 1)) {
@@ -4067,7 +3995,7 @@ void Game::use_equipped_item() {
               if (torch_battery_ > 100.f) torch_battery_ = 100.f;
             }
             used_special = true;
-            if (audio_) audio_->play("craft", 0.6f);
+            sfx_play(c2_item_activate2_sfx(20), player_.pos);   // flare_throw +10
           }
         } else if (eq.id == 22) { // Battery — refill torch/NVG (+ gasmask filter)
           if (inventory_.remove_at(equipped_slot_, 1)) {
@@ -4076,29 +4004,26 @@ void Game::use_equipped_item() {
             gasmask_filter_ += 40.f;
             if (gasmask_filter_ > 100.f) gasmask_filter_ = 100.f;
             used_special = true;
-            if (audio_) audio_->play("craft", 0.45f);
           }
         } else if (eq.id == 456) { // Civilian tent — long shelter fire marker
           if (inventory_.remove_at(equipped_slot_, 1)) {
             campfires_.place(player_.pos, 600.f);
             tent_warmth_t_ = 600.f;
             used_special = true;
-            if (audio_) audio_->play("craft", 0.7f);
+            sfx2d("tentpack", 0.f);
           }
         } else if (eq.id == 250) { // Gasmask — wear
           used_special = inventory_.wear_clothing(equipped_slot_, items_);
-          if (used_special && audio_) audio_->play("craft", 0.35f);
         } else if (eq.id == 45) { // Morphine — heal + adrenaline sprint
           if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
             adrenaline_t_ = 18.f;
             used_special = true;
-            if (audio_) audio_->play("craft", 0.5f);
           }
         } else if (eq.id == 25) { // Whiskey — drink + brief dutch courage
           if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
             adrenaline_t_ = 6.f;
             used_special = true;
-            if (audio_) audio_->play("pickup", 0.45f);
+            sfx_play(c2_item_activate_sfx(25), player_.pos);   // Whiskey -10 dB
           }
         } else if (eq.id == 36) { // Cleaning kit — clear jam / maintain firearm
           const WeaponDef* ew = find_weapon(eq.id);
@@ -4111,7 +4036,6 @@ void Game::use_equipped_item() {
           if ((gun_jammed_ || has_gun) && inventory_.remove_at(equipped_slot_, 1)) {
             gun_jammed_ = false;
             used_special = true;
-            if (audio_) audio_->play("craft", 0.55f);
           }
         } else if (eq.id == 35) { // Sewing kit — dry/repair clothes
           if (wetness_ > 5.f || inventory_.worn_count() > 0) {
@@ -4120,14 +4044,13 @@ void Game::use_equipped_item() {
               if (wetness_ < 0.f) wetness_ = 0.f;
               melee_break_mul_ = 0.5f; // patched gear
               used_special = true;
-              if (audio_) audio_->play("craft", 0.5f);
             }
           }
         } else if (eq.id == 63) { // Energy drink — water + short sprint
           if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
             adrenaline_t_ = 10.f;
             used_special = true;
-            if (audio_) audio_->play("drink", 0.4f);
+            sfx_play(c2_item_activate_sfx(63), player_.pos);   // DrinkSoda_0 -10 dB
           }
         } else if (eq.id == 57) { // Bear trap — place
           used_special = try_place_trap(0);
@@ -4141,12 +4064,10 @@ void Game::use_equipped_item() {
           if (inventory_.remove_at(equipped_slot_, 1)) {
             if (campfires_.boost_near(player_.pos, 120.f)) {
               used_special = true;
-              if (audio_) audio_->play("craft", 0.55f);
             } else {
               // Fuel puddle — short intense fire
               campfires_.place(player_.pos, 45.f);
               used_special = true;
-              if (audio_) audio_->play("gunshot", 0.3f);
             }
           }
         } else if (eq.id == 75) { // Radio — airdrop ETA (needs battery)
@@ -4154,10 +4075,7 @@ void Game::use_equipped_item() {
             torch_battery_ -= 3.f;
             radio_t_ = 6.f;
             used_special = true;
-            if (audio_) audio_->play("airdrop", 0.35f);
-          } else if (audio_) {
-            audio_->play("melee_swing", 0.2f);
-            used_special = true;
+            sfx2d("radio_noise", 0.f);   // Radio_scan
           }
         } else if (eq.id == 39) {
           // Duct tape melee reinforce: no C2 craft/jam strings — blocked (do not invent).
@@ -4165,12 +4083,10 @@ void Game::use_equipped_item() {
           used_special = inventory_.wear_clothing(equipped_slot_, items_);
           if (used_special) {
             has_headlamp_ = true;
-            if (torch_battery_ > 1.f) player_.torch_on = true;
-            if (audio_) audio_->play("craft", 0.35f);
+            if (torch_battery_ > 1.f) { player_.torch_on = true; sfx2d("torch_on", 0.f); }
           }
         } else if (eq.id == 83) { // Bandolier — wear for ammo stacks + slots
           used_special = inventory_.wear_clothing(equipped_slot_, items_);
-          if (used_special && audio_) audio_->play("craft", 0.35f);
         } else if (eq.id == 82) { // Hacksaw — cut nearest wire/fence trap
           float best = 55.f * 55.f;
           int best_i = -1;
@@ -4186,24 +4102,14 @@ void Game::use_equipped_item() {
             if (traps_[best_i].kind == 2) inventory_.add_item(38, 1, items_);
             else if (rng_.next_float() < 0.4f) inventory_.add_item(70, 1, items_);
             used_special = true;
-            if (audio_) audio_->play("melee_swing", 0.5f);
           }
         }
       }
       if (!used_special) {
         const ItemId before = inventory_.slot(equipped_slot_).id;
         const bool was_bleed = player_.survival.bleeding > 0.f;
-        auto play_consume = [&](ItemId id) {
-          if (!audio_) return;
-          // Drinks / medical / food family tags
-          if (id == 8 || id == 9 || id == 10 || id == 30 || id == 54 || id == 55 ||
-              id == 62 || id == 63 || id == 25)
-            audio_->play("drink", 0.45f);
-          else if (id == 18 || id == 19 || id == 26 || id == 28 || id == 29 ||
-                   id == 45 || id == 46)
-            audio_->play("craft", 0.4f);
-          else
-            audio_->play("eat", 0.4f);
+        auto play_consume = [&](ItemId id) {   // Function item_activate (c2_sfx.cpp)
+          sfx_play(c2_item_activate_sfx(id), player_.pos);
         };
         if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
           use_anim_t_ = 0.5f;
@@ -4234,7 +4140,8 @@ void Game::update(float dt) {
     fps_accum_ = 0.f;
   }
 
-  if (audio_) audio_->set_listener(player_.pos.x, player_.pos.y);
+  if (audio_) audio_->set_listener(player_.pos.x, player_.pos.y);   // listener = player_base
+  update_audio(dt);
   InputState in;
   if (!platform_->poll(in)) {
     quit_ = true;
@@ -5515,7 +5422,7 @@ void Game::open_trunk(int k, bool walked) {
 #define MDAZ_PICK(arr) arr[rng_.next_int(0, static_cast<int>(sizeof(arr) / sizeof(arr[0])) - 1)]
   const int f = c2_props_.trunk_frame(k);
   const Vec2 at = c2_props_.trunk_loot_pos(k);
-  if (audio_) audio_->play("open", 0.5623f);          // PlayByName "open", -5 dB
+  sfx2d("open", -5.f);                                // PlayByName "open", -5 dB
   c2_props_.set_frame(k, 1);                         // t920 IsOverlapping 232 -> SetAnimFrame 1
   ItemId id = 0;
   if (tut_.active) {

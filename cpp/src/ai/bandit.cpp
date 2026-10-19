@@ -1,3 +1,4 @@
+#include "mdaz/c2_sfx.hpp"
 #include "mdaz/los.hpp"
 #include "mdaz/bandit.hpp"
 #include "mdaz/combat.hpp"
@@ -133,30 +134,9 @@ int bot_bandit_iv11_for_iv14(int weapon_iv14) {
 }
 
 const char* bot_bandit_fire_sfx(int weapon_iv14, int weapon_iv11, Rng& rng) {
-  auto pick2 = [&rng](const char* a, const char* b) {
-    return rng.next_int(0, 1) ? b : a;
-  };
-  switch (weapon_iv11) {
-  case 4:
-  case 5:
-    return "SKS_close_0";
-  case 7:
-    return "Ak74_1";
-  case 8:
-    return "akm_5";
-  case 9:
-    return "Ak74_3";
-  case 16:
-    return "sporter_22";
-  case 17:
-    return "repeater";
-  case 22:
-    return "bizon_shot_1";
-  default:
-    break;
-  }
-  if (weapon_iv14 == 4) return pick2("FNX_1", "FNX_2");
-  return "gunshot";
+  (void)weapon_iv14;
+  // Delegates to the t827 IV11 firing table (c2_sfx.cpp); null = no C2 event for this IV11.
+  return c2_bandit_fire_sfx(weapon_iv11, rng).name;
 }
 
 void Bandit::setup(Vec2 p, EntityId eid, bool gun, bool ally, int iv14, int iv11) {

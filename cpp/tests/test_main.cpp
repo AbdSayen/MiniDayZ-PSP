@@ -20,10 +20,12 @@ int test_selection();
 int test_car_hitbox();
 int test_queue_q1();
 int test_fidelity2();
+int test_audio();
 int test_fidelity2_more();
 
 int main() {
   int failed = 0;
+  failed += test_audio();
   failed += test_balance();
   failed += test_weather();
   failed += test_survival();

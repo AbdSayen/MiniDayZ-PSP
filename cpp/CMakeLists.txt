@@ -12,6 +12,7 @@ option(MDAZ_PSP "Configure PSP toolchain hints (does not build EBOOT alone)" OFF
 set(MDAZ_CORE_SOURCES
   src/core/game.cpp
   src/core/game_tutorial.cpp
+  src/core/game_audio.cpp
   src/core/time.cpp
   src/core/rng.cpp
   src/core/c2_session_globals.cpp
@@ -48,6 +49,7 @@ set(MDAZ_CORE_SOURCES
   src/inventory/craft.cpp
   src/combat/combat.cpp
   src/combat/weapons.cpp
+  src/combat/c2_sfx.cpp
   src/combat/weapon_unlocks.cpp
   src/combat/bullet.cpp
   src/ai/zombie.cpp
@@ -64,6 +66,7 @@ set(MDAZ_CORE_SOURCES
   src/ui/ui_strings.cpp
   src/ui/quest.cpp
   src/platform/platform_null.cpp
+  src/platform/audio_mixer.cpp
 )
 
 add_library(mdaz_core STATIC ${MDAZ_CORE_SOURCES})
@@ -154,6 +157,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_player_visual.cpp
     tests/test_selection.cpp
     tests/test_fidelity2.cpp
+    tests/test_audio.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

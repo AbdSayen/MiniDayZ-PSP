@@ -37,6 +37,7 @@
 namespace mdaz {
 
 struct CropSaveView;
+struct C2Sfx;
 struct TrapSaveView;
 struct FireSaveView;
 
@@ -536,6 +537,40 @@ private:
   int helispawned_;   // C2 instance cap 3 (helicrash POI budget)
   void maybe_add_hammer_loot(LootPile* pile);
   void update_army_shooters(float dt);
+
+  // ---- C2 audio (game_audio.cpp, docs/AUDIO_AUDIT.md) ----
+  struct PendingSfx {   // System Wait follow-up of an Audio action
+    float t; const char* name; float db; bool positioned, loop; Vec2 pos;
+    int follow;         // 0 fixed pos, 1 player, 100+i vehicle i
+    char tag[32];
+  };
+  static const int kMaxPendingSfx = 8;
+  PendingSfx pending_sfx_[kMaxPendingSfx] = {};
+  Rng sfx_rng_;                    // choose() for sounds; keeps gameplay rng_ sequences intact
+  bool snd_day_trig_ = false, snd_night_trig_ = false, snd_first_tick_ = false;
+  bool snd_rain_on_ = false;
+  float snd_roof_t_ = 0.f;
+  bool snd_fire_on_[16] = {};
+  bool snd_flare_on_ = false;
+  int snd_car_idx_ = -1;
+  bool snd_car_broken_ = false;
+  bool snd_crash_latch_ = false;   // car collision edge (car_crash_* once per crash)
+  Vec2 snd_car_prev_pos_;
+  float snd_step_t_ = 0.f, snd_scream_t_ = 0.f, snd_buried_t_ = 0.f;
+  AppState snd_prev_state_ = AppState_Loading;
+  void sfx2d(const char* name, float db, const char* tag = "");
+  void sfx_at(const char* name, float db, Vec2 at, const char* tag = "");
+  void sfx_play(const C2Sfx& s, Vec2 at);
+  void sfx_later(float delay, const char* name, float db, bool positioned, Vec2 at, int follow,
+                 bool loop, const char* tag);
+  void audio_layout_start();
+  void audio_menu_start();
+  void audio_bunker_enter();
+  void audio_bunker_exit();
+  bool audio_player_in_warmzone(int* floor) const;
+  bool audio_player_in_house_area() const;
+  void audio_footsteps(float dt, bool moving);
+  void update_audio(float dt);
   void update_bandit_guns(float dt);
   void pack_crops_view(CropSaveView& out) const;
   void apply_crops_view(const CropSaveView& in);

@@ -176,7 +176,7 @@ int test_systems() {
       if (std::strcmp(mdaz::bot_bandit_fire_sfx(1, 8, sfx_rng), "akm_5") != 0) {
         std::printf("FAIL bot IV11=8 fire sfx\n");
         ++fail;
-      } else if (std::strcmp(mdaz::bot_bandit_fire_sfx(2, 4, sfx_rng), "SKS_close_0") != 0) {
+      } else if (std::strncmp(mdaz::bot_bandit_fire_sfx(2, 4, sfx_rng), "mosin_", 6) != 0) {
         std::printf("FAIL bot IV11=4 fire sfx\n");
         ++fail;
       } else if (mdaz::bot_bandit_iv11_for_iv14(10) != 7) {

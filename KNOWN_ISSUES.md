@@ -307,3 +307,14 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 | **PSP: analog stick dead + Map instead of Tutorial (user report 2026-10-20 02:25/02:31)** | Probable cause: a leftover autoplay.txt on the memory stick. Scripted input replaced the pad, and dev_skip_tutorial skipped the Tutorial. Fixed: a banner is shown and any pad input cancels autoplay. The Makefile also lacked header deps, which left a stale game_tutorial.o in the 02:17 EBOOT. walk_marker (trunk) checked: any stick/D-pad input cancels it, so it cannot latch. If it happens again with no autoplay.txt, unconfirmed transient: send log.txt | Fixed, not confirmed on hardware |
 
 | **PSP sound vs C2** | (1) The HRTF panner is replaced with equal-power panning. (2) Which game events loop sounds, use tags or set dB volumes is still the port's existing call sites, not checked 1:1 against data.js Audio actions (Play looping / PlayAtObject / SetVolume / Stop tag); ambient/rain loops are played once. (3) The listener is the player (C2 listener object not checked). (4) The first play of a short clip decodes on the main thread (short stall). (5) Not listened to on hardware or in a PPSSPP window | Open |
+
+## Звук 1:1 (2026-10-20, аудит docs/AUDIO_AUDIT.md)
+- Day&Night ставит `CurrentLevel>=2 ? ambient/night_loop : MD_winter_amb/MD_Winter_night_amb`. В порту CurrentLevel = 0, поэтому, как и в C2, на первом уровне играет зимний эмбиент. Это буквальное воспроизведение, не ошибка порта. Bunker_erase проверяет `CurrentLevel==1`, и это тоже повторено.
+- Слоя Login (StopAll + ambient + SetMasterVolume(lastaudio)) в порту нет: запуск идёт Loading → Menu, и ambient −10 дБ стартует в Menu_init.
+- Тайлмапа песка t411 порт не генерирует, поэтому sand_run не звучит никогда. Шаги в зданиях без warmzone IV1 и в бункере (вне t945) молчат, как в C2.
+- SetPlaybackRate двигателя = 1+abs(Speed/MaxSpeed). Машина порта либо стоит, либо едет на максимальной скорости, поэтому rate бывает только 1 или 2.
+- Тег fireplace_loop строится по слоту костра (в C2 по UID). Огонь молотова считается не камином.
+- Не перенесено (нет исходного объекта или состояния): крик танка −10 дБ (нужен автомат состояний танка), ground_hit (t755), body_1/2 −15 дБ при попадании пули в t472 (не установлено, какие объекты входят в t472), звуки тела при ударе в ближнем бою.
+- Гранаты/молотов: в механику броска звук не вносился. Звуки — "gren pin" (item_activate 21) и punch_swipes_0 +10 при создании молотова.
+- Длинные файлы (>96 KB) стримятся. Одновременно декодируются не больше 4 потоков (kMaxStreams), лишние становятся виртуальными голосами: тег сохраняется, звук молчит, ближайшие получают декодер первыми. Это ресурсная адаптация под PSP.
+- Свободный ящик Pick_player_item в окне одежды всегда играет gearpick (оружие через этот путь не берётся).

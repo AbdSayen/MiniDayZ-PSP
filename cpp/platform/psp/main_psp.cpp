@@ -4,6 +4,8 @@
 #include "mdaz/game.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/audio.hpp"
+#include <malloc.h>
+#include <cstdlib>
 
 #if defined(MDAZ_PSP) && defined(__PSP__)
 #include <pspkernel.h>
@@ -61,8 +63,12 @@ static void boot_log_reset() {
 }
 
 static void log_mem(const char* when) {
-  mdaz_boot_log("mem %s: max free block %d KB, total free %d KB", when,
-                (int)(sceKernelMaxFreeMemSize() / 1024), (int)(sceKernelTotalFreeMemSize() / 1024));
+  // "kernel" = user partition outside the newlib heap (thread stacks etc.);
+  // "heap" = what Game, textures and the audio cache allocate from.
+  const struct mallinfo mi = mallinfo();
+  mdaz_boot_log("mem %s: kernel max free block %d KB, total free %d KB | heap in use %d KB",
+                when, (int)(sceKernelMaxFreeMemSize() / 1024), (int)(sceKernelTotalFreeMemSize() / 1024),
+                (int)(mi.uordblks / 1024));
 }
 
 // Visible screen before any asset load (plain colour + built-in font; no sprites needed).
