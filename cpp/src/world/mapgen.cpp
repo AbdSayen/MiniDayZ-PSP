@@ -134,8 +134,8 @@ float MapGenerator::dist_to(const MapLocation& L, Vec2 p) {
 float MapGenerator::reload_radius_for(LocationReloadMode mode) {
   const float r = static_cast<float>(balance::respawn_radius2);
   if (mode == LocationReload_Runtime) return r;
-  const float cap = 1000.f;
-  return r < cap ? r : cap;
+  // Reload_locations_start / _aftersave: PickDistance <= respawn_radius2 + 1000 (C2 add, [4,..]).
+  return r + 1000.f;
 }
 
 void MapGenerator::generate_new_game(int seed) {

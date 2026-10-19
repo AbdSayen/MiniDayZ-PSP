@@ -367,6 +367,7 @@ private:
   void maybe_spawn_quest_bandits();
   int bandits_alive_near(Vec2 pos, float radius) const;
   Vec2 location_reload_anchor_;
+  float location_reload_t_;
   bool quest_bandits_spawned_;
   bool secret_spawn3_done_;
   int hammerspawned_; // C2 global cap 5

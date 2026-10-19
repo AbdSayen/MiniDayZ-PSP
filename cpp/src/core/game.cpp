@@ -314,7 +314,7 @@ Game::Game()
   bunker_zed_check_t_ = 0.f; molotov_tick_t_ = 0.f;
   for (int i = 0; i < 32; ++i) bunker_spawner_used_[i] = false;
   map_prop_count_ = 0; quest_bandits_spawned_ = false; secret_spawn3_done_ = false;
-  hammerspawned_ = 0; helispawned_ = 0; location_reload_anchor_ = Vec2();
+  hammerspawned_ = 0; helispawned_ = 0; location_reload_anchor_ = Vec2(); location_reload_t_ = 0.f;
   overworld_pos_ = Vec2();
   menu_focus_ = 0; pause_focus_ = 0; ui_t_ = 0.f; toast_[0] = 0; toast_t_ = 0.f;
   has_save_cache_ = -1; half_res_ = false; perf_overlay_ = false;
@@ -641,6 +641,12 @@ void Game::start_new_game(Difficulty d) {
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
   rng_.seed(140u);
   mapgen_.generate_new_game(140);
+  // C2 Reload_locations_start: create_map_location for every mapgen cell within
+  // respawn_radius2 + 1000 of the player; the rest streams in via Reload_locations.
+  mapgen_.reload_locations(player_.pos, LocationReload_Start);
+  location_reload_anchor_ = player_.pos;
+  location_reload_t_ = 0.f;
+  world_.reset();
   mapgen_.apply_collision(world_);
   world_tiles_.stamp_from_mapgen(mapgen_);
   // Scatter forest tree stubs around POIs (denser near villages / church / secret)
@@ -685,45 +691,11 @@ void Game::start_new_game(Difficulty d) {
   mark_sector_visited();
   log_helicrash_coords();
 
-  spawn_poi_loot();
-  // Extra hostiles around POIs — Zed_per_base (5) as density budget per site
-  const int zed_budget = static_cast<int>(balance::Zed_per_base);
-  const Vec2 spawn_pos = player_.pos;
   for (int i = 0; i < mapgen_.location_count(); ++i) {
-    const MapLocation& L = mapgen_.location(i);
-    if (dist2(L.pos, spawn_pos) < kSpawnSafeRadius * kSpawnSafeRadius) continue;
-    if (L.type == Loc_Military) {
-      for (int k = 0; k < zed_budget; ++k) {
-        const ZedType zt = (k % 3 == 0) ? Zed_ArmyShooter
-                           : (k % 3 == 1) ? Zed_Army : Zed_Normal;
-        float _j2x = 0.f, _j2y = 0.f;
-        rng_.range_pair(-55.f, 55.f, -55.f, 55.f, _j2x, _j2y);
-        zombies_.spawn(zt, Vec2(L.pos.x + _j2x, L.pos.y + _j2y));
-      }
-      bandits_.spawn(Vec2(L.pos.x + 60.f, L.pos.y - 30.f), true);
-    } else if (L.type == Loc_City || L.type == Loc_Village) {
-      for (int k = 0; k < zed_budget; ++k) {
-        const ZedType zt = (rng_.next_float() < 0.2f) ? Zed_Buried : Zed_Normal;
-        float _j3x = 0.f, _j3y = 0.f;
-        rng_.range_pair(-50.f, 50.f, -50.f, 50.f, _j3x, _j3y);
-        zombies_.spawn(zt, Vec2(L.pos.x + _j3x, L.pos.y + _j3y));
-      }
-    } else if (L.type == Loc_Hospital) {
-      for (int k = 0; k < zed_budget - 1; ++k) {
-        float jx = 0.f, jy = 0.f;
-        rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
-        zombies_.spawn(Zed_Fast, Vec2(L.pos.x + jx, L.pos.y + jy));
-      }
-    } else if (L.type == Loc_Police || L.type == Loc_Firestation) {
-      for (int k = 0; k < zed_budget - 2; ++k) {
-        float jx = 0.f, jy = 0.f;
-        rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
-        zombies_.spawn(Zed_Normal, Vec2(L.pos.x + jx, L.pos.y + jy));
-      }
-    } else if (L.type == Loc_Church) {
-      zombies_.spawn(Zed_Normal, Vec2(L.pos.x + 15.f, L.pos.y));
-      zombies_.spawn(Zed_Buried, Vec2(L.pos.x - 20.f, L.pos.y + 10.f));
-    }
+    MapLocation& L = mapgen_.location_mut(i);
+    if (!L.active) continue;
+    spawn_loot_for_poi(L);
+    spawn_hostiles_for_poi(L);
   }
   in_bunker_ = false;
   bunker_looted_ = false;
@@ -769,53 +741,123 @@ void Game::start_new_game(Difficulty d) {
   if (audio_) audio_->play("ambient", 0.25f);
 }
 
+// Port body recovered from the pre-loss game.cpp (agent transcripts, 2026-10-19), reviewed
+// against data.js: the per-type pile tables are the port's spawn model (create_map_location's
+// spawn_loot_point layout is not decoded); the recovered "helispawned_ >= 3" cap and the
+// 3.5 % sledgehammer roll (maybe_add_hammer_loot) were NOT ported - not in data.js
+// (C2 hammer = hammercrash_point / Humvee wreck with type-18 loot points).
+void Game::spawn_loot_for_poi(MapLocation& L) {
+  if (L.loot_seeded) return;
+  int piles = 1;
+  if (L.type == Loc_Military || L.type == Loc_Helicrash) piles = 3;
+  else if (L.type == Loc_Hospital || L.type == Loc_City || L.type == Loc_Secret ||
+           L.type == Loc_Police || L.type == Loc_Church || L.type == Loc_Firestation)
+    piles = 2;
+  for (int n = 0; n < piles; ++n) {
+    float ox = 0.f, oy = 0.f;
+    rng_.range_pair(-40.f, 40.f, -40.f, 40.f, ox, oy);
+    const Vec2 p(L.pos.x + ox, L.pos.y + oy);
+    switch (L.type) {
+    case Loc_Military:
+      loot_.spawn_military(p, rng_, &wpn_unlocks_); // weapon_unlock gating
+      break;
+    case Loc_Helicrash:
+      loot_.spawn_helicrash(p, rng_);
+      break;
+    case Loc_Hospital:
+      loot_.spawn_hospital(p, rng_);
+      break;
+    case Loc_GasStation:
+      loot_.spawn_gas_station(p, rng_);
+      break;
+    case Loc_City:
+    case Loc_Village:
+      loot_.spawn_civilian(p, rng_);
+      break;
+    case Loc_Firestation:
+      loot_.spawn_firestation(p, rng_);
+      break;
+    case Loc_Police:
+      loot_.spawn_police(p, rng_);
+      break;
+    case Loc_Church:
+      loot_.spawn_church(p, rng_);
+      break;
+    case Loc_Secret:
+      loot_.spawn_secret(p, rng_);
+      break;
+    default:
+      loot_.spawn_random(p, rng_);
+      break;
+    }
+  }
+  L.loot_seeded = true;
+}
+
 void Game::spawn_poi_loot() {
   for (int i = 0; i < mapgen_.location_count(); ++i) {
-    const MapLocation& L = mapgen_.location(i);
-    int piles = 1;
-    if (L.type == Loc_Military || L.type == Loc_Helicrash) piles = 3;
-    else if (L.type == Loc_Hospital || L.type == Loc_City || L.type == Loc_Secret ||
-             L.type == Loc_Police || L.type == Loc_Church || L.type == Loc_Firestation)
-      piles = 2;
-    for (int n = 0; n < piles; ++n) {
-      const float ox = rng_.range(-40.f, 40.f);
-      const float oy = rng_.range(-40.f, 40.f);
-      const Vec2 p(L.pos.x + ox, L.pos.y + oy);
-      switch (L.type) {
-      case Loc_Military:
-        loot_.spawn_military(p, rng_);
-        break;
-      case Loc_Helicrash:
-        loot_.spawn_helicrash(p, rng_);
-        break;
-      case Loc_Hospital:
-        loot_.spawn_hospital(p, rng_);
-        break;
-      case Loc_GasStation:
-        loot_.spawn_gas_station(p, rng_);
-        break;
-      case Loc_City:
-      case Loc_Village:
-        loot_.spawn_civilian(p, rng_);
-        break;
-      case Loc_Firestation:
-        loot_.spawn_firestation(p, rng_);
-        break;
-      case Loc_Police:
-        loot_.spawn_police(p, rng_);
-        break;
-      case Loc_Church:
-        loot_.spawn_church(p, rng_);
-        break;
-      case Loc_Secret:
-        loot_.spawn_secret(p, rng_);
-        break;
-      default:
-        loot_.spawn_random(p, rng_);
-        break;
+    MapLocation& L = mapgen_.location_mut(i);
+    if (L.active) spawn_loot_for_poi(L);
+  }
+}
+
+// Recovered body (same content as the old inline start_new_game block): Zed_per_base budget
+// per POI type; skipped inside the spawn-safe radius.
+void Game::spawn_hostiles_for_poi(const MapLocation& L) {
+  if (dist2(L.pos, player_.pos) < kSpawnSafeRadius * kSpawnSafeRadius) return;
+  const int zed_budget = static_cast<int>(balance::Zed_per_base);
+  float jx = 0.f, jy = 0.f;
+  if (L.type == Loc_Military) {
+    for (int k = 0; k < zed_budget; ++k) {
+      const ZedType zt = (k % 3 == 0) ? Zed_ArmyShooter : (k % 3 == 1) ? Zed_Army : Zed_Normal;
+      rng_.range_pair(-55.f, 55.f, -55.f, 55.f, jx, jy);
+      zombies_.spawn(zt, Vec2(L.pos.x + jx, L.pos.y + jy));
+    }
+    bandits_.spawn(Vec2(L.pos.x + 60.f, L.pos.y - 30.f), true);
+  } else if (L.type == Loc_City || L.type == Loc_Village) {
+    for (int k = 0; k < zed_budget; ++k) {
+      const ZedType zt = (rng_.next_float() < 0.2f) ? Zed_Buried : Zed_Normal;
+      rng_.range_pair(-50.f, 50.f, -50.f, 50.f, jx, jy);
+      zombies_.spawn(zt, Vec2(L.pos.x + jx, L.pos.y + jy));
+    }
+  } else if (L.type == Loc_Hospital) {
+    for (int k = 0; k < zed_budget - 1; ++k) {
+      rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
+      zombies_.spawn(Zed_Fast, Vec2(L.pos.x + jx, L.pos.y + jy));
+    }
+  } else if (L.type == Loc_Police || L.type == Loc_Firestation) {
+    for (int k = 0; k < zed_budget - 2; ++k) {
+      rng_.range_pair(-40.f, 40.f, -40.f, 40.f, jx, jy);
+      zombies_.spawn(Zed_Normal, Vec2(L.pos.x + jx, L.pos.y + jy));
+    }
+  } else if (L.type == Loc_Church) {
+    zombies_.spawn(Zed_Normal, Vec2(L.pos.x + 15.f, L.pos.y));
+    zombies_.spawn(Zed_Buried, Vec2(L.pos.x - 20.f, L.pos.y + 10.f));
+  }
+}
+
+// C2 Location loader: Every 1 s, if distance(alife_marker, camera) > 400 and not inBunker ->
+// Reload_locations (erase_map_location beyond respawn_radius2, create_map_location within),
+// alife_marker re-created at the camera. Recovered body; newly created locations get their
+// footprint, loot (once) and hostiles; collision is rebuilt only when the set changed.
+void Game::sync_location_stream(LocationReloadMode mode) {
+  const int n = mapgen_.location_count();
+  bool was[kMaxLocations];
+  for (int i = 0; i < n && i < kMaxLocations; ++i) was[i] = mapgen_.location(i).active;
+  mapgen_.reload_locations(player_.pos, mode);
+  bool changed = false;
+  for (int i = 0; i < n && i < kMaxLocations; ++i) {
+    MapLocation& L = mapgen_.location_mut(i);
+    if (L.active != was[i]) changed = true;
+    if (L.active && !was[i]) {
+      world_tiles_.stamp_location_footprint(L);
+      if (mode != LocationReload_AfterSave) {
+        spawn_loot_for_poi(L);
+        spawn_hostiles_for_poi(L);
       }
     }
   }
+  if (changed) mapgen_.rebuild_collision(world_);
 }
 
 void Game::apply_incoming_damage(float amount, bool can_bleed, PlayerDamageKind kind,
@@ -2286,6 +2328,24 @@ bool Game::load_game_from_disk() {
                              &extras, &fires_view, &load_loot_view_))
     return false;
   apply_loot_view(load_loot_view_);
+  // C2 Reload_locations_aftersave: erase all, create within respawn_radius2 + 1000 of the
+  // loaded player. Loot comes from the save, so a location with a saved pile near it counts
+  // as seeded; no hostiles are spawned for the reload itself.
+  if (load_loot_view_.count > 0) {
+    for (int i = 0; i < mapgen_.location_count(); ++i) {
+      MapLocation& L = mapgen_.location_mut(i);
+      L.loot_seeded = false;
+      for (int k = 0; k < loot_.count(); ++k) {
+        const LootPile* lp = loot_.at(k);
+        if (lp->active && dist2(lp->pos, L.pos) < 120.f * 120.f) { L.loot_seeded = true; break; }
+      }
+    }
+  }
+  sync_location_stream(LocationReload_AfterSave);
+  world_.reset();
+  mapgen_.apply_collision(world_);
+  location_reload_anchor_ = player_.pos;
+  location_reload_t_ = 0.f;
   set_npc_damage_for_difficulty(player_.difficulty);
   menu_difficulty_ = player_.difficulty;
   in_bunker_ = false;
@@ -3273,6 +3333,16 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       }
     }
     mark_sector_visited();
+    if (!in_bunker_) {
+      location_reload_t_ += dt;
+      if (location_reload_t_ >= 1.f) {
+        location_reload_t_ = 0.f;
+        if (dist2(player_.pos, location_reload_anchor_) > 400.f * 400.f) {
+          sync_location_stream(LocationReload_Runtime);
+          location_reload_anchor_ = player_.pos;
+        }
+      }
+    }
   }
 
   // Zeds update in overworld and bunker (bunker dens use same system)

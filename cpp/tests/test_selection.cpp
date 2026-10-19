@@ -71,6 +71,7 @@ struct GameTestAccess {
   static float trap_life(Game& g, int i) { return g.traps_[i].life; }
   static int trap_kind(Game& g, int i) { return g.traps_[i].kind; }
   static void kill_z(Game& g, Zombie& z, ItemId w) { g.hurt_zombie(z, 1.0e6f, w); }
+  static void stream(Game& g, LocationReloadMode m) { g.sync_location_stream(m); }
 };
 }
 
@@ -180,6 +181,30 @@ static void test_restored_step1(Game& g) {
   check(A::trap_count(g) == tc + 1 && A::trap_kind(g, tc) == 2 && A::trap_life(g, tc) > 1.0e8f,
         "fence placed, no lifetime");
   check(!A::fence(g, 2), "build_fence needs 5 sticks + woodpile");
+  // --- Location stream (recovered sync_location_stream / spawn_loot_for_poi / spawn_hostiles_for_poi).
+  MapGenerator& m = A::map(g);
+  m.generate_new_game(140);
+  int vi = -1;
+  for (int i = 0; i < m.location_count(); ++i) if (m.location(i).type == Loc_Village) { vi = i; break; }
+  const Vec2 vp = m.location(vi).pos;
+  A::zeds(g).clear(); A::loot(g).clear();
+  A::pl(g).pos = Vec2(vp.x + 1000.f, vp.y);
+  A::stream(g, LocationReload_Start);
+  const int loot1 = A::loot(g).count(), z1 = A::zeds(g).alive_count();
+  check(m.location(vi).active && m.location(vi).loot_seeded && loot1 >= 1 && z1 >= 1,
+        "Reload_locations_start creates a POI 1000 px away (loot + zeds)");
+  bool far_inactive = true;
+  for (int i = 0; i < m.location_count(); ++i) {
+    const float dx = m.location(i).pos.x - A::pl(g).pos.x, dy = m.location(i).pos.y - A::pl(g).pos.y;
+    if (dx * dx + dy * dy > 3100.f * 3100.f && m.location(i).active) far_inactive = false;
+  }
+  check(far_inactive, "start radius = respawn_radius2 + 1000 (nothing active beyond)");
+  A::pl(g).pos = Vec2(vp.x + 2600.f, vp.y);
+  A::stream(g, LocationReload_Runtime);
+  check(!m.location(vi).active, "Reload_locations erases a location beyond respawn_radius2");
+  A::pl(g).pos = Vec2(vp.x + 1000.f, vp.y);
+  A::stream(g, LocationReload_Runtime);
+  check(m.location(vi).active && A::loot(g).count() == loot1, "re-created location: loot not seeded twice");
 }
 
 int test_queue_q1() {
