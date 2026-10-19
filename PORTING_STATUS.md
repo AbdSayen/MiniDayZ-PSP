@@ -451,3 +451,12 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Removed the invented crow stick drop that was still in `on_animal_killed` (already listed as removed on 2026-10-17).
 - Tests: wolf frames come from wolf_dead, zed die2 = t210, last frame stays, deer 4 frames @ 8 fps = 0.5 s. The box-only "die anim" failures are gone.
 - Doc fix: the tutorial heading time is 23:44 (commit time), not 23:50.
+
+## Item 8 — craft audit against C2 sub_menu (2026-10-19, 23:53 Baku)
+- Status: Реализована, но не проверена (recipes + unit test; no in-game screenshot).
+- Source: `Call_sub_menu` drag pairs (gui_item_backpack onto pl19) and the t283 `sub_menu` recipe blocks.
+- Already matching: Craft_1 (40+41→454), Craft_5 (37+41→163), Craft_4 (454+38→455).
+- Added: Craft_3 (50+49→23), Craft_33/34 (26↔50→23), Craft_31/32 (sticks↔wood piles, first option "make campfire kit" t536[311] →23).
+- Not done: Craft_21/22 "Craft arrows" (sticks + knife →51 ×Crafted). The Crafted count and the consumption expression `[5,X,[6,3,Crafted]]` are not yet resolved.
+- Not done: the C2 craft wait (3/4/5 s with IV21=1). Crafting in the port is instant.
+- Craft_fishing_rod result line not yet confirmed (port: 87).

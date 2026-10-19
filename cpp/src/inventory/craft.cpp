@@ -55,6 +55,12 @@ const CraftRecipe kRecipes[] = {
   { "Craft_fishing_rod", 87, 1, 37, 1, 41, 1, false, 0, false },
   { "Craft_1", 454, 1, 40, 1, 41, 1, false, 0, false }, // improvised bag: burlap+rope
   { "Craft_4", 455, 1, 454, 1, 38, 3, false, 0, false }, // pack: bag+3 sticks
+  // Campfire kit (23) submenu label t536[311]; C2 waits 3 s, Check_space_inventory(-1,23).
+  { "Craft_3", 23, 1, 50, 1, 49, 1, false, 0, false },  // wood piles + papers
+  { "Craft_33", 23, 1, 26, 1, 50, 1, false, 0, false }, // rags onto wood piles
+  { "Craft_34", 23, 1, 50, 1, 26, 1, false, 0, false }, // wood piles onto rags
+  { "Craft_32", 23, 1, 38, 1, 50, 1, false, 0, false }, // sticks onto wood piles
+  { "Craft_31", 23, 1, 50, 1, 38, 1, false, 0, false }, // wood piles onto sticks
 };
 
 const int kCount = static_cast<int>(sizeof(kRecipes) / sizeof(kRecipes[0]));

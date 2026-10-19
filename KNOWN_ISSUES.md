@@ -5,6 +5,11 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented mechanics removed, cross-platform RNG order fix)
 
 ## 2026-10-19 open items
+- Craft (23:53 Baku):
+  - C2 Craft_3/31–34 clear both ingredient slots (a157 → 0); the port consumes only 1 of each.
+  - The 3–5 s craft wait is missing.
+  - Craft_21/22 (arrows) are not implemented.
+  - The fence "≥5 sticks" rule is unverified against C2.
 
 ### Tutorial (23:44 Baku)
 - Touch-only buttons are mapped to PSP input: tip touch = Cross (confirm); interact = Circle; inventory = bag; attack/reload/switch = their buttons. The perks button (595/598) has no port menu, so Cross on tips 10/11 stands in. The control-mode choice icons of tip 6 (457/456) are not shown; Cross closes it (stick only).

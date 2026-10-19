@@ -1,3 +1,5 @@
+#include <string>
+#include "mdaz/inventory_ui.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/item_db.hpp"
 #include "mdaz/timers.hpp"
@@ -155,6 +157,20 @@ int test_craft() {
     } else {
       std::printf("OK   Craft_31 fence2 can (sticks+pile)\n");
     }
+  }
+
+  {
+    mdaz::ItemDatabase cdb;
+    cdb.load_from_json_string("{\"items\":[{\"id\":23,\"name\":\"Campfire kit\"},{\"id\":49,\"name\":\"Papers\"},{\"id\":50,\"name\":\"Wood piles\"}]}");
+    mdaz::Inventory c;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; c.restore_worn(tw_, 4); }
+    c.add_item(50, 1, cdb); c.add_item(49, 1, cdb);
+    const mdaz::CraftRecipe* r = 0;
+    for (int i = 0; i < mdaz::craft_recipe_count(); ++i)
+      if (std::string(mdaz::craft_recipe_at(i)->name) == "Craft_3") r = mdaz::craft_recipe_at(i);
+    if (!r || !mdaz::craft_do(c, *r, cdb) || mdaz::count_item_in_inventory(c, 23) != 1) {
+      std::printf("FAIL Craft_3 campfire kit\n"); ++fail;
+    } else std::printf("OK   Craft_3 wood piles+papers -> campfire kit 23\n");
   }
 
   return fail ? 1 : 0;
