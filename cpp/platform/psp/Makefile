@@ -32,7 +32,7 @@ OBJS = \
   $(SRC)/world/building_solid.o \
   $(SRC)/world/building_interior.o \
   $(SRC)/world/c2_mapgen.o \
-  $(SRC)/world/map_props.o $(SRC)/world/cell_tilemaps.o $(SRC)/world/tutorial_layout.o \
+  $(SRC)/world/map_props.o $(SRC)/world/cell_tilemaps.o $(SRC)/world/tutorial_layout.o $(SRC)/world/die_anims.o \
   $(SRC)/world/vehicle.o \
   $(SRC)/world/campfire.o \
   $(SRC)/world/world_tilemaps.o \

@@ -31,6 +31,7 @@ set(MDAZ_CORE_SOURCES
   src/world/c2_mapgen.cpp
   src/world/map_props.cpp
   src/world/tutorial_layout.cpp
+  src/world/die_anims.cpp
   src/world/cell_tilemaps.cpp
   src/world/vehicle.cpp
   src/world/campfire.cpp

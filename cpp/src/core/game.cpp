@@ -17,6 +17,7 @@
 #include <new>
 #include <cstdio>
 #include <cstring>
+#include "mdaz/die_anims.hpp"
 
 namespace mdaz {
 
@@ -1565,19 +1566,16 @@ void Game::on_animal_killed(Animal& a) {
     ck = Corpse_Dog;
   }
   {
-    // wolf_skin die1 (3 frames @ 8 fps) before wolf_dead; other animals have no die anim.
-    const char* base = (a.type == Animal_Wolf) ? "wolf_skin" : 0;
-    const CharAnim* da = base ? char_anims_.find(base, "die1") : 0;
-    const float die_sec = (da && da->speed > 0) ? static_cast<float>(da->frame_count) / da->speed : 0.f;
-    spawn_corpse(ck, a.pos, 0.f, 0, da ? base : 0, die_sec, 1);
+    // wolf_dead / deer_dead / rabbit_dead / dog_dead die1 (data.js, 8 fps), last frame stays.
+    const char* base = a.type == Animal_Wolf ? "wolf" : a.type == Animal_Deer ? "deer" :
+                       a.type == Animal_Rabbit ? "rabbit" : a.type == Animal_Dog ? "dog" : 0;
+    const DieAnim* da = die_anim_find(base, 1);
+    spawn_corpse(ck, a.pos, 0.f, 0, da ? base : 0, die_anim_seconds(da), 1);
   }
   spawn_fx(Fx_Hit, a.pos, 0.f, 0.2f);
   spawn_fx(Fx_Blood, a.pos, 0.f, 0.45f);
   loot_.spawn_item(a.pos, meat, n);
-  // Crow: also drop sticks (feather substitute for fletching)
-  if (a.type == Animal_Crow && rng_.next_float() < 0.6f) {
-    loot_.spawn_item(Vec2(a.pos.x + 8.f, a.pos.y), 38, 1);
-  }
+  // (crow stick drop removed: not in data.js, listed as removed in KNOWN_ISSUES 2026-10-17)
 }
 
 void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
@@ -1595,10 +1593,10 @@ void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
   // then the *_dead sprite stays (Fade). Frames from data/char_anims.txt.
   const char* base = zed_skin_base(z.type);
   int style = 1;
-  const CharAnim* d2 = char_anims_.find(base, "die2");
+  const DieAnim* d2 = die_anim_find(base, 2);
   if (d2 && rng_.next_float() < 0.5f) style = 2;
-  const CharAnim* da = char_anims_.find(base, style == 2 ? "die2" : "die1");
-  const float die_sec = (da && da->speed > 0) ? static_cast<float>(da->frame_count) / da->speed : 0.f;
+  const DieAnim* da = die_anim_find(base, style);
+  const float die_sec = die_anim_seconds(da);
   const float face = std::atan2(player_.pos.y - z.pos.y, player_.pos.x - z.pos.x) * 57.2957795f;
   spawn_corpse(Corpse_Zed, z.pos, 0.f, variant, da ? base : 0, die_sec, style);
   (void)face;
@@ -4470,23 +4468,18 @@ void Game::render() {
         float sx = cx + (corpses_[i].pos.x - camv.x) * sc;
         float sy = cy + (corpses_[i].pos.y - camv.y) * sc;
         const float fade = corpses_[i].life < 10.f ? corpses_[i].life / 10.f : 1.f;
-        if (corpses_[i].die_anim_t > 0.f && corpses_[i].anim_base[0]) {
-          const CharAnim* da = char_anims_.find(corpses_[i].anim_base,
-                                                corpses_[i].die_style == 2 ? "die2" : "die1");
-          if (da && da->speed > 0) {
-            const float total = static_cast<float>(da->frame_count) / da->speed;
-            const float t = total - corpses_[i].die_anim_t;
-            const CharAnimFrame* fr = char_anims_.sample(da, t < 0.f ? 0.f : t);
-            char sheet[64];
-            if (fr) {
-              std::snprintf(sheet, sizeof(sheet), "%s-sheet%d", corpses_[i].anim_base, fr->sheet);
-              if (platform_->has_sprite(sheet)) {
-                const float dw = static_cast<float>(fr->sw) * sc, dh = static_cast<float>(fr->sh) * sc;
-                platform_->draw_sprite_frame(sheet, sx - dw * 0.5f, sy - dh * 0.5f, dw, dh,
-                                             fr->sx, fr->sy, fr->sw, fr->sh, 0.f, 1.f);
-                continue;
-              }
-            }
+        // C2 *_dead object: die1/die2 at 8 fps, then its last frame stays (native size, like
+        // the living characters), fading over the last 10 s of Bot_corpse_stay_time.
+        if (corpses_[i].anim_base[0]) {
+          const DieAnim* da = die_anim_find(corpses_[i].anim_base, corpses_[i].die_style);
+          const float total = die_anim_seconds(da);
+          const float t = total - (corpses_[i].die_anim_t > 0.f ? corpses_[i].die_anim_t : 0.f);
+          const DieFrame* fr = die_anim_frame(da, t);
+          if (fr && platform_->has_sprite(fr->sheet)) {
+            const float dw = static_cast<float>(fr->w), dh = static_cast<float>(fr->h);
+            platform_->draw_sprite_frame(fr->sheet, sx - dw * fr->hx, sy - dh * fr->hy, dw, dh,
+                                         fr->x, fr->y, fr->w, fr->h, corpses_[i].angle, fade);
+            continue;
           }
         }
         const char* spr = 0;
@@ -5337,4 +5330,16 @@ bool Game::harness_place_at_building(int mode) {
   return true;
 }
 
+} // namespace mdaz
+
+namespace mdaz {
+void Game::harness_death_demo() {
+  const Vec2 p = player_.pos;
+  const ZedType zt[3] = {Zed_Normal, Zed_Fast, Zed_Army};
+  for (int i = 0; i < 3; ++i)
+    if (Zombie* z = zombies_.spawn(zt[i], Vec2(p.x - 60.f + 60.f * i, p.y - 50.f))) hurt_zombie(*z, 100000.f);
+  const AnimalType at[4] = {Animal_Wolf, Animal_Deer, Animal_Rabbit, Animal_Dog};
+  for (int i = 0; i < 4; ++i)
+    if (Animal* a = animals_.spawn(at[i], Vec2(p.x - 90.f + 60.f * i, p.y + 50.f))) hurt_animal(*a, 100000.f);
+}
 } // namespace mdaz

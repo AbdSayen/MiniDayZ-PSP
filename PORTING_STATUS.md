@@ -430,7 +430,7 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 - Earlier "pick random" reading of c90 elsewhere should be audited (KNOWN_ISSUES).
 
 
-## Tutorial mode — C2 layout "Tutorial" (2026-10-19, 23:50 Baku)
+## Tutorial mode — C2 layout "Tutorial" (2026-10-19, 23:44 Baku)
 
 Status: **Реализована, протестирована** (unit tests + desktop playthrough with screenshots + PPSSPP boot into the tutorial). Not yet **Сверена с оригиналом** side by side.
 
@@ -441,3 +441,13 @@ Status: **Реализована, протестирована** (unit tests + d
 - Tests: `mdaz_tests` (tutorial layout counts, tip 3/6 flow, movement block, death guard) pass on Windows.
 - Desktop harness: `minidayz_desktop.exe --shots-tutorial <dir>` saved 25 shots covering every tip, 5 camera rolls, the boat menus and the final script.
 - PSP memory check: PPSSPP headless with the tutorial loaded `data/tutorial_tilemaps.txt` (19 KB) at 4.2 s. The memory probe logged "max free block 512 KB, total free 764 KB" at 1 s and 20 s in game, the same as before game init. This is a boot check only, not an FPS claim.
+
+## Item 7 — death animations from the *_dead objects (2026-10-19, 23:49 Baku)
+
+Status: **Протестирована** (unit tests on Windows and the box; desktop `--shots-death` screenshots).
+- Bug: corpse die frames were looked up in the living skin sheets (e.g. `wolf_skin-sheetN` = the living wolf; screamer living sheet). The original keeps die1/die2 in the separate *_dead objects (t210 zed_normal_skin1_dead, t396 fast, t213 army, t715 buried, t722 screamer, t470 wolf, t473 deer, t610 rabbit, t893 dog).
+- New `tools/extract_die_anims.py` → `src/world/die_anims.inc` (exact sheets/rects/hotspots, 8 fps, no loop). The corpse plays die1 or die2 (random when both exist), then the **last frame stays**, drawn at native size with its hotspot. This replaces the invented "frame (1,1) of sheet0 at 0.9× world scale" static corpse.
+- Deer, rabbit and dog now play their die1 (before: no animation). Tank: the dead object has only a 4-frame "Default" anim with no evidence of playback, so frame 0 is shown (KNOWN_ISSUES).
+- Removed the invented crow stick drop that was still in `on_animal_killed` (already listed as removed on 2026-10-17).
+- Tests: wolf frames come from wolf_dead, zed die2 = t210, last frame stays, deer 4 frames @ 8 fps = 0.5 s. The box-only "die anim" failures are gone.
+- Doc fix: the tutorial heading time is 23:44 (commit time), not 23:50.

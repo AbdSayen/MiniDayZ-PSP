@@ -57,6 +57,11 @@ public:
     if (door_) return poll_door(in);
     if (wreck_) return poll_wreck(in);
     if (tutorial_) return poll_tutorial(in);
+    if (death_) {
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (frame_ == 200 && game_) game_->harness_death_demo();
+      return frame_ < 330;
+    }
     if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -237,6 +242,19 @@ public:
       inner_->end_frame();
       return;
     }
+    if (death_) {
+      static const struct { int frame; const char* name; } kD[] = {
+        { 199, "death_0_before" }, { 203, "death_1_f0" }, { 216, "death_2_f2" }, { 232, "death_3_f4" }, { 320, "death_4_rest" },
+      };
+      for (unsigned i = 0; i < sizeof(kD) / sizeof(kD[0]); ++i) {
+        if (kD[i].frame != frame_) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kD[i].name);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (tutorial_) {
       if (pending_shot_) {
         pending_shot_ = false;
@@ -281,6 +299,10 @@ private:
   bool building_ = false;
   bool wreck_ = false;
   bool tutorial_ = false;
+  bool death_ = false;
+public:
+  void set_death(bool d) { death_ = d; }
+private:
   int step_ = 0, wait_ = 0, roll_wait_ = 0, bleed_wait_ = 0;
   bool pending_shot_ = false;
   char pending_path_[512] = {0};
@@ -300,6 +322,7 @@ int main(int argc, char** argv) {
   bool shots_intro = false;
   bool shots_wreck = false;
   bool shots_tutorial = false;
+  bool shots_death = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -313,6 +336,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-wreck") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_wreck = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-death") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_death = true;
     }
     else if (std::strcmp(argv[i], "--shots-tutorial") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -358,6 +385,7 @@ int main(int argc, char** argv) {
   }
   game.set_audio(audio);
   if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro, shots_wreck, shots_tutorial);
+  if (scripted) scripted->set_death(shots_death);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

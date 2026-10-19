@@ -15,6 +15,7 @@
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/map_decode_tables.hpp"
 #include "mdaz/los.hpp"
+#include "mdaz/die_anims.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -401,6 +402,17 @@ int test_queue_q1() {
     A::hurt_a(g, *a, 100000.f);
     check(!a->alive, "hurt_animal kills wolf");
     check(A::corpse_die_t(g, A::corpse_count(g) - 1) > 0.37f, "wolf corpse plays die1 (3 frames @ 8 fps)");
+    check(std::string(A::corpse_base(g, A::corpse_count(g) - 1)) == "wolf", "wolf die anim = wolf_dead object");
+  }
+  {
+    const DieAnim* d = die_anim_find("wolf", 1);
+    check(d && std::string(d->f[0].sheet) == "wolf_dead-sheet0", "wolf die1 frames come from wolf_dead (not wolf_skin)");
+    const DieAnim* dz = die_anim_find("zed_normal_skin1", 2);
+    check(dz && dz->count == 5 && std::string(dz->f[1].sheet) == "zed_normal_skin1_dead-sheet2", "zed die2 frames (t210)");
+    check(die_anim_frame(dz, 10.f) == &dz->f[4], "after the animation the last frame stays");
+    Animal* dr = A::animals(g).spawn(Animal_Deer, Vec2(650.f, 650.f));
+    if (dr) { A::hurt_a(g, *dr, 100000.f);
+      check(A::corpse_die_t(g, A::corpse_count(g) - 1) == 0.5f, "deer corpse plays die1 (4 frames @ 8 fps)"); }
   }
   Bandit* b = A::bandits(g).spawn(Vec2(700.f, 700.f), false);
   if (b) {
