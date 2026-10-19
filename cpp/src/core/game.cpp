@@ -4,6 +4,7 @@
 #include "mdaz/hud.hpp"
 #include "mdaz/item_sprites.hpp"
 #include "mdaz/map_labels.hpp"
+#include "mdaz/psp_ui.hpp"
 #include "mdaz/save_game.hpp"
 #include "mdaz/weapons.hpp"
 
@@ -194,7 +195,10 @@ void draw_pine(IPlatform* p, float sx, float sy, float h) {
   if (!p->has_sprite(name)) name = "tree_pine2-sheet0";
   if (!p->has_sprite(name)) return;
   const float w = h * (47.f / 92.f);
-  p->draw_sprite_frame(name, sx - w * 0.5f, sy - h * 0.75f, w, h, 1, 1, 47, 92, 0.f, 1.f);
+  // Anchor = trunk base (C2 tree_pine Imagepoint 1 at 0.53,0.924 of the 47x92 frame) so the
+  // drawn trunk sits on the collision point (was drawn ~12px too low: player seemed to walk
+  // through trunks).
+  p->draw_sprite_frame(name, sx - w * 0.53f, sy - h * 0.924f, w, h, 1, 1, 47, 92, 0.f, 1.f);
 }
 
 const char* poi_building_sprite(LocationType t, int variant) {
@@ -299,6 +303,17 @@ Game::Game()
   last_airdrop_pos_ = Vec2();
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
   prev_scream_ = false;
+  // Members not covered by the init list (were read uninitialised before 2026-10-19).
+  fire_anim_t_ = 0.f; energy_sprint_t_ = 0.f; vitamins_buff_t_ = 0.f; item_use_lock_t_ = 0.f;
+  bunker_reopen_t_ = 0.f; show_craft_menu_ = false; show_controls_ = false; craft_menu_index_ = 0;
+  hit_effect_t_ = 0.f; fps_ = 0.f; fps_accum_ = 0.f; fps_frames_ = 0;
+  molotov_dmg_cd_ = 0.f; molotov_reload_t_ = 0.f; vss_bleed_unlock_cd_ = 0.f;
+  wpn_unlock_toast_t_ = 0.f; wpn_unlock_toast_id_ = 0;
+  map_prop_count_ = 0; quest_bandits_spawned_ = false; secret_spawn3_done_ = false;
+  hammerspawned_ = 0; helispawned_ = 0; location_reload_anchor_ = Vec2();
+  overworld_pos_ = Vec2();
+  menu_focus_ = 0; pause_focus_ = 0; ui_t_ = 0.f; toast_[0] = 0; toast_t_ = 0.f;
+  for (int i = 0; i < 4; ++i) { nav_hold_t_[i] = 0.f; nav_prev_[i] = false; }
   for (int i = 0; i < kMaxTraps; ++i) traps_[i].active = false;
   for (int i = 0; i < kMaxFx; ++i) fx_[i].active = false;
   for (int i = 0; i < kMaxCorpses; ++i) corpses_[i].active = false;
@@ -1278,7 +1293,10 @@ void Game::try_craft() {
   }
 }
 
-void Game::try_drop_equipped() {
+void Game::try_drop_equipped() { try_drop_slot(equipped_slot_); }
+
+void Game::try_drop_slot(int slot_idx) {
+  if (slot_idx < 0 || slot_idx >= inventory_.slot_count()) return;
   // Near vehicle: G stashes into trunk, or retrieves if hotbar slot empty
   Vehicle* near_v = 0;
   for (int i = 0; i < vehicles_.count(); ++i) {
@@ -1286,7 +1304,7 @@ void Game::try_drop_equipped() {
     if (!v || !v->active) continue;
     if (dist2(v->pos, player_.pos) < 48.f * 48.f) { near_v = v; break; }
   }
-  InvSlot& s = inventory_.slot(equipped_slot_);
+  InvSlot& s = inventory_.slot(slot_idx);
   if (near_v) {
     if (s.empty()) {
       ItemId id = 0;
@@ -1300,14 +1318,14 @@ void Game::try_drop_equipped() {
       return;
     }
     const ItemId id = s.id;
-    if (near_v->stash_add(id, 1) && inventory_.remove_at(equipped_slot_, 1)) {
+    if (near_v->stash_add(id, 1) && inventory_.remove_at(slot_idx, 1)) {
       if (audio_) audio_->play("craft", 0.4f);
       return;
     }
   }
   if (s.empty()) return;
   const ItemId id = s.id;
-  if (!inventory_.remove_at(equipped_slot_, 1)) return;
+  if (!inventory_.remove_at(slot_idx, 1)) return;
   loot_.spawn_item(Vec2(player_.pos.x + 12.f, player_.pos.y), id, 1);
   if (audio_) audio_->play("pickup", 0.45f);
 }
@@ -1893,75 +1911,380 @@ void Game::update_bandit_guns(float dt) {
 
 void Game::update_menu(float dt, const InputState& in) {
   (void)dt;
+  // Controls sheet overlay (read-only): any back/confirm closes it.
+  if (show_controls_) {
+    if (in.back_pressed || in.confirm_pressed || in.attack_pressed || in.pause_pressed)
+      show_controls_ = false;
+    return;
+  }
+  // Shortcuts kept from the old menu: 1/2/3 (desktop) and L+X/T/S (PSP) pick difficulty.
   if (in.slot_digit == 1) menu_difficulty_ = Difficulty_Novice;
   if (in.slot_digit == 2) menu_difficulty_ = Difficulty_Regular;
   if (in.slot_digit == 3) menu_difficulty_ = Difficulty_Veteran;
-  if (in.load_pressed) {
-    int qact = 0, qprog = 0;
-    int mag = 0;
-    float wet = 0.f;
-    float gfilt = 100.f;
-    int fish = 0;
-    CropSaveView crops_view;
-    TrapSaveView traps_view;
-    FireSaveView fires_view;
-    WorldExtras extras;
-    if (SaveSystem::load_file(*platform_, "save.mdaz", player_, inventory_, weather_,
-                              &equipped_slot_, visited_sectors_,
-                              kMapSectorsX * kMapSectorsY,
-                              &torch_battery_, &qact, &qprog, &mag, &wet,
-                              &gfilt, &fish, &vehicles_, &crops_view, &traps_view,
-                              &extras, &fires_view)) {
-      set_npc_damage_for_difficulty(player_.difficulty);
-      menu_difficulty_ = player_.difficulty;
-      in_bunker_ = false;
-      bullets_.clear();
-      zombies_.clear();
-      animals_.clear();
-      bandits_.clear();
-      loot_.clear();
-      mag_rounds_ = mag;
-      wetness_ = wet;
-      gasmask_filter_ = gfilt;
-      player_.fish_caught = fish;
-      mag_weapon_id_ = inventory_.slot(equipped_slot_).id;
-      apply_crops_view(crops_view);
-      apply_traps_view(traps_view);
-      apply_fires_view(fires_view);
-      tent_warmth_t_ = extras.tent_warmth_t;
-      adrenaline_t_ = extras.adrenaline_t;
-      bunker_looted_ = extras.bunker_looted != 0;
-      melee_break_mul_ = extras.melee_break_mul > 0.f ? extras.melee_break_mul : 1.f;
-      timers_.airdrop = extras.airdrop_t > 0.f ? extras.airdrop_t : 360.f;
-      last_airdrop_pos_ = Vec2(extras.airdrop_x, extras.airdrop_y);
-      mark_sector_visited();
-      quest_.reset();
-      if (qact > 0 && qact <= 3) {
-        quest_.q_task_id = qact;
-        quest_.q_status = qprog;
-      } else {
-        quest_.generate_quest(rng_, mapgen_, 1);
-      }
-      if (vehicles_.count() == 0) {
-        vehicles_.spawn(Vehicle_Car, Vec2(player_.pos.x + 90.f, player_.pos.y - 50.f));
-        vehicles_.spawn(Vehicle_Boat, Vec2(180.f, player_.pos.y));
-      }
-      zombies_.spawn(Zed_Normal, Vec2(player_.pos.x + 140.f, player_.pos.y));
-      bandits_.spawn(Vec2(player_.pos.x - 160.f, player_.pos.y + 40.f), true);
-      state_ = AppState_Playing;
-      return;
+
+  // Items: 0 NEW GAME, 1 CONTINUE, 2 DIFFICULTY, 3 CONTROLS, 4 EXIT
+  const int kItems = 5;
+  if (in.nav_up) menu_focus_ = (menu_focus_ + kItems - 1) % kItems;
+  if (in.nav_down) menu_focus_ = (menu_focus_ + 1) % kItems;
+  if (menu_focus_ == 2 && (in.nav_left || in.nav_right)) {
+    int d = static_cast<int>(menu_difficulty_);
+    d += in.nav_right ? 1 : -1;
+    if (d < static_cast<int>(Difficulty_Novice)) d = static_cast<int>(Difficulty_Veteran);
+    if (d > static_cast<int>(Difficulty_Veteran)) d = static_cast<int>(Difficulty_Novice);
+    menu_difficulty_ = static_cast<Difficulty>(d);
+  }
+  if (in.load_pressed) { if (!load_game_from_disk()) show_toast("NO SAVE FOUND"); return; }
+  if (in.confirm_pressed || in.attack_pressed) {
+    switch (menu_focus_) {
+    case 0: start_new_game(menu_difficulty_); break;
+    case 1: if (!load_game_from_disk()) show_toast("NO SAVE FOUND"); break;
+    case 2: {
+      int d = static_cast<int>(menu_difficulty_) + 1;
+      if (d > static_cast<int>(Difficulty_Veteran)) d = static_cast<int>(Difficulty_Novice);
+      menu_difficulty_ = static_cast<Difficulty>(d);
+      break;
+    }
+    case 3: show_controls_ = true; break;
+    default: quit_ = true; break;
     }
   }
-  if (in.confirm_pressed || in.attack_pressed) {
-    start_new_game(menu_difficulty_);
-  }
-  if (in.cancel) quit_ = true;
 }
 
-void Game::update_playing(float dt, const InputState& in) {
-  if (in.pause_pressed) {
-    state_ = AppState_Paused;
+bool Game::has_save() const {
+  if (!platform_) return false;
+  char* data = 0;
+  std::size_t size = 0;
+  if (!platform_->read_file("save.mdaz", &data, &size)) return false;
+  delete[] data;
+  return size > 0;
+}
+
+void Game::show_toast(const char* msg) {
+  std::snprintf(toast_, sizeof(toast_), "%s", msg ? msg : "");
+  toast_t_ = 1.6f;
+}
+
+void Game::save_game_to_disk() {
+  CropSaveView crops_view;
+  TrapSaveView traps_view;
+  FireSaveView fires_view;
+  WorldExtras extras;
+  pack_crops_view(crops_view);
+  pack_traps_view(traps_view);
+  pack_fires_view(fires_view);
+  extras.airdrop_t = timers_.airdrop;
+  extras.airdrop_x = last_airdrop_pos_.x;
+  extras.airdrop_y = last_airdrop_pos_.y;
+  extras.tent_warmth_t = tent_warmth_t_;
+  extras.adrenaline_t = adrenaline_t_;
+  extras.bunker_looted = bunker_looted_ ? 1 : 0;
+  extras.melee_break_mul = melee_break_mul_;
+  const bool ok = SaveSystem::save_file(*platform_, "save.mdaz", player_, inventory_, weather_,
+                        equipped_slot_, visited_sectors_,
+                        kMapSectorsX * kMapSectorsY,
+                        torch_battery_, quest_.q_task_id, quest_.q_status,
+                        mag_rounds_, wetness_, gasmask_filter_, player_.fish_caught,
+                        &vehicles_, &crops_view, &traps_view, &extras, &fires_view);
+  show_toast(ok ? "GAME SAVED" : "SAVE FAILED");
+}
+
+bool Game::load_game_from_disk() {
+  if (!has_save()) return false;
+  // Loading from the main menu before any world exists: build the world first
+  // (save v18 stores player/inventory/world extras, not the generated map).
+  if (mapgen_.location_count() == 0) start_new_game(menu_difficulty_);
+  int qact = 0, qprog = 0;
+  int mag = 0;
+  float wet = 0.f;
+  float gfilt = 100.f;
+  int fish = 0;
+  CropSaveView crops_view;
+  TrapSaveView traps_view;
+  FireSaveView fires_view;
+  WorldExtras extras;
+  if (!SaveSystem::load_file(*platform_, "save.mdaz", player_, inventory_, weather_,
+                             &equipped_slot_, visited_sectors_,
+                             kMapSectorsX * kMapSectorsY,
+                             &torch_battery_, &qact, &qprog, &mag, &wet,
+                             &gfilt, &fish, &vehicles_, &crops_view, &traps_view,
+                             &extras, &fires_view))
+    return false;
+  set_npc_damage_for_difficulty(player_.difficulty);
+  menu_difficulty_ = player_.difficulty;
+  in_bunker_ = false;
+  bullets_.clear();
+  mag_rounds_ = mag;
+  wetness_ = wet;
+  gasmask_filter_ = gfilt;
+  player_.fish_caught = fish;
+  mag_weapon_id_ = inventory_.slot(equipped_slot_).id;
+  apply_crops_view(crops_view);
+  apply_traps_view(traps_view);
+  apply_fires_view(fires_view);
+  tent_warmth_t_ = extras.tent_warmth_t;
+  adrenaline_t_ = extras.adrenaline_t;
+  bunker_looted_ = extras.bunker_looted != 0;
+  melee_break_mul_ = extras.melee_break_mul > 0.f ? extras.melee_break_mul : 1.f;
+  timers_.airdrop = extras.airdrop_t > 0.f ? extras.airdrop_t : 360.f;
+  last_airdrop_pos_ = Vec2(extras.airdrop_x, extras.airdrop_y);
+  mark_sector_visited();
+  quest_.reset();
+  if (qact > 0 && qact <= 3) {
+    quest_.q_task_id = qact;
+    quest_.q_status = qprog;
+  } else {
+    quest_.generate_quest(rng_, mapgen_, 1);
+  }
+  if (vehicles_.count() == 0) {
+    vehicles_.spawn(Vehicle_Car, Vec2(player_.pos.x + 90.f, player_.pos.y - 50.f));
+    vehicles_.spawn(Vehicle_Boat, Vec2(180.f, player_.pos.y));
+  }
+  inventory_ui_.close_inventory();
+  show_bag_ = false;
+  show_craft_menu_ = false;
+  state_ = AppState_Playing;
+  show_toast("GAME LOADED");
+  return true;
+}
+
+void Game::compute_nav(InputState& in, float dt) {
+  // D-pad / analog -> edge + auto-repeat (0.32s delay, 0.11s rate). Platform-agnostic.
+  const bool held[4] = { in.move_y < -0.5f, in.move_y > 0.5f, in.move_x < -0.5f, in.move_x > 0.5f };
+  bool* out[4] = { &in.nav_up, &in.nav_down, &in.nav_left, &in.nav_right };
+  for (int i = 0; i < 4; ++i) {
+    *out[i] = false;
+    if (held[i]) {
+      if (!nav_prev_[i]) { *out[i] = true; nav_hold_t_[i] = 0.f; }
+      else {
+        nav_hold_t_[i] += dt;
+        if (nav_hold_t_[i] > 0.32f) { *out[i] = true; nav_hold_t_[i] -= 0.11f; }
+      }
+    } else {
+      nav_hold_t_[i] = 0.f;
+    }
+    nav_prev_[i] = held[i];
+  }
+}
+
+void Game::update_pause(float dt, const InputState& in) {
+  (void)dt;
+  if (show_controls_) {
+    if (in.back_pressed || in.confirm_pressed || in.attack_pressed || in.pause_pressed)
+      show_controls_ = false;
     return;
+  }
+  // 0 RESUME, 1 SAVE, 2 LOAD, 3 CANCEL TASK, 4 CONTROLS, 5 MAIN MENU
+  const int kItems = 6;
+  if (in.nav_up) pause_focus_ = (pause_focus_ + kItems - 1) % kItems;
+  if (in.nav_down) pause_focus_ = (pause_focus_ + 1) % kItems;
+  if (in.pause_pressed || in.back_pressed) { state_ = AppState_Playing; return; }
+  if (in.save_pressed) save_game_to_disk();
+  if (in.load_pressed && !load_game_from_disk()) show_toast("NO SAVE FOUND");
+  if (in.confirm_pressed || in.attack_pressed) {
+    switch (pause_focus_) {
+    case 0: state_ = AppState_Playing; break;
+    case 1: save_game_to_disk(); break;
+    case 2: if (!load_game_from_disk()) show_toast("NO SAVE FOUND"); break;
+    case 3:
+      if (quest_.show_panel()) { try_cancel_quest(); show_toast("TASK CANCELED"); }
+      else show_toast("NO ACTIVE TASK");
+      break;
+    case 4: show_controls_ = true; break;
+    default: state_ = AppState_Menu; menu_focus_ = 0; break;
+    }
+  }
+}
+
+void Game::try_cancel_quest() {
+  // C2 Quest_canceled (quest pad cancel) + Karma(karma_points), then the next task is rolled
+  // like after a finished reward (Generate_quest).
+  if (!quest_.cancel()) return;
+  quest_bandits_spawned_ = false;
+  if (audio_) audio_->play("craft", 0.4f);
+  quest_.generate_quest(rng_, mapgen_, 1);
+}
+
+void Game::close_inventory() {
+  // C2 close_inventory: hide bag + craft sub-menu, drop focus.
+  inventory_ui_.close_inventory();
+  show_bag_ = false;
+  show_craft_menu_ = false;
+}
+
+void Game::sync_bag_overlay_from_ui() { show_bag_ = inventory_ui_.opened; }
+
+void Game::toggle_craft_menu() {
+  // C2 Call_sub_menu_craft: open/close the recipe list (closes the bag panel).
+  show_craft_menu_ = !show_craft_menu_;
+  if (show_craft_menu_) {
+    inventory_ui_.close_inventory();
+    sync_bag_overlay_from_ui();
+    const int n = craft_recipe_count();
+    if (craft_menu_index_ >= n) craft_menu_index_ = 0;
+  }
+}
+
+void Game::try_craft_menu_recipe() {
+  const CraftRecipe* r = craft_recipe_at(craft_menu_index_);
+  if (!r) return;
+  const bool at_fire = campfires_.near_fire(player_.pos);
+  if (r->requires_fire && !at_fire) { show_toast("NEED A FIRE"); return; }
+  if (craft_do(inventory_, *r, items_)) {
+    if (audio_) audio_->play("craft", 0.7f);
+    show_toast("CRAFTED");
+  } else {
+    inv_full_flash_ = 0.6f;
+    show_toast("MISSING ITEMS");
+  }
+}
+
+void Game::update_craft_menu(const InputState& in) {
+  const int n = craft_recipe_count();
+  if (n <= 0) { show_craft_menu_ = false; return; }
+  if (in.nav_up) craft_menu_index_ = (craft_menu_index_ + n - 1) % n;
+  if (in.nav_down) craft_menu_index_ = (craft_menu_index_ + 1) % n;
+  if (in.back_pressed || in.craft_pressed) { show_craft_menu_ = false; return; }
+  if (in.confirm_pressed || in.attack_pressed) try_craft_menu_recipe();
+}
+
+void Game::use_bag_slot(int slot) {
+  if (slot < 0 || slot >= inventory_.slot_count() || inventory_.slot(slot).empty()) return;
+  const int prev = equipped_slot_;
+  equipped_slot_ = slot;
+  use_equipped_item(false);
+  equipped_slot_ = prev;
+  sync_mag_for_equipped();
+}
+
+void Game::equip_bag_slot(int slot) {
+  if (slot < 0 || slot >= inventory_.capacity()) return;
+  if (slot < 8) {
+    equipped_slot_ = slot;
+  } else {
+    // Move the focused stack into the hand (hotbar) slot.
+    InvSlot tmp = inventory_.slot(slot);
+    inventory_.slot(slot) = inventory_.slot(equipped_slot_);
+    inventory_.slot(equipped_slot_) = tmp;
+  }
+  sync_mag_for_equipped();
+  if (audio_) audio_->play("pickup", 0.3f);
+}
+
+void Game::update_inventory_ui(const InputState& in) {
+  InventoryUiState& ui = inventory_ui_;
+  const int cap = inventory_.capacity();
+  const int cols = 8;
+  static const ClothingRegion kRows[4] = { ClothingRegion_Pants, ClothingRegion_Outerwear,
+                                           ClothingRegion_Vest, ClothingRegion_Backpack };
+  if (in.back_pressed || in.bag_pressed) { close_inventory(); return; }
+  const bool in_cloth = ui.focus_cloth_region != ClothingRegion_Count;
+  if (!in_cloth && (ui.focus_bag_slot < 0 || ui.focus_bag_slot >= cap))
+    ui.focus_bag_slot = equipped_slot_ < cap ? equipped_slot_ : 0;
+
+  if (in_cloth) {
+    int row = 0;
+    for (int r = 0; r < 4; ++r) if (kRows[r] == ui.focus_cloth_region) row = r;
+    if (in.nav_left && ui.focus_cloth_sub > 0) ui.focus_cloth_sub -= 1;
+    if (in.nav_right) {
+      if (ui.focus_cloth_sub < kClothingContainerSlots - 1) ui.focus_cloth_sub += 1;
+      else {
+        int target = (row < 3 ? row : 2) * cols;
+        if (target >= cap) target = cap - 1;
+        ui.focus_cloth_region = ClothingRegion_Count;
+        ui.focus_cloth_sub = -1;
+        ui.focus_bag_slot = target < 0 ? 0 : target;
+        return;
+      }
+    }
+    if (in.nav_up || in.nav_down) {
+      const int dir = in.nav_up ? -1 : 1;
+      for (int k = 1; k <= 4; ++k) {
+        const int r = row + dir * k;
+        if (r < 0 || r > 3) break;
+        if (inventory_.clothing().region_available(kRows[r])) { ui.focus_cloth_region = kRows[r]; break; }
+      }
+    }
+    if (in.confirm_pressed || in.attack_pressed) {
+      const PickPlayerItemResult res =
+          pick_player_item(inventory_, items_, ui.focus_cloth_region, ui.focus_cloth_sub);
+      if (res == PickPlayer_Ok) { if (audio_) audio_->play("pickup", 0.4f); }
+      else if (res == PickPlayer_NoSpace) inv_full_flash_ = 1.f;
+    }
+    return;
+  }
+
+  int s = ui.focus_bag_slot;
+  const int col = s % cols;
+  if (in.nav_left) {
+    if (col > 0) s -= 1;
+    else {
+      // Jump to the clothing container on the same row (if worn).
+      const int row = s / cols;
+      for (int k = 0; k < 4; ++k) {
+        const int r = (row + k) % 4;
+        if (inventory_.clothing().region_available(kRows[r])) {
+          ui.focus_cloth_region = kRows[r];
+          ui.focus_cloth_sub = kClothingContainerSlots - 1;
+          ui.focus_bag_slot = -1;
+          return;
+        }
+      }
+    }
+  }
+  if (in.nav_right && col < cols - 1 && s + 1 < cap) s += 1;
+  if (in.nav_up && s - cols >= 0) s -= cols;
+  if (in.nav_down && s + cols < cap) s += cols;
+  ui.focus_bag_slot = s;
+
+  if (in.confirm_pressed || in.attack_pressed) use_bag_slot(s);          // Cross: use / wear
+  else if (in.inventory_pressed) equip_bag_slot(s);                      // Triangle: to hand
+  else if (in.mag_reload_pressed || in.reload_pressed) try_drop_slot(s); // Square: drop
+}
+
+const char* Game::interact_hint() const {
+  if (vehicles_.player_driving()) return "EXIT CAR";
+  for (int i = 0; i < loot_.count(); ++i) {
+    const LootPile* p = loot_.at(i);
+    if (p->active && p->item_count > 0 && dist2(p->pos, player_.pos) < 40.f * 40.f) return "LOOT";
+  }
+  if (near_vehicle()) return "ENTER CAR";
+  for (int i = 0; i < mapgen_.location_count(); ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    if (L.type == Loc_BunkerEntrance && dist2(L.pos, player_.pos) < 80.f * 80.f) return "BUNKER";
+  }
+  if (in_bunker_) return "SEARCH";
+  const ItemId eq = inventory_.slot(equipped_slot_).id;
+  if ((eq == 202 || eq == 204 || eq == 206) && near_choppable_tree()) return "CHOP";
+  return 0;
+}
+
+
+void Game::update_playing(float dt, const InputState& in_raw) {
+  // PSP UI overlays (inventory / craft) take the buttons; the world keeps running
+  // (C2 does not pause while Inventory_opened), but the player gets no action input.
+  InputState in = in_raw;
+  if (inventory_ui_.opened) {
+    update_inventory_ui(in_raw);
+    in = InputState();
+  } else if (show_craft_menu_) {
+    update_craft_menu(in_raw);
+    in = InputState();
+  } else {
+    if (in_raw.pause_pressed) {
+      state_ = AppState_Paused;
+      pause_focus_ = 0;
+      return;
+    }
+    if (in_raw.bag_pressed) {
+      inventory_ui_.open();
+      inventory_ui_.focus_bag_slot = equipped_slot_;
+      show_craft_menu_ = false;
+      sync_bag_overlay_from_ui();
+      in = InputState();
+    } else if (in_raw.craft_pressed) {
+      toggle_craft_menu();
+      in = InputState();
+    }
   }
 
   if (in.slot_digit >= 1 && in.slot_digit <= 8) {
@@ -2050,10 +2373,17 @@ void Game::update_playing(float dt, const InputState& in) {
     const bool can_sprint = !crouching_ &&
                             player_.survival.food > 8.f &&
                             player_.survival.water > 8.f;
+    const Vec2 pre_move = player_.pos;
     player_.apply_input(mx, my, in.run && can_sprint, dt);
     if (!in_bunker_ && world_.is_blocked(player_.pos.x, player_.pos.y)) {
       player_.pos.x -= player_.vel.x * dt;
       player_.pos.y -= player_.vel.y * dt;
+    }
+    // C2 tilemap_forest is Solid (per-tile collision polys): slide along the edge.
+    if (!in_bunker_ && world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y)) {
+      if (!world_tiles_.forest_solid_at(player_.pos.x, pre_move.y)) player_.pos.y = pre_move.y;
+      else if (!world_tiles_.forest_solid_at(pre_move.x, player_.pos.y)) player_.pos.x = pre_move.x;
+      else player_.pos = pre_move;
     }
     // Soft collision vs forest trees
     if (!in_bunker_) {
@@ -2101,8 +2431,9 @@ void Game::update_playing(float dt, const InputState& in) {
         footstep_t_ = 0.f;
       }
     }
-    // Crash into blocked cells while driving
-    if (world_.is_blocked(player_.pos.x, player_.pos.y)) {
+    // Crash into blocked cells / Solid forest tiles while driving
+    if (world_.is_blocked(player_.pos.x, player_.pos.y) ||
+        world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y)) {
       player_.pos.x -= in.move_x * 8.f;
       player_.pos.y -= in.move_y * 8.f;
       Vehicle* v = vehicles_.driven();
@@ -2931,7 +3262,8 @@ void Game::update_playing(float dt, const InputState& in) {
       quest_.generate_quest(rng_, mapgen_, 1);
     }  }
 
-  if (in.reload_pressed) try_craft();
+  // (R used to also auto-craft the first possible recipe; crafting now goes through the
+  //  craft menu only - PSP Square is reload.)
   if (in.drop_pressed) try_drop_equipped();
   if (in.mag_reload_pressed) try_mag_reload();
   if (in.throw_pressed) try_throw_projectile();
@@ -2964,80 +3296,35 @@ void Game::update_playing(float dt, const InputState& in) {
       audio_->play("melee_swing", 0.2f);
     }
   }
-  show_bag_ = in.bag;
+  sync_bag_overlay_from_ui();
 
-  if (in.save_pressed) {
-    CropSaveView crops_view;
-    TrapSaveView traps_view;
-    FireSaveView fires_view;
-    WorldExtras extras;
-    pack_crops_view(crops_view);
-    pack_traps_view(traps_view);
-    pack_fires_view(fires_view);
-    extras.airdrop_t = timers_.airdrop;
-    extras.airdrop_x = last_airdrop_pos_.x;
-    extras.airdrop_y = last_airdrop_pos_.y;
-    extras.tent_warmth_t = tent_warmth_t_;
-    extras.adrenaline_t = adrenaline_t_;
-    extras.bunker_looted = bunker_looted_ ? 1 : 0;
-    extras.melee_break_mul = melee_break_mul_;
-    SaveSystem::save_file(*platform_, "save.mdaz", player_, inventory_, weather_,
-                          equipped_slot_, visited_sectors_,
-                          kMapSectorsX * kMapSectorsY,
-                          torch_battery_, quest_.q_task_id, quest_.q_status,
-                          mag_rounds_, wetness_, gasmask_filter_, player_.fish_caught,
-                          &vehicles_, &crops_view, &traps_view, &extras, &fires_view);
-  }
+  if (in.save_pressed) save_game_to_disk();
   if (in.load_pressed) {
-    int qact = 0, qprog = 0;
-    int mag = 0;
-    float wet = 0.f;
-    float gfilt = 100.f;
-    int fish = 0;
-    CropSaveView crops_view;
-    TrapSaveView traps_view;
-    FireSaveView fires_view;
-    WorldExtras extras;
-    if (SaveSystem::load_file(*platform_, "save.mdaz", player_, inventory_, weather_,
-                              &equipped_slot_, visited_sectors_,
-                              kMapSectorsX * kMapSectorsY,
-                              &torch_battery_, &qact, &qprog, &mag, &wet,
-                              &gfilt, &fish, &vehicles_, &crops_view, &traps_view,
-                              &extras, &fires_view)) {
-      set_npc_damage_for_difficulty(player_.difficulty);
-      menu_difficulty_ = player_.difficulty;
-      in_bunker_ = false;
-      bullets_.clear();
-      mag_rounds_ = mag;
-      wetness_ = wet;
-      gasmask_filter_ = gfilt;
-      player_.fish_caught = fish;
-      mag_weapon_id_ = inventory_.slot(equipped_slot_).id;
-      apply_crops_view(crops_view);
-      apply_traps_view(traps_view);
-      apply_fires_view(fires_view);
-      tent_warmth_t_ = extras.tent_warmth_t;
-      adrenaline_t_ = extras.adrenaline_t;
-      bunker_looted_ = extras.bunker_looted != 0;
-      melee_break_mul_ = extras.melee_break_mul > 0.f ? extras.melee_break_mul : 1.f;
-      timers_.airdrop = extras.airdrop_t > 0.f ? extras.airdrop_t : 360.f;
-      last_airdrop_pos_ = Vec2(extras.airdrop_x, extras.airdrop_y);
-      mark_sector_visited();
-      quest_.reset();
-      if (qact > 0 && qact <= 3) {
-        quest_.q_task_id = qact;
-        quest_.q_status = qprog;
-      } else {
-        quest_.generate_quest(rng_, mapgen_, 1);
-      }
-      if (vehicles_.count() == 0) {
-        vehicles_.spawn(Vehicle_Car, Vec2(player_.pos.x + 90.f, player_.pos.y - 50.f));
-        vehicles_.spawn(Vehicle_Boat, Vec2(180.f, player_.pos.y));
-      }
-    }
+    if (!load_game_from_disk()) show_toast("NO SAVE FOUND");
+    return;
   }
 
-  if (in.inventory_pressed) {
+  if (in.inventory_pressed) use_equipped_item(true);
+
+  if (player_.survival.is_dead() && state_ != AppState_Dead) {
+    // Drop inventory as corpse piles (visible until return to menu)
+    Vec2 drop = player_.pos;
+    for (int i = 0; i < inventory_.slot_count(); ++i) {
+      const InvSlot& sl = inventory_.slot(i);
+      if (sl.empty()) continue;
+      loot_.spawn_item(Vec2(drop.x + rng_.range(-20.f, 20.f),
+                            drop.y + rng_.range(-20.f, 20.f)),
+                       sl.id, sl.count);
+    }
+    write_death_log();
+    state_ = AppState_Dead;
+    state_timer_ = 0.f;
+    in_bunker_ = false;
+    if (audio_) audio_->play("death", 0.8f);
+  }
+}
+
+void Game::use_equipped_item(bool allow_fallback) {
     // Gasoline (53) refuel / Car toolbox (59) repair
     bool vehicle_item = false;
     for (int i = 0; i < inventory_.slot_count() && !vehicle_item; ++i) {
@@ -3234,7 +3521,8 @@ void Game::update_playing(float dt, const InputState& in) {
           else
             audio_->play("eat", 0.4f);
         };
-        if (!inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
+        if (!inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_) &&
+            allow_fallback) {
           for (int i = 0; i < inventory_.slot_count(); ++i) {
             const ItemId id = inventory_.slot(i).id;
             if (inventory_.use_consumable(i, player_.survival, items_, &rng_)) {
@@ -3253,24 +3541,6 @@ void Game::update_playing(float dt, const InputState& in) {
       }
     }
   }
-
-  if (player_.survival.is_dead() && state_ != AppState_Dead) {
-    // Drop inventory as corpse piles (visible until return to menu)
-    Vec2 drop = player_.pos;
-    for (int i = 0; i < inventory_.slot_count(); ++i) {
-      const InvSlot& sl = inventory_.slot(i);
-      if (sl.empty()) continue;
-      loot_.spawn_item(Vec2(drop.x + rng_.range(-20.f, 20.f),
-                            drop.y + rng_.range(-20.f, 20.f)),
-                       sl.id, sl.count);
-    }
-    write_death_log();
-    state_ = AppState_Dead;
-    state_timer_ = 0.f;
-    in_bunker_ = false;
-    if (audio_) audio_->play("death", 0.8f);
-  }
-}
 
 void Game::update_dead(float dt, const InputState& in) {
   state_timer_ += dt;
@@ -3296,6 +3566,9 @@ void Game::update(float dt) {
     quit_ = true;
     return;
   }
+  compute_nav(in, dt);
+  ui_t_ += dt;
+  if (toast_t_ > 0.f) toast_t_ -= dt;
 
   switch (state_) {
   case AppState_Loading:
@@ -3308,8 +3581,7 @@ void Game::update(float dt) {
     update_playing(dt, in);
     break;
   case AppState_Paused:
-    if (in.pause_pressed || in.confirm_pressed) state_ = AppState_Playing;
-    if (in.cancel) state_ = AppState_Menu;
+    update_pause(dt, in);
     break;
   case AppState_Dead:
     update_dead(dt, in);
@@ -3327,6 +3599,26 @@ void Game::render() {
   const float cx = static_cast<float>(platform_->screen_w()) * 0.5f;
   const float cy = static_cast<float>(platform_->screen_h()) * 0.5f;
   const float sc = world_to_screen_scale();
+  // View-rect culling (2026-10-19): an object is drawn when its screen-space box
+  // (centre +- r_px, in screen px) intersects the 480x272 logical screen.
+  // Replaces the old fixed world-distance checks / fixed grid windows.
+  struct ViewRect {
+    float cx, cy;
+    Vec2 cam;
+    bool vis(const Vec2& p, float s, float r_px) const {
+      const float x = cx + (p.x - cam.x) * s, y = cy + (p.y - cam.y) * s;
+      return x + r_px >= 0.f && x - r_px <= 2.f * cx && y + r_px >= 0.f && y - r_px <= 2.f * cy;
+    }
+    // World-grid index range covering the view (+1 cell margin each side).
+    int lo(float c, float half, float s, float step) const {
+      return static_cast<int>(std::floor((c - half / s) / step)) - 1;
+    }
+    int hi(float c, float half, float s, float step) const {
+      return static_cast<int>(std::floor((c + half / s) / step)) + 1;
+    }
+  };
+  ViewRect view;
+  view.cx = cx; view.cy = cy; view.cam = player_.pos;
 
   if (state_ == AppState_Menu) {
     platform_->clear(0.12f, 0.14f, 0.18f);
@@ -3345,36 +3637,7 @@ void Game::render() {
     else
       platform_->draw_text(cx - 40.f, 30.f, "MINI DAYZ", 0.95f, 0.9f, 0.75f);
 
-    // Wooden buttons (menu_btn_wood: Default/Green/Red/Blue frames 160×39).
-    const char* diff = "NOVICE";
-    int diff_frame_y = 42;
-    if (menu_difficulty_ == Difficulty_Regular) { diff = "REGULAR"; diff_frame_y = 124; }
-    if (menu_difficulty_ == Difficulty_Veteran) { diff = "VETERAN"; diff_frame_y = 83; }
-    char dbuf[64];
-    std::snprintf(dbuf, sizeof(dbuf), "1-3  %s", diff);
-    struct MenuButton { const char* label; int frame_y; };
-    const MenuButton buttons[] = {
-      { "ENTER  NEW GAME", 1 }, { "F9  CONTINUE", 1 }, { dbuf, diff_frame_y }, { "ESC  QUIT", 1 },
-    };
-    const float bw = 150.f, bh = 30.f;
-    for (int i = 0; i < 4; ++i) {
-      const float bx = cx - bw * 0.5f;
-      const float by = 96.f + i * (bh + 8.f);
-      if (platform_->has_sprite("menu_btn_wood-sheet0"))
-        platform_->draw_sprite_frame("menu_btn_wood-sheet0", bx, by, bw, bh,
-                                     1, buttons[i].frame_y, 160, 39, 0.f, 1.f);
-      else
-        platform_->draw_rect(bx, by, bw, bh, 0.25f, 0.18f, 0.12f, 0.95f);
-      const float tw = static_cast<float>(std::strlen(buttons[i].label)) * 9.f;
-      platform_->draw_text(cx - tw * 0.5f, by + 9.f, buttons[i].label, 0.95f, 0.92f, 0.82f);
-    }
-    platform_->draw_rect(0.f, 248.f, 280.f, 24.f, 0.f, 0.f, 0.f, 0.65f);
-    platform_->draw_text(4.f, 250.f, "1.4.1 C++ PORT", 0.75f, 0.75f, 0.7f);
-    // Visible deploy check — if red, data/sprites.pak was not found next to EBOOT.
-    if (platform_->has_sprite("player_skin_def_1-sheet0"))
-      platform_->draw_text(4.f, 260.f, "SPRITES OK", 0.35f, 0.95f, 0.45f);
-    else
-      platform_->draw_text(4.f, 260.f, "NO SPRITES.PAK - COPY DEPLOY FOLDER", 1.f, 0.35f, 0.3f);
+    render_main_menu();
   } else if (state_ == AppState_Playing || state_ == AppState_Paused) {
     if (in_bunker_) platform_->clear(0.08f, 0.07f, 0.06f);
     else if (weather_.is_night) platform_->clear(0.05f, 0.06f, 0.08f);
@@ -3428,17 +3691,14 @@ void Game::render() {
         const bool has_g3 = platform_->has_sprite("ground_lvl3_tilemap");
         const bool has_g4 = platform_->has_sprite("ground_lvl4_tilemap");
         const bool has_gnd = has_g1 || has_g2 || has_g3 || has_g4;
-        const float forest_w = 150.f;
         const float water_w = 60.f;
         // Each ground_lvl*: 300×300 atlas → 5×5 of 60×60 (C2 tile size).
         // Pick atlas by coarse biome hash so the map isn't one repeating sheet.
         if (has_gnd) {
           const float step = 60.f;
           const float tile = step * sc;
-          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
-          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
-          for (int gx = gx0 - 10; gx <= gx0 + 10; ++gx) {
-            for (int gy = gy0 - 7; gy <= gy0 + 7; ++gy) {
+          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
               const float wx = (gx + 0.5f) * step;
               const float wy = (gy + 0.5f) * step;
               const float margin = 400.f;
@@ -3477,44 +3737,17 @@ void Game::render() {
             }
           }
         }
-        // Forest canopy layer (coarse)
-        {
-          const float step = forest_w;
-          const float tile = forest_w * sc;
-          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
-          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
-          for (int gx = gx0 - 4; gx <= gx0 + 4; ++gx) {
-            for (int gy = gy0 - 3; gy <= gy0 + 3; ++gy) {
-              const float wx = (gx + 0.5f) * step;
-              const float wy = (gy + 0.5f) * step;
-              const float sx = cx + (wx - player_.pos.x) * sc;
-              const float sy = cy + (wy - player_.pos.y) * sc;
-              const float margin = 400.f;
-              const bool water = wx < margin || wy < margin ||
-                wx > kMapLayoutW - margin || wy > kMapLayoutH - margin;
-              if (water) continue;
-              if (has_forest) {
-                const int ux = ((gx % 3) + 3) % 3;
-                const int uy = ((gy % 3) + 3) % 3;
-                // Soft overlay so ground_lvl shows through a bit
-                platform_->draw_sprite_frame("tilemap_forest",
-                  sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                  ux * 150, uy * 150, 150, 150, 0.f, has_gnd ? 0.55f : 1.f);
-              } else if (!has_gnd) {
-                platform_->draw_rect(sx - tile * 0.5f, sy - tile * 0.5f, tile, tile,
-                                     0.14f, 0.18f, 0.11f, 1.f);
-              }
-            }
-          }
-        }
+        // Forest: the real C2 tilemap_forest instances of the Map layout (150x150 tiles, Solid).
+        // Replaces the old procedural canopy that tinted every cell of the map with forest at
+        // 55% alpha (not in the original, and it had no collision).
+        if (has_forest)
+          world_tiles_.draw(*platform_, "tilemap_forest", player_.pos, sc, cx * 2.f, cy * 2.f);
         // Water / sand fringe (finer 60×60 cells)
         {
           const float step = water_w;
           const float tile = water_w * sc;
-          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
-          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
-          for (int gx = gx0 - 10; gx <= gx0 + 10; ++gx) {
-            for (int gy = gy0 - 7; gy <= gy0 + 7; ++gy) {
+          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
               const float wx = (gx + 0.5f) * step;
               const float wy = (gy + 0.5f) * step;
               const float margin = 400.f;
@@ -3546,10 +3779,8 @@ void Game::render() {
         if (platform_->has_sprite("ground_enviroment_tilemap")) {
           const float step = 30.f;
           const float tile = step * sc;
-          const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
-          const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
-          for (int gx = gx0 - 12; gx <= gx0 + 12; ++gx) {
-            for (int gy = gy0 - 8; gy <= gy0 + 8; ++gy) {
+          for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
+            for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
               // Sparse placement: ~1/7 cells get a prop
               const unsigned h = static_cast<unsigned>(gx * 73856093u) ^
                                  static_cast<unsigned>(gy * 19349663u);
@@ -3575,7 +3806,7 @@ void Game::render() {
       // Blood drips
       for (int i = 0; i < blood_drip_count_; ++i) {
         if (blood_drips_[i].life <= 0.f) continue;
-        if (dist2(blood_drips_[i].pos, player_.pos) > 350.f * 350.f) continue;
+        if (!view.vis(blood_drips_[i].pos, sc, 4.f)) continue;
         float sx = cx + (blood_drips_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (blood_drips_[i].pos.y - player_.pos.y) * sc;
         const float a = blood_drips_[i].life / 8.f;
@@ -3588,7 +3819,7 @@ void Game::render() {
       // Corpses (under living actors)
       for (int i = 0; i < corpse_count_; ++i) {
         if (!corpses_[i].active) continue;
-        if (dist2(corpses_[i].pos, player_.pos) > 420.f * 420.f) continue;
+        if (!view.vis(corpses_[i].pos, sc, 24.f)) continue;
         float sx = cx + (corpses_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (corpses_[i].pos.y - player_.pos.y) * sc;
         const float fade = corpses_[i].life < 10.f ? corpses_[i].life / 10.f : 1.f;
@@ -3623,16 +3854,14 @@ void Game::render() {
       // Berry bushes (original berry_bush frame)
       if (platform_->has_sprite("berry_bush-sheet0")) {
         const float step = 90.f;
-        const int gx0 = static_cast<int>(std::floor(player_.pos.x / step));
-        const int gy0 = static_cast<int>(std::floor(player_.pos.y / step));
-        for (int gx = gx0 - 5; gx <= gx0 + 5; ++gx) {
-          for (int gy = gy0 - 4; gy <= gy0 + 4; ++gy) {
+        for (int gx = view.lo(player_.pos.x, cx, sc, step); gx <= view.hi(player_.pos.x, cx, sc, step); ++gx) {
+          for (int gy = view.lo(player_.pos.y, cy, sc, step); gy <= view.hi(player_.pos.y, cy, sc, step); ++gy) {
             const unsigned h = static_cast<unsigned>(gx * 374761u) ^
                                static_cast<unsigned>(gy * 6682651u);
             if ((h % 5u) != 0u) continue;
             const float wx = (gx + 0.5f) * step;
             const float wy = (gy + 0.5f) * step;
-            if (dist2(Vec2(wx, wy), player_.pos) > 360.f * 360.f) continue;
+            if (!view.vis(Vec2(wx, wy), sc, 16.f)) continue;
             float sx = cx + (wx - player_.pos.x) * sc;
             float sy = cy + (wy - player_.pos.y) * sc;
             platform_->draw_sprite_frame("berry_bush-sheet0",
@@ -3643,7 +3872,7 @@ void Game::render() {
 
       // Forest trees — crop first pine frame (47×92), not whole sheet
       for (int i = 0; i < tree_count_; ++i) {
-        if (dist2(trees_[i], player_.pos) > 380.f * 380.f) continue;
+        if (!view.vis(trees_[i], sc, 72.f)) continue; // pine 47x92 frame drawn 70px tall
         float sx = cx + (trees_[i].x - player_.pos.x) * sc;
         float sy = cy + (trees_[i].y - player_.pos.y) * sc;
         draw_pine(platform_, sx, sy, 70.f);
@@ -3652,7 +3881,6 @@ void Game::render() {
       // Map POIs — interiors when standing inside, else exterior shells
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
-        if (dist2(L.pos, player_.pos) > 760.f * 760.f) continue; // hospital/fire station ~545px wide
         float sx = cx + (L.pos.x - player_.pos.x) * sc;
         float sy = cy + (L.pos.y - player_.pos.y) * sc;
         // Buildings are drawn at their native data.js frame size in world units, scaled by
@@ -3663,6 +3891,7 @@ void Game::render() {
         int nat_w = 100, nat_h = 100;
         poi_native_px(ext_spr, nat_w, nat_h);
         const float max_dim = static_cast<float>(nat_w > nat_h ? nat_w : nat_h) * sc;
+        if (!view.vis(L.pos, sc, max_dim * 0.5f + 12.f)) continue; // whole building + nameplate
         const float enter_r = static_cast<float>(nat_w < nat_h ? nat_w : nat_h) * 0.35f;
         const bool inside = (L.type != Loc_Helicrash) &&
                             dist2(L.pos, player_.pos) < enter_r * enter_r;
@@ -3707,19 +3936,18 @@ void Game::render() {
             platform_->draw_rect(sx - 6, sy - 6, 12, 12, 0.95f, 0.45f, 0.1f, 1.f);
           continue;
         }
-        const float d2p = dist2(p->pos, player_.pos);
-        if (d2p > 420.f * 420.f) continue;
+        if (!view.vis(p->pos, sc, 24.f)) continue;
         // C2 layer items_on_ground: each pile shows its item sprites at native size.
         // spawn_loot_point is an invisible editor marker in C2 (16x16 colour swatch) and is
         // never drawn in game (it was the "colored stacks" placeholder).
         int drawn = 0;
         for (int j = 0; j < p->item_count && drawn < 3; ++j) {
           if (p->counts[j] <= 0) continue;
-          const ItemIcon* ic = find_item_icon(p->items[j]);
+          const ItemIcon* ic = find_item_ground_icon(p->items[j]);
           if (!ic || !platform_->has_sprite(ic->sprite)) continue;
-          // Native world px (8..16) at 1.5x for 480x272 legibility (same factor as icons used before).
-          const float iw = static_cast<float>(ic->sw) * 1.5f;
-          const float ih = static_cast<float>(ic->sh) * 1.5f;
+          // C2 on_ground frame at native size (same 1:1 scale as characters: 30px sheet -> 30px).
+          const float iw = static_cast<float>(ic->sw);
+          const float ih = static_cast<float>(ic->sh);
           const float ox = (drawn == 1) ? 5.f : (drawn == 2 ? -5.f : 0.f);
           const float oy = (drawn == 0) ? 0.f : 3.f;
           platform_->draw_sprite_frame(ic->sprite, sx + ox - iw * 0.5f, sy + oy - ih * 0.5f, iw, ih,
@@ -3736,6 +3964,7 @@ void Game::render() {
       const float zsc = in_bunker_ ? 1.f : sc;
       for (const Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
         if (!z->alive) continue;
+        if (!view.vis(z->pos, zsc, 32.f)) continue;
         float sx = cx + (z->pos.x - player_.pos.x) * zsc;
         float sy = cy + (z->pos.y - player_.pos.y) * zsc;
         float zsz = 30.f;
@@ -3815,6 +4044,7 @@ void Game::render() {
         for (int i = 0; i < animals_.count(); ++i) {
           const Animal* a = animals_.at(i);
           if (!a->alive) continue;
+          if (!view.vis(a->pos, sc, 32.f)) continue;
           float sx = cx + (a->pos.x - player_.pos.x) * sc;
           float sy = cy + (a->pos.y - player_.pos.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - a->pos.y, player_.pos.x - a->pos.x) * 57.2957795f;
@@ -3851,6 +4081,7 @@ void Game::render() {
       {
         for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
           if (!bd->alive) continue;
+          if (!view.vis(bd->pos, sc, 32.f)) continue;
           float sx = cx + (bd->pos.x - player_.pos.x) * sc;
           float sy = cy + (bd->pos.y - player_.pos.y) * sc;
           const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
@@ -3874,6 +4105,7 @@ void Game::render() {
       for (int i = 0; i < vehicles_.count(); ++i) {
         const Vehicle* v = vehicles_.at(i);
         if (!v->active) continue;
+        if (!view.vis(v->pos, sc, 48.f)) continue;
         float sx = cx + (v->pos.x - player_.pos.x) * sc;
         float sy = cy + (v->pos.y - player_.pos.y) * sc;
         if (v->type == Vehicle_Boat) {
@@ -3898,6 +4130,7 @@ void Game::render() {
       for (int i = 0; i < campfires_.count(); ++i) {
         const Campfire* f = campfires_.at(i);
         if (!f->active) continue;
+        if (!view.vis(f->pos, sc, 40.f)) continue; // flame + glow
         float sx = cx + (f->pos.x - player_.pos.x) * sc;
         float sy = cy + (f->pos.y - player_.pos.y) * sc;
         const int flick = (static_cast<int>(state_timer_ * 8.f) + i) & 1;
@@ -3916,6 +4149,7 @@ void Game::render() {
       // Placed traps / barbed wire — original sprites
       for (int i = 0; i < trap_count_; ++i) {
         if (!traps_[i].active) continue;
+        if (!view.vis(traps_[i].pos, sc, 16.f)) continue;
         float sx = cx + (traps_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (traps_[i].pos.y - player_.pos.y) * sc;
         if (traps_[i].kind == 0) {
@@ -3951,6 +4185,7 @@ void Game::render() {
       // Crop plots — dirt mound while growing, green when ready
       for (int i = 0; i < crop_count_; ++i) {
         if (!crops_[i].active) continue;
+        if (!view.vis(crops_[i].pos, sc, 16.f)) continue;
         float sx = cx + (crops_[i].pos.x - player_.pos.x) * sc;
         float sy = cy + (crops_[i].pos.y - player_.pos.y) * sc;
         if (crops_[i].ready) {
@@ -3970,6 +4205,7 @@ void Game::render() {
       const bool has_b = platform_->has_sprite("zed_bullet-sheet0");
       for (const Bullet* b = bullets_.begin(); b != bullets_.end(); ++b) {
         if (!b->alive) continue;
+        if (!view.vis(b->pos, bsc, 8.f)) continue;
         float sx = cx + (b->pos.x - player_.pos.x) * bsc;
         float sy = cy + (b->pos.y - player_.pos.y) * bsc;
         const float ang = std::atan2(b->vel.y, b->vel.x) * 57.2957795f;
@@ -3992,6 +4228,7 @@ void Game::render() {
       const float bsc = in_bunker_ ? 1.f : sc;
       for (int i = 0; i < fx_count_; ++i) {
         if (!fx_[i].active) continue;
+        if (!view.vis(fx_[i].pos, bsc, 64.f)) continue; // explosions are the largest fx
         float sx = cx + (fx_[i].pos.x - player_.pos.x) * bsc;
         float sy = cy + (fx_[i].pos.y - player_.pos.y) * bsc;
         const float a = fx_[i].life > 0.05f ? 1.f : fx_[i].life / 0.05f;
@@ -4233,55 +4470,9 @@ void Game::render() {
     }
 
     draw_debug_hud(*platform_, *this);
-    if (state_ == AppState_Paused) {
-      platform_->draw_rect(0, 0, 480, 272, 0.f, 0.f, 0.f, 0.45f);
-      if (show_controls_) {
-        draw_controls_help();
-      } else {
-        if (platform_->has_sprite("menu_btn_wood-sheet0"))
-          platform_->draw_sprite_frame("menu_btn_wood-sheet0", 155, 88, 170, 32,
-                                       1, 1, 160, 39, 0.f, 0.95f);
-        else
-          platform_->draw_rect(155, 88, 170, 32, 0.08f, 0.06f, 0.04f, 0.9f);
-        platform_->draw_text(205, 98, "PAUSED", 1.f, 0.95f, 0.7f);
-#if defined(MDAZ_PSP)
-        platform_->draw_text(150, 130, "START / X  - RESUME", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(150, 148, "TRIANGLE   - CONTROLS", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(150, 166, "SELECT     - MAIN MENU", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(168, 200, "(CONTROLS READ ONLY)", 0.55f, 0.65f, 0.5f);
-#else
-        platform_->draw_text(150, 130, "ENTER / P  - RESUME", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(150, 148, "I          - CONTROLS", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(150, 166, "ESC        - MAIN MENU", 0.8f, 0.85f, 0.7f);
-        platform_->draw_text(168, 200, "(CONTROLS READ ONLY)", 0.55f, 0.65f, 0.5f);
-#endif
-      }
-    }
+    if (state_ == AppState_Paused) render_pause_menu();
   } else if (state_ == AppState_Dead) {
-    platform_->clear(0.04f, 0.01f, 0.01f);
-    if (platform_->has_sprite("dead_screen-sheet0"))
-      platform_->draw_sprite("dead_screen-sheet0", 240.f - 231.f * 0.75f, 40.f,
-                             231.f * 1.5f, 53.f * 1.5f, 0.f, 1.f);
-    else
-      platform_->draw_text(160, 80, "YOU DIED", 1.f, 0.3f, 0.25f);
-    if (platform_->has_sprite("player_skin_dead-sheet0"))
-      platform_->draw_sprite_frame("player_skin_dead-sheet0",
-        210.f, 150.f, 48.f, 48.f, 1, 1, 30, 30, 0.f, 1.f);
-    if (player_.survival.death_reason[0]) {
-      char cause[96];
-      std::snprintf(cause, sizeof(cause), "KILLED BY: %s", player_.survival.death_reason);
-      platform_->draw_text(140, 205, cause, 0.85f, 0.5f, 0.45f);
-    }
-    char buf[96];
-    std::snprintf(buf, sizeof(buf), "DAY %d  ZEDS %d  BOTS %d  ANIMALS %d",
-                  player_.days_survived, player_.zeds_killed, player_.bandits_killed,
-                  player_.animals_killed);
-    platform_->draw_text(80, 225, buf, 0.8f, 0.6f, 0.55f);
-#if defined(MDAZ_PSP)
-    platform_->draw_text(130, 250, "X - MENU", 0.75f, 0.55f, 0.5f);
-#else
-    platform_->draw_text(120, 250, "ENTER - MENU", 0.75f, 0.55f, 0.5f);
-#endif
+    render_dead_screen();
   }
 
   platform_->end_frame();
@@ -4298,22 +4489,3 @@ int Game::bandits_alive_near(Vec2 pos, float radius) const {
 }
 } // namespace mdaz
 
-namespace mdaz {
-void Game::draw_controls_help() const {
-  platform_->draw_rect(60, 30, 360, 212, 0.08f, 0.06f, 0.04f, 0.92f);
-  platform_->draw_text(200, 38, "CONTROLS", 1.f, 0.95f, 0.7f);
-#if defined(MDAZ_PSP)
-  static const char* lines[] = {
-    "DPAD/ANALOG - MOVE", "X - ATTACK", "O - INTERACT", "TRIANGLE - USE ITEM",
-    "SQUARE - RELOAD", "R - RUN   L - CROUCH", "R+SQUARE - CRAFT", "R+TRIANGLE - TORCH",
-    "L+START/SELECT - SAVE/LOAD", "START - RESUME"};
-#else
-  static const char* lines[] = {
-    "WASD - MOVE  SHIFT - RUN", "CTRL - CROUCH", "Z/SPACE - ATTACK", "E - INTERACT",
-    "C - USE ITEM  R/V - RELOAD", "B - CRAFT  F - THROW", "T - TORCH/CAMPFIRE  G - DROP",
-    "TAB - INVENTORY  1-8 HOTBAR", "F5/F9 - SAVE/LOAD", "P - RESUME  ESC - MENU"};
-#endif
-  for (int i = 0; i < 10; ++i)
-    platform_->draw_text(76, 58 + i * 17, lines[i], 0.85f, 0.85f, 0.7f);
-}
-} // namespace mdaz

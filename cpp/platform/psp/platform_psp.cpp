@@ -38,6 +38,18 @@ namespace {
 
 static unsigned int __attribute__((aligned(16))) s_gu_list[262144];
 
+// Boot log (main_psp.cpp): one line per call, file reopened + closed => flushed every line.
+extern "C" void mdaz_boot_log(const char* fmt, ...);
+
+// VRAM: two 512x272 RGB565 display buffers. Display scan-out reads VRAM; the game renders
+// into a RAM back buffer (fb_) that is copied here in end_frame. (Before 2026-10-19 the RAM
+// buffer itself was handed to sceGuDispBuffer, which treats the pointer as a VRAM *offset*
+// -> invalid display address -> black screen on hardware.)
+static const unsigned kFbBytes = 512u * 272u * 2u;
+static inline unsigned short* vram_buf(int i) {
+  return (unsigned short*)(0x44000000u + (unsigned)i * kFbBytes); // uncached VRAM mirror
+}
+
 // PSP 565 = BBBBBGGGGGGRRRRR (R in low bits). Toggle if a specific build looks swapped.
 #ifndef MDAZ_PSP_BGR565
 #define MDAZ_PSP_BGR565 1
@@ -255,7 +267,7 @@ static const unsigned kMaxCachePixels = 2 * 1024 * 1024; // ~8MB RGBA — fewer 
 class PspPlatform : public IPlatform {
 public:
   PspPlatform()
-    : fb_(0), prev_buttons_(0), boot_tick_(0), inited_(false),
+    : fb_(0), prev_buttons_(0), boot_tick_(0), inited_(false), front_(0), frames_(0),
       pak_data_(0), pak_size_(0), pak_entries_(0), pak_count_(0),
       cache_count_(0), cache_pixels_(0), cache_tick_(1) {
     images_dir_[0] = 0;
@@ -280,10 +292,12 @@ public:
     if (!fb_) return false;
     std::memset(fb_, 0, 512 * 272 * sizeof(unsigned short));
 
+    mdaz_boot_log("video: ram backbuffer %p (%u bytes)", (void*)fb_, kFbBytes);
     sceGuInit();
     sceGuStart(GU_DIRECT, s_gu_list);
-    sceGuDrawBuffer(GU_PSM_5650, fb_, 512);
-    sceGuDispBuffer(480, 272, fb_, 512);
+    // VRAM-relative offsets (0 and kFbBytes), not CPU pointers.
+    sceGuDrawBuffer(GU_PSM_5650, (void*)0, 512);
+    sceGuDispBuffer(480, 272, (void*)kFbBytes, 512);
     sceGuOffset(2048 - (480 / 2), 2048 - (272 / 2));
     sceGuViewport(2048, 2048, 480, 272);
     sceGuScissor(0, 0, 480, 272);
@@ -291,9 +305,14 @@ public:
     sceGuFinish();
     sceGuSync(0, 0);
 
+    std::memset(vram_buf(0), 0, kFbBytes);
+    std::memset(vram_buf(1), 0, kFbBytes);
     sceDisplaySetMode(0, 480, 272);
-    sceDisplaySetFrameBuf(fb_, 512, PSP_DISPLAY_PIXEL_FORMAT_565, PSP_DISPLAY_SETBUF_IMMEDIATE);
+    const int dr = sceDisplaySetFrameBuf((void*)vram_buf(0), 512, PSP_DISPLAY_PIXEL_FORMAT_565,
+                                         PSP_DISPLAY_SETBUF_IMMEDIATE);
     sceDisplayWaitVblankStart();
+    front_ = 0;
+    mdaz_boot_log("video: GU init done, display vram0 %p setfb=%d", (void*)vram_buf(0), dr);
 
     u64 t = 0;
     sceRtcGetCurrentTick(&t);
@@ -325,9 +344,11 @@ public:
       if (open_pak(path) && find_pak("player_skin_def_1-sheet0")) {
         std::strncpy(images_dir_, path, sizeof(images_dir_) - 1);
         log_io("pak_ok", path);
+        mdaz_boot_log("sprites: pak ok %s (%u entries)", path, pak_count_);
         return true;
       }
       log_io("pak_fail", path);
+      mdaz_boot_log("sprites: pak FAIL %s", path);
       return false;
     }
 
@@ -337,6 +358,7 @@ public:
     if (open_pak(pak) && find_pak("player_skin_def_1-sheet0")) {
       std::strncpy(images_dir_, pak, sizeof(images_dir_) - 1);
       log_io("pak_ok", pak);
+      mdaz_boot_log("sprites: pak ok %s (%u entries)", pak, pak_count_);
       return true;
     }
 
@@ -484,8 +506,14 @@ public:
 
   void end_frame() {
     if (!fb_ || !inited_) return;
-    sceKernelDcacheWritebackAll();
-    sceDisplaySetFrameBuf(fb_, 512, PSP_DISPLAY_PIXEL_FORMAT_565, PSP_DISPLAY_SETBUF_NEXTFRAME);
+    // Copy the finished RAM frame into the hidden VRAM buffer, then flip to it.
+    const int back = front_ ^ 1;
+    std::memcpy(vram_buf(back), fb_, kFbBytes);
+    sceDisplaySetFrameBuf((void*)vram_buf(back), 512, PSP_DISPLAY_PIXEL_FORMAT_565,
+                          PSP_DISPLAY_SETBUF_NEXTFRAME);
+    front_ = back;
+    if (frames_ < 3) mdaz_boot_log("frame %u presented", frames_);
+    ++frames_;
   }
 
   bool read_file(const char* path, char** out_data, std::size_t* out_size) {
@@ -522,6 +550,7 @@ public:
     }
     if (fd < 0) {
       log_io("rf_fail", path);
+      mdaz_boot_log("file %s: OPEN FAILED (cwd + ms0:/PSP/GAME/MINIDAYZ*/ tried)", path);
       return false;
     }
 
@@ -529,14 +558,21 @@ public:
     sceIoLseek(fd, 0, PSP_SEEK_SET);
     if (sz <= 0 || sz > 12 * 1024 * 1024) {
       sceIoClose(fd);
+      mdaz_boot_log("file %s: bad size %d", tried, (int)sz);
       return false;
     }
     char* buf = (char*)std::malloc((std::size_t)sz + 1);
-    if (!buf) { sceIoClose(fd); return false; }
+    if (!buf) {
+      sceIoClose(fd);
+      mdaz_boot_log("file %s: OUT OF MEMORY for %d bytes (free %d)", tried, (int)sz,
+                    (int)sceKernelMaxFreeMemSize());
+      return false;
+    }
     const int n = sceIoRead(fd, buf, (int)sz);
     sceIoClose(fd);
-    if (n <= 0) { std::free(buf); return false; }
+    if (n <= 0) { std::free(buf); mdaz_boot_log("file %s: READ FAILED", tried); return false; }
     buf[n] = 0;
+    mdaz_boot_log("file %s: ok %d bytes", tried, n);
     *out_data = buf;
     *out_size = (std::size_t)n;
     return true;
@@ -774,6 +810,8 @@ private:
   unsigned int prev_buttons_;
   u64 boot_tick_;
   bool inited_;
+  int front_;
+  unsigned frames_;
 
   char images_dir_[512];
   char* pak_data_;

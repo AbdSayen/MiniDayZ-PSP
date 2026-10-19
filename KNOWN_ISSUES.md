@@ -2,6 +2,28 @@
 
 Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP EBOOT still unverified)
 
+Last updated: 2026-10-19 (UI rewrite, forest Solid, culling)
+
+## 2026-10-19 open items
+
+| Issue | Impact | Status |
+|-------|--------|--------|
+| **Real PSP: black screen** (user test 2026-10-19 19:11) with `cpp/platform/psp/deploy/MINIDAYZ`: the deploy EBOOT.PBP (17.10 23:34) and sprites.pak (17.10 23:02) are stale, built before all of today's fixes | Game unusable on PSP | Исследуется: rebuild EBOOT + pak, boot log `ms0:/PSP/GAME/MINIDAYZ/log.txt`, pre-load splash |
+| ~~Intermittent silent exit in `--shots`~~ (build 19:01, frames 2/13/10/1 over 4 runs) | None: **false alarm**, the process was terminated by the user | Closed 2026-10-19 19:09 (user-terminated, not a bug) |
+| PSP EBOOT not rebuilt after the UI rewrite | New `psp_ui.o`/`screens.o` + input changes unverified on PSP/PPSSPP | Реализована, но не проверена |
+| `generate_location` forest stamps (72 SetTile offsets) are an approximate decode of a truncated export | Not applied any more: with forest drawn+Solid they produced isolated corner tiles around POIs. Forest exists only where the Map layout has tilemap_forest (borders) | Заблокирована внешним ограничением (export truncated) |
+| `trees_` scatter around POIs is a port approximation (C2 tree instances not decoded) | Tree placement not faithful; trunk push-out (14 px) is port-side, C2 trees are not Solid | Исследована |
+| Building walls: C2 building "in" animations are Solid with polygons; port still uses `mapgen.apply_collision` blocked cells | Can walk through some walls / blocked near centres | Не исследована (next) |
+| NPCs (zeds/bandits/animals) ignore tilemap_forest Solid | Only player/car collide with forest | Реализуется |
+| Ground loot uses the C2 on_ground frames (white outline is in the original art) | — | Сверена с оригиналом (frames) |
+| Ground seams: 60 px ground cells of visibly different shade (explore1) | Patchwork look | Queued |
+| Minimap draws black (fog covers everything) | No map info | Queued |
+| White outline around loot near the helicopter | Check against the original on_ground art | Queued |
+| Remaining undefined Game methods: apply_loot_view, pack_loot_view, hurt_animal/bandit/zombie/zombie_bullet, maybe_add_hammer_loot, maybe_spawn_quest_bandits, notify_weapon_unlock, on_quest_completed, spawn_bunker_zeds, spawn_hostiles_for_poi, spawn_loot_for_poi, sync_location_stream, tick_molotov_burn, try_build_fence, zed_check_bunker | Declared, not called by current code (link OK) | Не исследована / pending restore |
+| Ground biome layout (which ground_lvl atlas where) is a port hash, not decoded from C2 | Ground looks patchy in large squares (visible in explore shots) | Исследована |
+| Inventory/hotbar show items with the on_ground frame (C2 GUI icon source not confirmed) | Icons small, but they are original art | Исследована |
+| Mouse inventory clicks (old desktop path) | Removed from UI design; keyboard/PSP buttons only | By design |
+
 ## External / environment
 
 | Issue | Impact | Status |

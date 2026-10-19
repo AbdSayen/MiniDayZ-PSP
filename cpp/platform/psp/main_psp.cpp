@@ -11,12 +11,69 @@
 #include <psppower.h>
 #include <cstdio>
 #include <cstring>
+#include <cstdarg>
 #include <new>
 
 PSP_MODULE_INFO("MiniDAYZ", 0, 1, 0);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
-PSP_HEAP_SIZE_KB(18 * 1024);
+// All free user RAM minus 1 MB for the kernel/stack (was a fixed 18 MB). Logged at boot.
+PSP_HEAP_SIZE_KB(-1024);
 PSP_MAIN_THREAD_STACK_SIZE_KB(64);
+
+// ---- Boot log: ms0:/PSP/GAME/MINIDAYZ/log.txt (fallback ./log.txt). Each line is written
+// with open/append/close so it survives a crash or a forced power-off.
+static char s_log_path[128] = "ms0:/PSP/GAME/MINIDAYZ/log.txt";
+static unsigned long long s_log_t0 = 0;
+extern "C" void mdaz_boot_log(const char* fmt, ...) {
+  char line[512];
+  unsigned ms = 0;
+  {
+    const unsigned long long now = (unsigned long long)sceKernelGetSystemTimeWide();
+    if (s_log_t0 == 0) s_log_t0 = now;
+    ms = (unsigned)((now - s_log_t0) / 1000ull);
+  }
+  int n = std::snprintf(line, sizeof(line), "[%6u ms] ", ms);
+  va_list ap;
+  va_start(ap, fmt);
+  n += std::vsnprintf(line + n, sizeof(line) - n - 2, fmt, ap);
+  va_end(ap);
+  if (n > (int)sizeof(line) - 2) n = (int)sizeof(line) - 2;
+  line[n++] = '\n';
+  line[n] = 0;
+  SceUID fd = sceIoOpen(s_log_path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
+  if (fd < 0) {
+    std::strcpy(s_log_path, "log.txt");
+    fd = sceIoOpen(s_log_path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
+  }
+  if (fd < 0) return;
+  sceIoWrite(fd, line, n);
+  sceIoClose(fd);
+}
+
+static void boot_log_reset() {
+  SceUID fd = sceIoOpen(s_log_path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+  if (fd < 0) {
+    std::strcpy(s_log_path, "log.txt");
+    fd = sceIoOpen(s_log_path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+  }
+  if (fd >= 0) sceIoClose(fd);
+}
+
+static void log_mem(const char* when) {
+  mdaz_boot_log("mem %s: max free block %d KB, total free %d KB", when,
+                (int)(sceKernelMaxFreeMemSize() / 1024), (int)(sceKernelTotalFreeMemSize() / 1024));
+}
+
+// Visible screen before any asset load (plain colour + built-in font; no sprites needed).
+static void boot_splash(mdaz::IPlatform* p, const char* line2, float r, float g, float b) {
+  p->begin_frame();
+  p->clear(r, g, b);
+  p->draw_rect(0.f, 100.f, 480.f, 60.f, 0.f, 0.f, 0.f, 0.6f);
+  p->draw_text(150.f, 112.f, "MINI DAYZ C++  PSP BUILD", 1.f, 0.95f, 0.7f);
+  p->draw_text(150.f, 130.f, line2, 0.9f, 0.9f, 0.9f);
+  p->draw_text(150.f, 146.f, "log: ms0:/PSP/GAME/MINIDAYZ/log.txt", 0.7f, 0.8f, 0.7f);
+  p->end_frame();
+}
 
 static int exit_callback(int, int, void*) {
   sceKernelExitGame();
@@ -131,9 +188,13 @@ static void chdir_to_eboot(const char* argv0) {
 
 int main(int argc, char** argv) {
 #if defined(MDAZ_PSP) && defined(__PSP__)
+  boot_log_reset();
+  mdaz_boot_log("boot start argc=%d argv0=%s", argc, (argc > 0 && argv && argv[0]) ? argv[0] : "(null)");
+  log_mem("at start");
   setup_callbacks();
   scePowerSetClockFrequency(333, 333, 166);
   chdir_to_eboot((argc > 0 && argv) ? argv[0] : 0);
+  mdaz_boot_log("chdir done (probe details in mdaz_io.log)");
 #else
   (void)argc;
   (void)argv;
@@ -142,10 +203,18 @@ int main(int argc, char** argv) {
   mdaz::IPlatform* platform = mdaz::create_platform();
   if (!platform || !platform->init("Mini DAYZ", mdaz::kPspWidth, mdaz::kPspHeight)) {
 #if defined(MDAZ_PSP) && defined(__PSP__)
+    mdaz_boot_log("platform init FAILED");
     sceKernelExitGame();
 #endif
     return 1;
   }
+#if defined(MDAZ_PSP) && defined(__PSP__)
+  mdaz_boot_log("platform init ok");
+  boot_splash(platform, "LOADING...", 0.10f, 0.22f, 0.35f);
+  mdaz_boot_log("splash drawn");
+  mdaz_boot_log("sizeof(Game)=%u", (unsigned)sizeof(mdaz::Game));
+  log_mem("before Game alloc");
+#endif
 
   mdaz::Game* game = new (std::nothrow) mdaz::Game();
   if (!game) {
@@ -165,7 +234,22 @@ int main(int argc, char** argv) {
     return 2;
   }
 
-  game->init(platform, "data");
+#if defined(MDAZ_PSP) && defined(__PSP__)
+  mdaz_boot_log("Game allocated %p", (void*)game);
+  log_mem("after Game alloc");
+#endif
+  const bool init_ok = game->init(platform, "data");
+#if defined(MDAZ_PSP) && defined(__PSP__)
+  mdaz_boot_log("game init %s", init_ok ? "ok" : "FAILED");
+  log_mem("after game init");
+  if (!init_ok) {
+    boot_splash(platform, "INIT FAILED - SEE LOG.TXT", 0.45f, 0.05f, 0.05f);
+    for (int i = 0; i < 600; ++i) sceDisplayWaitVblankStart();
+  }
+  bool first_frame_logged = false;
+#else
+  (void)init_ok;
+#endif
 
   double prev = platform->time_seconds();
   while (!game->wants_quit()) {
@@ -176,6 +260,9 @@ int main(int argc, char** argv) {
     if (dt > 0.1f) dt = 0.1f;
     game->update(dt);
     game->render();
+#if defined(MDAZ_PSP) && defined(__PSP__)
+    if (!first_frame_logged) { mdaz_boot_log("first game frame drawn"); first_frame_logged = true; }
+#endif
   }
 
   game->shutdown();

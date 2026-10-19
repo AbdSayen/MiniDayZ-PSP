@@ -2,6 +2,7 @@
 #include "mdaz/game.hpp"
 #include "mdaz/platform.hpp"
 #include "mdaz/platform_null.hpp"
+#include "mdaz/psp_ui.hpp"
 
 #ifndef SDL_MAIN_HANDLED
 #define SDL_MAIN_HANDLED
@@ -46,20 +47,33 @@ public:
     if (!inner_->poll(in)) return false;
     in = mdaz::InputState();
     ++frame_;
+    // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
     if (frame_ > 200 && frame_ < 420) in.move_x = 1.f;
-    if (frame_ >= 480 && frame_ < 520) in.bag = true;
+    // Inventory: SELECT opens, D-pad moves focus, SELECT closes.
+    if (frame_ == 480) { in.bag = in.bag_pressed = true; }
+    if (frame_ == 490 || frame_ == 494) in.move_x = 1.f;
+    if (frame_ == 498) in.move_y = 1.f;
+    if (frame_ == 515) { in.bag = in.bag_pressed = true; }
+    // Craft menu: R+Square opens, D-pad down, Circle closes.
+    if (frame_ == 525) { in.craft_pressed = true; }
+    if (frame_ == 530 || frame_ == 534) in.move_y = 1.f;
+    if (frame_ == 548) { in.back_pressed = true; }
     if (frame_ > 560 && frame_ < 1400) { in.move_x = -0.7f; in.move_y = 0.7f; in.run = true; }
+    // Pause menu: START, D-pad down once (SAVE focus) for the shot, then CONTROLS.
     if (frame_ == 1500) { in.pause = in.pause_pressed = true; }
-    return frame_ < 1540;
+    if (frame_ == 1515) in.move_y = 1.f;
+    if (frame_ == 1535 || frame_ == 1540 || frame_ == 1545) in.move_y = 1.f;
+    if (frame_ == 1555) { in.confirm = in.confirm_pressed = true; }
+    return frame_ < 1580;
   }
 
   void end_frame() {
     static const struct { int frame; const char* name; } kShots[] = {
       { 50, "menu" }, { 180, "spawn" },
       { 220, "run_a" }, { 226, "run_b" }, { 232, "run_c" }, { 238, "run_d" },
-      { 430, "walk" }, { 510, "bag" },
-      { 900, "explore1" }, { 1390, "explore2" }, { 1530, "pause" },
+      { 430, "walk" }, { 510, "bag" }, { 545, "craft" },
+      { 900, "explore1" }, { 1390, "explore2" }, { 1530, "pause" }, { 1570, "controls" },
     };
     for (unsigned i = 0; i < sizeof(kShots) / sizeof(kShots[0]); ++i) {
       if (kShots[i].frame != frame_) continue;
@@ -83,6 +97,7 @@ int main(int argc, char** argv) {
   const char* shots_dir = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
+    else if (std::strcmp(argv[i], "--keys") == 0) mdaz::ui::set_keyboard_hints(true); // keyboard caps in hints
     else data_dir = argv[i];
   }
 

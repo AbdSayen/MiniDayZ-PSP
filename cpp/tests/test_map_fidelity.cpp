@@ -5,6 +5,7 @@
 #include "mdaz/mapgen.hpp"
 #include "mdaz/menu_camera.hpp"
 #include "mdaz/rng.hpp"
+#include "mdaz/world_tilemaps.hpp"
 
 #include <cstdio>
 
@@ -107,6 +108,24 @@ int test_map_fidelity() {
     ++fail;
   } else {
     std::printf("OK   Bot_bandits_check_situation camp spawn\n");
+  }
+
+  {
+    // tilemap_forest is Solid in C2 with per-tile collision polygons (data.js t202[13]).
+    mdaz::WorldTilemaps* wt = new mdaz::WorldTilemaps();
+    wt->stamp_fill("tilemap_forest", 0.f, 0.f, 1, 1, 4, 150, 150, 3);   // full-box tile
+    wt->stamp_fill("tilemap_forest", 150.f, 0.f, 1, 1, 1, 150, 150, 3); // bottom band y>=0.667
+    const bool a = wt->forest_solid_at(75.f, 75.f);
+    const bool b = wt->forest_solid_at(225.f, 50.f);
+    const bool c = wt->forest_solid_at(225.f, 130.f);
+    const bool d = wt->forest_solid_at(400.f, 75.f);
+    if (!a || b || !c || d) {
+      std::printf("FAIL forest_solid_at a=%d b=%d c=%d d=%d\n", a, b, c, d);
+      ++fail;
+    } else {
+      std::printf("OK   tilemap_forest Solid per-tile polygons\n");
+    }
+    delete wt;
   }
 
   return fail ? 1 : 0;

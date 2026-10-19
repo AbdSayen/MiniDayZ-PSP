@@ -52,6 +52,8 @@ OBJS = \
   $(SRC)/weather/weather.o \
   $(SRC)/save/save_game.o \
   $(SRC)/ui/hud.o \
+  $(SRC)/ui/psp_ui.o \
+  $(SRC)/ui/screens.o \
   $(SRC)/ui/menu_camera.o \
   $(SRC)/ui/tutorial.o \
   $(SRC)/ui/item_sprites.o \

@@ -27,67 +27,49 @@ minidayz_desktop.exe
 Data files are copied next to the binaries from `cpp/data/` (items.json, bunker_json).  
 `SDL2.dll` must sit next to `minidayz_desktop.exe`.
 
-### Controls (desktop)
+### Controls (PSP-first, same layout on desktop) — 2026-10-19
 
-| Key | Action |
-|-----|--------|
-| WASD / arrows | Move |
-| Shift | Run |
-| Ctrl | Crouch (slower, quieter vs zeds) |
-| Z / Space | Attack / confirm |
-| E | Loot / bunker / mount / chop tree (axe) / fish / building search / forage |
-| C | Use item (food/med/NVG/flare/morphine/energy) / wear armor·bag |
-| R / V | Mag reload from bag ammo (`Mag_reload`) |
-| B | Craft (bow/arrows/bag/molotov…) / cook near fire |
-| F | Throw F1 / molotov / stick |
-| C + Battery | Refill torch/NVG charge |
-| C + Tent | Place shelter (long warmth) |
-| C + Duct tape | Reinforce melee (less break chance) |
-| C + Bear trap / Barbed wire | Place trap / slow zone |
-| C + Cleaning / Sewing kit | Clear jam / dry·patch gear |
-| C + Whiskey | Drink (warmth + short adrenaline) |
-| C + Gasmask/Headlamp | Wear |
-| G | Drop one from equipped slot |
-| T | Place campfire (if kit) / else toggle torch |
-| Q / X / mousewheel | Cycle hotbar |
-| Tab | Hold: inventory list |
-| 1–8 | Equip hotbar slot |
-| F5 / F9 | Save / load (`save.mdaz` v13 — +bunker/melee mul) |
-| P | Pause |
-| Enter | New game from menu |
-| 1/2/3 (menu) | Novice / Regular / Veteran |
-| Esc | Menu / quit |
+The UI is laid out for the PSP screen (logical 480×272, 6 px safe margin, 5×7 font at 1 px,
+6 px advance, 1 px shadow). There is no mouse/touch UI: the virtual stick and tap buttons are
+gone, every action has a PSP button and an on-screen hint (bottom hint bar). Desktop shows PSP
+glyphs by default; `minidayz_desktop.exe --keys` shows keyboard caps instead.
 
-HUD shows **FPS** (top-left) on desktop and PSP.
+| PSP | Desktop | Gameplay |
+|-----|---------|----------|
+| Analog / D-Pad | WASD / arrows | Move |
+| × Cross | Z / Space | Attack / shoot |
+| ○ Circle | E | Interact (loot / car / bunker / chop / search) |
+| △ Triangle | C | Use equipped item |
+| □ Square | R / V | Reload (magazine) |
+| R (hold) | Shift | Run |
+| L (hold) | Ctrl | Crouch |
+| Select | Tab | Inventory open/close |
+| Start | Esc / P | Pause menu |
+| L + ←/→ | Q / X, 1–8 | Hotbar slot |
+| R + × | F | Throw |
+| R + ○ | G | Drop equipped |
+| R + △ | T | Torch / campfire |
+| R + □ | B | Craft menu |
+| L + Start | F5 | Quick save |
+| L + Select | F9 | Quick load |
 
-### Controls (PSP)
+Menus (main, pause, craft, inventory): D-Pad moves focus (auto-repeat 0.32 s / 0.11 s),
+× (Enter/Space) confirms, ○ (Esc/E/Backspace) goes back.
 
-Mapped in `platform/psp/platform_psp.cpp` (logical 480×272):
-
-| Button | Action |
-|--------|--------|
-| D-Pad / Analog | Move |
-| × Cross | Attack / confirm |
-| ○ Circle | Interact (loot / mount / chop / fish) |
-| △ Triangle | Use equipped item (C) |
-| □ Square | Mag reload (V) / also opens craft like desktop R |
-| R | Run |
-| L | Crouch (held alone) / modifier |
-| Start | Pause |
-| Select | Cancel / Esc / close UI |
-| **R + □** | Craft menu (B) |
-| **R + △** | Torch / campfire (T) |
-| **R + ○** | Drop (G) |
-| **R + ×** | Throw (F) |
-| **L + ←/→** | Cycle hotbar |
-| **L + Start** | Save (F5) |
-| **L + Select** | Load (F9) |
-| **L + ○** | Inventory bag (Tab) |
-| **L + ×/△/□** (menu) | Difficulty Novice / Regular / Veteran |
+- **Main menu:** NEW GAME · CONTINUE (disabled without `save.mdaz`; builds the world first) ·
+  DIFFICULTY (←/→) · CONTROLS · EXIT. Desktop 1/2/3 still pick difficulty.
+- **Pause:** RESUME · SAVE GAME · LOAD GAME · CANCEL TASK · CONTROLS · MAIN MENU. Start / ○ resume.
+- **Inventory:** 8-column bag grid (row 1 = hotbar) + worn containers (pants / jacket / vest /
+  backpack). × use / wear (container slot: take), △ move to hand (hotbar slot), □ drop, ○ / Select close.
+  The world keeps running while the inventory is open (C2 does not pause on `Inventory_opened`).
+- **Craft:** list of C2 recipes, green = possible; × craft (toast CRAFTED / MISSING ITEMS / NEED A FIRE).
 
 ### Scripted screenshot run
 
-`minidayz_desktop.exe --shots <dir>` plays a fixed input script (menu → new game → walk → bag → run south-west → pause), saves BMP screenshots (`menu`, `spawn`, `walk`, `bag`, `explore1`, `explore2`, `pause`) into `<dir>` and exits. Time is fixed at 60 fps, so the run is deterministic apart from the world seed.
+`minidayz_desktop.exe --shots <dir>` plays a fixed input script and writes BMPs:
+`menu`(50) `spawn`(180) `run_a..d` `walk`(430) `bag`(510, inventory with D-pad focus moved)
+`craft`(545) `explore1`(900) `explore2`(1390) `pause`(1530, focus on SAVE) `controls`(1570).
+Time is fixed at 60 fps, so the run is deterministic apart from the world seed.
 
 ## Analysis tools (Node.js)
 

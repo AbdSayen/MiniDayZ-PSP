@@ -98,6 +98,14 @@ public:
   ItemId weapon_unlock_toast_weapon() const { return wpn_unlock_toast_id_; }
   // Smoothed frames-per-second (updated every ~0.5s from Game::update dt).
   float fps() const { return fps_; }
+  // PSP UI (focus navigation, no pointer).
+  float ui_time() const { return ui_t_; }
+  int menu_focus() const { return menu_focus_; }
+  int pause_focus() const { return pause_focus_; }
+  const char* toast_text() const { return toast_t_ > 0.f ? toast_ : 0; }
+  // Short label for the Circle/interact action available right now (0 = none).
+  const char* interact_hint() const;
+  bool has_save() const;
 
   Player& player_mut() { return player_; }
   Inventory& inventory_mut() { return inventory_; }
@@ -170,6 +178,28 @@ private:
   int craft_menu_index_;
   Difficulty menu_difficulty_;
   void draw_controls_help() const;
+  // --- PSP UI state ---
+  int menu_focus_;
+  int pause_focus_;
+  float ui_t_;
+  float nav_hold_t_[4];
+  bool nav_prev_[4];
+  char toast_[48];
+  float toast_t_;
+  void compute_nav(InputState& in, float dt);
+  void show_toast(const char* msg);
+  void update_pause(float dt, const InputState& in);
+  void update_inventory_ui(const InputState& in);
+  void update_craft_menu(const InputState& in);
+  bool load_game_from_disk();
+  void save_game_to_disk();
+  void use_equipped_item(bool allow_fallback);
+  void use_bag_slot(int slot);
+  void equip_bag_slot(int slot);
+  void try_drop_slot(int slot);
+  void render_main_menu() const;
+  void render_pause_menu() const;
+  void render_dead_screen() const;
   Vec2 overworld_pos_;
   Vec2 last_airdrop_pos_;
   bool visited_sectors_[kMapSectorsX * kMapSectorsY];

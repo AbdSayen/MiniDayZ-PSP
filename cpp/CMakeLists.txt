@@ -48,6 +48,8 @@ set(MDAZ_CORE_SOURCES
   src/weather/weather.cpp
   src/save/save_game.cpp
   src/ui/hud.cpp
+  src/ui/psp_ui.cpp
+  src/ui/screens.cpp
   src/ui/menu_camera.cpp
   src/ui/tutorial.cpp
   src/ui/item_sprites.cpp
