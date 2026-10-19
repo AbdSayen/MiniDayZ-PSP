@@ -17,6 +17,7 @@ int test_tutorial();
 int test_map_fidelity();
 int test_player_visual();
 int test_selection();
+int test_car_hitbox();
 int test_queue_q1();
 int test_fidelity2();
 int test_fidelity2_more();
@@ -40,6 +41,7 @@ int main() {
   failed += test_map_fidelity();
   failed += test_player_visual();
   failed += test_selection();
+  failed += test_car_hitbox();
   failed += test_queue_q1();
   failed += test_fidelity2();
   failed += test_fidelity2_more();

@@ -86,6 +86,9 @@ struct GameTestAccess {
   static bool& zr_iv1(Game& g, int i) { return g.zr_iv1_[i]; }
   static void install_los(Game& g) { g.install_los(); }
   static bool bullet_wall(Game& g, Vec2 a, Vec2 b) { return g.bullet_hits_obstacle(a, b); }
+  static MapProps& props(Game& g) { return g.c2_props_; }
+  static bool player_block(Game& g, Vec2 a, Vec2 b) { return g.building_blocks(a, b); }  // player move (game.cpp update)
+  static bool zed_block(Game& g, Vec2& pos, Vec2 prev) { return g.npc_forest_block(pos, prev); }
 };
 }
 
@@ -593,5 +596,72 @@ int test_selection() {
 
   delete gp;
   std::printf("test_selection: %d failure(s)\n", g_fail);
+  return g_fail ? 1 : 0;
+}
+
+// Item 3: car hitboxes = the Solid obst_base / big_obstacle_base each car spawns in
+// create_map_element (IV1 = 6, subs 1..17), frames + SetSize(c2 - c1) from data.js
+// (tools/gen_car_hitbox.js -> car_hitbox.json). Player, zombies and bullets must stop at it.
+int test_car_hitbox() {
+  std::printf("--- test_car_hitbox ---\n");
+  g_fail = 0;
+  Game* gp = new (std::nothrow) Game();
+  if (!gp) { std::printf("FAIL alloc Game\n"); return 1; }
+  Game& g = *gp;
+  // Expected polygon bounding boxes (offsets from the car origin) from data.js.
+  static const struct { int sub; float x0, y0, x1, y1; const char* name; } kCars[] = {
+    { 1, -44, -16, 45, 17, "car_regular_blue" },  { 2, -20, -38, 16, 34, "car_regular_blue_vert" },
+    { 3, -44, -16, 45, 17, "car_regular_red" },   { 4, -20, -38, 16, 34, "car_regular_red_vert" },
+    { 5, -44, -16, 45, 17, "car_regular_gray" },  { 6, -20, -38, 16, 34, "car_regular_gray_vert" },
+    { 7, -20, -38, 16, 34, "car_regular_green_vert" },
+    { 8, -39, -12, 54, 17, "car_van_black" }, { 9, -39, -12, 54, 17, "car_van_blue" }, { 10, -39, -12, 54, 17, "car_van_red" },
+    { 11, -44, -16, 45, 17, "car_police" },   { 12, -20, -38, 16, 34, "car_police_vert" },
+    { 13, -67, -20, 58, 18, "car_btr" },      { 14, -68, -11, 63, 21, "car_truck" },
+    { 15, -34, -8, 35, 16, "car_hatch_grey" }, { 16, -34, -8, 35, 16, "car_hatch_red" }, { 17, -34, -8, 35, 16, "car_hatch_white" },
+  };
+  const Vec2 o(12000.f, 12000.f);
+  for (unsigned c = 0; c < sizeof(kCars) / sizeof(kCars[0]); ++c) {
+    const int def = MapProps::def_for(6, kCars[c].sub);
+    char what[160];
+    std::snprintf(what, sizeof(what), "car %s: def found", kCars[c].name);
+    check(def >= 0, what);
+    if (def < 0) continue;
+    for (int frame = 0; frame < 2; ++frame) {   // frame 1 = trunk opened (IV3 = 1): same Solid
+      MapProp mp; mp.x = o.x; mp.y = o.y; mp.def = static_cast<short>(def); mp.frame = static_cast<short>(frame);
+      A::props(g).build_list(&mp, 1);
+      Vec2 v[8];
+      const int n = MapProps::def_solid_poly(def, frame, 0, o, v);
+      float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
+      for (int k = 0; k < n; ++k) { x0 = std::fmin(x0, v[k].x); y0 = std::fmin(y0, v[k].y); x1 = std::fmax(x1, v[k].x); y1 = std::fmax(y1, v[k].y); }
+      std::snprintf(what, sizeof(what), "car %s f%d: polygon %d pts bbox (%.0f,%.0f)-(%.0f,%.0f) == data.js", kCars[c].name, frame, n,
+                    x0 - o.x, y0 - o.y, x1 - o.x, y1 - o.y);
+      check(n >= 3 && std::fabs(x0 - o.x - kCars[c].x0) < 0.6f && std::fabs(y0 - o.y - kCars[c].y0) < 0.6f &&
+            std::fabs(x1 - o.x - kCars[c].x1) < 0.6f && std::fabs(y1 - o.y - kCars[c].y1) < 0.6f, what);
+      const float mx = (x0 + x1) * 0.5f, my = (y0 + y1) * 0.5f;
+      // Four sides: start 4 px outside, step 6 px in (ends 2 px inside).
+      const Vec2 out[4] = { Vec2(mx, y1 + 4.f), Vec2(mx, y0 - 4.f), Vec2(x0 - 4.f, my), Vec2(x1 + 4.f, my) };
+      const Vec2 in[4]  = { Vec2(mx, y1 - 2.f), Vec2(mx, y0 + 2.f), Vec2(x0 + 2.f, my), Vec2(x1 - 2.f, my) };
+      bool pl = true, pl_free = true, zd = true;
+      for (int s = 0; s < 4; ++s) {
+        pl = pl && A::player_block(g, out[s], in[s]);
+        const Vec2 away(out[s].x + (out[s].x - in[s].x), out[s].y + (out[s].y - in[s].y));
+        pl_free = pl_free && !A::player_block(g, out[s], away);
+        Vec2 zp = in[s];
+        zd = zd && A::zed_block(g, zp, out[s]) && !A::player_block(g, zp, zp);
+      }
+      std::snprintf(what, sizeof(what), "car %s f%d: player stops at polygon (4 sides), free outside", kCars[c].name, frame);
+      check(pl && pl_free, what);
+      std::snprintf(what, sizeof(what), "car %s f%d: zombie stops at polygon (4 sides)", kCars[c].name, frame);
+      check(zd, what);
+      const bool b_hit = A::bullet_wall(g, Vec2(x0 - 30.f, my), Vec2(x1 + 30.f, my)) &&
+                         A::bullet_wall(g, Vec2(mx, y1 + 30.f), Vec2(mx, y0 - 30.f));
+      const bool b_miss = !A::bullet_wall(g, Vec2(x0 - 30.f, y1 + 6.f), Vec2(x1 + 30.f, y1 + 6.f));
+      std::snprintf(what, sizeof(what), "car %s f%d: bullet stops at polygon, passes 6 px below", kCars[c].name, frame);
+      check(b_hit && b_miss, what);
+    }
+  }
+  A::props(g).build_list(0, 0);
+  delete gp;
+  std::printf("test_car_hitbox: %d failure(s)\n", g_fail);
   return g_fail ? 1 : 0;
 }

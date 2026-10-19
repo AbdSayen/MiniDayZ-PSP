@@ -290,6 +290,11 @@ public:
   // TEST HARNESS ONLY: nearest live car trunk / stand on it / count live trunks.
   int harness_trunk_near(float& d);
   bool harness_place_at_trunk(bool on_point);
+  // Test-only (--shots-carhit): player 20 px south of the first car of create_map_element sub
+  // (IV1 = 6); returns the car's polygon bottom y (or -1). debug_hitbox_ draws Solid polygons.
+  float harness_place_at_car(int sub);
+  bool debug_hitbox_ = false;
+  float harness_player_y() const { return player_.pos.y; }
   int trunk_opened_ = 0, trunk_found_ = 0;   // test counters
   int ach_gta() const { return ach_gta_; }
   int harness_prop_frame(int k) const { return c2_props_.at(k).frame; }

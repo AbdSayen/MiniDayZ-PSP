@@ -40,6 +40,15 @@ public:
   // Movement a->b blocked by a Solid base polygon of a prop near b.
   bool blocks(Vec2 a, Vec2 b, float r) const;
   int solid_count() const;
+  // kPropDefs index of create_map_element (cat, sub), -1 if none (tests / debug overlay).
+  static int def_for(int cat, int sub);
+  // World vertices of Solid base k of def placed at origin with instance frame (C2 obst_base /
+  // big_obstacle_base polygon, SetSize applied). Returns the vertex count, 0 when k is out of
+  // range or the base belongs to another frame (mframe).
+  static int def_solid_poly(int def, int frame, int k, Vec2 origin, Vec2* out8);
+  int solid_poly(int i, int k, Vec2* out8) const {
+    return (i >= 0 && i < count_) ? def_solid_poly(props_[i].def, props_[i].frame, k, Vec2(props_[i].x, props_[i].y), out8) : 0;
+  }
   // C2 car_loot_point (t232): spawned at the car's Imagepoint 1 when IV3 = 0 (Map) / at layout
   // start (Tutorial); destroyed when opened. Opened set saved (v19).
   bool trunk_alive(int i) const { return i >= 0 && i < count_ && (trunk_[i >> 3] & (1u << (i & 7))) != 0; }

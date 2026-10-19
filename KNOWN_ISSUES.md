@@ -298,3 +298,8 @@ Open/ambiguous:
 
 ## House_transparenting not fully ported (found during item 2)
 C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t928): when not in the warmzone, the interior plays anim "out"; if player Y < exterior imagepoint 1 the roof goes to opacity 25 and the interior moves to Buildings_base_top with Tint + outline (t943 Outline param 3 = 1); otherwise opacity 100. Exterior layer: player Y >= imagepoint 2 -> Buildings_bg, else Buildings (above player). door#340 opacity 100/25, rain_roof/rain_loop audio swap. Leaving t928 (TriggerOnce) resets opacity 100, Buildings_bg, anim "in". The port has no exterior imagepoints 1/2 in BuildingShape yet, so the 25 % roof and the layer swap are missing; scheduled with item 7 (global depth sort).
+
+## Car hitbox notes (item 3)
+- Hatchbacks (subs 15..17) did not spawn on the seed used by --shots-carhit, so their in-game screenshot is missing; they are covered by test_car_hitbox only.
+- Other SetSize obstacles not from c1/c2 still use native size: obst_barricade (SetSize from its own image points 1/2, expression not evaluated by gen_base_sizes.js), b_gas_station_fueling_int (constant 21x100), door SetWidth. Not cars; to check in the KNOWN_ISSUES pass.
+- Player is drawn over the car sprite when south of it: depth sort is item 7.

@@ -4597,6 +4597,40 @@ void Game::render() {
               else platform_->draw_sprite_frame(sh, lx, sy - thy * th * sc, tw * sc, th * sc, tsx, tsy, tw, th, 0.f, 1.f);
             }
           }
+        // Test-only debug overlay (--shots-carhit): Solid base polygons (red) over the sprites
+        // and the frame rectangle of each prop sprite (yellow corners).
+        if (debug_hitbox_)
+          for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
+            for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
+              int f0 = 0, pn = 0;
+              c2_props_.cell_range(ax, ay, f0, pn);
+              for (int k = f0; k < f0 + pn; ++k) {
+                const MapProp& mp = c2_props_.at(k);
+                const PropFrame* pf = c2_props_.frame_of(mp);
+                const float rx = cx + (mp.x - camv.x) * sc - pf->hx * pf->w * sc, ry = cy + (mp.y - camv.y) * sc - pf->hy * pf->h * sc;
+                const float rw = pf->w * sc, rh = pf->h * sc;
+                for (float t = 0.f; t <= 1.f; t += 0.02f) {
+                  platform_->draw_rect(rx + rw * t, ry, 1, 1, 1.f, 1.f, 0.f, 1.f);
+                  platform_->draw_rect(rx + rw * t, ry + rh, 1, 1, 1.f, 1.f, 0.f, 1.f);
+                  platform_->draw_rect(rx, ry + rh * t, 1, 1, 1.f, 1.f, 0.f, 1.f);
+                  platform_->draw_rect(rx + rw, ry + rh * t, 1, 1, 1.f, 1.f, 0.f, 1.f);
+                }
+                Vec2 v[8];
+                for (int b = 0; b < 8; ++b) {
+                  const int n = c2_props_.solid_poly(k, b, v);
+                  for (int j = 0; j < n; ++j) {
+                    const Vec2 p = v[j], q = v[(j + 1) % n];
+                    const float len = std::sqrt((q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y));
+                    const int steps = static_cast<int>(len) + 1;
+                    for (int s = 0; s <= steps; ++s) {
+                      const float t = static_cast<float>(s) / steps;
+                      platform_->draw_rect(cx + (p.x + (q.x - p.x) * t - camv.x) * sc - 1.f,
+                                           cy + (p.y + (q.y - p.y) * t - camv.y) * sc - 1.f, 2, 2, 1.f, 0.f, 0.f, 1.f);
+                    }
+                  }
+                }
+              }
+            }
       }
 
       // Forest trees — crop first pine frame (47×92), not whole sheet
@@ -5319,6 +5353,22 @@ bool Game::harness_place_at_wreck(int mode) {
     platform_->log_line(line);
   }
   return true;
+}
+
+float Game::harness_place_at_car(int sub) {
+  const int def = MapProps::def_for(6, sub);
+  for (int k = 0; k < c2_props_.count(); ++k) {
+    if (c2_props_.at(k).def != def) continue;
+    Vec2 v[8];
+    const int n = c2_props_.solid_poly(k, 0, v);
+    if (n < 3) continue;
+    float y1 = v[0].y, x0 = v[0].x, x1 = v[0].x;
+    for (int j = 1; j < n; ++j) { if (v[j].y > y1) y1 = v[j].y; if (v[j].x < x0) x0 = v[j].x; if (v[j].x > x1) x1 = v[j].x; }
+    player_.pos = Vec2((x0 + x1) * 0.5f, y1 + 20.f);
+    player_.vel = Vec2();
+    return y1;
+  }
+  return -1.f;
 }
 
 bool Game::harness_place_at_building(int mode) {

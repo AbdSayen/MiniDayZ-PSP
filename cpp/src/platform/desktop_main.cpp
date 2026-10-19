@@ -69,6 +69,19 @@ public:
       if (game_ && frame_ == 220) game_->harness_set_quest(3, 1, 88);
       return frame_ < 230;
     }
+    if (carhit_) {
+      // 6 car models: place 20 px south of the polygon, walk north into it for 30 frames.
+      static const int kSubs[] = { 1, 2, 8, 13, 14, 15 };
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (game_ && frame_ == 190) game_->debug_hitbox_ = true;
+      for (int j = 0; j < 6; ++j) {
+        const int f = 200 + j * 60;
+        if (game_ && frame_ == f) { carhit_y1_ = game_->harness_place_at_car(kSubs[j]); std::printf("[carhit] sub %d polygon bottom y %.1f player y %.1f\n", kSubs[j], carhit_y1_, game_->harness_player_y()); }
+        if (frame_ > f + 2 && frame_ < f + 40) in.move_y = -1.f;
+        if (game_ && frame_ == f + 45) std::printf("[carhit] sub %d after walking north: player y %.1f (polygon bottom %.1f, gap %.1f)\n", kSubs[j], game_->harness_player_y(), carhit_y1_, game_->harness_player_y() - carhit_y1_);
+      }
+      return frame_ < 200 + 6 * 60;
+    }
     if (trunk_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (game_ && frame_ == 200) { game_->harness_place_at_trunk(false); float d = 0; game_->harness_trunk_near(d); std::printf("[trunk] placed %.0f px from point, alive=%d\n", d, game_->harness_trunks_alive()); }
@@ -291,6 +304,19 @@ public:
       inner_->end_frame();
       return;
     }
+    if (carhit_) {
+      static const int kSubs[] = { 1, 2, 8, 13, 14, 15 };
+      for (int j = 0; j < 6; ++j) {
+        const int f = 200 + j * 60;
+        const char* tag = frame_ == f + 1 ? "a_placed" : (frame_ == f + 45 ? "b_stopped" : 0);
+        if (!tag) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/carhit_sub%02d_%s.bmp", dir_, kSubs[j], tag);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (trunk_) {
       static const struct { int frame; const char* name; } kT[] = {
         { 205, "trunk_0_near" }, { 230, "trunk_1_walking" }, { 320, "trunk_2_opened" }, { 398, "trunk_3_lid_up" },
@@ -379,6 +405,8 @@ public:
   void set_death(bool d) { death_ = d; }
   bool chop_ = false;
   bool trunk_ = false;
+  bool carhit_ = false;
+  float carhit_y1_ = 0.f;
   int chop_tree_ = -1;
   void chop_log(const char* tag) {
     std::printf("[chop] %s tree=%d hp=%d trees=%d ground: sticks(38)=%d firewood(50)=%d bag: sticks=%d firewood=%d\n", tag, chop_tree_,
@@ -411,6 +439,7 @@ int main(int argc, char** argv) {
   bool shots_quest = false;
   bool shots_chop = false;
   bool shots_trunk = false;
+  bool shots_carhit = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -428,6 +457,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-death") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_death = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-carhit") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_carhit = true;
     }
     else if (std::strcmp(argv[i], "--shots-trunk") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -489,6 +522,7 @@ int main(int argc, char** argv) {
   if (scripted) scripted->set_quest(shots_quest);
   if (scripted) scripted->chop_ = shots_chop;
   if (scripted) scripted->trunk_ = shots_trunk;
+  if (scripted) scripted->carhit_ = shots_carhit;
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

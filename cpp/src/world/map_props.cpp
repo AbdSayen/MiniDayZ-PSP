@@ -232,6 +232,23 @@ bool MapProps::blocks(Vec2 a, Vec2 b, float r) const {
   return false;
 }
 
+int MapProps::def_for(int cat, int sub) {
+  for (int i = 0; i < kPropDefCount; ++i)
+    if (kPropDefs[i].cat == cat && kPropDefs[i].sub == sub) return i;
+  return -1;
+}
+
+int MapProps::def_solid_poly(int def, int frame, int k, Vec2 o, Vec2* out) {
+  if (def < 0 || def >= kPropDefCount) return 0;
+  const PropDef& d = kPropDefs[def];
+  if (k < 0 || k >= d.base_count) return 0;
+  const PropBase& pb = kPropBases[d.first_base + k];
+  if (pb.mframe >= 0 && pb.mframe != frame) return 0;
+  for (int j = 0; j < pb.n && j < 8; ++j)
+    out[j] = Vec2(o.x + pb.ox + pb.pts[j * 2], o.y + pb.oy + pb.pts[j * 2 + 1]);
+  return pb.n < 8 ? pb.n : 8;
+}
+
 int MapProps::solid_count() const {
   int s = 0;
   for (int i = 0; i < count_; ++i) {
