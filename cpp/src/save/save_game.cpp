@@ -268,6 +268,8 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
     out.wpn_sv98_progress = extras->weapon_unlocks.sv98_progress;
     out.wpn_saiga12_progress = extras->weapon_unlocks.saiga12_progress;
     out.wpn_vss_progress = extras->weapon_unlocks.vss_progress;
+    for (int i = 0; i < kSaveTrunkBytes; ++i) out.trunks_opened[i] = extras->trunks_opened[i];
+    out.ach_gta = extras->ach_gta;
     out.wpn_unlock_flags = 0;
     if (extras->weapon_unlocks.aug_unlocked) out.wpn_unlock_flags |= 1;
     if (extras->weapon_unlocks.mac10_unlocked) out.wpn_unlock_flags |= 2;
@@ -400,6 +402,8 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
     } else {
       extras->loot_respawn_t = 0.f;
     }
+    for (int i = 0; i < kSaveTrunkBytes; ++i) extras->trunks_opened[i] = in.version >= 19 ? in.trunks_opened[i] : 0;
+    extras->ach_gta = in.version >= 19 ? in.ach_gta : 0;
     if (in.version >= 16) {
       extras->weapon_unlocks.aug_progress = in.wpn_aug_progress;
       extras->weapon_unlocks.mac10_progress = in.wpn_mac10_progress;

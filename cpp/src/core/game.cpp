@@ -12,6 +12,7 @@
 #include "mdaz/psp_ui.hpp"
 #include "mdaz/save_game.hpp"
 #include "mdaz/weapons.hpp"
+#include "mdaz/balance_globals.hpp"
 
 #include <cmath>
 #include <new>
@@ -2550,6 +2551,9 @@ void Game::save_game_to_disk() {
   extras.adrenaline_t = adrenaline_t_;
   extras.bunker_looted = bunker_looted_ ? 1 : 0;
   extras.melee_break_mul = melee_break_mul_;
+  static_assert(MapProps::kTrunkBytes == kSaveTrunkBytes, "trunk save size");
+  for (int i = 0; i < kSaveTrunkBytes; ++i) extras.trunks_opened[i] = c2_props_.trunks_opened_bits()[i];
+  extras.ach_gta = ach_gta_;
   const bool ok = SaveSystem::save_file(*platform_, "save.mdaz", player_, inventory_, weather_,
                         equipped_slot_, visited_sectors_,
                         kMapSectorsX * kMapSectorsY,
@@ -2583,6 +2587,9 @@ bool Game::load_game_from_disk() {
                              &extras, &fires_view, &load_loot_view_))
     return false;
   apply_loot_view(load_loot_view_);
+  c2_props_.apply_trunks_opened(extras.trunks_opened, kSaveTrunkBytes);   // map_element IV3 = 1
+  ach_gta_ = extras.ach_gta;
+  trunk_walk_ = -1;
   // C2 Reload_locations_aftersave: erase all, create within respawn_radius2 + 1000 of the
   // loaded player. Loot comes from the save, so a location with a saved pile near it counts
   // as seeded; no hostiles are spawned for the reload itself.
@@ -2938,11 +2945,18 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     equipped_slot_ = next_hotbar_slot(equipped_slot_, in.slot_digit, in.equip_delta);
     sync_mag_for_equipped();
   }
-  // C2 walk_marker (IV0 = 4): AltMove toward the car_loot_point; on reaching it while
-  // overlapping the point the trunk opens. Port: any stick/D-pad input cancels the walk and
-  // a 5 s cap stops it (C2 cancel rules not decoded, KNOWN_ISSUES).
-  // avalible_interaction = 3: nearest car_loot_point < 50 px with doorchecker LOS (custom
-  // obstacles = family t927, the b_*_int building sprites) -> SetVisible(1).
+  // C2 walk_marker (Merged pick and interact, Else of sid1792234758292318): IV0 = 7 at the nearer
+  // car_loot_point image point wp1/wp2 (+5 y when IV1 = vertical car); AltMove vector
+  // (marker - player) * 100, SetSpeed 100, angle toward it. player_base OnCollision IV0 = 7 ->
+  // marker at the nearest car_loot_point origin (+5 y), IV0 = 4; OnCollision IV0 = 4 with
+  // player_collision_base overlapping the point -> open (sid7711324247664447), marker destroyed.
+  // data.js has no other cancel; PSP adaptation: any stick/D-pad input cancels (touch d-pad
+  // drives the same EightDir in C2).
+  // avalible_interaction (sid3971809969300003, evaluated in order, later wins): skipped while 5
+  // (items family t912 < 100 px) or 6 (t909 < 100 px) - the port's loot pickup runs first on
+  // Circle; 1 plants t940, 2 bush, 3 trunk, 4 waterpump, 8 panel_button, 7 obstacle. The parent
+  // event sets every car_loot_point SetVisible(0) each tick; 3 = nearest car_loot_point < 50 px
+  // with doorchecker LOS (custom obstacles = family t927, the b_*_int sprites) -> SetVisible(1).
   trunk_avail_ = -1;
   if (!in_bunker_ && !vehicles_.player_driving()) {
     float td2 = 0.f;
@@ -2952,19 +2966,33 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       c2_props_.trunk_show(tk);
     }
   }
+  trunk_walk_drive_ = false;
   if (trunk_walk_ >= 0) {
-    trunk_walk_t_ += dt;
-    if (in.move_x != 0.f || in.move_y != 0.f || trunk_walk_t_ > 5.f || !c2_props_.trunk_alive(trunk_walk_)) {
-      trunk_walk_ = -1;
-    } else if (c2_props_.trunk_overlaps(trunk_walk_, player_.pos, 15.f)) {
-      open_trunk(trunk_walk_);
+    if (in.move_x != 0.f || in.move_y != 0.f) {
       trunk_walk_ = -1;
     } else {
-      Vec2 tgt = c2_props_.trunk_pos(trunk_walk_);
-      if (c2_props_.trunk_vertical(trunk_walk_)) tgt.y += 5.f;
-      const float dx = tgt.x - player_.pos.x, dy = tgt.y - player_.pos.y;
-      const float l = std::sqrt(dx * dx + dy * dy);
-      if (l > 0.5f) { in.move_x = dx / l; in.move_y = dy / l; in.run = false; }
+      const float dx = trunk_walk_tgt_.x - player_.pos.x, dy = trunk_walk_tgt_.y - player_.pos.y;
+      if (std::fabs(dx) <= 3.f && std::fabs(dy) <= 3.f) {   // player_base 2x2 vs walk_marker poly 4x4
+        if (trunk_walk_stage_ == 7) {
+          float d2 = 0.f;
+          const int k = c2_props_.nearest_trunk(player_.pos, d2);
+          if (k >= 0) {
+            trunk_walk_ = k; trunk_walk_stage_ = 4;
+            trunk_walk_tgt_ = c2_props_.trunk_pos(k);
+            if (c2_props_.trunk_vertical(k)) trunk_walk_tgt_.y += 5.f;
+          } else {
+            trunk_walk_ = -1;
+          }
+        } else {
+          const int k = trunk_walk_;
+          trunk_walk_ = -1;
+          if (c2_props_.trunk_alive(k) && c2_props_.trunk_overlaps(k, player_.pos, 15.f)) open_trunk(k, true);
+        }
+      } else {
+        const float l = std::sqrt(dx * dx + dy * dy);
+        in.move_x = dx / l; in.move_y = dy / l; in.run = false;
+        trunk_walk_drive_ = true;
+      }
     }
   }
 
@@ -3041,7 +3069,10 @@ void Game::update_playing(float dt, const InputState& in_raw) {
                             player_.survival.food > 8.f &&
                             player_.survival.water > 8.f;
     const Vec2 pre_move = player_.pos;
+    const float ms_keep = player_.move_speed;
+    if (trunk_walk_drive_) player_.move_speed = 100.f;   // C2 AltMove SetSpeed 100 (walk_marker)
     player_.apply_input(mx, my, in.run && can_sprint, dt);
+    player_.move_speed = ms_keep;
     if (!in_bunker_ && world_.is_blocked(player_.pos.x, player_.pos.y)) {
       player_.pos.x -= player_.vel.x * dt;
       player_.pos.y -= player_.vel.y * dt;
@@ -4511,7 +4542,7 @@ void Game::render() {
             int f0 = 0, pn = 0;
             c2_props_.cell_range(ax, ay, f0, pn);
             for (int k = f0; k < f0 + pn; ++k) {
-              if (!c2_props_.trunk_alive(k) || !c2_props_.trunk_visible(k)) continue;
+              if (k != trunk_avail_ || !c2_props_.trunk_alive(k)) continue;   // SetVisible(0) every tick unless avalible_interaction = 3
               const char* sh = 0; int tsx = 0, tsy = 0, tw = 0, th = 0; float thx = 0.f, thy = 0.f; bool mir = false;
               if (!c2_props_.trunk_sprite(k, sh, tsx, tsy, tw, th, thx, thy, mir)) continue;
               const Vec2 tp = c2_props_.trunk_pos(k);
@@ -5369,38 +5400,74 @@ bool Game::try_trunk_interact() {
   float d2 = 0.f;
   const int k = c2_props_.nearest_trunk(player_.pos, d2);
   if (k < 0 || d2 >= 100.f * 100.f) return false;
-  if (c2_props_.trunk_overlaps(k, player_.pos, 15.f)) open_trunk(k);
-  else { trunk_walk_ = k; trunk_walk_t_ = 0.f; }
+  if (c2_props_.trunk_overlaps(k, player_.pos, 15.f)) {
+    open_trunk(k, false);              // sid1792234758292318: stop AltMove, open
+  } else {
+    // Else: walk_marker IV0 = 7 at wp2 if distance(player, wp2) < distance(player, wp1), else wp1.
+    const Vec2 w1 = c2_props_.trunk_wp(k, 1), w2 = c2_props_.trunk_wp(k, 2);
+    Vec2 t = dist2(player_.pos, w2) < dist2(player_.pos, w1) ? w2 : w1;
+    if (c2_props_.trunk_vertical(k)) t.y += 5.f;
+    trunk_walk_ = k; trunk_walk_stage_ = 7; trunk_walk_tgt_ = t;
+    player_.facing_deg = std::atan2(t.y - player_.pos.y, t.x - player_.pos.x) * 57.2957795f;
+  }
   return true;
 }
 
-// C2 trunk open (data.js sid1792234758292318 / sid7711324247664447): sound "open"; per
-// car_loot_point frame a choose() list; Map: choose(1,2) = 2 -> Spawn_drop at the "loot" image
-// point + log 7, else log 8; Tutorial: always (2,8,9,4) or 54 for frames 2/4; point destroyed.
-void Game::open_trunk(int k) {
-  static const ItemId kA[] = {1,2,3,4,5,6,7,8,9,8,9,8,9,26,10,20,254,256,300,302,350,352,200,203,39,49,44};
-  static const ItemId kB[] = {252,253,254,256,259,300,301,302,350,352,353,354,356,357,4,25,16,17,18,20,22,24,153,154,155,450,200,201,202,203,205,164,52,39,40,41,50,58,13,63};
-  static const ItemId kC[] = {256,257,300,304,12,16,17,352,354,256,257,300,12,16,17,352,354,181,200,153,264,41,100,100,155,20,26};
-  static const ItemId kTut[] = {2, 8, 9, 4};
-  auto pick = [&](unsigned n) { unsigned i = static_cast<unsigned>(rng_.next_float() * n); return i < n ? i : n - 1; };
-  const int f = c2_props_.trunk_frame(k);
-  const Vec2 at = c2_props_.trunk_loot_pos(k);
-  if (audio_) audio_->play("open", 0.6f);
-  ItemId id = 0;
-  if (tut_.active) {
-    id = (f == 2 || f == 4) ? 54 : kTut[pick(4)];
-  } else if (rng_.next_float() >= 0.5f) {   // choose(1,2) = 2 (float draw: next_int low bits alternate)
-    if (f == 1) id = kB[pick(sizeof(kB) / sizeof(kB[0]))];
-    else if (f == 2 || f == 4) id = kC[pick(sizeof(kC) / sizeof(kC[0]))];
-    else id = kA[pick(sizeof(kA) / sizeof(kA[0]))];
+// C2 Spawn_drop IV1 (stack count) per item, data.js Function "Spawn_drop" (spawn_drop_count.inc).
+// Items whose IV1 is a condition / charge / fill (knives, canteen, batteries...) are spawned with
+// count 1 here (KNOWN_ISSUES: ground items carry no IV1 / IV6 in the port).
+namespace { struct SpawnDropCount { int id, kind, a, b, farmer, n; int list[5]; };
+#include "../world/spawn_drop_count.inc"
+}
+int Game::spawn_drop_count(ItemId id) {
+  for (unsigned i = 0; i < sizeof(kSpawnDropCount) / sizeof(kSpawnDropCount[0]); ++i) {
+    const SpawnDropCount& r = kSpawnDropCount[i];
+    if (r.id != id) continue;
+    int n = r.kind == 1 ? rng_.next_int(r.a, r.b - 1)     // int(random(a, b))
+                        : r.list[rng_.next_int(0, r.n - 1)];
+    if (r.farmer && player_.perk_farmer) n += r.farmer;
+    return n;
   }
-  if (id > 0) loot_.spawn_item(at, id, 1);
-  ++trunk_opened_; if (id > 0) ++trunk_found_;
-  std::printf("[trunk] opened prop %d frame %d -> item %d at (%.0f,%.0f)\n", k, f, id, at.x, at.y);
-  show_toast(id > 0 ? "I found something in this trunk." : "There is nothing in this trunk.");  // l_eng_log 7 / 8
-  c2_props_.trunk_take(k);
+  return 1;
 }
 
+// C2 trunk open: direct (Circle while overlapping, sid1792234758292318 -> sid3302144065259174)
+// and walk_marker (sid7711324247664447 -> sid1074032691412307) branches; both play "open" at
+// -5 dB, set the overlapping car (family t920) to frame 1 = trunk lid up, and per
+// car_loot_point frame: Map choose(1,2) = 2 -> Spawn_drop choose(list) at the "loot" image point
+// + log 7, else log 8; Tutorial (2,8,9,4) or 54 for frames 2/4 + tutorCarTrunkOpened. Then
+// map_element IV3 = 1 and ach_gta IV2 += 1 when SEED_RUN = 0. Lists differ per branch.
+void Game::open_trunk(int k, bool walked) {
+  static const ItemId kA_dir[] = {1,2,3,4,5,6,7,8,9,8,9,8,9,26,10,20,254,256,300,302,350,352,200,203,39,49,44};
+  static const ItemId kA_walk[] = {1,2,3,4,5,6,7,8,9,8,9,8,9,24,10,20,254,256,300,302,350,352,200,203,39,49,44};
+  static const ItemId kB_dir[] = {252,253,254,256,259,300,301,302,350,352,353,354,356,357,4,25,16,17,18,20,22,24,153,154,155,450,200,201,202,203,205,164,52,39,40,41,50,58,13,63};
+  static const ItemId kB_walk[] = {252,253,254,256,259,300,301,302,350,352,353,354,356,357,4,25,16,17,24,20,22,24,153,154,155,450,200,201,202,203,205,164,166,52,39,40,41,50,58,58};
+  static const ItemId kC[] = {256,257,300,304,12,16,17,352,354,256,257,300,12,16,17,352,354,181,200,153,264,41,100,100,155,20,26};
+  static const ItemId kTut[] = {2, 8, 9, 4};
+#define MDAZ_PICK(arr) arr[rng_.next_int(0, static_cast<int>(sizeof(arr) / sizeof(arr[0])) - 1)]
+  const int f = c2_props_.trunk_frame(k);
+  const Vec2 at = c2_props_.trunk_loot_pos(k);
+  if (audio_) audio_->play("open", 0.5623f);          // PlayByName "open", -5 dB
+  c2_props_.set_frame(k, 1);                         // t920 IsOverlapping 232 -> SetAnimFrame 1
+  ItemId id = 0;
+  if (tut_.active) {
+    id = (f == 2 || f == 4) ? 54 : MDAZ_PICK(kTut);
+    tut_car_trunk_opened_ = true;
+  } else if (rng_.next_int(1, 2) == 2) {
+    if (f == 1) id = walked ? MDAZ_PICK(kB_walk) : MDAZ_PICK(kB_dir);
+    else if (f == 2 || f == 4) id = MDAZ_PICK(kC);
+    else id = walked ? MDAZ_PICK(kA_walk) : MDAZ_PICK(kA_dir);
+  }
+#undef MDAZ_PICK
+  int n = 0;
+  if (id > 0) { n = spawn_drop_count(id); loot_.spawn_item(at, id, n); }
+  ++trunk_opened_; if (id > 0) ++trunk_found_;
+  std::printf("[trunk] %s prop %d frame %d -> item %d x%d at (%.0f,%.0f)\n", walked ? "walk" : "direct", k, f, id, n, at.x, at.y);
+  show_toast(id > 0 ? "I found something in this trunk." : "There is nothing in this trunk.");  // l_eng_log 7 / 8
+  c2_props_.trunk_take(k);
+  c2_props_.trunk_mark_opened(k);                    // map_element IV3 = 1
+  if (balance::SEED_RUN == 0) ++ach_gta_;            // ach_gta IV2 (Check_ach_unlocks: KNOWN_ISSUES)
+}
 int Game::harness_trunk_near(float& d) {
   float d2 = 0.f;
   const int k = c2_props_.nearest_trunk(player_.pos, d2);

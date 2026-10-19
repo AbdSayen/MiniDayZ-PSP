@@ -286,3 +286,12 @@ Open/ambiguous:
 - RESOLVED: Rng::next_int low-bit bias (fixed globally, poi hash now 438baa57; old saves load into a different world).
 - RESOLVED: invented vehicle stash removed.
 - Trunk findings still open (next item): car frame 1 (trunk lid raised) on open via family t920; two-stage walk (wp1/wp2 nearest imagepoint IV0=7, then loot point IV0=4, speed 100); walk branch lists differ from the direct branch (frame0 list: 24 vs 26; frame1 list differs); tutorial frame 1 uses choose(2,8,9,4); sound "open" at -5 dB; ach_gta +1 when SEED_RUN=0; Spawn_drop quantity rules; save state.
+
+
+## Car trunk leftovers (2026-10-20 02:05)
+- avalible_interaction order (sid3971809969300003): 5 (items t912) / 6 (t909) suppress all; then 1 plants, 2 bush, 3 trunk, 4 pump, 8 panel, 7 obstacle (later wins). Port: loot pickup runs first; trunk vs pump/panel/obstacle arbitration to be finished with queue items 4 (pump) and 5 (obstacles).
+- Spawn_drop non-count attributes (weapon IV6 condition / IV5 / mag sub-events, clothing containers, knife/canteen/battery IV1 fill or charge) are not carried by ground loot piles in the port; items spawn with count 1. Needs a loot-pile attribute field (later item "loot tables").
+- Check_ach_unlocks / achievements UI not ported; only the ach_gta counter is kept and saved.
+- walk_marker collision: player_base instance assumed 2x2 (sprite size) vs walk_marker poly 4x4 -> arrival window +-3 px.
+- No explicit walk cancel in data.js; PSP: stick/D-pad input cancels (documented adaptation).
+- Original-vs-port gameplay screenshot still not taken (browser original needs manual play); car frames compared with car_*-sheet0 frames 0/1.

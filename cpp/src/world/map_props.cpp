@@ -8,7 +8,7 @@ namespace mdaz {
 namespace {
 #include "map_props.inc"
 struct CarTrunkDef { int frame, mirror; float ox, oy; };
-struct CarTrunkFrame { const char* sheet; int sx, sy, w, h; float hx, hy, lx, ly; int n; float pts[8]; };
+struct CarTrunkFrame { const char* sheet; int sx, sy, w, h; float hx, hy, lx, ly, w1x, w1y, w2x, w2y; int n; float pts[8]; };
 #include "car_trunk.inc"
 const CarTrunkDef* trunk_def(int def) {
   if (def < 0 || def >= kPropDefCount) return 0;
@@ -106,7 +106,7 @@ void MapProps::build(const C2Map& m, Rng& rng) {
 }
 
 void MapProps::mark_trunks(bool tutorial) {
-  for (int i = 0; i < kMax / 8 + 1; ++i) { trunk_[i] = 0; trunk_vis_[i] = 0; }
+  for (int i = 0; i < kMax / 8 + 1; ++i) { trunk_[i] = 0; trunk_vis_[i] = 0; trunk_opened_[i] = 0; }
   for (int i = 0; i < count_; ++i) {
     const bool flag = (props_[i].frame & 0x4000) != 0;
     props_[i].frame = static_cast<short>(props_[i].frame & 0x3FFF);
@@ -134,6 +134,23 @@ Vec2 MapProps::trunk_loot_pos(int i) const {
   const CarTrunkFrame& f = kCarTrunkFrames[t->frame];
   const float sx = t->mirror ? -1.f : 1.f;   // SetMirrored(0): negative width
   return Vec2(o.x + sx * (f.lx - f.hx) * f.w, o.y + (f.ly - f.hy) * f.h);
+}
+Vec2 MapProps::trunk_wp(int i, int which) const {
+  const CarTrunkDef* t = trunk_def(props_[i].def);
+  const Vec2 o = trunk_pos(i);
+  if (!t) return o;
+  const CarTrunkFrame& f = kCarTrunkFrames[t->frame];
+  const float sx = t->mirror ? -1.f : 1.f;
+  const float fx = which == 2 ? f.w2x : f.w1x, fy = which == 2 ? f.w2y : f.w1y;
+  return Vec2(o.x + sx * (fx - f.hx) * f.w, o.y + (fy - f.hy) * f.h);
+}
+void MapProps::apply_trunks_opened(const unsigned char* bits, int nbytes) {
+  for (int i = 0; i < count_ && (i >> 3) < nbytes; ++i) {
+    if (!(bits[i >> 3] & (1u << (i & 7))) || !trunk_def(props_[i].def)) continue;
+    trunk_mark_opened(i);
+    trunk_take(i);
+    props_[i].frame = 1;   // car frame 1 (lid up) = create_map_element IV3 = 1
+  }
 }
 bool MapProps::trunk_overlaps(int i, Vec2 c, float r) const {
   const CarTrunkDef* t = trunk_def(props_[i].def);

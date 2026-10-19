@@ -10,6 +10,8 @@
 
 namespace mdaz {
 
+static const int kSaveTrunkBytes = 751;   // == MapProps::kTrunkBytes (static_assert in game.cpp)
+
 struct SavedVehicle {
   int type; // VehicleType
   float x, y, facing, fuel, hp;
@@ -149,9 +151,14 @@ struct SaveBlob {
   // v18 — ground loot piles 32..95 (v14–v17 kept first 32 in loot_piles only)
   int loot_ext_count;
   SavedLootPile loot_ext_piles[LootSaveView::kExtMax];
+  // v19 - opened car trunks (map_element IV3 = 1 per MapProps index) + ach_gta counter
+  unsigned char trunks_opened[kSaveTrunkBytes];
+  int ach_gta;
 };
 
 struct WorldExtras {
+  unsigned char trunks_opened[kSaveTrunkBytes];  // v19
+  int ach_gta;                                   // v19
   float airdrop_t;
   float airdrop_x, airdrop_y;
   float tent_warmth_t;
@@ -163,13 +170,13 @@ struct WorldExtras {
   WorldExtras()
     : airdrop_t(360.f), airdrop_x(0.f), airdrop_y(0.f),
       tent_warmth_t(0.f), adrenaline_t(0.f), bunker_looted(0), melee_break_mul(1.f),
-      loot_respawn_t(0.f) {}
+      loot_respawn_t(0.f) { for (int i = 0; i < kSaveTrunkBytes; ++i) trunks_opened[i] = 0; ach_gta = 0; }
 };
 
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 18;
+  static const int kVersion = 19;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,

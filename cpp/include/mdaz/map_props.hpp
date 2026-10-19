@@ -41,7 +41,7 @@ public:
   bool blocks(Vec2 a, Vec2 b, float r) const;
   int solid_count() const;
   // C2 car_loot_point (t232): spawned at the car's Imagepoint 1 when IV3 = 0 (Map) / at layout
-  // start (Tutorial); destroyed when opened. Not saved (like bush frames).
+  // start (Tutorial); destroyed when opened. Opened set saved (v19).
   bool trunk_alive(int i) const { return i >= 0 && i < count_ && (trunk_[i >> 3] & (1u << (i & 7))) != 0; }
   void trunk_take(int i) { if (i >= 0 && i < count_) trunk_[i >> 3] &= static_cast<unsigned char>(~(1u << (i & 7))); }
   int trunk_frame(int i) const;            // car_loot_point frame 0..5, -1 if none
@@ -54,11 +54,19 @@ public:
   // in data.js; the LOOT_respawn template instance is invisible).
   bool trunk_visible(int i) const { return i >= 0 && i < count_ && (trunk_vis_[i >> 3] & (1u << (i & 7))) != 0; }
   void trunk_show(int i) { if (i >= 0 && i < count_) trunk_vis_[i >> 3] |= static_cast<unsigned char>(1u << (i & 7)); }
+  Vec2 trunk_wp(int i, int which) const;   // car_loot_point image point "wp1" / "wp2" (walk_marker IV0 = 7)
+  // map_element IV3 = 1 after opening (sid619013608272315); saved (MDAZ v19) as a bitset.
+  bool trunk_opened(int i) const { return i >= 0 && i < count_ && (trunk_opened_[i >> 3] & (1u << (i & 7))) != 0; }
+  void trunk_mark_opened(int i) { if (i >= 0 && i < count_) trunk_opened_[i >> 3] |= static_cast<unsigned char>(1u << (i & 7)); }
+  const unsigned char* trunks_opened_bits() const { return trunk_opened_; }
+  static const int kTrunkBytes = kMax / 8 + 1;
+  void apply_trunks_opened(const unsigned char* bits, int nbytes);
   bool trunk_sprite(int i, const char*& sheet, int& sx, int& sy, int& w, int& h, float& hx, float& hy, bool& mirror) const;
 private:
   void mark_trunks(bool tutorial);
   unsigned char trunk_[kMax / 8 + 1];
   unsigned char trunk_vis_[kMax / 8 + 1];
+  unsigned char trunk_opened_[kMax / 8 + 1];
   MapProp props_[kMax];
   int count_;
   int cell_first_[257];

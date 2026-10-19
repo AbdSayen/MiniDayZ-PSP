@@ -620,3 +620,13 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 ## 2026-10-20 01:20 (Baku) - Rng::next_int fix + vehicle stash removed (user decisions a/b)
 - `Rng::next_int` now maps the range with the high bits (`(u64)next_u32() * span >> 32`); `% span` on LCG low bits alternated (bit 0 period 2). Every choose()/random() port is affected; seed-140 map changed: **poi hash 7cbc5967 -> 438baa57** (test prints it; no hard-coded hash). test_queue_q1 warn_zed check rewritten to "moved >= 30 px toward the noise" (the old +y check depended on the old police position). mdaz_tests ALL TESTS PASSED.
 - The invented vehicle trunk stash (G near a drivable car stores/takes items) removed from `Game::try_drop_slot`; not in data.js (Trunk_count unused in events). Vehicle stash fields stay in the v7+ save layout (always 0) only for save compatibility.
+
+
+## 2026-10-20 02:05 (Baku) - Car trunk finished 1:1 (data.js re-decoded with tools/c2chain.js)
+- Open: family t920 (all 17 car types) IsOverlapping car_loot_point -> SetAnimFrame 1 = trunk lid up (car sprite frame 1); was missing. Sound PlayByName "open" -5 dB (0.5623 linear).
+- Two-stage walk_marker: IV0 = 7 at the nearer car_loot_point image point wp2/wp1 (+5 y on vertical cars, IV1), AltMove (dx, dy) * 100, SetSpeed 100 -> on reaching it IV0 = 4 at the nearest point origin -> opens if player_collision_base overlaps. Player speed forced to 100 while walking.
+- Lists per branch from data.js: direct (sid3302144065259174) frame 0/3/5 list has 26, walk (sid1074032691412307) has 24; frame 1 lists differ (direct ..18..13,63; walk ..24..166..58,58). Tutorial: (2,8,9,4) for frames 0/1/3/5, 54 for 2/4 (+ tutorCarTrunkOpened flag).
+- Spawn_drop IV1 count rules generated from Function "Spawn_drop" (tools/gen_spawn_drop.js + gen_spawn_drop_inc.js -> src/world/spawn_drop_count.inc): ammo int(random(a,b)) + perk_farmer 3, flare/sticks/arrows/22lr/9x18/9x39 choose(), matches.
+- map_element IV3 = 1 + save v19 (opened-trunk bitset 751 B + ach_gta); load re-applies car frame 1 and removes the point. ach_gta +1 per open (SEED_RUN = 0).
+- Outline: the parent event sets every car_loot_point SetVisible(0) each tick, so the outline is drawn only for the current avalible_interaction = 3 point (was: stayed visible).
+- Evidence: --shots-trunk log: f220 stage 7 -> f230 stage 4 -> f240 open "walk prop 365 frame 2 -> item 12 x10", car_frame 0 -> 1, ach_gta 1; 61 opens -> 31 found; counts e.g. 45acp x12, 9x18 x15. Test "v19 opened trunks + ach_gta saved". mdaz_tests ALL TESTS PASSED. Shots cpp/shots_trunk (trunk_0_near, trunk_1_walking, trunk_2_opened, trunk_3_lid_up). Status: **проверено** (desktop); PSP not run.

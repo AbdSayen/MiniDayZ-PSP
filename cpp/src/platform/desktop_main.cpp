@@ -72,6 +72,11 @@ public:
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (game_ && frame_ == 200) { game_->harness_place_at_trunk(false); float d = 0; game_->harness_trunk_near(d); std::printf("[trunk] placed %.0f px from point, alive=%d\n", d, game_->harness_trunks_alive()); }
       if (frame_ == 210) in.interact = in.interact_pressed = true;   // Circle: walk_marker
+      if (game_ && (frame_ == 205 || (frame_ > 210 && frame_ <= 400 && frame_ % 10 == 0))) {
+        static int k0 = -1; float d = 0; const int kn = game_->harness_trunk_near(d); if (frame_ == 205) k0 = kn; const int k = k0;
+        std::printf("[trunk] f%d stage=%d d=%.1f car_frame=%d opened=%d ach_gta=%d\n", frame_, game_->harness_trunk_walk_stage(), d,
+                    k >= 0 ? game_->harness_prop_frame(k) : -1, game_->trunk_opened_, game_->ach_gta());
+      }
       if (game_ && frame_ >= 400 && frame_ < 1000 && frame_ % 10 == 0) game_->harness_place_at_trunk(true);
       if (frame_ >= 400 && frame_ < 1000 && frame_ % 10 == 2) in.interact = in.interact_pressed = true;
       if (game_ && frame_ == 1001) std::printf("[trunk] opened=%d found=%d alive=%d\n", game_->trunk_opened_, game_->trunk_found_, game_->harness_trunks_alive());
@@ -287,7 +292,7 @@ public:
     }
     if (trunk_) {
       static const struct { int frame; const char* name; } kT[] = {
-        { 205, "trunk_0_near" }, { 230, "trunk_1_walking" }, { 320, "trunk_2_opened" },
+        { 205, "trunk_0_near" }, { 230, "trunk_1_walking" }, { 320, "trunk_2_opened" }, { 398, "trunk_3_lid_up" },
       };
       for (unsigned i = 0; i < sizeof(kT) / sizeof(kT[0]); ++i) {
         if (kT[i].frame != frame_) continue;

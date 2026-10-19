@@ -100,7 +100,7 @@ int test_save() {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 18) {
+  if (blob.version != 19) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -285,6 +285,24 @@ int test_save() {
       } else {
         std::printf("OK   v18 extended loot piles (96 max)\n");
       }
+    }
+    // v19: opened car trunks bitset + ach_gta
+    mdaz::WorldExtras ex19;
+    ex19.trunks_opened[0] = 0x05; ex19.trunks_opened[750] = 0x80; ex19.ach_gta = 7;
+    mdaz::SaveBlob blob19;
+    mdaz::WorldExtras ex19r;
+    mdaz::Player p4; mdaz::Inventory inv4; mdaz::WeatherState w4;
+    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv4.restore_worn(tw_, 4); }
+    if (!mdaz::SaveSystem::write_to_buffer(p, inv, w, 3, blob19, 0, 0, 66.f, 0, 0, 0, 0.f, 100.f, 0,
+                                           0, 0, 0, &ex19) ||
+        !mdaz::SaveSystem::read_from_buffer(blob19, p4, inv4, w4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                            &ex19r) ||
+        blob19.version != 19 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
+        ex19r.ach_gta != 7) {
+      std::printf("FAIL v19 trunks/ach_gta roundtrip\n");
+      ++fail;
+    } else {
+      std::printf("OK   v19 opened trunks + ach_gta saved\n");
     }
   }
 

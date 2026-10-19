@@ -273,19 +273,28 @@ private:
   float berry_t_ = 0.f;   // C2 bush search wait (3 s, IV21=1)
   int berry_idx_ = -1;
   int trunk_avail_ = -1;     // avalible_interaction = 3 target (gui_btn_interact frame 3)
-  int trunk_walk_ = -1;      // C2 walk_marker IV0=4: walking to a car_loot_point
-  float trunk_walk_t_ = 0.f;
+  int trunk_walk_ = -1;      // C2 walk_marker: target car_loot_point (stage IV0 7 / 4)
+  int trunk_walk_stage_ = 0; // walk_marker IV0: 7 = to wp1/wp2, 4 = to the point
+  Vec2 trunk_walk_tgt_;      // walk_marker position
+  bool trunk_walk_drive_ = false;  // AltMove SetSpeed 100 this tick
+  bool tut_car_trunk_opened_ = false;  // C2 global tutorCarTrunkOpened
+  int ach_gta_ = 0;          // C2 ach_gta IV2 (trunks opened, SEED_RUN = 0)
   bool try_trunk_interact();
   bool doorchecker_blocked(Vec2 a, Vec2 b) const;
 public:
   bool trunk_available() const { return trunk_avail_ >= 0; }
 private:
-  void open_trunk(int k);
+  void open_trunk(int k, bool walked);
+  int spawn_drop_count(ItemId id);
 public:
   // TEST HARNESS ONLY: nearest live car trunk / stand on it / count live trunks.
   int harness_trunk_near(float& d);
   bool harness_place_at_trunk(bool on_point);
   int trunk_opened_ = 0, trunk_found_ = 0;   // test counters
+  int ach_gta() const { return ach_gta_; }
+  int harness_prop_frame(int k) const { return c2_props_.at(k).frame; }
+  bool harness_trunk_opened(int k) const { return c2_props_.trunk_opened(k); }
+  int harness_trunk_walk_stage() const { return trunk_walk_ >= 0 ? trunk_walk_stage_ : 0; }
   int harness_trunks_alive() const { int n = 0; for (int i = 0; i < c2_props_.count(); ++i) if (c2_props_.trunk_alive(i)) ++n; return n; }
 private:
   float airdrop_alert_;
