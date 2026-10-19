@@ -43,12 +43,13 @@ public:
   int screen_w() const { return inner_->screen_w(); }
   int screen_h() const { return inner_->screen_h(); }
 
-  void set_game(mdaz::Game* g, bool building) { game_ = g; building_ = building; }
+  void set_game(mdaz::Game* g, bool building, bool door = false) { game_ = g; building_ = building; door_ = door; }
 
   bool poll(mdaz::InputState& in) {
     if (!inner_->poll(in)) return false;
     in = mdaz::InputState();
     ++frame_;
+    if (door_) return poll_door(in);
     if (building_) return poll_building(in);
     // Menu -> NEW GAME (focus 0).
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -81,7 +82,29 @@ public:
     return frame_ < 760;
   }
 
+  // --shots-door: start south of the police station (one test placement), push north into the
+  // wall east of the door, side-step west to the door gap (x -31..-1), then walk in. Input only.
+  bool poll_door(mdaz::InputState& in) {
+    if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (frame_ == 200 && game_) game_->harness_place_at_building(2);
+    if (frame_ > 220 && frame_ <= 310) in.move_y = -1.f;               // ~1.5 s into the wall
+    else if (frame_ > 310 && game_ && door_phase_ == 0) {
+      if (game_->harness_player_rel().x > -16.f) in.move_x = -1.f; else door_phase_ = 1;
+    }
+    if (door_phase_ == 1 && frame_ > 310) in.move_y = -1.f;            // through the door
+    return frame_ < 620;
+  }
+
   void end_frame() {
+    if (door_) {
+      if (frame_ >= 210 && frame_ <= 600 && (frame_ - 210) % 35 == 0) {
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/door_%02d_f%d.bmp", dir_, (frame_ - 210) / 35, frame_);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (building_) {
       static const struct { int frame; const char* name; } kB[] = {
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
@@ -116,6 +139,8 @@ private:
   int frame_;
   mdaz::Game* game_ = 0;
   bool building_ = false;
+  bool door_ = false;
+  int door_phase_ = 0;
 };
 
 } // namespace
@@ -124,11 +149,16 @@ int main(int argc, char** argv) {
   const char* data_dir = "data";
   const char* shots_dir = 0;
   bool shots_building = false;
+  bool shots_door = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_building = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-door") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_door = true;
     }
     else if (std::strcmp(argv[i], "--keys") == 0) mdaz::ui::set_keyboard_hints(true); // keyboard caps in hints
     else data_dir = argv[i];
@@ -165,7 +195,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   game.set_audio(audio);
-  if (scripted) scripted->set_game(&game, shots_building);
+  if (scripted) scripted->set_game(&game, shots_building, shots_door);
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

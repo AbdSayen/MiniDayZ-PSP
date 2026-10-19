@@ -50,6 +50,7 @@ public:
   // TEST HARNESS ONLY (desktop --shots-building): puts the player inside (mode 0) or just south
   // of (mode 1) the first police/other Solid building. Never called by gameplay code.
   bool harness_place_at_building(int mode);
+  Vec2 harness_player_rel() const;  // test-only: player pos minus harness building hotspot
   bool wants_quit() const { return quit_; }
 
   AppState state() const { return state_; }
@@ -180,6 +181,7 @@ private:
   ItemId mag_weapon_id_; // weapon the mag belongs to
   int equipped_slot_;
   bool in_bunker_;
+  int harness_loc_ = -1;
   bool bunker_looted_;
   float bunker_reopen_t_; // C2 Bunker_erase → Reopen after 1800s
   bool show_bag_;

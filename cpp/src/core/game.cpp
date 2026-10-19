@@ -5026,6 +5026,12 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
 }
 
 
+Vec2 Game::harness_player_rel() const {
+  if (harness_loc_ < 0 || harness_loc_ >= mapgen_.location_count()) return Vec2();
+  const MapLocation& L = mapgen_.location(harness_loc_);
+  return Vec2(player_.pos.x - L.pos.x, player_.pos.y - L.pos.y);
+}
+
 bool Game::harness_place_at_building(int mode) {
   int best = -1;
   for (int pass = 0; pass < 2 && best < 0; ++pass) {
@@ -5049,9 +5055,13 @@ bool Game::harness_place_at_building(int mode) {
         const Vec2 p(L.pos.x + x, L.pos.y + y);
         if (!building_blocks_move(*s, L.pos, p, p, 2.f)) { target = p; found = true; }
       }
+  } else if (mode == 2) {
+    // --shots-door: south of the building, 30 px east of the hotspot (in front of solid wall).
+    target = Vec2(L.pos.x + 30.f, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);
   } else {
     target = Vec2(L.pos.x, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);
   }
+  harness_loc_ = best;
   player_.pos = target;
   player_.vel = Vec2();
   mapgen_.reload_locations(player_.pos, LocationReload_AfterSave);
