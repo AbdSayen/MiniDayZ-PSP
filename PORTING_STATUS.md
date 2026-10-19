@@ -388,7 +388,7 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
   (wreck_hummer.png, zr_spawn_t0.png, zr_spawn_t1.png).
 
 
-## B2d — location tilemaps from create_map_location (2026-10-19, 23:05 Baku)
+## B2d — location tilemaps from create_map_location (2026-10-19, 22:48 Baku)
 Статус: **Реализована, но не проверена** против оригинала покадрово (unit test + desktop shots).
 - New `CellTilemaps` (include/mdaz/cell_tilemaps.hpp, src/world/cell_tilemaps.cpp): per mapgen cell
   ground tilemap (t475/681/682/771 by CurrentLevel, 60 px, at mapgen XY - 500, 1050x1050 from the
@@ -405,3 +405,11 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
   tilemaps (ground_lvl1 strips, tilemap_sand, tilemap_water) are now drawn from world_tilemaps.txt.
 - Test: all 256 cells build level-1 ground; road tile 15 in 64 cells, water in 15 (seed 140 map).
 - Shots: /workspace/b2dshots/b2d_grid.png (spawn, explore1, explore2, run_c, wreck_hummer, zr_spawn_t1).
+
+## Milestone after B2a-B2d (2026-10-19, 22:55 Baku)
+- Desktop: ALL TESTS PASSED (Windows), shots /workspace/b2dshots/b2d_grid.png + wreck/zr shots.
+- PSP: EBOOT rebuilt 22:50 (2 518 312 bytes), deploy packed (sprites.pak 1138 entries).
+- PPSSPP headless boot check (not an FPS claim): platform init 269 ms, game init ok 665 ms,
+  menu reached (~3936 ms), mem after game init: max free block 512 KB, total free 764 KB; no errors.
+  The bench autoplay stayed in the menu, so in-game PSP memory with the new 40 cell-tilemap slots is
+  not verified yet.
