@@ -131,7 +131,6 @@ void Game::draw_controls_help() const {
     {Btn_None, Btn_Triangle, "C", "Use equipped item"},
     {Btn_None, Btn_Square, "R", "Reload"},
     {Btn_None, Btn_R, "SHIFT", "Hold: run"},
-    {Btn_None, Btn_L, "CTRL", "Hold: crouch"},
     {Btn_None, Btn_Select, "TAB", "Inventory"},
     {Btn_None, Btn_Start, "ESC", "Pause menu"},
   };

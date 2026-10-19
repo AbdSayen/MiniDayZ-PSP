@@ -582,3 +582,14 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Gaps:
   - the C2 drop-to-ground when the inventory is full is not ported (add_item fails silently);
   - bush frames are not saved.
+
+## Crouch removed (2026-10-20, 00:27 Baku)
+- data.js has no crouch/sneak (0 matches in the decoded events), so crouch was a port invention.
+- Removed:
+  - the crouch inputs (SDL Ctrl and the PSP L hold, now always false);
+  - the controls hint "Hold: crouch".
+- Game::crouching_ is always false, which removes:
+  - crouch move ×0.45, braced aim ×0.55 and faster dispersion settle;
+  - the bandit spread +4 and the crouch sprite size/reach;
+  - zed loudness.
+- The PSP L button keeps its other combo uses.

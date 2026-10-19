@@ -342,8 +342,7 @@ public:
     out.move_y = my;
 
     out.run = r && !(pressed & (PSP_CTRL_CROSS | PSP_CTRL_CIRCLE | PSP_CTRL_TRIANGLE | PSP_CTRL_SQUARE));
-    out.crouch = l && !(pressed & (PSP_CTRL_LEFT | PSP_CTRL_RIGHT | PSP_CTRL_START | PSP_CTRL_SELECT |
-                                   PSP_CTRL_CROSS | PSP_CTRL_CIRCLE | PSP_CTRL_TRIANGLE | PSP_CTRL_SQUARE));
+    out.crouch = false; // C2 has no crouch
 
     out.attack = (b & PSP_CTRL_CROSS) != 0 && !r && !l;
     out.attack_pressed = (pressed & PSP_CTRL_CROSS) != 0 && !r && !l;

@@ -3026,7 +3026,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       mx *= 1.25f;
       my *= 1.25f;
     }
-    crouching_ = in.crouch;
+    crouching_ = false; // C2 has no crouch (data.js: no crouch/sneak); input ignored
     if (crouching_) {
       mx *= 0.45f;
       my *= 0.45f;
@@ -3551,7 +3551,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   {
     float zed_dmg = 0.f;
     // Standing still / walking quieter than sprint; crouch quieter still
-    const bool loud = player_.running && !in.crouch;
+    const bool loud = player_.running;
     // Storm (heavy rain) makes zeds slightly more aggressive
     const bool storm = !in_bunker_ && weather_.rain > 0.85f;
     Vec2 prev_zed[kMaxZombies];
@@ -3560,7 +3560,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) prev_zed[zi++] = z->pos;
     }
     zombies_.set_vision(weather_.is_night && !in_bunker_, player_.torch_on);
-    zombies_.update(dt, player_.pos, zed_dmg, loud || storm, in.crouch,
+    zombies_.update(dt, player_.pos, zed_dmg, loud || storm, false,
                     player_.survival.bleeding > 0.f,
                     cough_alert_t_ > 0.f || storm);
     if (!in_bunker_) {
