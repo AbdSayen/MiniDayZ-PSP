@@ -263,6 +263,19 @@ int main(int argc, char** argv) {
     game->render();
 #if defined(MDAZ_PSP) && defined(__PSP__)
     if (!first_frame_logged) { mdaz_boot_log("first game frame drawn"); first_frame_logged = true; }
+    {
+      // Memory once gameplay runs (cell tilemaps, zeds, loot allocated) and again 20 s later.
+      static double play_t0 = -1.0;
+      static int play_logs = 0;
+      if (game->state() == mdaz::AppState_Playing && play_logs < 2) {
+        const double now_s = platform->time_seconds();
+        if (play_t0 < 0.0) play_t0 = now_s;
+        if ((play_logs == 0 && now_s - play_t0 > 1.0) || (play_logs == 1 && now_s - play_t0 > 20.0)) {
+          log_mem(play_logs == 0 ? "in game (1 s)" : "in game (20 s)");
+          ++play_logs;
+        }
+      }
+    }
 #endif
   }
 

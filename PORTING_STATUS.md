@@ -406,10 +406,18 @@ Includes survival sverka, fist dmg 10 / range 45, bullet ±25%, craft, bunker lo
 - Test: all 256 cells build level-1 ground; road tile 15 in 64 cells, water in 15 (seed 140 map).
 - Shots: /workspace/b2dshots/b2d_grid.png (spawn, explore1, explore2, run_c, wreck_hummer, zr_spawn_t1).
 
-## Milestone after B2a-B2d (2026-10-19, 22:55 Baku)
+## Milestone after B2a-B2d (2026-10-19, 22:52 Baku)
 - Desktop: ALL TESTS PASSED (Windows), shots /workspace/b2dshots/b2d_grid.png + wreck/zr shots.
 - PSP: EBOOT rebuilt 22:50 (2 518 312 bytes), deploy packed (sprites.pak 1138 entries).
 - PPSSPP headless boot check (not an FPS claim): platform init 269 ms, game init ok 665 ms,
   menu reached (~3936 ms), mem after game init: max free block 512 KB, total free 764 KB; no errors.
   The bench autoplay stayed in the menu, so in-game PSP memory with the new 40 cell-tilemap slots is
   not verified yet.
+
+## PSP in-game memory check (2026-10-19, 22:58 Baku)
+- Bench autoplay fixed: the NEW GAME presses moved to frames 330/390 (after the 3.5 s intro), walk from 480.
+- main_psp logs memory 1 s and 20 s after AppState_Playing.
+- PPSSPP headless (boot/emulation check, not an FPS claim): "new game: 137 locations" at 6607 ms;
+  mem in game (1 s) and (20 s): max free block 512 KB, total free 764 KB (same as after init: Game and
+  CellTilemaps are statically allocated, nothing grows at runtime). Ground and objects passes are
+  active in the perf lines (ground ~1.1-1.4 ms, objects ~2.2 ms per frame, emulator timing). No OOM.

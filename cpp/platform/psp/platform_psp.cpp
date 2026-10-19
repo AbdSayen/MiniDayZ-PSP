@@ -398,15 +398,16 @@ public:
   void scripted_input(InputState& out) {
     const unsigned f = auto_frame_++;
     out = InputState();
-    if (f == 90 || f == 150) { out.confirm = true; out.confirm_pressed = true; }
-    if (f < 240) return;
-    if (auto_pause_ && f >= 600) {
-      if (f == 600) out.pause_pressed = out.pause = true;
+    // Intro (Bonds Guru, 3.5 s) + LOADING come first: press NEW GAME after it, then confirm.
+    if (f == 330 || f == 390) { out.confirm = true; out.confirm_pressed = true; }
+    if (f < 480) return;
+    if (auto_pause_ && f >= 840) {
+      if (f == 840) out.pause_pressed = out.pause = true;
       // Down x5 -> HALF RES (index 5) on the 8-item PSP pause menu.
-      if (f >= 620 && f <= 660 && (f - 620) % 8 == 0) out.move_y = 1.f;
+      if (f >= 860 && f <= 900 && (f - 860) % 8 == 0) out.move_y = 1.f;
       return;
     }
-    const unsigned leg = ((f - 240) / 240) % 4;
+    const unsigned leg = ((f - 480) / 240) % 4;
     out.run = ((f / 480) & 1) != 0;
     if (leg == 0) out.move_x = 1.f;
     else if (leg == 1) out.move_y = 1.f;
