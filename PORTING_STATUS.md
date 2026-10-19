@@ -508,7 +508,7 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - Output: Check_space_inventory(-1, 51, Crafted).
   - Which array holds counts vs condition for knives is unresolved, so no guess.
 
-## Item 11 — Save_loot (2026-10-20, 00:14 Baku)
+## Item 11 — Save_loot (2026-10-20, 00:13 Baku)
 - Status: Исследована. Not applicable to the port: Level_change is not ported, and the port has a single level.
 - What C2 Save_loot is: it is called only from `Level_change` (CurrentLevel += 1). It is not a ground-loot save.
 - It builds a CSV text (pl17 t485) with:
@@ -521,3 +521,13 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - then food −10 and water −10;
   - re-creates each item with Spawn_drop + picky at the player's position.
 - The port's ground-pile persistence (MDAZ v14 `SavedLootPile`) is a port feature. Its comments wrongly called it Save_loot; they are now corrected.
+
+## PSP rebuild + PPSSPP boot check after items 7–11 (2026-10-20, 00:20 Baku)
+- EBOOT.PBP was rebuilt at 00:15 (2 548 328 bytes, make exit=0) and packed by pack_psp_deploy.ps1. The deploy has 12 files, 4.48 MB.
+- The deploy contains no autoplay.txt and no settings.cfg. They were added only to the box test copy.
+- PPSSPPHeadless, 60 s, autoplay "bench" (boot check only, not an FPS claim):
+  - boot OK, sprites.pak 1138 entries, game init ok;
+  - new game: 137 locations, 0 helicrashes, poi hash 438baa57;
+  - mem in game: 512 KB max block, 764 KB total free, at 1 s and 20 s;
+  - the bench bot then died (last_death.txt: reason=Bullet, days=1);
+  - no crash; the log runs to the 60 s timeout.
