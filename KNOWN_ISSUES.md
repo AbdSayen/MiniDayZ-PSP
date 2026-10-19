@@ -136,3 +136,14 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Weapon range, fire interval and dispersion are still port values. C2 bullets carry IV3=400 (Не исследована).
 - Zed/animal speed random(lo, hi) is rolled from a hash of the entity id, not the game RNG. Warn/idle speeds (b_warn 80–90, speed /4 modifiers) and aggro radii are not ported. Crow HP 10 is a port value.
 - C2 weapon slot ids 9, 15 and 20 have reload entries but no pickup name, so they are unmapped.
+
+## Inventory slots (2026-10-19 21:05)
+- Container sizes for Bulletproof vest 400 / Kevlar 404 not found in data.js -> 0 slots; Molle vest (t119, 3 slots) has no port item id.
+- C2 drops a container's contents when the piece is taken off/replaced (Cut_arrays); the port keeps items in the flat 24-slot array, slots above capacity() are just inaccessible.
+- Pickup still merges into existing stacks (port); C2 Check_space_* writes into an empty slot. Ammo stack_max bandolier bonus still from the port (not verified).
+- Only Player_skin_type 1 starter ported (skins 2..15 have other Spawn_drop sets; no skin selection in port). Starter perks per difficulty are still a port scaffold.
+
+## Trees (2026-10-19 21:05)
+- Trunk collider uses obst_base frame 10 at its natural 15x17 size. C2 created objects take the size of the layout template instance (placed obst_base instances are 61x93 = frame 9 size); if that applies, the real collider is ~4x larger. Unverified.
+- Bag screen still draws the port's ClothingContainers grids (4 invented sub-slots per region); capacity counter (e.g. 1/3) is the C2 value.
+- Tree placement still invented (scatter around POIs), pending item 5 (map_element types).

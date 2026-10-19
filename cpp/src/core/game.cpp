@@ -2751,19 +2751,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       else if (!world_tiles_.forest_solid_at(pre_move.x, player_.pos.y)) player_.pos.x = pre_move.x;
       else player_.pos = pre_move;
     }
-    // Soft collision vs forest trees
-    if (!in_bunker_) {
-      for (int ti = 0; ti < tree_count_; ++ti) {
-        const float dx = player_.pos.x - trees_[ti].x;
-        const float dy = player_.pos.y - trees_[ti].y;
-        const float d2t = dx * dx + dy * dy;
-        if (d2t < 14.f * 14.f && d2t > 0.01f) {
-          const float len = std::sqrt(d2t);
-          player_.pos.x = trees_[ti].x + (dx / len) * 14.f;
-          player_.pos.y = trees_[ti].y + (dy / len) * 14.f;
-        }
-      }
-    }
+    // C2: tree sprites themselves have no Solid behaviour (only NoSave),
+    // but each tree spawns a Solid obst_base trunk (frame 10) - see building_blocks(). The
+    // invented 14px radial push-out was replaced by that polygon (fidelity #6).
     if (in_bunker_ && bunker_.is_blocked_world(player_.pos.x, player_.pos.y)) {
       const float rx = player_.pos.x - player_.vel.x * dt;
       const float ry = player_.pos.y - player_.vel.y * dt;
@@ -4958,6 +4948,29 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
     if (dx * dx + dy * dy > 700.f * 700.f) continue;
     const BuildingShape* s = poi_shape(L.type, i);
     if (s && building_blocks_move(*s, L.pos, a, b, 1.f)) return true;
+  }
+  // Tree trunks: create_map_element spawns obst_base (t336, Solid) at the tree's Imagepoint 1
+  // and sets it to frame 10 (15x17, hotspot 0.47/0.65, triangle collision poly). trees_[] are
+  // stored at that trunk point. Size = natural frame size (see KNOWN_ISSUES: template size).
+  if (!in_bunker_) {
+    static const float kTri[6] = {0.f * 15.f, -0.59f * 17.f, 0.53f * 15.f, 0.24f * 17.f,
+                                  -0.47f * 15.f, 0.24f * 17.f};
+    for (int ti = 0; ti < tree_count_; ++ti) {
+      const float px = b.x - trees_[ti].x, py = b.y - trees_[ti].y;
+      if (px * px + py * py > 20.f * 20.f) continue;
+      bool inside = true;
+      float sign = 0.f;
+      for (int e = 0; e < 3; ++e) {
+        const float x0 = kTri[e * 2], y0 = kTri[e * 2 + 1];
+        const float x1 = kTri[((e + 1) % 3) * 2], y1 = kTri[((e + 1) % 3) * 2 + 1];
+        const float c = (x1 - x0) * (py - y0) - (y1 - y0) * (px - x0);
+        if (c != 0.f) {
+          if (sign == 0.f) sign = c;
+          else if ((c > 0.f) != (sign > 0.f)) { inside = false; break; }
+        }
+      }
+      if (inside) return true;
+    }
   }
   return false;
 }
