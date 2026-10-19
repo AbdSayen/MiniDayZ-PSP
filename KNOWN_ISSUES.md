@@ -5,6 +5,10 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented mechanics removed, cross-platform RNG order fix)
 
 ## 2026-10-19 open items
+- AI (00:24 Baku):
+  - Zed vision is approximated: the cone uses the last chase direction, and the C2 Turret/warn wandering is not modelled.
+  - At night, zeds without a player light never aggro by sight; this matches C2 eyes, but noise and hit reactions still use port logic.
+  - Port crouch input still exists, although C2 has none; it no longer affects zed detection.
 - Quest UI (00:11 Baku):
   - The C2 pad (pad_list tabs/pages) is not ported. Only the HUD panel uses the C2 row1 strings; the reward text and time-left helpers are not drawn yet.
   - Port Q_status numbering differs from C2 (C2: 0 none, 1 active, 2 failed, 3 bandits done, 4 none).

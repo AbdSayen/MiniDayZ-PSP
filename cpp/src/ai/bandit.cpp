@@ -175,7 +175,8 @@ void Bandit::setup(Vec2 p, EntityId eid, bool gun, bool ally, int iv14, int iv11
   max_hp = gun ? 110.f : 90.f;
   hp = max_hp;
   speed = gun ? 55.f : 75.f;
-  aggro_radius = gun ? 380.f : 260.f;
+  // C2 bot_enemy_bandit/puncher/shooter "Eyes" LineOfSight range 360, cone 360 (data.js).
+  aggro_radius = 360.f;
 }
 
 BanditSystem::BanditSystem() : count_(0), next_id_(1) { touch_bandit_audit_anchors(); }

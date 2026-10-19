@@ -20,6 +20,11 @@ struct Zombie {
   // C2 warn_zed: an idle zed that hears noice() turns toward the sound (+-50 px) and walks at
   // its b_warn Bullet speed random(80,90) for 2 s - no line of sight needed.
   float warn_t;
+  // C2 eyes IV0 "attacking" + LineOfSight behaviours (data.js instance props):
+  // MainLook range 335 (shooter 350) cone 180, ShortLook range 70 cone 360. Re-checked every 1 s.
+  bool c2_aggro = false;
+  float look_t = 0.f;
+  Vec2 facing = Vec2(0.f, 1.f);
   Vec2 warn_dir;
   float warn_spd;
   float burn_t;       // C2 molotov 'burning' boolean: seconds left (5 s Wait in Molotov params)
@@ -55,6 +60,12 @@ private:
   int count_;
   EntityId next_id_;
   bool scream_active_;
+public:
+  // C2 night rule: eyes see the player only if the player light overlaps him and dist <= 175.
+  void set_vision(bool night, bool player_light) { vis_night_ = night; vis_light_ = player_light; }
+  bool vis_night_ = false;
+  bool vis_light_ = false;
+private:
   Vec2 scream_pos_;
 };
 

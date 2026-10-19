@@ -548,3 +548,23 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - the bush shows frame 1 when it has berries;
   - the player walks to it, waits 3 s and plays "bushsearch";
   - it gives 27 red / 73 yellow / 74 blue berries, ×2 with perk_agronom.
+
+## AI behaviour audit — zeds, animals, bandits (2026-10-20, 00:24 Baku)
+- Status: Реализована, но не проверена (box and desktop unit tests; no in-game screenshots).
+- Source: the behaviour properties of data.js layout instances (proj.pkl) plus the decoded Zeds, Animals and NPC event groups.
+- Zeds (normal, fast, army, shooter, buried eyes):
+  - MainLook LineOfSight range 335 (shooter 350) in a 180° cone; ShortLook 70 all round.
+  - Every 1 s: no LOS → IV0 = 0 (stop chasing).
+  - LOS in daytime → aggro.
+  - LOS at night → aggro only if the player light overlaps the player and the distance is ≤ 175.
+  - Ported as `c2_aggro` with a 1 s look timer. Facing = last chase direction (starts facing down, idle_down).
+  - Removed invented hearing multipliers: run ×1.45, crouch ×0.55, bleeding ×1.35, cough ×1.2. data.js has no crouch.
+  - Tank and screamer keep their port aggro radii (not audited).
+- Wolves and dogs:
+  - Chase range = LOS/Turret range: wolf 335, dog 200.
+  - Removed the invented pack alert (range 520, ×1.15, deer stampede ×1.35) and the blood-scent bonus (+140 range, ×1.1).
+  - The 180° cone is not ported.
+- Deer and rabbits: flee when the 1 s LOS check finds the player within 300 (deer) / 250 (rabbit). The port used 250 for both.
+- Crows: the invented ×1.15 vertical flee factor is removed.
+- Bandits (bot_enemy_bandit/puncher/shooter): Eyes LineOfSight range 360, cone 360. aggro_radius is now 360; it was 380 with a gun and 260 without.
+- Not audited: zed/animal attack damage and cooldowns, warn_zed wandering, the bandit Aim/Gun behaviours, and tank/screamer.

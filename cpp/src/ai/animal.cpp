@@ -85,15 +85,7 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
   if (wolf_melee_hit) *wolf_melee_hit = false;
   const float wolf_range = wolf_attack_melee_range();
   const float wolf_cd = wolf_attack_cooldown_sec();
-  // Pack howl: if any wolf is close, pull distant packmates in
-  bool pack_alert = false;
-  for (int i = 0; i < count_; ++i) {
-    if (!animals_[i].alive) continue;
-    if (animals_[i].type != Animal_Wolf && animals_[i].type != Animal_Dog) continue;
-    const float dx = player_pos.x - animals_[i].pos.x;
-    const float dy = player_pos.y - animals_[i].pos.y;
-    if (dx * dx + dy * dy < 180.f * 180.f) { pack_alert = true; break; }
-  }
+  (void)player_bleeding; // no blood-scent rule in data.js
 
   for (int i = 0; i < count_; ++i) {
     Animal& a = animals_[i];
@@ -105,10 +97,10 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
     const float dist = std::sqrt(dx * dx + dy * dy);
 
     if (a.type == Animal_Wolf || a.type == Animal_Dog) {
-      float range = pack_alert ? 520.f : 400.f;
-      if (player_bleeding) range += 140.f; // blood scent
-      float spd = a.speed * (pack_alert ? 1.15f : 1.f);
-      if (player_bleeding) spd *= 1.1f;
+      // C2: wolf_eyes Turret/LineOfSight range 335, dog_eyes 200 (data.js instance props).
+      // Removed invented pack-alert (x1.15, 520) and blood-scent (+140, x1.1) boosts.
+      const float range = a.type == Animal_Dog ? 200.f : 335.f;
+      const float spd = a.speed;
       const bool sees = !los_blocked(a.pos, player_pos); // wolf/dog LineOfSight t927+t339
       if (sees && dist > 1.f && dist < range) {
         a.pos.x += (dx / dist) * spd * dt;
@@ -127,13 +119,14 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
       // Crows scatter farther / faster
       if (dist < 320.f && dist > 1.f) {
         a.pos.x -= (dx / dist) * a.speed * dt;
-        a.pos.y -= (dy / dist) * a.speed * 1.15f * dt;
+        a.pos.y -= (dy / dist) * a.speed * dt;
       }
     } else {
       // Prey flees; deer stampede slightly faster when pack-alert wolves nearby
-      float flee_spd = a.speed;
-      if (a.type == Animal_Deer && pack_alert) flee_spd *= 1.35f;
-      if (dist < 250.f && dist > 1.f) {
+      // C2 Deer/Rabbit groups: every 1 s LineOfSight range 300 (deer) / 250 (rabbit) -> flee.
+      const float flee_spd = a.speed;
+      const float flee_r = a.type == Animal_Deer ? 300.f : 250.f;
+      if (dist < flee_r && dist > 1.f) {
         a.pos.x -= (dx / dist) * flee_spd * dt;
         a.pos.y -= (dy / dist) * flee_spd * dt;
       }

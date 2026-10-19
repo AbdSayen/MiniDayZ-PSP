@@ -1,3 +1,4 @@
+#include "mdaz/zombie.hpp"
 #include <string>
 #include "mdaz/bandit.hpp"
 
@@ -426,6 +427,23 @@ int test_systems() {
                   a.c_str(), b.c_str(), tl);
       ++fail;
     } else std::printf("OK   quest pad strings (row1 ids, reward text, time left)\n");
+  }
+
+  {
+    // C2 zed eyes: MainLook 335 cone 180 (facing), ShortLook 70; night needs player light + <=175.
+    bool hit = false; float dmg = 0.f;
+    mdaz::ZombieSystem zs;
+    mdaz::Zombie* za = zs.spawn(mdaz::Zed_Normal, mdaz::Vec2(1000.f, 1000.f)); // faces down (+y)
+    za->update_ai(1.1f, mdaz::Vec2(1000.f, 800.f), hit, dmg, 1.f);   // behind, 200 px
+    const bool behind = za->c2_aggro;
+    za->update_ai(1.1f, mdaz::Vec2(1000.f, 1200.f), hit, dmg, 1.f);  // in front, 200 px
+    const bool front = za->c2_aggro;
+    mdaz::Zombie* zb = zs.spawn(mdaz::Zed_Normal, mdaz::Vec2(3000.f, 3000.f));
+    zb->update_ai(1.1f, mdaz::Vec2(3000.f, 3060.f), hit, dmg, 1.f);  // ShortLook 60 px
+    const bool shortl = zb->c2_aggro;
+    if (behind || !front || !shortl) {
+      std::printf("FAIL zed C2 vision behind=%d front=%d short=%d\n", behind, front, shortl); ++fail;
+    } else std::printf("OK   zed C2 vision (cone 180 / 335, short 70)\n");
   }
 
   return fail ? 1 : 0;

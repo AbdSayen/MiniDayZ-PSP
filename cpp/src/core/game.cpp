@@ -3551,6 +3551,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       int zi = 0;
       for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) prev_zed[zi++] = z->pos;
     }
+    zombies_.set_vision(weather_.is_night && !in_bunker_, player_.torch_on);
     zombies_.update(dt, player_.pos, zed_dmg, loud || storm, in.crouch,
                     player_.survival.bleeding > 0.f,
                     cough_alert_t_ > 0.f || storm);

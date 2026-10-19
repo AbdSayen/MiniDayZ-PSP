@@ -68,6 +68,14 @@ void Zombie::setup(ZedType t, Vec2 p, EntityId eid) {
   hp = max_hp;
 }
 
+namespace {
+bool g_vis_night = false;
+bool g_vis_light = false;
+bool c2_vision_type(ZedType t) {
+  return t == Zed_Normal || t == Zed_Fast || t == Zed_Army || t == Zed_ArmyShooter;
+}
+} // namespace
+
 void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& out_damage,
                        float aggro_mul) {
   out_hit_player = false;
@@ -80,11 +88,19 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
   const float dist = std::sqrt(dx * dx + dy * dy);
   const float hear = aggro_radius * (aggro_mul > 0.1f ? aggro_mul : 1.f);
 
-  // Buried: stay put until player enters ambush radius, then rush with boost.
-  if (type == Zed_Buried && dist > hear) {
-    return;
+  // Buried: stay put until the eyes aggro (C2 vision), then rush with boost.
+  if (type == Zed_Buried && !c2_aggro) {
+    look_t -= dt;
+    if (look_t <= 0.f) {
+      look_t += 1.f;
+      if (!los_blocked(pos, player_pos) && dist <= 335.f &&
+          (dist <= 70.f || facing.x * dx + facing.y * dy >= 0.f) &&
+          (!g_vis_night || (g_vis_light && dist <= 175.f)))
+        c2_aggro = true;
+    }
+    if (!c2_aggro) return;
   }
-  if (type == Zed_Buried && ambush_boost <= 0.f && dist <= hear) {
+  if (type == Zed_Buried && ambush_boost <= 0.f) {
     ambush_boost = 1.6f; // pop-up sprint
     // Flag just-sprung via brief boost > 1.55 (Game listens for audio)
   }
@@ -100,7 +116,27 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
 
   // C2 MainLook/ShortLook obstacles = buildings (t927) + big obstacles (t339).
   const bool sees = !los_blocked(pos, player_pos);
-  if (sees && dist < hear && dist > 1.f) {
+  bool chase = sees && dist < hear;
+  if (c2_vision_type(type)) {
+    // C2 "Every 1 s" per zed eyes: no LOS (Main+Short) -> IV0=0; LOS -> day: IV0=1;
+    // night: IV0=1 only if the player light overlaps the player and dist <= 175.
+    look_t -= dt;
+    if (look_t <= 0.f) {
+      look_t += 1.f;
+      const float main_r = type == Zed_ArmyShooter ? 350.f : 335.f;
+      bool los = false;
+      if (sees && dist <= 70.f) los = true;
+      if (sees && dist <= main_r && dist > 0.f) {
+        const float fx = facing.x, fy = facing.y;
+        if (fx * dx + fy * dy >= 0.f) los = true; // within +-90 deg (cone 180)
+      }
+      if (!los) c2_aggro = false;
+      else if (!g_vis_night || (g_vis_light && dist <= 175.f)) c2_aggro = true;
+    }
+    chase = c2_aggro && sees;
+  }
+  if (chase && dist > 1.f) {
+    facing = Vec2(dx / dist, dy / dist);
     pos.x += (dx / dist) * move_spd * dt;
     pos.y += (dy / dist) * move_spd * dt;
     warn_t = 0.f;
@@ -136,11 +172,12 @@ void ZombieSystem::update(float dt, Vec2 player_pos, float& damage_to_player, bo
                           bool player_crouch, bool player_bleeding, bool player_coughing) {
   damage_to_player = 0.f;
   scream_active_ = false;
-  float aggro_mul = 1.f;
-  if (player_running) aggro_mul = 1.45f;
-  else if (player_crouch) aggro_mul = 0.55f;
-  if (player_bleeding) aggro_mul *= 1.35f; // blood scent pulls infected
-  if (player_coughing) aggro_mul *= 1.2f;  // cough noise
+  // Removed invented hearing multipliers (run x1.45, crouch x0.55, bleeding x1.35, cough x1.2):
+  // data.js zed eyes use LineOfSight only (no crouch exists in C2).
+  (void)player_running; (void)player_crouch; (void)player_bleeding; (void)player_coughing;
+  const float aggro_mul = 1.f;
+  g_vis_night = vis_night_;
+  g_vis_light = vis_light_;
 
   // Screamer alert: if a screamer is within its aggro of the player, pull nearby zeds in.
   Vec2 scream_pos;
