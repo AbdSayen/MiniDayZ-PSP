@@ -5312,3 +5312,16 @@ void Game::harness_death_demo() {
     if (Animal* a = animals_.spawn(at[i], Vec2(p.x - 90.f + 60.f * i, p.y + 50.f))) hurt_animal(*a, 100000.f);
 }
 } // namespace mdaz
+
+namespace mdaz {
+// TEST HARNESS ONLY (--shots-chop): items of this id lying in active ground piles.
+int Game::harness_loot_count(int id) const {
+  int n = 0;
+  for (int i = 0; i < loot_.count(); ++i) {
+    const LootPile* p = loot_.at(i);
+    if (!p || !p->active) continue;
+    for (int k = 0; k < p->item_count; ++k) if (p->items[k] == id) n += p->counts[k];
+  }
+  return n;
+}
+} // namespace mdaz

@@ -64,6 +64,16 @@ public:
       if (game_ && frame_ == 220) game_->harness_set_quest(3, 1, 88);
       return frame_ < 230;
     }
+    if (chop_) {
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (game_ && frame_ == 200) { chop_tree_ = game_->harness_place_at_tree(); chop_log("placed"); }
+      if (frame_ == 210 || frame_ == 250) in.interact = in.interact_pressed = true;   // Circle
+      if (game_ && (frame_ == 212 || frame_ == 252)) chop_log(frame_ == 212 ? "hit1" : "hit2");
+      if (frame_ == 290 || frame_ == 300 || frame_ == 310) in.interact = in.interact_pressed = true;  // pick up
+      if (game_ && frame_ == 320) chop_log("pickup");
+      if (frame_ == 330) { in.bag = in.bag_pressed = true; }
+      return frame_ < 350;
+    }
     if (death_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (frame_ == 200 && game_) game_->harness_death_demo();
@@ -262,6 +272,19 @@ public:
       inner_->end_frame();
       return;
     }
+    if (chop_) {
+      static const struct { int frame; const char* name; } kC[] = {
+        { 205, "chop_0_before" }, { 240, "chop_1_hit1" }, { 280, "chop_2_hit2_drop" }, { 345, "chop_3_inventory" },
+      };
+      for (unsigned i = 0; i < sizeof(kC) / sizeof(kC[0]); ++i) {
+        if (kC[i].frame != frame_) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kC[i].name);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (death_) {
       static const struct { int frame; const char* name; } kD[] = {
         { 199, "death_0_before" }, { 203, "death_1_f0" }, { 216, "death_2_f2" }, { 232, "death_3_f4" }, { 320, "death_4_rest" },
@@ -322,6 +345,13 @@ private:
   bool death_ = false;
 public:
   void set_death(bool d) { death_ = d; }
+  bool chop_ = false;
+  int chop_tree_ = -1;
+  void chop_log(const char* tag) {
+    std::printf("[chop] %s tree=%d hp=%d trees=%d ground: sticks(38)=%d firewood(50)=%d bag: sticks=%d firewood=%d\n", tag, chop_tree_,
+                game_->harness_tree_hp(chop_tree_), game_->harness_tree_count(), game_->harness_loot_count(38),
+                game_->harness_loot_count(50), game_->harness_inv_count(38), game_->harness_inv_count(50));
+  }
   bool quest_ = false;
   void set_quest(bool q) { quest_ = q; }
 private:
@@ -346,6 +376,7 @@ int main(int argc, char** argv) {
   bool shots_tutorial = false;
   bool shots_death = false;
   bool shots_quest = false;
+  bool shots_chop = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -363,6 +394,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-death") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_death = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-chop") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_chop = true;
     }
     else if (std::strcmp(argv[i], "--shots-quest") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -414,6 +449,7 @@ int main(int argc, char** argv) {
   if (scripted) scripted->set_game(&game, shots_building, shots_door, shots_intro, shots_wreck, shots_tutorial);
   if (scripted) scripted->set_death(shots_death);
   if (scripted) scripted->set_quest(shots_quest);
+  if (scripted) scripted->chop_ = shots_chop;
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

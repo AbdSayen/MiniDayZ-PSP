@@ -60,6 +60,25 @@ public:
     quest_.q_task_id = task; quest_.q_status = status; quest_.q_target_sid = target;
   }
   void harness_set_pos(float x, float y) { player_.pos = Vec2(x, y); }
+  // TEST HARNESS ONLY (--shots-chop): stand 25 px south of the nearest tree (sub 1..6) with a
+  // hatchet (204) equipped. Returns the tree index or -1.
+  int harness_place_at_tree() {
+    int best = -1; float bd = 1e30f;
+    for (int i = 0; i < tree_count_; ++i) {
+      if (tree_sub_[i] < 1 || tree_sub_[i] > 6) continue;
+      const float dx = trees_[i].x - player_.pos.x, dy = trees_[i].y - player_.pos.y;
+      if (dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = i; }
+    }
+    if (best < 0) return -1;
+    player_.pos = Vec2(trees_[best].x, trees_[best].y + 25.f);
+    harness_give_item(204, 1);
+    for (int s = 0; s < inventory_.slot_count(); ++s) if (inventory_.slot(s).id == 204) { equipped_slot_ = s; break; }
+    return best;
+  }
+  int harness_tree_hp(int i) const { return (i >= 0 && i < tree_count_) ? tree_hp_[i] : -1; }
+  int harness_tree_count() const { return tree_count_; }
+  int harness_inv_count(int id) const { int n = 0; for (int s = 0; s < inventory_.slot_count(); ++s) if (inventory_.slot(s).id == id) n += inventory_.slot(s).count; return n; }
+  int harness_loot_count(int id) const;
   void harness_give_item(int id, int n) {   // frees the last used bag slot when the bag is full
     if (inventory_.add_item(static_cast<ItemId>(id), n, items_)) return;
     for (int i = inventory_.slot_count() - 1; i > 0; --i)
