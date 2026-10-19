@@ -3652,29 +3652,29 @@ void Game::render() {
       // Map POIs — interiors when standing inside, else exterior shells
       for (int i = 0; i < mapgen_.location_count(); ++i) {
         const MapLocation& L = mapgen_.location(i);
-        if (dist2(L.pos, player_.pos) > 520.f * 520.f) continue;
+        if (dist2(L.pos, player_.pos) > 760.f * 760.f) continue; // hospital/fire station ~545px wide
         float sx = cx + (L.pos.x - player_.pos.x) * sc;
         float sy = cy + (L.pos.y - player_.pos.y) * sc;
-        float max_dim = 100.f;
-        if (L.type == Loc_Hospital) max_dim = 140.f;
-        else if (L.type == Loc_Firestation || L.type == Loc_Church) max_dim = 130.f;
-        else if (L.type == Loc_Military || L.type == Loc_Police) max_dim = 110.f;
-        else if (L.type == Loc_City) max_dim = 100.f;
-        else if (L.type == Loc_Helicrash) max_dim = 56.f;
-        else if (L.type == Loc_BunkerEntrance || L.type == Loc_Secret) max_dim = 48.f;
-        else if (L.type == Loc_GasStation) max_dim = 64.f;
-        const float enter_r = max_dim * 0.35f;
+        // Buildings are drawn at their native data.js frame size in world units, scaled by
+        // the same world->screen factor as positions/terrain. (Bug fix 2026-10-19: this used
+        // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
+        // ~100x and covered the screen with flat colour squares.)
+        const char* ext_spr = poi_building_sprite(L.type, i);
+        int nat_w = 100, nat_h = 100;
+        poi_native_px(ext_spr, nat_w, nat_h);
+        const float max_dim = static_cast<float>(nat_w > nat_h ? nat_w : nat_h) * sc;
+        const float enter_r = static_cast<float>(nat_w < nat_h ? nat_w : nat_h) * 0.35f;
         const bool inside = (L.type != Loc_Helicrash) &&
                             dist2(L.pos, player_.pos) < enter_r * enter_r;
         if (inside) {
           if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
           const char* ispr = poi_interior_sprite(L.type, i);
           if (platform_->has_sprite(ispr))
-            draw_poi_sprite(platform_, sx, sy, ispr, max_dim);
+            draw_poi_sprite(platform_, sx, sy, ispr, sc);
           else
-            draw_poi_sprite(platform_, sx, sy, poi_building_sprite(L.type, i), max_dim);
+            draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
         } else {
-          draw_poi_sprite(platform_, sx, sy, poi_building_sprite(L.type, i), max_dim);
+          draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
         }
         // Nameplate when close
         if (dist2(L.pos, player_.pos) < 160.f * 160.f) {
@@ -3708,26 +3708,26 @@ void Game::render() {
           continue;
         }
         const float d2p = dist2(p->pos, player_.pos);
-        bool drew_icon = false;
-        if (d2p < 160.f * 160.f && p->item_count > 0) {
-          ItemId show = 0;
-          for (int j = 0; j < p->item_count; ++j) {
-            if (p->counts[j] > 0) { show = p->items[j]; break; }
-          }
-          const ItemIcon* ic = show ? find_item_icon(show) : 0;
-          if (ic && platform_->has_sprite(ic->sprite)) {
-            const float iw = (d2p < 70.f * 70.f) ? 18.f : 12.f;
-            platform_->draw_sprite_frame(ic->sprite, sx - iw * 0.5f, sy - iw * 0.5f, iw, iw,
-                                         ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
-            drew_icon = true;
-          }
+        if (d2p > 420.f * 420.f) continue;
+        // C2 layer items_on_ground: each pile shows its item sprites at native size.
+        // spawn_loot_point is an invisible editor marker in C2 (16x16 colour swatch) and is
+        // never drawn in game (it was the "colored stacks" placeholder).
+        int drawn = 0;
+        for (int j = 0; j < p->item_count && drawn < 3; ++j) {
+          if (p->counts[j] <= 0) continue;
+          const ItemIcon* ic = find_item_icon(p->items[j]);
+          if (!ic || !platform_->has_sprite(ic->sprite)) continue;
+          // Native world px (8..16) at 1.5x for 480x272 legibility (same factor as icons used before).
+          const float iw = static_cast<float>(ic->sw) * 1.5f;
+          const float ih = static_cast<float>(ic->sh) * 1.5f;
+          const float ox = (drawn == 1) ? 5.f : (drawn == 2 ? -5.f : 0.f);
+          const float oy = (drawn == 0) ? 0.f : 3.f;
+          platform_->draw_sprite_frame(ic->sprite, sx + ox - iw * 0.5f, sy + oy - ih * 0.5f, iw, ih,
+                                       ic->sx, ic->sy, ic->sw, ic->sh, 0.f, 1.f);
+          ++drawn;
         }
-        if (!drew_icon) {
-          if (platform_->has_sprite("spawn_loot_point-sheet0"))
-            platform_->draw_sprite("spawn_loot_point-sheet0", sx - 8, sy - 8, 16, 16, 0.f, 1.f);
-          else
-            platform_->draw_rect(sx - 3, sy - 3, 6, 6, 0.9f, 0.85f, 0.2f, 1.f);
-        }
+        if (drawn == 0 && p->item_count > 0)
+          platform_->draw_rect(sx - 3, sy - 2, 6, 4, 0.55f, 0.5f, 0.35f, 0.9f);
       }
     }
 

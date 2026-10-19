@@ -40,6 +40,18 @@ const int kOverlayCols = 298; // ceil(17850/60)
 const int kOverlayRows = 334; // ceil(20000/60)
 const int kTile = 60;
 
+#include "mdaz/forest_collision.inc"
+
+bool point_in_poly(const float* pts, int n, float x, float y) {
+  bool in = false;
+  for (int i = 0, j = n - 1; i < n; j = i++) {
+    const float xi = pts[i * 2], yi = pts[i * 2 + 1];
+    const float xj = pts[j * 2], yj = pts[j * 2 + 1];
+    if (((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) in = !in;
+  }
+  return in;
+}
+
 } // namespace
 
 WorldTilemaps::WorldTilemaps()
@@ -203,11 +215,13 @@ void WorldTilemaps::stamp_from_mapgen(const MapGenerator& gen) {
   };
 
   // C2 create_map_location: ground SetTile → 15; water → 4.
+  // stamp_location_forest is NOT applied (2026-10-19): the decoded SetTile offsets are marked
+  // approximate (truncated export) and, now that tilemap_forest is drawn and Solid, they put
+  // isolated corner tiles around POIs. See KNOWN_ISSUES.md.
   for (int i = 0; i < gen.location_count(); ++i) {
     const MapLocation& L = gen.location(i);
     if (!L.active) continue;
     stamp_location_footprint(L);
-    stamp_location_forest(L);
   }
 
   // C2 generate_array_roads_1/_2 sector markers (12/13/14) → runtime dirt tile 15.
@@ -259,6 +273,24 @@ int WorldTilemaps::tile_at(const char* image, float wx, float wy) const {
     if (id >= 0) return id;
   }
   return -1;
+}
+
+bool WorldTilemaps::forest_solid_at(float wx, float wy) const {
+  for (int i = count_ - 1; i >= 0; --i) {
+    const Map& m = maps_[i];
+    if (std::strcmp(m.image, "tilemap_forest") != 0) continue;
+    const int c = static_cast<int>(std::floor((wx - m.x) / m.tile_w));
+    const int r = static_cast<int>(std::floor((wy - m.y) / m.tile_h));
+    if (c < 0 || r < 0 || c >= m.cols || r >= m.rows) continue;
+    const int id = tiles_[m.first + r * m.cols + c];
+    if (id < 0) continue;
+    if (id >= kForestTilePolyCount) return true;
+    const float lx = (wx - (m.x + c * m.tile_w)) / static_cast<float>(m.tile_w);
+    const float ly = (wy - (m.y + r * m.tile_h)) / static_cast<float>(m.tile_h);
+    const ForestTilePoly& tp = kForestTilePolys[id];
+    if (point_in_poly(tp.pts, tp.n, lx, ly)) return true;
+  }
+  return false;
 }
 
 void WorldTilemaps::draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,

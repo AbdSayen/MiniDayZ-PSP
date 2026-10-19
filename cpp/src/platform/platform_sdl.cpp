@@ -238,7 +238,19 @@ public:
     out.inventory_pressed = out.inventory && !prev_inventory_;
     out.reload_pressed = out.reload && !prev_reload_;
     out.pause_pressed = out.pause && !prev_pause_;
-    out.confirm_pressed = out.confirm && !prev_confirm_;
+    // PSP-style semantics on desktop: Esc = Start (pause) in game and = Circle (back) in menus.
+    {
+      const bool esc = keys[SDL_SCANCODE_ESCAPE] != 0;
+      const bool bksp = keys[SDL_SCANCODE_BACKSPACE] != 0;
+      if (esc && !prev_esc_) { out.pause_pressed = true; out.back_pressed = true; }
+      if (bksp && !prev_bksp_) out.back_pressed = true;
+      if (out.interact_pressed) out.back_pressed = true; // E == Circle
+      if (keys[SDL_SCANCODE_SPACE] && !prev_space_) out.confirm_pressed = true;
+      prev_esc_ = esc;
+      prev_bksp_ = bksp;
+      prev_space_ = keys[SDL_SCANCODE_SPACE] != 0;
+    }
+    out.confirm_pressed = (out.confirm && !prev_confirm_) || out.confirm_pressed;
 
     prev_attack_ = out.attack;
     prev_interact_ = out.interact;
@@ -307,8 +319,8 @@ public:
   }
   void draw_text(float x, float y, const char* text, float r, float g, float b) {
     if (!text) return;
-    // Text pixels are half a logical pixel: the window is 2x the 480x272 logical size.
-    const float px = 1.5f;
+    // 5x7 font, 1 logical px per font pixel + 1px drop shadow (matches PSP).
+    const float px = 1.0f; // same metrics as PSP fb font (6 px advance)
     SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
     float cx = x;
     for (const char* p = text; *p; ++p) {
@@ -316,7 +328,7 @@ public:
       for (int row = 0; row < 7; ++row) {
         for (int col = 0; col < 5; ++col) {
           if (!(rows[row] & (0x10 >> col))) continue;
-          const SDL_FRect px_rect = { cx + col * px + 0.5f, y + row * px + 0.5f, px, px };
+          const SDL_FRect px_rect = { cx + col * px + 1.f, y + row * px + 1.f, px, px };
           SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 160);
           SDL_RenderFillRectF(renderer_, &px_rect);
         }
@@ -454,6 +466,7 @@ private:
   bool prev_drop_, prev_mag_reload_, prev_craft_, prev_throw_;
   bool prev_equip_prev_, prev_equip_next_;
   bool prev_mouse_left_;
+  bool prev_esc_ = false, prev_bksp_ = false, prev_space_ = false;
 };
 
 IPlatform* create_platform() {

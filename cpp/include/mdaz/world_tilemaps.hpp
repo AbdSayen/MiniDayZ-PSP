@@ -48,6 +48,9 @@ public:
   bool ensure_ground_overlay();
 
   int tile_at(const char* image, float wx, float wy) const;
+  // C2 tilemap_forest has the Solid behaviour: true when (wx,wy) is inside the collision
+  // polygon of the forest tile under it (per-tile polys from data.js; null = full box).
+  bool forest_solid_at(float wx, float wy) const;
   void draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
             float view_w, float view_h) const;
 

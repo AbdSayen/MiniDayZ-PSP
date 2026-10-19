@@ -12,5 +12,7 @@ struct ItemIcon {
 
 // Returns null if no known sprite mapping.
 const ItemIcon* find_item_icon(ItemId id);
+// Ground (items_on_ground) frame: C2 "on_ground" animation when the type has one.
+const ItemIcon* find_item_ground_icon(ItemId id);
 
 } // namespace mdaz

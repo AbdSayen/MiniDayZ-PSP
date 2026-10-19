@@ -220,4 +220,29 @@ const ItemIcon* find_item_icon(ItemId id) {
   return 0;
 }
 
+
+namespace {
+struct GroundEntry { const char* icon_sheet; ItemIcon ground; };
+const GroundEntry kGround[] = {
+#include "item_ground_frames.inc"
+};
+const int kGroundCount = static_cast<int>(sizeof(kGround) / sizeof(kGround[0]));
+} // namespace
+
+// C2 items_on_ground: weapon/clothing/backpack types draw their "on_ground" animation
+// frame (e.g. hunter backpack 15x10, AKM 19x7); the 30x30 sheet0 frames are the
+// worn/held overlays. Small items (food, meds, ammo) have no on_ground anim: their
+// single frame (8x8 etc.) is already the ground sprite.
+const ItemIcon* find_item_ground_icon(ItemId id) {
+  const ItemIcon* ic = find_item_icon(id);
+  if (!ic) return 0;
+  for (int i = 0; i < kGroundCount; ++i) {
+    const char* a = kGround[i].icon_sheet;
+    const char* b = ic->sprite;
+    while (*a && *a == *b) { ++a; ++b; }
+    if (*a == 0 && *b == 0) return &kGround[i].ground;
+  }
+  return ic;
+}
+
 } // namespace mdaz

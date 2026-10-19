@@ -33,6 +33,13 @@ struct InputState {
   bool bag_pressed;
   int slot_digit; // 1..9 pressed this frame, else 0
   int equip_delta; // -1 / +1 from Q/X or mouse wheel
+  // Menu "back" (PSP Circle, desktop Esc/Backspace/E) — rising edge.
+  bool back_pressed;
+  // D-pad / analog navigation edges with auto-repeat — filled by Game, not platforms.
+  bool nav_up;
+  bool nav_down;
+  bool nav_left;
+  bool nav_right;
   float mouse_x;
   float mouse_y;
   bool mouse_left;
@@ -51,6 +58,7 @@ struct InputState {
       craft_pressed(false), throw_pressed(false), bag(false), bag_pressed(false),
       slot_digit(0),
       equip_delta(0),
+      back_pressed(false), nav_up(false), nav_down(false), nav_left(false), nav_right(false),
       mouse_x(0.f), mouse_y(0.f), mouse_left(false), mouse_left_pressed(false) {}
 };
 

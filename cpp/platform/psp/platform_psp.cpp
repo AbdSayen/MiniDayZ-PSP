@@ -76,6 +76,31 @@ static void fb_fill(unsigned short* fb, int x, int y, int w, int h, unsigned sho
   }
 }
 
+// Alpha-blended fill (RGB565/BGR565 — per-channel blend is order-agnostic).
+static void fb_fill_blend(unsigned short* fb, int x, int y, int w, int h, unsigned short c, int a8) {
+  if (!fb || w <= 0 || h <= 0 || a8 <= 4) return;
+  if (a8 >= 250) { fb_fill(fb, x, y, w, h, c); return; }
+  if (x < 0) { w += x; x = 0; }
+  if (y < 0) { h += y; y = 0; }
+  if (x + w > 480) w = 480 - x;
+  if (y + h > 272) h = 272 - y;
+  if (w <= 0 || h <= 0) return;
+  const int a5 = (a8 + 4) >> 3;           // 0..32
+  const int ia = 32 - a5;
+  const int cr = c >> 11, cg = (c >> 5) & 63, cb = c & 31;
+  const int pr = cr * a5, pg = cg * a5, pb = cb * a5;
+  for (int row = 0; row < h; ++row) {
+    unsigned short* dst = fb + (y + row) * 512 + x;
+    for (int col = 0; col < w; ++col) {
+      const unsigned short d = dst[col];
+      const int r = (pr + (d >> 11) * ia) >> 5;
+      const int g = (pg + ((d >> 5) & 63) * ia) >> 5;
+      const int b = (pb + (d & 31) * ia) >> 5;
+      dst[col] = (unsigned short)((r << 11) | (g << 5) | b);
+    }
+  }
+}
+
 static const unsigned char kGlyph5x7[96][7] = {
   {0,0,0,0,0,0,0},
   {0x04,0x04,0x04,0x04,0x00,0x04,0x00},{0x0A,0x0A,0x00,0x00,0x00,0x00,0x00},
@@ -146,7 +171,8 @@ static void fb_draw_char(unsigned short* fb, int x, int y, char ch, unsigned sho
 static void fb_draw_text(unsigned short* fb, int x, int y, const char* text, unsigned short c) {
   int cx = x;
   for (const char* p = text; *p; ++p) {
-    if (*p == '\n') { cx = x; y += 8; continue; }
+    if (*p == '\n') { cx = x; y += 10; continue; }
+    fb_draw_char(fb, cx + 1, y + 1, *p, 0); // 1px drop shadow (same as desktop)
     fb_draw_char(fb, cx, y, *p, c);
     cx += 6;
   }
@@ -404,6 +430,9 @@ public:
     out.confirm = (b & PSP_CTRL_CROSS) != 0 && !l;
     out.confirm_pressed = (pressed & PSP_CTRL_CROSS) != 0 && !l;
     out.cancel = (b & PSP_CTRL_SELECT) != 0 && !l;
+    // PSP UI: Circle = back in menus; Select = open/close inventory.
+    out.back_pressed = (pressed & PSP_CTRL_CIRCLE) != 0 && !l && !r;
+    if (!l && (pressed & PSP_CTRL_SELECT)) out.bag_pressed = true;
     out.pause = (b & PSP_CTRL_START) != 0 && !l;
     out.pause_pressed = (pressed & PSP_CTRL_START) != 0 && !l;
 
@@ -443,8 +472,9 @@ public:
   }
 
   void draw_rect(float x, float y, float w, float h, float r, float g, float b, float a) {
-    if (a < 0.05f) return;
-    fb_fill(fb_, (int)x, (int)y, (int)(w + 0.5f), (int)(h + 0.5f), rgba565(r, g, b, a));
+    if (a < 0.02f) return;
+    fb_fill_blend(fb_, (int)x, (int)y, (int)(w + 0.5f), (int)(h + 0.5f), rgba565(r, g, b, 1.f),
+                  (int)(a * 255.f));
   }
 
   void draw_text(float x, float y, const char* text, float r, float g, float b) {
