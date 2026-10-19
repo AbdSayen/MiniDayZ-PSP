@@ -269,27 +269,21 @@ void draw_quest_panel(IPlatform& platform, const Game& game) {
   if (!game.quest().show_panel()) return;
   char qbuf[160];
   const char* qline = quest_hud_line(game.quest(), game.items());
-  if (game.quest().q_task_id == 1) {
-    int have = 0;
-    for (int i = 0; i < game.inventory().slot_count(); ++i) {
-      const InvSlot& s = game.inventory().slot(i);
-      if (s.id == static_cast<ItemId>(game.quest().q_target_sid)) have += s.count;
-    }
-    std::snprintf(qbuf, sizeof(qbuf), "%s (%d/1)", qline ? qline : "", have > 1 ? 1 : have);
-  } else if (qline && qline[0]) {
+  // C2 row1 text only (the invented "(have/1)" counter was removed).
+  if (qline && qline[0]) {
     std::snprintf(qbuf, sizeof(qbuf), "%s", qline);
   } else {
     std::snprintf(qbuf, sizeof(qbuf), "TASK %d: %s", game.quest().q_task_id,
                   game.quest().label(game.items()));
   }
-  const float x = kSafe, y = 46.f, w = 170.f, h = 26.f;
+  const float x = kSafe, y = 46.f, w = 200.f, h = 44.f;
   if (spr(platform, "gui_quest_panel-sheet0"))
     platform.draw_sprite("gui_quest_panel-sheet0", x, y, w, h, 0.f, 0.85f);
   else
     panel(platform, x, y, w, h, 0.8f);
   if (spr(platform, "quest_icon-sheet0"))
     platform.draw_sprite("quest_icon-sheet0", x + 3.f, y + 5.f, 16.f, 16.f, 0.f, 1.f);
-  text_wrap(platform, x + 22.f, y + 4.f, w - 26.f, 2, qbuf, 0.95f, 0.88f, 0.55f);
+  text_wrap(platform, x + 22.f, y + 4.f, w - 26.f, 4, qbuf, 0.95f, 0.88f, 0.55f);
 }
 
 void draw_compass(IPlatform& platform, const Game& game, float y) {

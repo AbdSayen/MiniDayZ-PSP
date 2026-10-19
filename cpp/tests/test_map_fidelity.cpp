@@ -102,7 +102,11 @@ int test_map_fidelity() {
   mdaz::BanditSystem bandits;
   mdaz::Rng rng(42);
   camps.spawn_team_camp(mdaz::Vec2(1000.f, 1000.f), 9);
-  mdaz::bot_bandits_check_situation(bandits, camps, mdaz::Vec2(500.f, 500.f), 0, rng);
+  mdaz::bot_bandits_check_situation(bandits, camps, mdaz::Vec2(500.f, 500.f), 0, false, 0, rng);
+  if (bandits.alive_count() != 0) {
+    std::printf("FAIL Bot_bandits_check_situation must not run on CurrentLevel 0\n"); ++fail;
+  } else std::printf("OK   Bot_bandits_check_situation skipped on CurrentLevel 0\n");
+  mdaz::bot_bandits_check_situation(bandits, camps, mdaz::Vec2(500.f, 500.f), 1, false, 0, rng);
   if (bandits.alive_count() != 4) {
     std::printf("FAIL bot_bandits_check_situation spawn got %d\n", bandits.alive_count());
     ++fail;

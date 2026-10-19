@@ -461,7 +461,7 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Not done: the C2 craft wait (3/4/5 s with IV21=1). Crafting in the port is instant.
 - Craft_fishing_rod result line not yet confirmed (port: 87).
 
-## Item 9 — sickness (IV34) + day/night/rain timebase (2026-10-19, 23:58 Baku)
+## Item 9 — sickness (IV34) + day/night/rain timebase (2026-10-19, 23:59 Baku)
 - Status: Реализована, но не проверена (unit tests only; no screenshots).
 - Sickness, from the C2 States group:
   - While sick: −1 food and −1 water per 5 s stats tick, and no blood regeneration.
@@ -485,3 +485,25 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Not done:
   - rains_level → 2 after Stats_time_lived ≥ 5000 (SEED_morezeds == 0).
   - AI event trees (zombie, animal, bandit): not audited in this step.
+
+## Item 10 — quest pad strings + Bot_bandits_check_situation branch (2026-10-20, 00:11 Baku)
+- Status: Реализована, но не проверена.
+  - Unit tests pass, plus `--shots-quest` screenshots.
+  - The pad screen itself is not ported; the strings feed the HUD quest panel.
+- Decode method: C2 function indices were resolved with `c2runtime.js` getObjectRefTable. Examples: c78 = Sprite.PickDistance, exps 127 = Count, 533 = item-name table, 536 = UI strings.
+- Quest strings, from the pad_list rows:
+  - row1: 367 no task; 371 + newline + item name (task 1); 383 (task 2); 382 (task 3); 386 bandits eliminated; 387 failed.
+  - row3: 381 + reward text for all 41 Q_reward_id values (21 has none), now `quest_reward_text`.
+  - Time left: "Time left: m:s" (`quest_time_left_text`).
+  - The HUD quest panel now shows row1. The invented "(have/1)" counter is removed.
+- Bot_bandits_check_situation:
+  - Runs every 400 + 2·karma s, only when CurrentLevel > 0.
+  - Count ≤ 0 → Spawn_bandit_camp.
+  - Otherwise, if not the quest camp (controller IV2, set for Q_task_id 2) and Q_status ≠ 0: when the nearest bandit is > 1200 from the player → Remove_bandit_bots.
+  - Remove_bandit_bots removes all enemy bandits (no anchor/radius).
+  - The port has only CurrentLevel 0, so this check never runs in the port, which matches C2 for level 0. It is not wired to a timer.
+- Arrow recipe (Craft_21/22): decoded further, still not implemented.
+  - Crafted = Arr.At(slot) of submenu item 1 (IV1 = the dragged backpack item).
+  - Item 2's cell is set to At − 3·Crafted.
+  - Output: Check_space_inventory(-1, 51, Crafted).
+  - Which array holds counts vs condition for knives is unresolved, so no guess.

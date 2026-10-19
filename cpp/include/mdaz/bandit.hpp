@@ -55,7 +55,7 @@ private:
 // C2 Spawn_bandit_camp + Spawn_firearm_bot / Spawn_puncher_bot at camp anchor (obj245).
 void spawn_bandit_camp(BanditSystem& bandits, Vec2 anchor, Rng& rng);
 // C2 Remove_bandit_bots — quest camp cleanup near anchor.
-void remove_bandit_bots(BanditSystem& bandits, Vec2 anchor, float radius);
+void remove_bandit_bots(BanditSystem& bandits);
 
 // C2 NPCs: destroy bot instances by role when they die or quest ends.
 void remove_bot_firearm(Bandit* bot);
@@ -102,9 +102,9 @@ private:
 // C2 Bot_team_check_situation: obj549 IV127==3 → Spawn_team_camp.
 void bot_team_check_situation(TeamCampSystem& camps, int team_iv127, Vec2 anchor, int camp_iv0);
 
-// C2 Bot_bandits_check_situation (team IV127==0): Spawn_bandit_camp on eligible obj507.
+// C2 Bot_bandits_check_situation (CurrentLevel>0 only): Count<=0 -> camp; quest active, not quest camp, nearest bandit >1200 -> Remove_bandit_bots.
 void bot_bandits_check_situation(BanditSystem& bandits, TeamCampSystem& camps, Vec2 player_pos,
-                                 int team_iv127, Rng& rng);
+                                 int current_level, bool controller_iv2, int q_status, Rng& rng);
 
 // C2 bot_reloading (obj522): when IV9==0, IV10=1, Wait, refill IV9 from IV14 weapon class.
 int bot_mag_capacity_for_weapon_iv14(int weapon_iv14);

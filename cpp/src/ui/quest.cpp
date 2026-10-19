@@ -255,6 +255,102 @@ bool QuestState::cancel() {
   return true;
 }
 
+namespace {
+// C2 pad_list "row3" (Pad tab quest): AppendText newline + name per Q_reward_id.
+// a > 0: item name (t533 item-name table == item id); a < 0: UI string -a (t536).
+// b > 0: second item name on its own line. Reward 31 uses Cyrillic "\u0445" in C2;
+// ASCII 'x' here (PSP font). Reward 21 has no row text in C2.
+struct RewardText { int id; int a; int b; const char* suffix; };
+const RewardText kRewardText[] = {
+  { 1, 4, 0, " x2" },
+  { 2, 10, 0, " x2" },
+  { 3, 18, 0, " x3" },
+  { 4, 34, 0, " x3" },
+  { 5, 11, 0, " x60" },
+  { 6, 12, 0, " x60" },
+  { 7, 13, 0, " x30" },
+  { 8, 14, 0, " x60" },
+  { 9, 15, 0, " x60" },
+  { 10, 16, 0, " x40" },
+  { 11, 17, 0, " x30" },
+  { 12, 58, 0, " x100" },
+  { 13, 69, 0, " x90" },
+  { 14, 35, 0, " x2" },
+  { 15, 36, 0, " x2" },
+  { 16, 53, 0, " x2" },
+  { 17, 19, 0, " x2" },
+  { 18, 85, 0, " x2" },
+  { 19, 86, 0, "" },
+  { 20, 75, 0, "" },
+  { 22, 456, 0, "" },
+  { 23, 265, 0, "" },
+  { 24, -368, 0, "" },
+  { 25, -369, 0, "" },
+  { 26, -370, 0, "" },
+  { 27, 450, 0, "" },
+  { 28, 403, 0, "" },
+  { 29, 204, 0, "" },
+  { 30, -376, 0, "" },
+  { 31, 63, 0, " x3" },
+  { 32, 23, 24, "" },
+  { 33, 29, 0, " x2" },
+  { 34, 46, 0, " x2" },
+  { 35, 56, 0, " x3" },
+  { 36, 56, 0, " x3" },
+  { 37, 181, 100, " x25" },
+  { 38, 171, 17, " x10" },
+  { 39, 166, 58, " x30" },
+  { 40, 153, 16, " x12" },
+  { 41, 157, 14, " x15" },
+  { 42, 161, 15, " x30" },
+};
+
+const char* item_name_or_empty(const ItemDatabase& db, int id) {
+  const ItemDef* d = db.find(static_cast<ItemId>(id));
+  return d ? d->name.c_str() : "";
+}
+} // namespace
+
+int quest_task_row_string_id(const QuestState& q) {
+  // C2 pad row1: Q_status 0/4 -> 367; Q_status 1 -> task 1: 371, 2: 383, 3: 382;
+  // Q_status 2 -> 387 (failed); Q_status 3 -> 386 (bandits eliminated).
+  // Port state: q_task_id 0 = no task; task 2 awaiting reward == C2 Q_status 3.
+  if (q.q_task_id <= 0) return 367;
+  if (q.q_task_id == 2 && q.q_status == 2) return 386;
+  switch (q.q_task_id) {
+  case 1: return 371;
+  case 2: return 383;
+  case 3: return 382;
+  default: return 367;
+  }
+}
+
+const char* quest_reward_text(int q_reward_id, const ItemDatabase& db) {
+  static char buf[160];
+  buf[0] = 0;
+  for (unsigned i = 0; i < sizeof(kRewardText) / sizeof(kRewardText[0]); ++i) {
+    const RewardText& r = kRewardText[i];
+    if (r.id != q_reward_id) continue;
+    const char* a = r.a > 0 ? item_name_or_empty(db, r.a) : ui_string(-r.a);
+    if (r.b > 0)
+      std::snprintf(buf, sizeof(buf), "%s\n%s%s", a ? a : "", item_name_or_empty(db, r.b), r.suffix);
+    else
+      std::snprintf(buf, sizeof(buf), "%s%s", a ? a : "", r.suffix);
+    break;
+  }
+  return buf;
+}
+
+void quest_time_left_text(float seconds_left, char* out, int n) {
+  // C2: timeleft = abs(Timer duration - elapsed); "Time left: " floor(t/60) ":" round(t - floor(t/60)*60)
+  float t = seconds_left < 0.f ? -seconds_left : seconds_left;
+  const int m = static_cast<int>(t / 60.f);
+  const float rest = t - static_cast<float>(m) * 60.f;
+  const int s = static_cast<int>(rest + 0.5f);
+  const char* lbl = ui_string(384);
+  std::snprintf(out, static_cast<size_t>(n), "%s %d:%d", lbl ? lbl : "", m, s);
+}
+
 int quest_ui_intro_string_id(int q_task_id) {
   switch (q_task_id) {
   case 1: return 371;
@@ -265,26 +361,16 @@ int quest_ui_intro_string_id(int q_task_id) {
 }
 
 const char* quest_hud_line(const QuestState& q, const ItemDatabase& db) {
-  if (q.q_task_id <= 0) return "";
-  const int intro_id = quest_ui_intro_string_id(q.q_task_id);
-  const char* intro = intro_id ? ui_string(intro_id) : "";
-  if (q.q_task_id == 1) {
-    const ItemDef* d = db.find(static_cast<ItemId>(q.q_target_sid));
-    static char buf[160];
-    if (intro && intro[0]) {
-      if (d && !d->name.empty())
-        std::snprintf(buf, sizeof(buf), "%s %s", intro, d->name.c_str());
-      else
-        std::snprintf(buf, sizeof(buf), "%s #%d", intro, q.q_target_sid);
-    } else if (d && !d->name.empty()) {
-      std::snprintf(buf, sizeof(buf), "FIND: %s", d->name.c_str());
-    } else {
-      std::snprintf(buf, sizeof(buf), "FIND: #%d", q.q_target_sid);
-    }
+  // C2 pad row1 text; task 1 appends newline + t533 item name of Q_target_sid.
+  static char buf[200];
+  const char* row = ui_string(quest_task_row_string_id(q));
+  if (!row || !row[0]) row = q.label(db);
+  if (q.q_task_id == 1 && q.q_status != 2) {
+    std::snprintf(buf, sizeof(buf), "%s\n%s", row, item_name_or_empty(db, q.q_target_sid));
     return buf;
   }
-  if (intro && intro[0]) return intro;
-  return q.label(db);
+  std::snprintf(buf, sizeof(buf), "%s", row);
+  return buf;
 }
 
 const char* QuestState::label(const ItemDatabase& db) const {

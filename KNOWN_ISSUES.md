@@ -5,7 +5,13 @@ Last updated: 2026-10-17 (dmg_hint ported; no invented consumable restores; PSP 
 Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented mechanics removed, cross-platform RNG order fix)
 
 ## 2026-10-19 open items
-- Weather/sickness (23:58 Baku):
+- Quest UI (00:11 Baku):
+  - The C2 pad (pad_list tabs/pages) is not ported. Only the HUD panel uses the C2 row1 strings; the reward text and time-left helpers are not drawn yet.
+  - Port Q_status numbering differs from C2 (C2: 0 none, 1 active, 2 failed, 3 bandits done, 4 none).
+  - Reward 31 suffix uses ASCII x (C2 has Cyrillic х).
+  - The task 3 row (382) is longer than the 4-line HUD panel and is cut with "..".
+  - Tar sync note: files extracted with old mtimes may not rebuild; touch them before cmake --build.
+- Weather/sickness (23:59 Baku):
   - Rain intensity mapping rain_intensity_from_level is a port invention; level 1 gives 0.45.
   - The rain effects gated on rain > 0.7 (sprint slow, wetness soak) are not from C2 and never fire at rains_level 1.
   - Other unverified extras found during this audit:

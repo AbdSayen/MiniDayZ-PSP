@@ -27,6 +27,15 @@ const Fallback kFallbacks[] = {
   {379, "Did you find our loot case?"},
   {381, "Reward for this task is:"},
   {387, "Current task failed."},
+  {367, "No active task at this moment."},
+  {368, "Coordinates where a drivable vehicle is located"},
+  {369, "Coordinates of an underground bunker entrance"},
+  {370, "Coordinates of an interesting place"},
+  {376, "Coordinates of a boat we saw on the east coast."},
+  {382, "A group of survivors has lost their loot case. I can find it and bring it back, or I can open it and steal all the stuff."},
+  {383, "A group of survivors asked me to deal with bandits."},
+  {384, "Time left:"},
+  {386, "Bandits eliminated. I need to get back to survivors for my reward."},
 };
 
 std::map<int, std::string> g_ui;

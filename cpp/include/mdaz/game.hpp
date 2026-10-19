@@ -56,6 +56,9 @@ public:
   // Test-only (--shots-tutorial): placement and an item grant to reach later tutorial steps.
   // Test-only (--shots-death): kill a zed / fast zed / wolf / deer / rabbit / dog next to the player.
   void harness_death_demo();
+  void harness_set_quest(int task, int status, int target) {  // test-only: quest panel screenshots
+    quest_.q_task_id = task; quest_.q_status = status; quest_.q_target_sid = target;
+  }
   void harness_set_pos(float x, float y) { player_.pos = Vec2(x, y); }
   void harness_give_item(int id, int n) {   // frees the last used bag slot when the bag is full
     if (inventory_.add_item(static_cast<ItemId>(id), n, items_)) return;

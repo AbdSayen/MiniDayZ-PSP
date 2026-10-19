@@ -220,13 +220,31 @@ static bool try_spawn_bandit_camp_at(TeamCampMarker& camp, BanditSystem& bandits
 }
 
 void bot_bandits_check_situation(BanditSystem& bandits, TeamCampSystem& camps, Vec2 player_pos,
-                                 int team_iv127, Rng& rng) {
-  if (team_iv127 != 0) return;
-  for (int i = 0; i < camps.count(); ++i) {
-    TeamCampMarker* c = camps.at(i);
-    if (!c || !c->active) continue;
-    try_spawn_bandit_camp_at(*c, bandits, player_pos, rng);
+                                 int current_level, bool controller_iv2, int q_status, Rng& rng) {
+  // C2 (decoded with c2runtime getObjectRefTable): called every 400 + 2*karma s only when
+  // CurrentLevel > 0.
+  //   bot_enemy_bandit.Count <= 0 -> Spawn_bandit_camp(0);
+  //   else NOT controller.IV2 and Q_status != 0 -> PickDistance nearest bandit to player,
+  //        distance > 1200 -> Remove_bandit_bots.
+  // controller IV2 is set when the camp is the Q_task_id==2 quest camp.
+  if (current_level <= 0) return;
+  if (bandits.alive_count() <= 0) {
+    for (int i = 0; i < camps.count(); ++i) {
+      TeamCampMarker* c = camps.at(i);
+      if (!c || !c->active) continue;
+      try_spawn_bandit_camp_at(*c, bandits, player_pos, rng);
+    }
+    return;
   }
+  if (controller_iv2 || q_status == 0) return;
+  float best = -1.f;
+  for (int i = 0; i < bandits.count(); ++i) {
+    Bandit* bt = bandits.at(i);
+    if (!bt || !bt->alive || bt->is_ally) continue;
+    const float d = dist(bt->pos, player_pos);
+    if (best < 0.f || d < best) best = d;
+  }
+  if (best > 1200.f) remove_bandit_bots(bandits);
 }
 
 void spawn_bandit_camp(BanditSystem& bandits, Vec2 anchor, Rng& rng) {
@@ -307,22 +325,17 @@ int BanditSystem::alive_count() const {
   return n;
 }
 
-void remove_bandit_bots(BanditSystem& bandits, Vec2 anchor, float radius) {
+void remove_bandit_bots(BanditSystem& bandits) {
+  // C2 Remove_bandit_bots: destroy every bot_enemy_bandit (+ its light_bot1), all
+  // bot_bandit_waypoint and bot_bandits_controller. No anchor/radius; friends untouched.
   (void)kC2_Remove_bandit_bots;
-  const float r2 = radius * radius;
   for (int i = 0; i < bandits.count(); ++i) {
     Bandit* b = bandits.at(i);
-    if (!b || !b->alive) continue;
-    const float dx = b->pos.x - anchor.x;
-    const float dy = b->pos.y - anchor.y;
-    if (dx * dx + dy * dy <= r2) {
-      if (b->is_ally)
-        remove_bot_friend(b);
-      else if (b->has_gun)
-        remove_bot_firearm(b);
-      else
-        remove_bot_puncher(b);
-    }
+    if (!b || !b->alive || b->is_ally) continue;
+    if (b->has_gun)
+      remove_bot_firearm(b);
+    else
+      remove_bot_puncher(b);
   }
 }
 

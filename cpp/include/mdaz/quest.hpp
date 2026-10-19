@@ -43,6 +43,10 @@ struct QuestState {
 // l_eng_ui.xml task pad strings (ids 371–379) for compact HUD panel.
 int quest_ui_intro_string_id(int q_task_id);
 const char* quest_hud_line(const QuestState& q, const ItemDatabase& db);
+// C2 pad_list strings (decoded from data.js; ids into l_eng_ui.xml).
+int quest_task_row_string_id(const QuestState& q);
+const char* quest_reward_text(int q_reward_id, const ItemDatabase& db);
+void quest_time_left_text(float seconds_left, char* out, int n);
 
 // Verified Q_reward_id → l_eng item sid (tools/decode_quest_reward_box.js).
 ItemId quest_reward_item_id(int q_reward_id);

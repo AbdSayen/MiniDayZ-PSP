@@ -1,3 +1,4 @@
+#include <string>
 #include "mdaz/bandit.hpp"
 
 #include <cstring>
@@ -366,12 +367,23 @@ int test_systems() {
     mdaz::BanditSystem qb;
     mdaz::Rng qr(9);
     mdaz::spawn_bandit_camp(qb, mdaz::Vec2(200.f, 200.f), qr);
-    mdaz::remove_bandit_bots(qb, mdaz::Vec2(200.f, 200.f), 450.f);
-    if (qb.alive_count() != 0) {
-      std::printf("FAIL Remove_bandit_bots near anchor got %d alive\n", qb.alive_count());
+    mdaz::TeamCampSystem nc;
+    // Quest camp (controller IV2) is never removed by distance.
+    mdaz::bot_bandits_check_situation(qb, nc, mdaz::Vec2(5000.f, 5000.f), 1, true, 1, qr);
+    const int kept_quest = qb.alive_count();
+    // Q_status 0 -> no removal.
+    mdaz::bot_bandits_check_situation(qb, nc, mdaz::Vec2(5000.f, 5000.f), 1, false, 0, qr);
+    const int kept_q0 = qb.alive_count();
+    // Nearest bandit within 1200 -> kept.
+    mdaz::bot_bandits_check_situation(qb, nc, mdaz::Vec2(1200.f, 200.f), 1, false, 1, qr);
+    const int kept_near = qb.alive_count();
+    // Nearest bandit > 1200 -> Remove_bandit_bots removes all.
+    mdaz::bot_bandits_check_situation(qb, nc, mdaz::Vec2(5000.f, 5000.f), 1, false, 1, qr);
+    if (kept_quest != 4 || kept_q0 != 4 || kept_near != 4 || qb.alive_count() != 0) {
+      std::printf("FAIL bandit removal branch %d %d %d %d\n", kept_quest, kept_q0, kept_near, qb.alive_count());
       ++fail;
     } else
-      std::printf("OK   Remove_bandit_bots quest camp\n");
+      std::printf("OK   Remove_bandit_bots distance branch (>1200, not quest camp, Q_status!=0)\n");
   }
 
   {
@@ -392,6 +404,28 @@ int test_systems() {
       ++fail;
     } else
       std::printf("OK   generate_bunker_entrance CurrentLevel>=1\n");
+  }
+
+  {
+    // C2 pad_list strings: row1 id by task, row3 reward text, time-left format.
+    mdaz::ItemDatabase rdb;
+    rdb.load_from_json_string("{\"items\":[{\"id\":4,\"name\":\"Apple\"},{\"id\":181,\"name\":\"Gun\"},{\"id\":100,\"name\":\"Ammo\"}]}");
+    mdaz::QuestState qs; qs.reset();
+    const int r0 = mdaz::quest_task_row_string_id(qs);
+    qs.q_task_id = 1; qs.q_status = 1; const int r1 = mdaz::quest_task_row_string_id(qs);
+    qs.q_task_id = 2; const int r2 = mdaz::quest_task_row_string_id(qs);
+    qs.q_status = 2; const int r2d = mdaz::quest_task_row_string_id(qs);
+    qs.q_task_id = 3; qs.q_status = 1; const int r3 = mdaz::quest_task_row_string_id(qs);
+    const std::string a = mdaz::quest_reward_text(1, rdb);
+    const std::string b = mdaz::quest_reward_text(37, rdb);
+    char tl[64]; mdaz::quest_time_left_text(125.f, tl, sizeof(tl));
+    const std::string tls = tl;
+    if (r0 != 367 || r1 != 371 || r2 != 383 || r2d != 386 || r3 != 382 || a != "Apple x2" ||
+        b != "Gun\nAmmo x25" || tls.find("2:5") == std::string::npos) {
+      std::printf("FAIL quest pad strings %d %d %d %d %d [%s] [%s] [%s]\n", r0, r1, r2, r2d, r3,
+                  a.c_str(), b.c_str(), tl);
+      ++fail;
+    } else std::printf("OK   quest pad strings (row1 ids, reward text, time left)\n");
   }
 
   return fail ? 1 : 0;
