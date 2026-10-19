@@ -7,6 +7,16 @@
 namespace mdaz {
 namespace {
 #include "map_props.inc"
+struct CarTrunkDef { int frame, mirror; float ox, oy; };
+struct CarTrunkFrame { const char* sheet; int sx, sy, w, h; float hx, hy, lx, ly; int n; float pts[8]; };
+#include "car_trunk.inc"
+const CarTrunkDef* trunk_def(int def) {
+  if (def < 0 || def >= kPropDefCount) return 0;
+  const PropDef& d = kPropDefs[def];
+  if (d.cat != 6 || d.sub < 1 || d.sub > 17) return 0;
+  const CarTrunkDef& t = kCarTrunk[d.sub - 1];
+  return t.frame < 0 ? 0 : &t;
+}
 
 const PropDef* find_def(int cat, int sub, int iv6, int& idx) {
   for (int i = 0; i < kPropDefCount; ++i) {
@@ -80,6 +90,7 @@ void MapProps::build(const C2Map& m, Rng& rng) {
     if (f < 0 || f >= s.count) f = 0;
     tmp[n].x = row.x; tmp[n].y = row.y;
     tmp[n].def = static_cast<short>(di); tmp[n].frame = static_cast<short>(f);
+    if (row.c5 == 0 && trunk_def(di)) tmp[n].frame |= 0x4000;  // car_loot_point only when IV3 = 0
     tcell[n] = static_cast<unsigned short>(cell_of(row.x, row.y));
     ++n;
   }
@@ -91,6 +102,58 @@ void MapProps::build(const C2Map& m, Rng& rng) {
   for (int c = 0; c < 256; ++c) fill[c] = cell_first_[c];
   for (int i = 0; i < n; ++i) props_[fill[tcell[i]]++] = tmp[i];
   count_ = n;
+  mark_trunks(false);
+}
+
+void MapProps::mark_trunks(bool tutorial) {
+  for (int i = 0; i < kMax / 8 + 1; ++i) { trunk_[i] = 0; trunk_vis_[i] = 0; }
+  for (int i = 0; i < count_; ++i) {
+    const bool flag = (props_[i].frame & 0x4000) != 0;
+    props_[i].frame = static_cast<short>(props_[i].frame & 0x3FFF);
+    if ((tutorial && trunk_def(props_[i].def)) || flag) trunk_[i >> 3] |= static_cast<unsigned char>(1u << (i & 7));
+  }
+}
+
+bool MapProps::trunk_sprite(int i, const char*& sheet, int& sx, int& sy, int& w, int& h, float& hx, float& hy, bool& mirror) const {
+  const CarTrunkDef* t = trunk_def(props_[i].def);
+  if (!t) return false;
+  const CarTrunkFrame& f = kCarTrunkFrames[t->frame];
+  sheet = f.sheet; sx = f.sx; sy = f.sy; w = f.w; h = f.h; hx = f.hx; hy = f.hy; mirror = t->mirror != 0;
+  return true;
+}
+int MapProps::trunk_frame(int i) const { const CarTrunkDef* t = trunk_def(props_[i].def); return t ? t->frame : -1; }
+bool MapProps::trunk_vertical(int i) const { const int f = trunk_frame(i); return f == 3 || f == 4; }
+Vec2 MapProps::trunk_pos(int i) const {
+  const CarTrunkDef* t = trunk_def(props_[i].def);
+  return t ? Vec2(props_[i].x + t->ox, props_[i].y + t->oy) : Vec2(props_[i].x, props_[i].y);
+}
+Vec2 MapProps::trunk_loot_pos(int i) const {
+  const CarTrunkDef* t = trunk_def(props_[i].def);
+  const Vec2 o = trunk_pos(i);
+  if (!t) return o;
+  const CarTrunkFrame& f = kCarTrunkFrames[t->frame];
+  const float sx = t->mirror ? -1.f : 1.f;   // SetMirrored(0): negative width
+  return Vec2(o.x + sx * (f.lx - f.hx) * f.w, o.y + (f.ly - f.hy) * f.h);
+}
+bool MapProps::trunk_overlaps(int i, Vec2 c, float r) const {
+  const CarTrunkDef* t = trunk_def(props_[i].def);
+  if (!t) return false;
+  const CarTrunkFrame& f = kCarTrunkFrames[t->frame];
+  const Vec2 o = trunk_pos(i);
+  float x0 = -f.hx * f.w, x1 = (1.f - f.hx) * f.w;
+  if (t->mirror) { const float a = -x1, b = -x0; x0 = a; x1 = b; }
+  const float y0 = -f.hy * f.h, y1 = (1.f - f.hy) * f.h;
+  return c.x + r > o.x + x0 && c.x - r < o.x + x1 && c.y + r > o.y + y0 && c.y - r < o.y + y1;
+}
+int MapProps::nearest_trunk(Vec2 p, float& d2) const {
+  int best = -1; d2 = 1e30f;
+  for (int i = 0; i < count_; ++i) {
+    if (!trunk_alive(i)) continue;
+    const Vec2 q = trunk_pos(i);
+    const float dx = q.x - p.x, dy = q.y - p.y, d = dx * dx + dy * dy;
+    if (d < d2) { d2 = d; best = i; }
+  }
+  return best;
 }
 
 void MapProps::build_list(const MapProp* in, int n_in) {
@@ -115,6 +178,7 @@ void MapProps::build_list(const MapProp* in, int n_in) {
   for (int c = 0; c < 256; ++c) fill[c] = cell_first_[c];
   for (int i = 0; i < n; ++i) props_[fill[tcell[i]]++] = tmp[i];
   count_ = n;
+  mark_trunks(true);   // Tutorial start: car_loot_point at every car
 }
 
 const PropFrame* MapProps::frame_of(const MapProp& p) const {

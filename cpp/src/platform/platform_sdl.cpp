@@ -205,6 +205,19 @@ public:
     }
   }
 
+  void draw_sprite_frame_mirrored(const char* name, float x, float y, float w, float h,
+                                  int sx, int sy, int sw, int sh, float alpha) {
+    SDL_Texture* tex = texture_of(name);
+    if (!tex || w <= 0.f || h <= 0.f) return;
+    if (alpha < 0.f) alpha = 0.f;
+    if (alpha > 1.f) alpha = 1.f;
+    SDL_SetTextureAlphaMod(tex, (Uint8)(alpha * 255.f));
+    SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+    SDL_Rect dst = { (int)x, (int)y, (int)w, (int)h };
+    SDL_Rect src = { sx, sy, sw, sh };
+    SDL_RenderCopyEx(renderer_, tex, &src, &dst, 0.0, 0, SDL_FLIP_HORIZONTAL);
+  }
+
   bool poll(InputState& out) {
     out = InputState();
     SDL_Event e;

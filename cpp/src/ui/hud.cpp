@@ -331,6 +331,10 @@ void draw_gameplay_hints(IPlatform& platform, const Game& game) {
   h[n++] = Hint{Btn_R, Btn_Square, "B", "Craft"};
   h[n++] = Hint{Btn_None, Btn_Start, "ESC", "Menu"};
   hint_bar(platform, h, n, 0.6f);
+  // C2 gui_btn_interact frame 3 (car trunk icon, avalible_interaction = 3). PSP adaptation: the
+  // touch button is drawn at half size left of the minimap, above the hint bar (KNOWN_ISSUES).
+  if (!game.driving() && game.trunk_available() && platform.has_sprite("gui_btn_interact-sheet0"))
+    platform.draw_sprite_frame("gui_btn_interact-sheet0", kScreenW - 8.f - 56.f - 6.f - 25.f, kScreenH - 22.f - 27.f, 25.f, 25.f, 1, 1, 50, 50, 0.f, 1.f);
 }
 
 // ---------------------------------------------------------------- inventory panel

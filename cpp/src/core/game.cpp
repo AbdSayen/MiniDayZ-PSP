@@ -2913,6 +2913,7 @@ void Game::update_inventory_ui(const InputState& in) {
 
 const char* Game::interact_hint() const {
   if (vehicles_.player_driving()) return "EXIT CAR";
+  if (trunk_avail_ >= 0) return "TRUNK";
   for (int i = 0; i < loot_.count(); ++i) {
     const LootPile* p = loot_.at(i);
     if (p->active && p->item_count > 0 && dist2(p->pos, player_.pos) < 40.f * 40.f) return "LOOT";
@@ -2960,6 +2961,35 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   if ((in.slot_digit >= 1 && in.slot_digit <= 8) || in.equip_delta != 0) {
     equipped_slot_ = next_hotbar_slot(equipped_slot_, in.slot_digit, in.equip_delta);
     sync_mag_for_equipped();
+  }
+  // C2 walk_marker (IV0 = 4): AltMove toward the car_loot_point; on reaching it while
+  // overlapping the point the trunk opens. Port: any stick/D-pad input cancels the walk and
+  // a 5 s cap stops it (C2 cancel rules not decoded, KNOWN_ISSUES).
+  // avalible_interaction = 3: nearest car_loot_point < 50 px with doorchecker LOS (custom
+  // obstacles = family t927, the b_*_int building sprites) -> SetVisible(1).
+  trunk_avail_ = -1;
+  if (!in_bunker_ && !vehicles_.player_driving()) {
+    float td2 = 0.f;
+    const int tk = c2_props_.nearest_trunk(player_.pos, td2);
+    if (tk >= 0 && td2 < 50.f * 50.f && !doorchecker_blocked(player_.pos, c2_props_.trunk_pos(tk))) {
+      trunk_avail_ = tk;
+      c2_props_.trunk_show(tk);
+    }
+  }
+  if (trunk_walk_ >= 0) {
+    trunk_walk_t_ += dt;
+    if (in.move_x != 0.f || in.move_y != 0.f || trunk_walk_t_ > 5.f || !c2_props_.trunk_alive(trunk_walk_)) {
+      trunk_walk_ = -1;
+    } else if (c2_props_.trunk_overlaps(trunk_walk_, player_.pos, 15.f)) {
+      open_trunk(trunk_walk_);
+      trunk_walk_ = -1;
+    } else {
+      Vec2 tgt = c2_props_.trunk_pos(trunk_walk_);
+      if (c2_props_.trunk_vertical(trunk_walk_)) tgt.y += 5.f;
+      const float dx = tgt.x - player_.pos.x, dy = tgt.y - player_.pos.y;
+      const float l = std::sqrt(dx * dx + dy * dy);
+      if (l > 0.5f) { in.move_x = dx / l; in.move_y = dy / l; in.run = false; }
+    }
   }
 
   if (adrenaline_t_ > 0.f) {
@@ -3690,6 +3720,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
     try_pickup_loot();
     try_bunker_enter_exit();
+    if (!picked && !in_bunker_ && try_trunk_interact()) picked = true;
     if (!picked && !in_bunker_ && berry_t_ <= 0.f) {
       // C2 berry bush: player overlaps a bush with frame 1 -> "bushsearch", frame 0, wait 3 s,
       // Check_space_inventory(-1, 27/73/74, perk_agronom ? 2 : 1).
@@ -4496,6 +4527,22 @@ void Game::render() {
               const float sx = cx + (mp.x - camv.x) * sc, sy = cy + (mp.y - camv.y) * sc;
               platform_->draw_sprite_frame(pf->sheet, sx - pf->hx * pf->w * sc, sy - pf->hy * pf->h * sc,
                                            pf->w * sc, pf->h * sc, pf->x, pf->y, pf->w, pf->h, 0.f, 1.f);
+            }
+          }
+        // car_loot_point (layer Sunset_Dawn, above Buildings): white trunk outline once visible.
+        for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
+          for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
+            int f0 = 0, pn = 0;
+            c2_props_.cell_range(ax, ay, f0, pn);
+            for (int k = f0; k < f0 + pn; ++k) {
+              if (!c2_props_.trunk_alive(k) || !c2_props_.trunk_visible(k)) continue;
+              const char* sh = 0; int tsx = 0, tsy = 0, tw = 0, th = 0; float thx = 0.f, thy = 0.f; bool mir = false;
+              if (!c2_props_.trunk_sprite(k, sh, tsx, tsy, tw, th, thx, thy, mir)) continue;
+              const Vec2 tp = c2_props_.trunk_pos(k);
+              const float sx = cx + (tp.x - camv.x) * sc, sy = cy + (tp.y - camv.y) * sc;
+              const float lx = mir ? (sx - (1.f - thx) * tw * sc) : (sx - thx * tw * sc);
+              if (mir) platform_->draw_sprite_frame_mirrored(sh, lx, sy - thy * th * sc, tw * sc, th * sc, tsx, tsy, tw, th, 1.f);
+              else platform_->draw_sprite_frame(sh, lx, sy - thy * th * sc, tw * sc, th * sc, tsx, tsy, tw, th, 0.f, 1.f);
             }
           }
       }
@@ -5323,5 +5370,73 @@ int Game::harness_loot_count(int id) const {
     for (int k = 0; k < p->item_count; ++k) if (p->items[k] == id) n += p->counts[k];
   }
   return n;
+}
+} // namespace mdaz
+
+namespace mdaz {
+// C2 "Merged pick and interact", gui_btn_interact frame 3 (avalible_interaction = 3: nearest
+// car_loot_point < 50 px, doorchecker LOS). Press: nearest point < 100 px and the 30x30
+// player_collision_base overlaps it -> open; otherwise walk_marker IV0=4 at the point.
+// Port: the LOS check is not applied (KNOWN_ISSUES).
+bool Game::doorchecker_blocked(Vec2 a, Vec2 b) const {
+  for (int i = 0; i < mapgen_.location_count(); ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    if (!L.active) continue;
+    const BuildingShape* s = loc_shape(L);
+    if (s && building_blocks_move(*s, L.pos, a, b, 0.f)) return true;
+  }
+  return false;
+}
+
+bool Game::try_trunk_interact() {
+  if (trunk_avail_ < 0) return false;   // gui_btn_interact frame 3 only
+  float d2 = 0.f;
+  const int k = c2_props_.nearest_trunk(player_.pos, d2);
+  if (k < 0 || d2 >= 100.f * 100.f) return false;
+  if (c2_props_.trunk_overlaps(k, player_.pos, 15.f)) open_trunk(k);
+  else { trunk_walk_ = k; trunk_walk_t_ = 0.f; }
+  return true;
+}
+
+// C2 trunk open (data.js sid1792234758292318 / sid7711324247664447): sound "open"; per
+// car_loot_point frame a choose() list; Map: choose(1,2) = 2 -> Spawn_drop at the "loot" image
+// point + log 7, else log 8; Tutorial: always (2,8,9,4) or 54 for frames 2/4; point destroyed.
+void Game::open_trunk(int k) {
+  static const ItemId kA[] = {1,2,3,4,5,6,7,8,9,8,9,8,9,26,10,20,254,256,300,302,350,352,200,203,39,49,44};
+  static const ItemId kB[] = {252,253,254,256,259,300,301,302,350,352,353,354,356,357,4,25,16,17,18,20,22,24,153,154,155,450,200,201,202,203,205,164,52,39,40,41,50,58,13,63};
+  static const ItemId kC[] = {256,257,300,304,12,16,17,352,354,256,257,300,12,16,17,352,354,181,200,153,264,41,100,100,155,20,26};
+  static const ItemId kTut[] = {2, 8, 9, 4};
+  auto pick = [&](unsigned n) { unsigned i = static_cast<unsigned>(rng_.next_float() * n); return i < n ? i : n - 1; };
+  const int f = c2_props_.trunk_frame(k);
+  const Vec2 at = c2_props_.trunk_loot_pos(k);
+  if (audio_) audio_->play("open", 0.6f);
+  ItemId id = 0;
+  if (tut_.active) {
+    id = (f == 2 || f == 4) ? 54 : kTut[pick(4)];
+  } else if (rng_.next_float() >= 0.5f) {   // choose(1,2) = 2 (float draw: next_int low bits alternate)
+    if (f == 1) id = kB[pick(sizeof(kB) / sizeof(kB[0]))];
+    else if (f == 2 || f == 4) id = kC[pick(sizeof(kC) / sizeof(kC[0]))];
+    else id = kA[pick(sizeof(kA) / sizeof(kA[0]))];
+  }
+  if (id > 0) loot_.spawn_item(at, id, 1);
+  ++trunk_opened_; if (id > 0) ++trunk_found_;
+  std::printf("[trunk] opened prop %d frame %d -> item %d at (%.0f,%.0f)\n", k, f, id, at.x, at.y);
+  show_toast(id > 0 ? "I found something in this trunk." : "There is nothing in this trunk.");  // l_eng_log 7 / 8
+  c2_props_.trunk_take(k);
+}
+
+int Game::harness_trunk_near(float& d) {
+  float d2 = 0.f;
+  const int k = c2_props_.nearest_trunk(player_.pos, d2);
+  d = std::sqrt(d2);
+  return k;
+}
+bool Game::harness_place_at_trunk(bool on_point) {
+  float d = 0.f;
+  const int k = harness_trunk_near(d);
+  if (k < 0) return false;
+  const Vec2 p = c2_props_.trunk_pos(k);
+  player_.pos = on_point ? p : Vec2(p.x, p.y + 40.f);
+  return true;
 }
 } // namespace mdaz

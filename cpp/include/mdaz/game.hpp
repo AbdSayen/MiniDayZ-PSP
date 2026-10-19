@@ -272,6 +272,22 @@ private:
   float use_anim_t_;      // >0 while playing using_item
   float berry_t_ = 0.f;   // C2 bush search wait (3 s, IV21=1)
   int berry_idx_ = -1;
+  int trunk_avail_ = -1;     // avalible_interaction = 3 target (gui_btn_interact frame 3)
+  int trunk_walk_ = -1;      // C2 walk_marker IV0=4: walking to a car_loot_point
+  float trunk_walk_t_ = 0.f;
+  bool try_trunk_interact();
+  bool doorchecker_blocked(Vec2 a, Vec2 b) const;
+public:
+  bool trunk_available() const { return trunk_avail_ >= 0; }
+private:
+  void open_trunk(int k);
+public:
+  // TEST HARNESS ONLY: nearest live car trunk / stand on it / count live trunks.
+  int harness_trunk_near(float& d);
+  bool harness_place_at_trunk(bool on_point);
+  int trunk_opened_ = 0, trunk_found_ = 0;   // test counters
+  int harness_trunks_alive() const { int n = 0; for (int i = 0; i < c2_props_.count(); ++i) if (c2_props_.trunk_alive(i)) ++n; return n; }
+private:
   float airdrop_alert_;
   float radio_t_; // seconds to show radio HUD after use
   float torch_battery_; // 0..100 — drains while torch/NVG on; Battery (22) refills

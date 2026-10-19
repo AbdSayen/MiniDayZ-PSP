@@ -38,6 +38,10 @@ public:
                          int sx, int sy, int sw, int sh, float a, float al) {
     inner_->draw_sprite_frame(n, dx, dy, dw, dh, sx, sy, sw, sh, a, al);
   }
+  void draw_sprite_frame_mirrored(const char* n, float dx, float dy, float dw, float dh,
+                                  int sx, int sy, int sw, int sh, float al) {
+    inner_->draw_sprite_frame_mirrored(n, dx, dy, dw, dh, sx, sy, sw, sh, al);
+  }
   bool read_file(const char* p, char** d, std::size_t* s) { return inner_->read_file(p, d, s); }
   bool write_file(const char* p, const void* d, std::size_t s) { return inner_->write_file(p, d, s); }
   int screen_w() const { return inner_->screen_w(); }
@@ -63,6 +67,15 @@ public:
       if (game_ && frame_ == 210) game_->harness_set_quest(2, 1, 0);
       if (game_ && frame_ == 220) game_->harness_set_quest(3, 1, 88);
       return frame_ < 230;
+    }
+    if (trunk_) {
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (game_ && frame_ == 200) { game_->harness_place_at_trunk(false); float d = 0; game_->harness_trunk_near(d); std::printf("[trunk] placed %.0f px from point, alive=%d\n", d, game_->harness_trunks_alive()); }
+      if (frame_ == 210) in.interact = in.interact_pressed = true;   // Circle: walk_marker
+      if (game_ && frame_ >= 400 && frame_ < 1000 && frame_ % 10 == 0) game_->harness_place_at_trunk(true);
+      if (frame_ >= 400 && frame_ < 1000 && frame_ % 10 == 2) in.interact = in.interact_pressed = true;
+      if (game_ && frame_ == 1001) std::printf("[trunk] opened=%d found=%d alive=%d\n", game_->trunk_opened_, game_->trunk_found_, game_->harness_trunks_alive());
+      return frame_ < 1010;
     }
     if (chop_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -272,6 +285,19 @@ public:
       inner_->end_frame();
       return;
     }
+    if (trunk_) {
+      static const struct { int frame; const char* name; } kT[] = {
+        { 205, "trunk_0_near" }, { 230, "trunk_1_walking" }, { 320, "trunk_2_opened" },
+      };
+      for (unsigned i = 0; i < sizeof(kT) / sizeof(kT[0]); ++i) {
+        if (kT[i].frame != frame_) continue;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kT[i].name);
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      inner_->end_frame();
+      return;
+    }
     if (chop_) {
       static const struct { int frame; const char* name; } kC[] = {
         { 205, "chop_0_before" }, { 240, "chop_1_hit1" }, { 280, "chop_2_hit2_drop" }, { 345, "chop_3_inventory" },
@@ -346,6 +372,7 @@ private:
 public:
   void set_death(bool d) { death_ = d; }
   bool chop_ = false;
+  bool trunk_ = false;
   int chop_tree_ = -1;
   void chop_log(const char* tag) {
     std::printf("[chop] %s tree=%d hp=%d trees=%d ground: sticks(38)=%d firewood(50)=%d bag: sticks=%d firewood=%d\n", tag, chop_tree_,
@@ -377,6 +404,7 @@ int main(int argc, char** argv) {
   bool shots_death = false;
   bool shots_quest = false;
   bool shots_chop = false;
+  bool shots_trunk = false;
   for (int i = 1; i < argc; ++i) {
     if (std::strcmp(argv[i], "--shots") == 0 && i + 1 < argc) shots_dir = argv[++i];
     else if (std::strcmp(argv[i], "--shots-building") == 0 && i + 1 < argc) {
@@ -394,6 +422,10 @@ int main(int argc, char** argv) {
     else if (std::strcmp(argv[i], "--shots-death") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
       shots_death = true;
+    }
+    else if (std::strcmp(argv[i], "--shots-trunk") == 0 && i + 1 < argc) {
+      shots_dir = argv[++i];
+      shots_trunk = true;
     }
     else if (std::strcmp(argv[i], "--shots-chop") == 0 && i + 1 < argc) {
       shots_dir = argv[++i];
@@ -450,6 +482,7 @@ int main(int argc, char** argv) {
   if (scripted) scripted->set_death(shots_death);
   if (scripted) scripted->set_quest(shots_quest);
   if (scripted) scripted->chop_ = shots_chop;
+  if (scripted) scripted->trunk_ = shots_trunk;
 
   double prev = platform->time_seconds();
   while (!game.wants_quit()) {

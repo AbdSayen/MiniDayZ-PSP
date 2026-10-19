@@ -40,7 +40,25 @@ public:
   // Movement a->b blocked by a Solid base polygon of a prop near b.
   bool blocks(Vec2 a, Vec2 b, float r) const;
   int solid_count() const;
+  // C2 car_loot_point (t232): spawned at the car's Imagepoint 1 when IV3 = 0 (Map) / at layout
+  // start (Tutorial); destroyed when opened. Not saved (like bush frames).
+  bool trunk_alive(int i) const { return i >= 0 && i < count_ && (trunk_[i >> 3] & (1u << (i & 7))) != 0; }
+  void trunk_take(int i) { if (i >= 0 && i < count_) trunk_[i >> 3] &= static_cast<unsigned char>(~(1u << (i & 7))); }
+  int trunk_frame(int i) const;            // car_loot_point frame 0..5, -1 if none
+  Vec2 trunk_pos(int i) const;             // car_loot_point origin
+  Vec2 trunk_loot_pos(int i) const;        // its "loot" image point (Spawn_drop position)
+  bool trunk_overlaps(int i, Vec2 c, float r) const;  // circle vs car_loot_point box
+  bool trunk_vertical(int i) const;        // car_loot_point IV1 (vertical cars)
+  int nearest_trunk(Vec2 p, float& d2) const;
+  // SetVisible(1) when it becomes the available interaction; never hidden again (no SetVisible 0
+  // in data.js; the LOOT_respawn template instance is invisible).
+  bool trunk_visible(int i) const { return i >= 0 && i < count_ && (trunk_vis_[i >> 3] & (1u << (i & 7))) != 0; }
+  void trunk_show(int i) { if (i >= 0 && i < count_) trunk_vis_[i >> 3] |= static_cast<unsigned char>(1u << (i & 7)); }
+  bool trunk_sprite(int i, const char*& sheet, int& sx, int& sy, int& w, int& h, float& hx, float& hy, bool& mirror) const;
 private:
+  void mark_trunks(bool tutorial);
+  unsigned char trunk_[kMax / 8 + 1];
+  unsigned char trunk_vis_[kMax / 8 + 1];
   MapProp props_[kMax];
   int count_;
   int cell_first_[257];

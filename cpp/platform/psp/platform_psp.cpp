@@ -314,6 +314,15 @@ public:
     emit_sprite(t, x, y, w, h, (float)sx, (float)sy, (float)sw, (float)sh, c);
   }
 
+  void draw_sprite_frame_mirrored(const char* name, float x, float y, float w, float h,
+                                  int sx, int sy, int sw, int sh, float alpha) {
+    if (recording_) { draw_sprite_frame(name, x, y, w, h, sx, sy, sw, sh, 0.f, alpha); return; }
+    const int before = nv_;
+    draw_sprite_frame(name, x, y, w, h, sx, sy, sw, sh, 0.f, alpha);
+    // Swap u of each emitted sprite pair (single 512 tile; split sprites keep piece order).
+    for (int i = before; i + 1 < nv_; i += 2) { const float u = tv_[i].u; tv_[i].u = tv_[i + 1].u; tv_[i + 1].u = u; }
+  }
+
   bool poll(InputState& out) {
     out = InputState();
     SceCtrlData pad;

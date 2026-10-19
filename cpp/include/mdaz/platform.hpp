@@ -85,6 +85,11 @@ public:
                                  float /*dx*/, float /*dy*/, float /*dw*/, float /*dh*/,
                                  int /*sx*/, int /*sy*/, int /*sw*/, int /*sh*/,
                                  float /*angle_deg*/ = 0.f, float /*alpha*/ = 1.f) {}
+  // C2 SetMirrored(0) (negative width): source frame flipped horizontally.
+  virtual void draw_sprite_frame_mirrored(const char* name, float dx, float dy, float dw, float dh,
+                                          int sx, int sy, int sw, int sh, float alpha = 1.f) {
+    draw_sprite_frame(name, dx, dy, dw, dh, sx, sy, sw, sh, 0.f, alpha);
+  }
   virtual void end_frame() = 0;
   // Saves the current back buffer as BMP; call before end_frame().
   virtual bool save_screenshot(const char* /*path*/) { return false; }

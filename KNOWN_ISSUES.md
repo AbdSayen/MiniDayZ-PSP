@@ -269,3 +269,14 @@ Open/ambiguous:
 - 458 "Choose the movement controls mode" still shown, but the port has no mode choice (Cross only closes the tip). Not reworded: it names no control. Needs a decision.
 - 460: the port has no perk-choice UI; Cross only closes the tip.
 - Desktop builds show the same PSP wording.
+
+## Car trunks (2026-10-20)
+- PSP adaptation: the touch interact button (gui_btn_interact frame 3) is drawn as a 25x25 icon left of the minimap; Circle presses it; hint bar text "TRUNK".
+- walk_marker cancel rules are not decoded: the port cancels on any move input or after 5 s. Walk uses the port walk speed (C2 AltMove SetSpeed 100).
+- Spawn_drop count rules (ammo amounts etc.) are not applied: 1 item is dropped.
+- The walk_marker branch lists (sid7711324247664447) were assumed identical to the direct-open branch; only its first list was compared.
+- t920 (overlapping wreck marker frame 1 / map_element IV3 = 1, i.e. looted state for save/reload) is not ported; trunk state is not saved.
+- Precedence vs other avalible_interaction values (pump 4, obstacle 7, panel 8, loot) is not applied; in the port, loot pickup runs first.
+- The port's drivable-vehicle "stash" (drop near car stores items) has no data.js source (Trunk_count is never used in events). Left as is; needs a decision.
+- **Rng::next_int bias (whole port):** LCG `next_u32() % span` uses the low bits; `next_int(0,1)`/`(1,2)` alternate per call. Affects every choose() port (berry frames, loot rolls...). Not changed globally (it would change the seed-140 map hash); needs a decision.
+- Original-vs-port gameplay screenshot not captured (the browser original needs manual play to reach a car); compared against the data.js sprites (car_loot_point-sheet0/1 white outlines, gui_btn_interact-sheet0 frame 3).
