@@ -1,4 +1,5 @@
 #include "mdaz/game.hpp"
+#include "mdaz/building_solid.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/hud.hpp"
@@ -281,6 +282,19 @@ void draw_poi_sprite(IPlatform* p, float sx, float sy, const char* spr, float wo
     p->draw_sprite(spr, sx - dw * 0.5f, sy - dh * 0.5f, dw, dh, 0.f, 1.f);
   else
     p->draw_rect(sx - 8, sy - 8, 16, 16, 0.5f, 0.45f, 0.3f, 0.9f);
+}
+
+// C2: map_element spawns <b>_int (Buildings_base, Solid) at its origin, and the interior spawns
+// the exterior roof (Buildings) at its image point 0, so both sprites share the hotspot point.
+const BuildingShape* poi_shape(LocationType t, int variant) {
+  if (t == Loc_Helicrash) return 0; // heli_crash (t237) has no Solid behaviour
+  return building_shape_by_int_sprite(poi_interior_sprite(t, variant));
+}
+
+void draw_hotspot_sprite(IPlatform* p, float sx, float sy, const char* spr, int w, int h,
+                         float hx, float hy, float sc) {
+  if (!p || !spr || !p->has_sprite(spr)) return;
+  p->draw_sprite(spr, sx - hx * w * sc, sy - hy * h * sc, w * sc, h * sc, 0.f, 1.f);
 }
 
 } // namespace
@@ -2765,6 +2779,16 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       player_.pos.x -= player_.vel.x * dt;
       player_.pos.y -= player_.vel.y * dt;
     }
+    // C2 building interiors are Solid (one collision polygon per *_int frame); player_base is a
+    // 2x2 AltMove body, so test the step against the polygon edges and slide.
+    // (Port guard: if already inside a wall polygon, e.g. an old save, let the player walk out.)
+    if (!in_bunker_ && !building_blocks(pre_move, pre_move) &&
+        building_blocks(pre_move, player_.pos)) {
+      const Vec2 tried = player_.pos;
+      if (!building_blocks(pre_move, Vec2(tried.x, pre_move.y))) player_.pos = Vec2(tried.x, pre_move.y);
+      else if (!building_blocks(pre_move, Vec2(pre_move.x, tried.y))) player_.pos = Vec2(pre_move.x, tried.y);
+      else player_.pos = pre_move;
+    }
     // C2 tilemap_forest is Solid (per-tile collision polys): slide along the edge.
     if (!in_bunker_ && world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y)) {
       if (!world_tiles_.forest_solid_at(player_.pos.x, pre_move.y)) player_.pos.y = pre_move.y;
@@ -2819,7 +2843,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     }
     // Crash into blocked cells / Solid forest tiles while driving
     if (world_.is_blocked(player_.pos.x, player_.pos.y) ||
-        world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y)) {
+        world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y) ||
+        building_blocks(player_.pos, player_.pos)) {
       player_.pos.x -= in.move_x * 8.f;
       player_.pos.y -= in.move_y * 8.f;
       Vehicle* v = vehicles_.driven();
@@ -4358,20 +4383,23 @@ void Game::render() {
         // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
         // ~100x and covered the screen with flat colour squares.)
         const char* ext_spr = poi_building_sprite(L.type, i);
+        const BuildingShape* bs = poi_shape(L.type, i);
         int nat_w = 100, nat_h = 100;
         poi_native_px(ext_spr, nat_w, nat_h);
+        if (bs) { nat_w = bs->ext_w; nat_h = bs->ext_h; }
         const float max_dim = static_cast<float>(nat_w > nat_h ? nat_w : nat_h) * sc;
-        if (!view.vis(L.pos, sc, max_dim * 0.5f + 12.f)) continue; // whole building + nameplate
-        const float enter_r = static_cast<float>(nat_w < nat_h ? nat_w : nat_h) * 0.35f;
-        const bool inside = (L.type != Loc_Helicrash) &&
-                            dist2(L.pos, player_.pos) < enter_r * enter_r;
-        if (inside) {
-          if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
-          const char* ispr = poi_interior_sprite(L.type, i);
-          if (platform_->has_sprite(ispr))
-            draw_poi_sprite(platform_, sx, sy, ispr, sc);
-          else
-            draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
+        if (!view.vis(L.pos, sc, max_dim + 12.f)) continue; // hotspot need not be centred
+        // Indoor = C2 warmzone rect (spawned at image point w1, sized to w2).
+        const bool inside = bs && building_in_warmzone(*bs, L.pos, player_.pos);
+        if (bs) {
+          if (inside) {
+            if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
+            draw_hotspot_sprite(platform_, sx, sy, bs->int_sprite, bs->int_w, bs->int_h,
+                                bs->int_hx, bs->int_hy, sc);
+          } else {
+            draw_hotspot_sprite(platform_, sx, sy, bs->ext_sprite, bs->ext_w, bs->ext_h,
+                                bs->ext_hx, bs->ext_hy, sc);
+          }
         } else {
           draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
         }
@@ -4965,5 +4993,17 @@ int Game::bandits_alive_near(Vec2 pos, float radius) const {
     if (b->alive && dist2(b->pos, pos) < radius * radius) ++n;
   return n;
 }
-} // namespace mdaz
 
+bool Game::building_blocks(Vec2 a, Vec2 b) const {
+  for (int i = 0; i < mapgen_.location_count(); ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    if (!L.active) continue;
+    const float dx = b.x - L.pos.x, dy = b.y - L.pos.y;
+    if (dx * dx + dy * dy > 700.f * 700.f) continue;
+    const BuildingShape* s = poi_shape(L.type, i);
+    if (s && building_blocks_move(*s, L.pos, a, b, 1.f)) return true;
+  }
+  return false;
+}
+
+} // namespace mdaz

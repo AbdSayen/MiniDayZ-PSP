@@ -123,3 +123,8 @@ Still unverified against C2 (not yet removed): many `craft.cpp` recipes without 
 ## Legal
 
 Assets and game design belong to Bohemia Interactive / original authors. This tree is a technical porting effort from publicly mirrored browser files; redistribution of assets may be restricted.
+
+## Building walls (2026-10-19 20:50)
+
+- Solid polygons from data.js now drive building collision (fidelity #1). Open: zombies, animals and bandits do not collide with building polygons yet, so they can walk through walls. Whether the C2 z_walker / bandit movement respects Solid is Не исследована. Vehicles use only a point-in-wall test. Port guard: a player who starts a step already inside a wall polygon (for example an old save) can walk out.
+- Which exterior/interior pair a POI shows still comes from the invented `poi_layout.cpp` pair layout (Buildings_base prefab XY + create_map_element is item 5) — only one building per POI (the drawn one) is collided now. The second `poi_layout` part was never drawn; its invisible cell blockers are removed.

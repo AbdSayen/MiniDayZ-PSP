@@ -25,6 +25,7 @@ set(MDAZ_CORE_SOURCES
   src/world/loot.cpp
   src/world/mapgen.cpp
   src/world/poi_layout.cpp
+  src/world/building_solid.cpp
   src/world/vehicle.cpp
   src/world/campfire.cpp
   src/world/world_tilemaps.cpp
@@ -145,6 +146,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_map_fidelity.cpp
     tests/test_player_visual.cpp
     tests/test_selection.cpp
+    tests/test_fidelity2.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

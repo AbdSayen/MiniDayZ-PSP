@@ -278,23 +278,11 @@ bool MapGenerator::is_road_sector(int sector_x, int sector_y) const {
 }
 
 void MapGenerator::apply_collision_for(int idx, World& world) const {
-  if (idx < 0 || idx >= count_) return;
-  const MapLocation& L = locs_[idx];
-  const int n = poi_part_count(L.type, idx);
-  for (int p = 0; p < n; ++p) {
-    const PoiPartView part = poi_part(L.type, idx, p);
-    if (!part.valid) continue;
-    const float cx = L.pos.x + part.dx;
-    const float cy = L.pos.y + part.dy;
-    const float r = part.block_r > 0.f ? part.block_r : 45.f;
-    world.set_blocked_world(cx, cy, true);
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        if (dx == 0 && dy == 0) continue;
-        world.set_blocked_world(cx + dx * r * 0.35f, cy + dy * r * 0.35f, true);
-      }
-    }
-  }
+  // Building walls are now the C2 Solid polygons of the *_int objects (building_solid.cpp,
+  // Game::building_blocks). The old invented 3x3 block_r cell stamps at +-150 px "pair"
+  // offsets (which did not even match the drawn building) are gone; the grid stays clear.
+  (void)idx;
+  (void)world;
 }
 
 void MapGenerator::apply_collision(World& world) const {
