@@ -522,12 +522,29 @@ Status: **Протестирована** (unit tests on Windows and the box; des
   - re-creates each item with Spawn_drop + picky at the player's position.
 - The port's ground-pile persistence (MDAZ v14 `SavedLootPile`) is a port feature. Its comments wrongly called it Save_loot; they are now corrected.
 
-## PSP rebuild + PPSSPP boot check after items 7–11 (2026-10-20, 00:20 Baku)
+## PSP rebuild + PPSSPP boot check after items 7–11 (2026-10-20, 00:17 Baku)
 - EBOOT.PBP was rebuilt at 00:15 (2 548 328 bytes, make exit=0) and packed by pack_psp_deploy.ps1. The deploy has 12 files, 4.48 MB.
 - The deploy contains no autoplay.txt and no settings.cfg. They were added only to the box test copy.
 - PPSSPPHeadless, 60 s, autoplay "bench" (boot check only, not an FPS claim):
   - boot OK, sprites.pak 1138 entries, game init ok;
-  - new game: 137 locations, 0 helicrashes, poi hash 438baa57;
+  - new game: 137 locations, 0 helicrashes, poi hash 438baa57. 0 helicrashes on level 0 matches the original (B2a finding);
   - mem in game: 512 KB max block, 764 KB total free, at 1 s and 20 s;
   - the bench bot then died (last_death.txt: reason=Bullet, days=1);
   - no crash; the log runs to the 60 s timeout.
+
+## Removed invented effects (2026-10-20, 00:19 Baku)
+- Status: Реализована, но не проверена (box and desktop tests only).
+- Checked against data.js (decoded event dump):
+  - no sleep/dig/forage events exist;
+  - blood (IV15) is only raised by the States regeneration and by medical items;
+  - shovel appears only as a melee weapon (condition wear, Drop_melee);
+  - nothing drinks rain.
+- Removed from game.cpp:
+  - blood regen while resting at a fire, and the night "sleep" time skip;
+  - shovel digging (buried zed pop + random dirt finds);
+  - drinking rain;
+  - random bush forage (sticks/berries/rags) and the forage-count farmer unlock.
+- C2 berry bushes are not ported yet:
+  - the bush shows frame 1 when it has berries;
+  - the player walks to it, waits 3 s and plays "bushsearch";
+  - it gives 27 red / 73 yellow / 74 blue berries, ×2 with perk_agronom.

@@ -3289,23 +3289,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
             sv.bleeding <= 0.f && rng_.next_int(1, 2) == 1) sv.infected = false;
       }
     }
-    // Rest near fire while standing still — mild blood regen + night sleep
-    if (campfires_.near_fire(player_.pos, 55.f) &&
-        player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y < 1.f) {
-      if (player_.survival.blood < 100.f && player_.survival.bleeding <= 0.f) {
-        player_.survival.blood += 1.2f * dt;
-        if (player_.survival.blood > 100.f) player_.survival.blood = 100.f;
-      }
-      if (!in_bunker_ && weather_.is_night) {
-        // Sleep accelerates dawn
-        weather_.day_phase += dt * 0.08f;
-        if (weather_.day_phase >= 1.f) {
-          weather_.day_phase -= 1.f;
-          player_.days_survived += 1;
-        }
-        weather_.is_night = (weather_.day_phase < 0.25f || weather_.day_phase > 0.75f);
-      }
-    }
+    // Removed (not in data.js): rest-at-fire blood regen and night sleep time skip.
     // Auto heatpack when freezing hard
     if (player_.survival.temperature < 18.f) {
       for (int i = 0; i < inventory_.slot_count(); ++i) {
@@ -3705,40 +3689,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       }
       const float fish_chance = player_.perk_farmer ? 0.45f : 0.35f;
       const float bush_chance = player_.perk_farmer ? 0.4f : 0.25f;
-      // Shovel dig (prefer over axe when shovel equipped)
+      // Removed (not in data.js): shovel digging. C2 shovel is a melee weapon only.
       const ItemId eqid = inventory_.slot(equipped_slot_).id;
-      bool has_shovel = (eqid == 201);
-      if (!has_shovel) {
-        for (int i = 0; i < inventory_.slot_count(); ++i) {
-          if (inventory_.slot(i).id == 201) { has_shovel = true; break; }
-        }
-      }
-      if (has_shovel && eqid == 201) {
-        // Uncover buried zeds nearby, else forage dirt finds
-        bool dug_zed = false;
-        for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
-          if (!z->alive || z->type != Zed_Buried) continue;
-          if (dist2(z->pos, player_.pos) > 40.f * 40.f) continue;
-          if (z->ambush_boost <= 0.f) {
-            z->ambush_boost = 1.f; // pop ambush
-            if (z->aggro_radius < 320.f) z->aggro_radius = 320.f;
-            dug_zed = true;
-            if (audio_) audio_->play("hit", 0.55f);
-            break;
-          }
-        }
-        if (!dug_zed) {
-          const float r = rng_.next_float();
-          bool found = true;
-          if (r < 0.28f) inventory_.add_item(47 + rng_.next_int(0, 1), 1, items_);
-          else if (r < 0.42f) inventory_.add_item(97, 1, items_);
-          else if (r < 0.6f) inventory_.add_item(38, 1, items_);
-          else if (r < 0.72f) inventory_.add_item(26, 1, items_);
-          else if (r < 0.82f) inventory_.add_item(27, 1, items_);
-          else found = false;
-          if (audio_) audio_->play("melee_swing", found ? 0.4f : 0.25f);
-        }
-      } else {
+      {
       // Chop wood with axe / hatchet equipped
       bool has_axe = false;
       if (eqid == 202 || eqid == 204 || eqid == 206) has_axe = true;
@@ -3889,20 +3842,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           if (audio_) audio_->play(has_crowbar ? "hit" : "pickup", has_crowbar ? 0.45f : 0.35f);
           break;
         }
-        if (!searched && weather_.rain > 0.7f && player_.survival.water < 95.f) {
-          // Drink rain — dirty water
-          player_.survival.water += 8.f;
-          if (player_.survival.water > 100.f) player_.survival.water = 100.f;
-          if (audio_) audio_->play("drink", 0.3f);
-        } else if (!searched && rng_.next_float() < bush_chance) {
-          // Bush forage: sticks / berries / rags
-          static const ItemId kBush[] = { 38, 27, 26, 33, 97, 73 };
-          ItemId id = kBush[rng_.next_int(0, 5)];
-          inventory_.add_item(id, 1 + (player_.perk_farmer ? 1 : 0), items_);
-          player_.forage_count += 1;
-          if (player_.forage_count >= 8) player_.perk_farmer = true;
-          if (audio_) audio_->play("bush", 0.4f);
-        }
+        // Removed (not in data.js): rain drinking and random bush forage.
+        // C2 berry bushes (frame 1, 3 s, items 27/73/74, x2 with perk_agronom) are not ported.
+        (void)bush_chance;
         } // end non-seed interact
       }
       } // end axe/rod/forage (not shovel-equipped dig)
