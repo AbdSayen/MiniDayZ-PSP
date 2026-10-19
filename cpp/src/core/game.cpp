@@ -1,6 +1,7 @@
 #include "mdaz/game.hpp"
 #include "mdaz/building_solid.hpp"
 #include "mdaz/building_interior.hpp"
+#include "mdaz/los.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/hud.hpp"
@@ -437,6 +438,7 @@ void Game::mark_sector_visited() {
 }
 
 bool Game::init(IPlatform* platform, const char* data_dir) {
+  install_los();
   platform_ = platform;
   if (data_dir) {
     std::strncpy(data_dir_, data_dir, sizeof(data_dir_) - 1);
@@ -570,6 +572,7 @@ void Game::toggle_perf_overlay() {
 void Game::shutdown() {}
 
 void Game::start_new_game(Difficulty d) {
+  install_los();
   player_.reset_new_game(d);
   set_npc_damage_for_difficulty(d);
   // Free starter perks by difficulty (scaffold — original perk shop not ported)
@@ -2163,6 +2166,7 @@ void Game::update_army_shooters(float dt) {
     if (z->attack_cooldown > 0.f) continue;
     const float d2 = dist2(z->pos, player_.pos);
     if (d2 > 420.f * 420.f || d2 < 55.f * 55.f) continue;
+    if (los_blocked(z->pos, player_.pos)) continue; // MainLook obstacles t927/t339
     float ang = std::atan2(player_.pos.y - z->pos.y, player_.pos.x - z->pos.x) * 57.2957795f;
     ang += rng_.range(-6.f, 6.f); // imperfect aim
     // Scale army shooter pellet with difficulty army melee table (Regular ≈18)
@@ -2188,6 +2192,7 @@ void Game::update_bandit_guns(float dt) {
     if (b->attack_cooldown > 0.f) continue;
     const float d2 = dist2(b->pos, player_.pos);
     if (d2 > 380.f * 380.f || d2 < 45.f * 45.f) continue;
+    if (los_blocked(b->pos, player_.pos)) continue; // bot Gun obstacles t927
     float ang = std::atan2(player_.pos.y - b->pos.y, player_.pos.x - b->pos.x) * 57.2957795f;
     // Closer = tighter aim; crouching player slightly harder to hit
     float spread = 10.f;
@@ -3452,6 +3457,21 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   }
 
   bullets_.update(dt);
+  // C2 Hitting_obstacles: every bullet (player/bot family t910 and zed_bullet t724) is
+  // destroyed on collision with buildings (t927), obstacles t202/t339/t755 and obst_base t336.
+  if (!in_bunker_) {
+    for (Bullet* b = bullets_.begin(); b != bullets_.end(); ++b) {
+      if (!b->alive) continue;
+      const Vec2 prev(b->pos.x - b->vel.x * dt, b->pos.y - b->vel.y * dt);
+      if (!bullet_hits_obstacle(prev, b->pos)) continue;
+      if (b->explosive || b->leaves_fire) {
+        explode_at(prev, b->damage, b->leaves_fire);
+        b->explosive = false;
+        b->leaves_fire = false;
+      }
+      b->alive = false;
+    }
+  }
   if (in_bunker_) {
     for (Bullet* b = bullets_.begin(); b != bullets_.end(); ++b) {
       if (!b->alive) continue;
@@ -4979,6 +4999,30 @@ int Game::bandits_alive_near(Vec2 pos, float radius) const {
     if (b->alive && dist2(b->pos, pos) < radius * radius) ++n;
   return n;
 }
+
+bool Game::bullet_hits_obstacle(Vec2 a, Vec2 b) const { return building_blocks(a, b); }
+
+bool Game::los_blocked_world(Vec2 a, Vec2 b) const {
+  if (in_bunker_) return false;
+  for (int i = 0; i < mapgen_.location_count(); ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    if (!L.active) continue;
+    const float mx = (a.x + b.x) * 0.5f - L.pos.x, my = (a.y + b.y) * 0.5f - L.pos.y;
+    if (mx * mx + my * my > 900.f * 900.f) continue;
+    const BuildingShape* s = poi_shape(L.type, i);
+    if (!s) continue;
+    if (building_blocks_move(*s, L.pos, a, b, 0.f)) return true;
+    const BuildingInterior* bi = building_interior_by_int_type(s->c2_type);
+    if (bi && interior_props_block(*bi, L.pos, a, b, 0.f, true)) return true;
+  }
+  return false;
+}
+
+static bool game_los_cb(const void* ctx, Vec2 a, Vec2 b) {
+  return static_cast<const Game*>(ctx)->los_blocked_world(a, b);
+}
+
+void Game::install_los() { set_los_blocker(&game_los_cb, this); }
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
   for (int i = 0; i < mapgen_.location_count(); ++i) {

@@ -157,3 +157,9 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 - Not done: create_map_location element program (array 518) -> real building/tree/obstacle/Humvee (hammercrash_point) placement; port world gen (location types/counts) is still its own model, so prefab XY and tree placement remain port-made. Needs generate_array_locations port first.
 - Loot per point: Trigger_spawn tables (per spawn_loot_point IV0) not ported; pile count still the port's.
 - Bench (autoplay) draw times drop to 0 at ~42 s because the bench character is killed (last_death.txt: reason=Bullet) -> death screen. Not a renderer bug.
+
+## Walls vs bullets / sight (2026-10-19 21:35)
+- Ported: bullets stop on building walls, interior props, tree trunks; NPC sight/chase/melee/shots need LOS (buildings + big obstacles).
+- Not ported: C2 noise ("noice") still lets zeds walk toward a sound without LOS in the original; port aggro = hearing radius gated by LOS (zeds behind a wall stay put). Bullet bounce-off-solids for NPC Bullet movers not modelled (bullet is destroyed, as the Hitting_obstacles event does).
+- Tank rush into a wall -> stun (zed_tank_eyes vs t336/t339/t927) not ported.
+- Player melee is instant in the port (C2 melee_swing is a t910 bullet and is stopped by walls).

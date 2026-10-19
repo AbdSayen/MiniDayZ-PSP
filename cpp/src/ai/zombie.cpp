@@ -1,3 +1,4 @@
+#include "mdaz/los.hpp"
 #include "mdaz/zombie.hpp"
 #include "mdaz/combat.hpp"
 #include "mdaz/balance_globals.hpp"
@@ -95,12 +96,14 @@ void Zombie::update_ai(float dt, Vec2 player_pos, bool& out_hit_player, float& o
     melee_reach = 36.f;
   }
 
-  if (dist < hear && dist > 1.f) {
+  // C2 MainLook/ShortLook obstacles = buildings (t927) + big obstacles (t339).
+  const bool sees = !los_blocked(pos, player_pos);
+  if (sees && dist < hear && dist > 1.f) {
     pos.x += (dx / dist) * move_spd * dt;
     pos.y += (dy / dist) * move_spd * dt;
   }
 
-  if (dist < melee_reach && attack_cooldown <= 0.f) {
+  if (sees && dist < melee_reach && attack_cooldown <= 0.f) {
     out_hit_player = true;
     out_damage = zed_melee_damage(type);
     if (type == Zed_Fast) attack_cooldown = 0.7f;

@@ -30,9 +30,11 @@ const BuildingInterior* building_interior_by_int_type(int t) {
 const InteriorProp& interior_prop(const BuildingInterior& b, int k) { return kIntProps[b.first_prop + k]; }
 const InteriorLoot& interior_loot(const BuildingInterior& b, int k) { return kIntLoot[b.first_loot + k]; }
 
-bool interior_props_block(const BuildingInterior& bi, Vec2 o, Vec2 a, Vec2 b, float r) {
+bool interior_props_block(const BuildingInterior& bi, Vec2 o, Vec2 a, Vec2 b, float r,
+                          bool big_only) {
   for (int k = 0; k < bi.prop_count; ++k) {
     const InteriorProp& p = kIntProps[bi.first_prop + k];
+    if (big_only && !p.big) continue;
     if (p.pt_count < 3) continue;
     const Vec2 c(o.x + p.x, o.y + p.y);
     if ((b.x - c.x) * (b.x - c.x) + (b.y - c.y) * (b.y - c.y) > 160.f * 160.f) continue;
@@ -51,4 +53,11 @@ bool interior_props_block(const BuildingInterior& bi, Vec2 o, Vec2 a, Vec2 b, fl
   return false;
 }
 
+} // namespace mdaz
+
+#include "mdaz/los.hpp"
+namespace mdaz {
+namespace { LosBlockedFn g_los_fn = 0; const void* g_los_ctx = 0; }
+void set_los_blocker(LosBlockedFn fn, const void* ctx) { g_los_fn = fn; g_los_ctx = ctx; }
+bool los_blocked(Vec2 a, Vec2 b) { return g_los_fn ? g_los_fn(g_los_ctx, a, b) : false; }
 } // namespace mdaz

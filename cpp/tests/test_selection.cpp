@@ -10,6 +10,7 @@
 #include "mdaz/rng.hpp"
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/map_decode_tables.hpp"
+#include "mdaz/los.hpp"
 
 #include <cstdio>
 #include <new>
@@ -72,6 +73,8 @@ struct GameTestAccess {
   static int trap_kind(Game& g, int i) { return g.traps_[i].kind; }
   static void kill_z(Game& g, Zombie& z, ItemId w) { g.hurt_zombie(z, 1.0e6f, w); }
   static void stream(Game& g, LocationReloadMode m) { g.sync_location_stream(m); }
+  static void install_los(Game& g) { g.install_los(); }
+  static bool bullet_wall(Game& g, Vec2 a, Vec2 b) { return g.bullet_hits_obstacle(a, b); }
 };
 }
 
@@ -86,6 +89,7 @@ static void check(bool ok, const char* what) {
 
 static void reset(Game& g) {
   A::inv(g).clear();
+  { const ItemId tw_[4] = {303, 355, 403, 452}; A::inv(g).restore_worn(tw_, 4); } // test: 16 C2 slots
   A::surv(g).food = 40.f; A::surv(g).water = 40.f; A::surv(g).blood = 60.f;
   A::eq(g) = 0; A::mag(g) = 0;
 }
@@ -156,6 +160,7 @@ static void test_restored_step1(Game& g) {
   // --- Quest completion + quest bandits.
   A::db(g).load_from_json_file("data/items.json");
   A::inv(g).clear();
+  { const ItemId tw_[4] = {303, 355, 403, 452}; A::inv(g).restore_worn(tw_, 4); } // test: 16 C2 slots
   A::inv(g).add_item(1, 1, A::db(g));
   QuestState& q = A::quest(g);
   q.q_task_id = 1; q.q_target_sid = 1; q.q_status = 2;
@@ -173,6 +178,7 @@ static void test_restored_step1(Game& g) {
   check(q.karma == karma1 + 20, "quest bandit task: Karma +20");
   // --- build_fence.
   A::inv(g).clear();
+  { const ItemId tw_[4] = {303, 355, 403, 452}; A::inv(g).restore_worn(tw_, 4); } // test: 16 C2 slots
   A::inv(g).add_item(38, 6, A::db(g));
   A::inv(g).add_item(50, 1, A::db(g));
   const int tc = A::trap_count(g);
@@ -205,6 +211,33 @@ static void test_restored_step1(Game& g) {
   A::pl(g).pos = Vec2(vp.x + 1000.f, vp.y);
   A::stream(g, LocationReload_Runtime);
   check(m.location(vi).active && A::loot(g).count() == loot1, "re-created location: loot not seeded twice");
+}
+
+// C2: LineOfSight obstacles t927 (buildings) + t339; Hitting_obstacles destroys bullets on walls.
+static void test_walls_los(Game& g) {
+  MapGenerator& m = A::map(g);
+  int pi = -1;
+  for (int i = 0; i < m.location_count(); ++i) if (m.location(i).type == Loc_Police) { pi = i; break; }
+  check(pi >= 0, "seed has a police station");
+  if (pi < 0) return;
+  const Vec2 o = m.location(pi).pos;
+  A::pl(g).pos = Vec2(o.x - 60.f, o.y + 60.f);           // inside, north of the south wall
+  A::stream(g, LocationReload_Start);
+  A::install_los(g);
+  const Vec2 out(o.x - 60.f, o.y + 140.f), in(o.x - 60.f, o.y + 60.f);
+  check(g.los_blocked_world(out, in), "LOS outside->inside blocked by police south wall");
+  check(!g.los_blocked_world(Vec2(o.x - 16.f, o.y + 140.f), Vec2(o.x - 16.f, o.y + 80.f)),
+        "LOS through the door gap is clear");
+  check(A::bullet_wall(g, Vec2(out.x, o.y + 104.f), Vec2(out.x, o.y + 94.f)),
+        "bullet step across the wall is stopped");
+  A::zeds(g).clear();
+  Zombie* z = A::zeds(g).spawn(Zed_Normal, Vec2(out.x, o.y + 110.f));
+  float dmg = 0.f;
+  const Vec2 z0 = z ? z->pos : Vec2();
+  for (int k = 0; k < 60 && z; ++k) { float d = 0.f; A::zeds(g).update(1.f / 60.f, A::pl(g).pos, d); dmg += d; }
+  check(z && dmg == 0.f && z->pos.x == z0.x && z->pos.y == z0.y,
+        "zed outside the wall neither sees, chases nor hits the player inside");
+  set_los_blocker(0, 0);
 }
 
 int test_queue_q1() {
@@ -316,6 +349,7 @@ int test_queue_q1() {
   delete v;
   test_restored_step1(g);
   delete np;
+  test_walls_los(g);
   delete gp;
   std::printf("test_queue_q1: %d failure(s)\n", g_fail);
   return g_fail ? 1 : 0;

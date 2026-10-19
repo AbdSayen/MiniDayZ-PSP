@@ -1,3 +1,4 @@
+#include "mdaz/los.hpp"
 #include "mdaz/animal.hpp"
 #include "mdaz/combat.hpp"
 
@@ -105,11 +106,12 @@ float AnimalSystem::update(float dt, Vec2 player_pos, bool player_bleeding,
       if (player_bleeding) range += 140.f; // blood scent
       float spd = a.speed * (pack_alert ? 1.15f : 1.f);
       if (player_bleeding) spd *= 1.1f;
-      if (dist > 1.f && dist < range) {
+      const bool sees = !los_blocked(a.pos, player_pos); // wolf/dog LineOfSight t927+t339
+      if (sees && dist > 1.f && dist < range) {
         a.pos.x += (dx / dist) * spd * dt;
         a.pos.y += (dy / dist) * spd * dt;
       }
-      if (dist < wolf_range && a.attack_cooldown <= 0.f) {
+      if (sees && dist < wolf_range && a.attack_cooldown <= 0.f) {
         if (a.type == Animal_Wolf) {
           dmg += wolf_melee_damage();
           if (wolf_melee_hit) *wolf_melee_hit = true;

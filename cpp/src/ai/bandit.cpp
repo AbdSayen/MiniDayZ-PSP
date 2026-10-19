@@ -1,3 +1,4 @@
+#include "mdaz/los.hpp"
 #include "mdaz/bandit.hpp"
 #include "mdaz/combat.hpp"
 
@@ -277,7 +278,8 @@ float BanditSystem::update(float dt, Vec2 player_pos) {
     if (b.has_gun && dist < 180.f) spd *= 0.4f;
     const bool fleeing = b.hp < b.max_hp * 0.3f;
 
-    if (dist > 1.f && dist < b.aggro_radius) {
+    const bool sees = !los_blocked(b.pos, player_pos); // C2 bot Eyes/Gun obstacles t927
+    if (sees && dist > 1.f && dist < b.aggro_radius) {
       if (fleeing) {
         // Low HP — run away
         b.pos.x -= (dx / dist) * spd * 1.2f * dt;
@@ -289,7 +291,7 @@ float BanditSystem::update(float dt, Vec2 player_pos) {
     }
 
     // Melee bandits always; gun bandits bayonet when very close
-    if (!fleeing && dist < 28.f && b.attack_cooldown <= 0.f) {
+    if (sees && !fleeing && dist < 28.f && b.attack_cooldown <= 0.f) {
       if (!b.has_gun || dist < 22.f) {
         dmg += npc_bandit_melee_damage(b.has_gun);
         b.attack_cooldown = b.has_gun ? 1.2f : 1.0f;

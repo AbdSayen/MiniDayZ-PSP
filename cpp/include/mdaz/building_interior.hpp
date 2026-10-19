@@ -30,6 +30,7 @@ const BuildingInterior* building_interior_by_int_type(int c2_type);
 const InteriorProp& interior_prop(const BuildingInterior& b, int k);
 const InteriorLoot& interior_loot(const BuildingInterior& b, int k);
 // Movement a->b blocked by any Solid prop of building b placed at origin (hotspot).
-bool interior_props_block(const BuildingInterior& b, Vec2 origin, Vec2 a, Vec2 bpos, float r);
+bool interior_props_block(const BuildingInterior& b, Vec2 origin, Vec2 a, Vec2 bpos, float r,
+                          bool big_only = false);
 
 } // namespace mdaz
