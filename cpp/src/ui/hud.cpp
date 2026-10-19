@@ -232,9 +232,15 @@ void draw_minimap(IPlatform& platform, const Game& game) {
 }
 
 void draw_hotbar(IPlatform& platform, const Game& game) {
-  const float total = 8.f * kHotSlot + 7.f * kHotGap;
+  // data.js: slot cells (gui_item_backpack, IV12 = slot index) exist only for the capacity the
+  // worn containers give; missing containers are covered by gui_slot_hider_*. So draw exactly
+  // capacity() cells (at most 8 in this one-row bar), never empty cells beyond capacity.
+  int n = game.inventory().capacity();
+  if (n > 8) n = 8;
+  if (n < 1) n = 1;
+  const float total = n * kHotSlot + (n - 1) * kHotGap;
   const float x0 = std::floor((kScreenW - total) * 0.5f);
-  for (int i = 0; i < 8; ++i) {
+  for (int i = 0; i < n; ++i) {
     const float sx = x0 + i * (kHotSlot + kHotGap);
     const bool eq = (i == game.equipped_slot());
     draw_slot_bg(platform, sx, kHotY, kHotSlot, kHotSlot, eq);
