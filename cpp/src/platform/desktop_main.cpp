@@ -91,7 +91,10 @@ public:
     else if (frame_ > 310 && game_ && door_phase_ == 0) {
       if (game_->harness_player_rel().x > -16.f) in.move_x = -1.f; else door_phase_ = 1;
     }
-    if (door_phase_ == 1 && frame_ > 310) in.move_y = -1.f;            // through the door
+    if (door_phase_ == 1 && frame_ > 310) {                             // through the door,
+      if (game_->harness_player_rel().y > 60.f) in.move_y = -1.f;      // stop once inside
+      else door_phase_ = 2;
+    }
     return frame_ < 620;
   }
 

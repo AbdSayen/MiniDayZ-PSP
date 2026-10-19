@@ -4395,13 +4395,7 @@ void Game::render() {
         } else {
           draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
         }
-        // Nameplate when close
-        if (dist2(L.pos, player_.pos) < 160.f * 160.f) {
-          const char* lab = location_label(L.type);
-          if (lab)
-            platform_->draw_text(sx - 18.f, sy - max_dim * 0.55f - 8.f, lab,
-                                 0.9f, 0.85f, 0.55f);
-        }
+        // (Invented world nameplate removed: the original draws no location names.)
         if (L.type == Loc_BunkerEntrance &&
             platform_->has_sprite("alife_marker-sheet0"))
           platform_->draw_sprite("alife_marker-sheet0",

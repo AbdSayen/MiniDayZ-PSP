@@ -630,7 +630,9 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
   }
 
   draw_quest_panel(platform, game);
-  draw_compass(platform, game, game.quest().show_panel() ? 76.f : 46.f);
+  // Location compass text ("POLICE E") removed: data.js has no location-name strings or
+  // text objects; the original only shows locations on the minimap.
+  (void)&draw_compass;
 
   if (game.airdrop_alert() > 0.f)
     text_center(platform, kScreenW * 0.5f, 40.f, "AIRDROP INBOUND", 0.95f, 0.75f, 0.25f);
