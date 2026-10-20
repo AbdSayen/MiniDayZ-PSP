@@ -732,3 +732,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - 8b: двери door#340 — спавн, авто-открытие/закрытие по «in», блокер 339, звуки, прозрачность 100/25.
 
 - 8d: Bot_puncher_zindex (Survivors2), поправка про Buildings_shadows.
+
+- 8: вода t199 Solid (игрок, NPC, машины).

@@ -51,6 +51,8 @@ public:
   // C2 tilemap_forest has the Solid behaviour: true when (wx,wy) is inside the collision
   // polygon of the forest tile under it (per-tile polys from data.js; null = full box).
   bool forest_solid_at(float wx, float wy) const;
+  // C2 Water tilemap t199 has the Solid behaviour too (tile polys, null = full box).
+  bool water_solid_at(float wx, float wy) const;
   void draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
             float view_w, float view_h) const;
   // Maps tagged "|top" in the data file (Tutorial "Forests" layer, drawn above the objects).

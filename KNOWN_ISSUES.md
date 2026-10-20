@@ -420,3 +420,8 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 - Поправка к прежней записи: в Game_events NPC на Buildings_shadows НЕ переносятся. Единственный MoveToLayer на Buildings_shadows (t941 OnCollision t928) — в листе Menu_Events (меню), Game_events его не включает. На Buildings_shadows в игре спавнятся только капли крови blood_drop#242 от ботов.
 - Портирована группа Bot_puncher_zindex (активна всегда): скин t943 с IV1=1 (боты 549/243/540/522) OnCollision t928: Y ≤ Imagepoint 1 → слой Survivors2 (10, под Buildings_base), Y ≥ Imagepoint 1 → Survivors (на равенстве побеждает позднее событие). Порт: Bandit::layer2, отрисовка в слоте Survivors2 перед интерьерами. Коллизия скина — прямоугольник 30x30.
 - Не портировано: перенос пиннутой одежды t909 на s_*2 (порт не одевает ботов — существующий пробел); bot_enemy_bandit#827 (bandit_skin, не t943) правилу не подлежит — как в оригинале.
+
+## 8. Ходьба по воде (сделано)
+- Water tilemap t199 имеет поведение Solid (data.js). Портирована коллизия: статичные tilemap_water слоя Map и Water t199 каждой ячейки create_map_location, полигоны тайлов из data.js (null = весь тайл, тайл 11 вырожденный - без коллизии). Применяется к игроку, NPC (npc_forest_block) и машинам (кроме лодки порта).
+- Не сделано / вопросы: лодка Vehicle_Boat порта (в C2 boat_arrive - анимация прибытия, не транспорт) - в аудит; пули через воду: C2 Bullet не учитывает Solid тайлмапов - не проверено, порт пули водой не блокирует.
+- Запись в начале файла «water has no collision» устарела.

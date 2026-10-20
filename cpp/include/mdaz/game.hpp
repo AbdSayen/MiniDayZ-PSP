@@ -677,6 +677,10 @@ private:
   bool door_open_prev_ = false, door_close_prev_ = false;   // TriggerOnce
   Rng door_rng_;
   void build_doors();
+public:
+  bool water_solid(Vec2 p) const;   // C2 Water tilemap t199 (Solid)
+  float harness_place_near_water();
+private:
   void update_bot_zindex();
   void update_doors(float dt);
   void door_spawn_blocker(DoorInst& d);

@@ -158,6 +158,21 @@ int CellTilemaps::tile_at(int layer, float wx, float wy) const {
   return res;
 }
 
+#include "water_tile_polys.inc"
+// t199 Water tilemap (Solid): every created instance collides on its own.
+bool CellTilemaps::water_solid_at(float wx, float wy) const {
+  for (int i = 0; i < kSlots; ++i) {
+    const Slot& s = slots_[i];
+    if (s.cell < 0 || !s.has_water) continue;
+    if (wx < s.x || wy < s.y || wx >= s.x + 1050.f || wy >= s.y + 1050.f) continue;
+    const int cc = static_cast<int>((wx - s.x) / 60.f), r = static_cast<int>((wy - s.y) / 60.f);
+    if (cc >= kG || r >= kG) continue;
+    const int id = s.w[r * kG + cc];
+    if (water_tile_solid(id, (wx - s.x - cc * 60.f) / 60.f, (wy - s.y - r * 60.f) / 60.f)) return true;
+  }
+  return false;
+}
+
 void CellTilemaps::draw(IPlatform& p, int layer, Vec2 cam, float scale, float view_w, float view_h) const {
   static const char* const kG_img[4] = {"ground_lvl1_tilemap", "ground_lvl2_tilemap",
                                         "ground_lvl3_tilemap", "ground_lvl4_tilemap"};

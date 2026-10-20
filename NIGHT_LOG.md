@@ -89,3 +89,6 @@
 
 ### 8d
 Buildings_shadows для NPC в игре нет (только Menu_Events). Сделан Bot_puncher_zindex, тесты + MDAZ_HARNESS_BOTZ.
+
+### 8 (вода)
+water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.

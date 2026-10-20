@@ -297,6 +297,24 @@ bool WorldTilemaps::forest_solid_at(float wx, float wy) const {
   return false;
 }
 
+namespace {
+#include "water_tile_polys.inc"
+}
+// Static Map-layout tilemap_water instances (t199, Solid): per-tile collision polys.
+bool WorldTilemaps::water_solid_at(float wx, float wy) const {
+  for (int i = count_ - 1; i >= 0; --i) {
+    const Map& m = maps_[i];
+    if (std::strcmp(m.image, "tilemap_water") != 0) continue;
+    const int c = static_cast<int>(std::floor((wx - m.x) / m.tile_w));
+    const int r = static_cast<int>(std::floor((wy - m.y) / m.tile_h));
+    if (c < 0 || r < 0 || c >= m.cols || r >= m.rows) continue;
+    const int id = tiles_[m.first + r * m.cols + c];
+    if (water_tile_solid(id, (wx - (m.x + c * m.tile_w)) / static_cast<float>(m.tile_w),
+                         (wy - (m.y + r * m.tile_h)) / static_cast<float>(m.tile_h))) return true;
+  }
+  return false;
+}
+
 void WorldTilemaps::draw(IPlatform& platform, const char* prefix, Vec2 cam, float scale,
                          float view_w, float view_h) const {
   draw_maps(platform, prefix, cam, scale, view_w, view_h, false);

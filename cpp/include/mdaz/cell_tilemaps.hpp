@@ -37,6 +37,7 @@ public:
   const Slot* slot_for_cell(int cell) const;
   // Tile under (wx, wy): layer 0 ground, 1 enviroment, 2 water; -1 = none.
   int tile_at(int layer, float wx, float wy) const;
+  bool water_solid_at(float wx, float wy) const;
   void draw(IPlatform& p, int layer, Vec2 cam, float scale, float view_w, float view_h) const;
 private:
   Slot slots_[kSlots];

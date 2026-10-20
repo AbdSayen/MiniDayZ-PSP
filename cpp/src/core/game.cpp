@@ -606,12 +606,42 @@ bool Game::npc_forest_block(Vec2& pos, Vec2 prev) const {
     else pos = prev;
     return true;
   }
+  if (!in_bunker_ && water_solid(pos) && !water_solid(prev)) {   // Water t199 Solid
+    if (!water_solid(Vec2(pos.x, prev.y))) pos.y = prev.y;
+    else if (!water_solid(Vec2(prev.x, pos.y))) pos.x = prev.x;
+    else pos = prev;
+    return true;
+  }
   if (!world_tiles_.forest_solid_at(pos.x, pos.y)) return false;
   if (world_tiles_.forest_solid_at(prev.x, prev.y)) return false; // spawned inside: let it walk out
   if (!world_tiles_.forest_solid_at(pos.x, prev.y)) pos.y = prev.y;
   else if (!world_tiles_.forest_solid_at(prev.x, pos.y)) pos.x = prev.x;
   else pos = prev;
   return true;
+}
+
+bool Game::water_solid(Vec2 p) const {
+  if (in_bunker_) return false;
+  return world_tiles_.water_solid_at(p.x, p.y) || cell_tiles_.water_solid_at(p.x, p.y);
+}
+
+// Harness / test: put the player on dry ground just east of the first Solid water tile found
+// scanning west along the player's row. Returns the water edge x (or -1).
+float Game::harness_place_near_water() {
+  const float y = player_.pos.y;
+  for (float x = player_.pos.x; x > -2000.f; x -= 2.f) {
+    if (water_solid(Vec2(x, y))) {
+      player_.pos = Vec2(x + 40.f, y);
+      player_.vel = Vec2();
+      if (platform_) {
+        char line[96];
+        std::snprintf(line, sizeof(line), "harness: water edge x=%.0f y=%.0f", x, y);
+        platform_->log_line(line);
+      }
+      return x;
+    }
+  }
+  return -1.f;
 }
 
 void Game::mark_sector_visited() {
@@ -3208,6 +3238,12 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       else if (!world_tiles_.forest_solid_at(pre_move.x, player_.pos.y)) player_.pos.x = pre_move.x;
       else player_.pos = pre_move;
     }
+    // C2 Water tilemap t199 is Solid too (static Map borders + per-cell Water): slide.
+    if (!in_bunker_ && water_solid(player_.pos) && !water_solid(pre_move)) {
+      if (!water_solid(Vec2(player_.pos.x, pre_move.y))) player_.pos.y = pre_move.y;
+      else if (!water_solid(Vec2(pre_move.x, player_.pos.y))) player_.pos.x = pre_move.x;
+      else player_.pos = pre_move;
+    }
     // C2: tree sprites themselves have no Solid behaviour (only NoSave),
     // but each tree spawns a Solid obst_base trunk (frame 10) - see building_blocks(). The
     // invented 14px radial push-out was replaced by that polygon (fidelity #6).
@@ -3235,6 +3271,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     // Crash into blocked cells / Solid forest tiles while driving
     if (world_.is_blocked(player_.pos.x, player_.pos.y) ||
         world_tiles_.forest_solid_at(player_.pos.x, player_.pos.y) ||
+        (vehicles_.driven() && vehicles_.driven()->type != Vehicle_Boat && water_solid(player_.pos)) ||
         building_blocks(player_.pos, player_.pos)) {
       player_.pos.x -= in.move_x * 8.f;
       player_.pos.y -= in.move_y * 8.f;

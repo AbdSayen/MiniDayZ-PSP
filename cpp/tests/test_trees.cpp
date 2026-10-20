@@ -166,6 +166,18 @@ int test_trees() {
     check(g.bot_zindex_probe_for_test(-3.f) == 1, "bot enters house above Imagepoint 1 -> Survivors2");
     check(g.bot_zindex_probe_for_test(0.f) == 0, "bot at Y == Imagepoint 1 -> Survivors (later event wins)");
   }
+  // 8: Water tilemap t199 Solid.
+  {
+    g.start_new_game(Difficulty_Regular);
+    const float ex = g.harness_place_near_water();
+    // Headless tests load no Map-layout tilemaps (no platform file): only check when present;
+    // the in-game evidence is --shots-building + MDAZ_HARNESS_WATER.
+    if (ex <= -1.f) std::printf("NOTE water: no Solid water tile on the spawn row in headless run\n");
+    if (ex > -1.f) {
+      const Vec2 p = g.player_mut().pos;
+      check(!g.water_solid(p) && g.water_solid(Vec2(ex, p.y)), "dry 40 px east of the water edge, edge is Solid");
+    }
+  }
   delete gp;
   return g_fail;
 }

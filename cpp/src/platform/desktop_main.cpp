@@ -171,6 +171,16 @@ public:
       if (frame_ == 360 && game_) { game_->harness_place_at_prop(305, 40.f); std::printf("broken %d\n", game_->harness_break_prop()); }
       return frame_ < 400;
     }
+    if (std::getenv("MDAZ_HARNESS_WATER")) {   // 8: Water t199 is Solid
+      if (frame_ == 200 && game_) game_->harness_place_near_water();
+      if (frame_ > 205 && frame_ < 330) in.move_x = -1.f;            // walk west into the water
+      if (frame_ == 335 && game_) {
+        const mdaz::Vec2 p = game_->harness_player_pos();
+        std::printf("water: player x=%.1f y=%.1f solid_here=%d solid_2px_west=%d\n", p.x, p.y,
+                    game_->water_solid(p) ? 1 : 0, game_->water_solid(mdaz::Vec2(p.x - 2.f, p.y)) ? 1 : 0);
+      }
+      return frame_ < 345;
+    }
     if (std::getenv("MDAZ_HARNESS_BOTZ")) {   // 8d: Bot_puncher_zindex
       if (frame_ == 200 && game_) game_->harness_bot_zindex(-3.f);
       if (frame_ == 280 && game_) game_->harness_bot_zindex(10.f);
@@ -451,7 +461,7 @@ public:
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
         { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
-        { 201, "botz_0_bot_survivors2_under_house" }, { 281, "botz_1_bot_survivors" },
+        { 201, "botz_0_bot_survivors2_under_house" }, { 210, "water_0_start" }, { 336, "water_1_blocked_at_edge" }, { 281, "botz_1_bot_survivors" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;
