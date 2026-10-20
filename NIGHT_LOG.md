@@ -122,3 +122,7 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 - IV6 декодирован по data.js (Firearm shooting, Melee_2_auto, item_activate 36, Items_update, Spawn_drop). Значения — из дампа t909 (iv6.txt).
 - Выдуманная таблица clothing_iv6_max убрана.
 - Дальше 11d: drag-and-drop курсором (GUI_Drag) и Combine из кучи.
+
+## 2026-10-20 — пункт 11d
+- GUI_Drag разобран: функции перетаскивания определены в Game_events, Replace_clear_slot — это обмен через Replace_fit_slot.
+- Пометка-«Combine» R+Cross из пункта 9 заменена настоящим перетаскиванием.

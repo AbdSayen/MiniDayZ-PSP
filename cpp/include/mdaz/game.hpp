@@ -48,6 +48,7 @@ struct FireSaveView;
 int c2_melee_iv4(ItemId id);                   // player_collision_base IV4 for an equipped melee item
 float c2_melee_reload(ItemId id);              // t909 IV4 Reloading_time_melee (0 = fist / not melee)
 int c2_melee_swing_dmg(int iv4);               // melee_swing_general IV0
+int c2_check_craft_slot(ItemId target, ItemId dragged);   // Check_craft "Slot": 1 Combine, 2 recipe
 float c2_fire_wear(ItemId id);                  // Firearm shooting: t909 IV6 -= N per shot
 float c2_melee_npc_wear(ItemId id);             // melee NPC hit: t909 IV6 -= N by IV15
 const char* c2_log_weapon_ruined();             // l_eng_log 11
@@ -598,6 +599,9 @@ private:
   void try_melee_attack();
   void try_ranged_attack();
   void try_pickup_loot();
+  void pick_pile_entry(int k);
+  void compact_pile(int pi);
+  void update_pickpile_ui(const InputState& in);
   void try_craft();
   void toggle_craft_menu();
   void try_craft_menu_recipe();
@@ -724,7 +728,14 @@ public:
   void harness_perks(int step);
   void harness_gearbox(int step);
   void harness_bottle(int step);
-  void harness_durability(int step);   // item 11c shots   // item 10: XP + perk menu shots
+  void harness_durability(int step);   // item 11c shots
+  void harness_drag(int step);         // item 11d shots
+  // Item 11d: C2 GUI_Drag + gui_pickpile (game_drag.cpp).
+  int pickpile_count() const;
+  int pickpile_entry(int k, int* pile_out, int* item_out) const;
+  ItemId pickpile_id(int k, int* count_out) const;
+  void c2_drag_drop_on_slot(int src, int dst);
+  void c2_drag_drop_on_pile(int src, int k);   // item 10: XP + perk menu shots
   const PerkState& perks() const;
   int perk_menu_sel() const { return perk_sel_; }
   bool perk_menu_open() const { return show_perks_; }

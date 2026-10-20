@@ -716,7 +716,7 @@ void Game::harness_combine_log() {
   char line[160];
   std::snprintf(line, sizeof(line), "combine: cap=%d s1=%d/%d s2=%d/%d src=%d focus=%d",
                 inventory_.capacity(), (int)inventory_.slot(1).id, inventory_.slot(1).count,
-                (int)inventory_.slot(2).id, inventory_.slot(2).count, inventory_ui_.combine_src,
+                (int)inventory_.slot(2).id, inventory_.slot(2).count, inventory_ui_.drag_src,
                 inventory_ui_.focus_bag_slot);
   std::printf("%s\n", line);
   if (platform_) platform_->log_line(line);
@@ -3099,7 +3099,9 @@ void Game::update_inventory_ui(const InputState& in) {
   const int cols = 8;
   static const ClothingRegion kRows[4] = { ClothingRegion_Pants, ClothingRegion_Outerwear,
                                            ClothingRegion_Vest, ClothingRegion_Backpack };
+  if (ui.drag_src >= 0 && in.back_pressed) { ui.drag_src = -1; return; }   // released off target: snaps back
   if (in.back_pressed || in.bag_pressed) { close_inventory(); return; }
+  if (ui.focus_pile >= 0) { update_pickpile_ui(in); return; }
   const bool in_cloth = ui.focus_cloth_region != ClothingRegion_Count;
   if (!in_cloth && (ui.focus_bag_slot < 0 || ui.focus_bag_slot >= cap))
     ui.focus_bag_slot = equipped_slot_ < cap ? equipped_slot_ : 0;
@@ -3167,25 +3169,29 @@ void Game::update_inventory_ui(const InputState& in) {
   if (in.nav_right && col < cols - 1 && s + 1 < cap) s += 1;
   if (in.nav_up && s - cols >= 0) s -= cols;
   if (in.nav_down && s + cols < cap) s += cols;
+  else if (in.nav_down && pickpile_count() > 0) {   // below the bag grid: gui_pickpile row
+    ui.focus_pile = 0;
+    ui.pile_page = 0;
+    return;
+  }
   ui.focus_bag_slot = s;
   inventory_slot_actions(in, s);
 }
 
 void Game::inventory_slot_actions(const InputState& in, int s) {
   InventoryUiState& ui = inventory_ui_;
-  // PSP adaptation (C2: drag item onto a slot with the same frame -> sub_menu "Combine"):
-  // R+Cross marks the source slot, R+Cross on another slot runs Combine_ammo.
+  // PSP adaptation of C2 GUI_Drag: R+Cross = OnDragStart on the focused cell, R+Cross again
+  // = release over the focused cell (gui_dragger overlaps gui_item_backpack IV0 "Slot").
   if (in.throw_pressed) {
-    if (ui.combine_src < 0) {
-      const InvSlot& src = inventory_.slot(s);
-      if (!src.empty() && c2_combine_menu(src.id)) ui.combine_src = s;
+    if (ui.drag_src < 0) {
+      if (!inventory_.slot(s).empty()) ui.drag_src = s;
     } else {
-      if (ui.combine_src != s && inventory_.combine_slots(ui.combine_src, s, items_) != -1)
-        sfx2d("eject", 0.f);   // Combine_ammo: PlayByName "eject" 0 dB
-      ui.combine_src = -1;
+      c2_drag_drop_on_slot(ui.drag_src, s);
+      ui.drag_src = -1;
     }
     return;
   }
+  if (ui.drag_src >= 0) return;   // while dragging only the cursor moves
   if (in.confirm_pressed || in.attack_pressed) use_bag_slot(s);          // Cross: use / wear
   else if (in.inventory_pressed) {                                       // Triangle
     // C2 sub_menu "Use2" (ui 322 "Fill with water") for 54/55; elsewhere the port's to-hand.

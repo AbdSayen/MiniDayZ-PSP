@@ -91,7 +91,9 @@ void InventoryUiState::clear_focus() {
   focus_bag_slot = -1;
   focus_cloth_region = ClothingRegion_Count;
   focus_cloth_sub = -1;
-  combine_src = -1;
+  drag_src = -1;
+  focus_pile = -1;
+  pile_page = 0;
 }
 
 void InventoryUiState::open() {

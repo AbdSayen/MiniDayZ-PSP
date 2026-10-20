@@ -547,3 +547,22 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
   - ремонт скотчем/заплатками (+15/+50, лук +20, максимум 100);
   - Rust_layer на иконке;
   - износ шлема и жилета от попаданий — уже был в порту (apply_hit_armor_wear), проверить на аудите.
+
+## Пункт 11d — перетаскивание (GUI_Drag) и куча на земле (gui_pickpile)
+- **Источник:** DragnDrop на семействе t925, функции Replace_clear_slot, Replace_fit_slot, Replace_slot_ground, Drop_slot, Check_craft, Call_sub_menu_craft, checkpile (дамп data.js).
+- **Ячейка → ячейка:** отпускание над gui_item_backpack с IV0 «Slot» при GUI_craft_possible = 0 вызывает Replace_clear_slot → Replace_fit_slot. Содержимое цели уходит в исходную ячейку, перетаскиваемое — в цель. Это обмен; пустая цель просто получает предмет. В порту обмен идёт вместе с IV6.
+- **Check_craft «Slot»:** если предметы одного кадра (это id) и предмет из списка Combine, GUI_craft_possible = 1 и открывается sub_menu «Combine» (Combine_ammo). Подсветка цели зелёная (gui_slot_bg кадр 1).
+- **Ячейка → куча:** отпускание над строкой gui_pickpile вызывает Replace_slot_ground. Сначала Drop_slot исходной ячейки, затем в ячейку кладётся t912 (IV2 id, IV1 count), t912 уничтожается. Если строка — одежда t909 (не t912), ячейка остаётся пустой, как в C2.
+- **checkpile:** строки = одежда t909 на земле (IV5 = −1), затем все t912 под игроком; 7 на страницу (gui_pickpile_maxpage). Клик по строке = Pick_player_item / Pick_inventory_item.
+- **Адаптация PSP (документировано):**
+  - курсор = рамка фокуса (D-pad);
+  - R+Cross = начать перетаскивание (OnDragStart), R+Cross ещё раз = отпустить над ячейкой в фокусе;
+  - Circle во время перетаскивания = отпустить вне цели (предмет возвращается на место);
+  - строка «GROUND» под сеткой сумки (D-pad вниз из нижнего ряда);
+  - «под игроком» = радиус 40 px, как у подбора кучи в порту (в C2 — пересечение с player_collision_base);
+  - sub_menu «Combine» выполняется сразу, без второго нажатия на кнопку меню (как в пункте 9).
+- **НЕ перенесено (бэклог):**
+  - пункты Call_sub_menu_craft, кроме Combine: Craft_1..34, Attach Battery, Charge_radio, load_pistol, Knife-melee/Melee-knife, Craft arrows, ремонт скотчем и заплатками, build_fence. Для этих пар (40/41, 37/41, 38/42–44, 40/42–44, 44/38, 44/40, 49/50, 50/26/38/49, 22/75) отпускание сейчас ничего не делает (C2 открыл бы меню крафта);
+  - перетаскивание надетой одежды и оружейных карточек (Firearm/Pistol/Melee/Helmet): в дампе GUI_Drag Replace_* вызывается только для IV0 «Slot», для карточек есть лишь Check_craft/меню крафта и возврат на место — меню не перенесено;
+  - Combine с предметом на земле (Call_sub_menu_craft с t912) — не сделан;
+  - листание страниц кучи кнопками gui_pickpile (в порту — D-pad влево/вправо через край страницы).

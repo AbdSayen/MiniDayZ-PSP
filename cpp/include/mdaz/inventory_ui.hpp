@@ -75,12 +75,17 @@ struct InventoryUiState {
   int focus_bag_slot;
   ClothingRegion focus_cloth_region;
   int focus_cloth_sub;
-  // PSP input adaptation of C2 drag-onto-slot + sub_menu "Combine": marked source bag slot.
-  int combine_src;
+  // PSP input adaptation of C2 GUI_Drag (DragnDrop on t925): the focus frame is the cursor,
+  // R+Cross picks the focused cell up (OnDragStart), R+Cross again drops it on the focused
+  // cell (Replace_clear_slot / Replace_slot_ground / sub_menu "Combine"). Flat cell index.
+  int drag_src;
+  // C2 gui_pickpile (checkpile t532 rows, 7 per page): focused entry on the page, -1 = none.
+  int focus_pile;
+  int pile_page;
 
   InventoryUiState()
     : opened(false), focus_bag_slot(-1), focus_cloth_region(ClothingRegion_Count),
-      focus_cloth_sub(-1), combine_src(-1) {}
+      focus_cloth_sub(-1), drag_src(-1), focus_pile(-1), pile_page(0) {}
 
   void open();
   void close_inventory();

@@ -239,6 +239,11 @@ public:
       if (frame_ == 755 && game_) game_->harness_bottle(2);
       return frame_ < 760;
     }
+    if (std::getenv("MDAZ_HARNESS_DRAG")) {   // 11d: GUI_Drag swap / Combine / pickpile
+      static const int kF[6] = {200, 300, 360, 420, 480, 540};
+      for (int i = 0; i < 6; ++i) if (frame_ == kF[i] && game_) game_->harness_drag(i);
+      return frame_ < 580;
+    }
     if (std::getenv("MDAZ_HARNESS_DURABILITY")) {   // 11c: t909 IV6 HUD, wear per shot, ruined
       if (frame_ == 200 && game_) game_->harness_durability(0);
       if (frame_ == 300 && game_) game_->harness_durability(1);   // 1.5 -> 0.7
@@ -402,6 +407,20 @@ public:
       static const struct { int frame; const char* name; } kD[] = {
         { 290, "dur_0_condition" }, { 350, "dur_1_after_shot" }, { 425, "dur_2_ruined" }, { 510, "dur_3_container" },
       };
+      static const struct { int frame; const char* name; } kG[] = {
+        { 260, "drag_0_open" }, { 330, "drag_1_hover" }, { 390, "drag_2_swapped" },
+        { 450, "drag_3_combined" }, { 510, "drag_4_over_ground" }, { 570, "drag_5_ground_swapped" },
+      };
+      if (std::getenv("MDAZ_HARNESS_DRAG")) {
+        for (unsigned i = 0; i < sizeof(kG) / sizeof(kG[0]); ++i) {
+          if (kG[i].frame != frame_) continue;
+          char path[512];
+          std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kG[i].name);
+          std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+        }
+        inner_->end_frame();
+        return;
+      }
       if (std::getenv("MDAZ_HARNESS_DURABILITY")) {
         for (unsigned i = 0; i < sizeof(kD) / sizeof(kD[0]); ++i) {
           if (kD[i].frame != frame_) continue;

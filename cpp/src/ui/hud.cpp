@@ -453,7 +453,52 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     }
     if (eq) outline(platform, sx, sy, kBagSlot, kBagSlot, 0.95f, 0.8f, 0.3f, 1.f);
     if (focus) focus_frame(platform, sx - 1.f, sy - 1.f, kBagSlot + 2.f, kBagSlot + 2.f, t);
-    if (i == ui.combine_src) outline(platform, sx + 1.f, sy + 1.f, kBagSlot - 2.f, kBagSlot - 2.f, 0.3f, 0.95f, 0.3f, 1.f);  // PSP combine source marker
+    if (i == ui.drag_src) platform.draw_rect(sx + 1.f, sy + 1.f, kBagSlot - 2.f, kBagSlot - 2.f, 0.f, 0.f, 0.f, 0.55f);  // picked-up cell
+    // GUI_Drag hover: gui_slot_bg frame 1 (green) when GUI_craft_possible, frame 2 otherwise.
+    if (ui.drag_src >= 0 && focus && i != ui.drag_src) {
+      const int cr = c2_check_craft_slot(sl.id, inv.slot(ui.drag_src).id);
+      if (cr != 0) outline(platform, sx + 1.f, sy + 1.f, kBagSlot - 2.f, kBagSlot - 2.f, 0.3f, 0.95f, 0.3f, 1.f);
+    }
+  }
+
+  // gui_pickpile: checkpile rows (ground items under the player), 7 per page.
+  {
+    const int np = game.pickpile_count();
+    const float py0 = kInvY + kInvH - kBagSlot - 18.f;
+    const float px0 = gx0;
+    if (np > 0) {
+      char pt[32];
+      const int maxpage = (np - 1) / 7;
+      if (maxpage > 0) std::snprintf(pt, sizeof(pt), "GROUND %d/%d", ui.pile_page + 1, maxpage + 1);
+      else std::snprintf(pt, sizeof(pt), "GROUND");
+      text(platform, px0, py0 - 2.f - kCharH, pt, 0.6f, 0.6f, 0.5f);
+      for (int c = 0; c < 7; ++c) {
+        const int k = ui.pile_page * 7 + c;
+        if (k >= np) break;
+        const float sx = px0 + c * (kBagSlot + 2.f);
+        const bool f = (ui.focus_pile == c);
+        draw_slot_bg(platform, sx, py0, kBagSlot, kBagSlot, f);
+        int pc = 0;
+        const ItemId pid = game.pickpile_id(k, &pc);
+        if (pid > 0) {
+          draw_item_fit(platform, pid, sx + 2.f, py0 + 2.f, kBagSlot - 4.f, kBagSlot - 4.f);
+          draw_count(platform, sx, py0, kBagSlot, kBagSlot, pc, pid);
+        }
+        if (f) focus_frame(platform, sx - 1.f, py0 - 1.f, kBagSlot + 2.f, kBagSlot + 2.f, t);
+      }
+    }
+  }
+  // GUI_Drag: the dragged icon is pinned to the cursor (gui_dragger), drawn over the focus.
+  if (ui.drag_src >= 0 && ui.drag_src < cap && !inv.slot(ui.drag_src).empty()) {
+    float cx = -1.f, cy = -1.f;
+    if (ui.focus_pile >= 0) {
+      cx = gx0 + ui.focus_pile * (kBagSlot + 2.f);
+      cy = kInvY + kInvH - kBagSlot - 18.f;
+    } else if (ui.focus_bag_slot >= 0 && ui.focus_bag_slot < cap) {
+      cx = gx0 + (ui.focus_bag_slot % cols) * (kBagSlot + 2.f);
+      cy = gy0 + (ui.focus_bag_slot / cols) * (kBagSlot + 2.f);
+    }
+    if (cx >= 0.f) draw_item_fit(platform, inv.slot(ui.drag_src).id, cx + 8.f, cy + 8.f, kBagSlot - 4.f, kBagSlot - 4.f);
   }
 
   // Details of the focused item.
@@ -464,6 +509,8 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
   if (ui.focus_cloth_region != ClothingRegion_Count && ui.focus_cloth_sub >= 0) {
     const InvSlot& cs = inv.clothing().slot(ui.focus_cloth_region, ui.focus_cloth_sub);
     fid = cs.id; fcount = cs.count;
+  } else if (ui.focus_pile >= 0) {
+    fid = game.pickpile_id(ui.pile_page * 7 + ui.focus_pile, &fcount);
   } else if (ui.focus_bag_slot >= 0 && ui.focus_bag_slot < cap) {
     const InvSlot& sl = inv.slot(ui.focus_bag_slot);
     fid = sl.id; fcount = sl.count;
@@ -488,12 +535,16 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
   h[n++] = Hint{Btn_None, Btn_DPad, "ARROWS", "Move"};
   (void)in_cloth;
   {
-    h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Use/Wear"};
-    h[n++] = Hint{Btn_None, Btn_Triangle, "C", c2_item_has_use2_fill(fid) ? "Fill" : "To hand"};
-    h[n++] = Hint{Btn_None, Btn_Square, "R", "Drop"};
-    h[n++] = Hint{Btn_R, Btn_Cross, "F", ui.combine_src >= 0 ? "Combine here" : "Combine"};  // PSP adaptation of C2 drag + "Combine"
+    if (ui.focus_pile >= 0) {   // gui_pickpile row: click = Pick_inventory_item / Pick_player_item
+      if (ui.drag_src < 0) h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Pick up"};
+    } else if (ui.drag_src < 0) {   // while dragging only the cursor moves
+      h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Use/Wear"};
+      h[n++] = Hint{Btn_None, Btn_Triangle, "C", c2_item_has_use2_fill(fid) ? "Fill" : "To hand"};
+      h[n++] = Hint{Btn_None, Btn_Square, "R", "Drop"};
+    }
+    h[n++] = Hint{Btn_R, Btn_Cross, "F", ui.drag_src >= 0 ? "Drop here" : "Drag"};  // PSP adaptation of C2 GUI_Drag
   }
-  h[n++] = Hint{Btn_None, Btn_Circle, "ESC", "Close"};
+  h[n++] = Hint{Btn_None, Btn_Circle, "ESC", ui.drag_src >= 0 ? "Cancel" : "Close"};
   hint_bar(platform, h, n);
 }
 

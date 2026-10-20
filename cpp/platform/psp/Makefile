@@ -14,7 +14,7 @@ SRC_ROOT = ../..
 SRC = $(SRC_ROOT)/src
 
 OBJS = \
-  $(SRC)/core/game.o $(SRC)/core/game_tutorial.o $(SRC)/core/game_audio.o $(SRC)/core/game_pump.o $(SRC)/core/game_chop.o $(SRC)/core/game_perks.o $(SRC)/core/game_items.o \
+  $(SRC)/core/game.o $(SRC)/core/game_tutorial.o $(SRC)/core/game_audio.o $(SRC)/core/game_pump.o $(SRC)/core/game_chop.o $(SRC)/core/game_perks.o $(SRC)/core/game_items.o $(SRC)/core/game_drag.o \
   $(SRC)/core/time.o \
   $(SRC)/core/rng.o \
   $(SRC)/core/c2_session_globals.o \
