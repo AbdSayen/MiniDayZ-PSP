@@ -27,6 +27,7 @@ int test_pump();
 int test_chop();
 int test_trees();
 int test_melee();
+int test_durability();
 int test_fidelity2_more();
 
 int main(int argc, char** argv) {
@@ -39,6 +40,7 @@ int main(int argc, char** argv) {
   failed += test_chop();
   failed += test_trees();
   failed += test_melee();
+  failed += test_durability();
   failed += test_balance();
   failed += test_weather();
   failed += test_survival();

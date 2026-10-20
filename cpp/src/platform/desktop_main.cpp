@@ -239,6 +239,14 @@ public:
       if (frame_ == 755 && game_) game_->harness_bottle(2);
       return frame_ < 760;
     }
+    if (std::getenv("MDAZ_HARNESS_DURABILITY")) {   // 11c: t909 IV6 HUD, wear per shot, ruined
+      if (frame_ == 200 && game_) game_->harness_durability(0);
+      if (frame_ == 300 && game_) game_->harness_durability(1);   // 1.5 -> 0.7
+      if (frame_ == 360 && game_) game_->harness_durability(1);   // 0.7 -> 0 (clamp)
+      if (frame_ == 420 && game_) game_->harness_durability(1);   // IV6 <= 0 -> log 11
+      if (frame_ == 470) { in.bag = in.bag_pressed = true; }      // container label "(37.5%)"
+      return frame_ < 520;
+    }
     if (std::getenv("MDAZ_HARNESS_PUMP")) {   // waterpump: prompt, Circle, drink
       if (frame_ == 200 && game_) game_->harness_place_at_pump();
       if (frame_ == 270) in.interact = in.interact_pressed = true;
@@ -391,6 +399,19 @@ public:
       static const struct { int frame; const char* name; } kB[] = {
         { 610, "bottle_0_filled" }, { 758, "bottle_1_drunk" },
       };
+      static const struct { int frame; const char* name; } kD[] = {
+        { 290, "dur_0_condition" }, { 350, "dur_1_after_shot" }, { 425, "dur_2_ruined" }, { 510, "dur_3_container" },
+      };
+      if (std::getenv("MDAZ_HARNESS_DURABILITY")) {
+        for (unsigned i = 0; i < sizeof(kD) / sizeof(kD[0]); ++i) {
+          if (kD[i].frame != frame_) continue;
+          char path[512];
+          std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kD[i].name);
+          std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+        }
+        inner_->end_frame();
+        return;
+      }
       if (std::getenv("MDAZ_HARNESS_BOTTLE")) {
         for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
           if (kB[i].frame != frame_) continue;

@@ -35,6 +35,8 @@ ItemId pick_weighted(Rng& rng, const DropW* tab, int n) {
 
 struct SpawnDropCount { int id, kind, a, b, farmer, n; int list[5]; };
 #include "spawn_drop_count.inc"
+struct SpawnDropIv6 { int id, n; int list[6]; };
+#include "spawn_drop_iv6.inc"
 
 } // namespace
 
@@ -49,6 +51,20 @@ int c2_spawn_drop_iv1(ItemId id, Rng& rng, bool farmer) {
     return n;
   }
   return 1;
+}
+
+bool c2_item_has_iv6(ItemId id) {
+  for (unsigned i = 0; i < sizeof(kSpawnDropIv6) / sizeof(kSpawnDropIv6[0]); ++i)
+    if (kSpawnDropIv6[i].id == id) return true;
+  return false;
+}
+
+float c2_spawn_drop_iv6(ItemId id, Rng& rng) {
+  for (unsigned i = 0; i < sizeof(kSpawnDropIv6) / sizeof(kSpawnDropIv6[0]); ++i) {
+    const SpawnDropIv6& r = kSpawnDropIv6[i];
+    if (r.id == id) return static_cast<float>(r.list[rng.next_int(0, r.n - 1)]);
+  }
+  return -1.f;
 }
 
 namespace {
@@ -67,13 +83,13 @@ static unsigned char next_loot_stagger_sec(unsigned char prev) {
 
 } // namespace
 
-LootSystem::LootSystem() : count_(0) { touch_loot_respawn_audit(); }
+LootSystem::LootSystem() : count_(0), iv6_rng_(0x6d64617au) { touch_loot_respawn_audit(); }
 
 void LootSystem::set_farmer(bool on) { g_loot_farmer = on; }
 
 void LootSystem::clear() { count_ = 0; }
 
-void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
+void LootSystem::load_from_save(const SavedLootPile* piles, int n, const float (*iv6)[8]) {
   clear();
   if (!piles || n <= 0) return;
   if (n > kMaxLootPiles) n = kMaxLootPiles;
@@ -94,7 +110,7 @@ void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
     const int ic = s.item_count > 8 ? 8 : s.item_count;
     for (int j = 0; j < ic; ++j) {
       if (s.items[j] <= 0 || s.counts[j] < 0) continue;
-      push_item(p, s.items[j], s.counts[j]);
+      push_item(p, s.items[j], s.counts[j], iv6 ? iv6[i][j] : kIv6Roll);
     }
     if (p.item_count <= 0) {
       --count_;
@@ -103,10 +119,13 @@ void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
   }
 }
 
-void LootSystem::push_item(LootPile& p, ItemId id, int n) {
+void LootSystem::push_item(LootPile& p, ItemId id, int n, float iv6) {
   if (p.item_count >= 8) return;
   p.items[p.item_count] = id;
   p.counts[p.item_count] = n;
+  // Spawn_drop: IV6 = choose(...); "param3 != -1" -> IV6 = param3 (an instance's own IV6).
+  p.iv6[p.item_count] = (iv6 == kIv6Roll) ? c2_spawn_drop_iv6(id, iv6_rng_)
+                                          : (c2_item_has_iv6(id) ? iv6 : -1.f);
   p.item_count++;
 }
 
@@ -115,12 +134,9 @@ static bool loot_unlock_allows(const WeaponUnlockState* unlocks, ItemId id) {
   return weapon_unlock_allows_loot_item(*unlocks, id);
 }
 
-static void push_item_unlock(LootPile& p, ItemId id, int n, const WeaponUnlockState* unlocks) {
+void LootSystem::push_item_unlock(LootPile& p, ItemId id, int n, const WeaponUnlockState* unlocks) {
   if (!loot_unlock_allows(unlocks, id)) return;
-  if (p.item_count >= 8) return;
-  p.items[p.item_count] = id;
-  p.counts[p.item_count] = n;
-  p.item_count++;
+  push_item(p, id, n);
 }
 
 LootPile* LootSystem::spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int table_len,
@@ -189,6 +205,15 @@ LootPile* LootSystem::spawn_item(Vec2 pos, ItemId id, int n) {
 LootPile* LootSystem::spawn_quest_reward(Vec2 pos, ItemId id, int n) {
   LootPile* p = spawn_item(pos, id, n);
   if (p) p->quest_reward_case = true;
+  return p;
+}
+
+LootPile* LootSystem::spawn_item_iv6(Vec2 pos, ItemId id, int count, float iv6) {
+  LootPile* p = spawn_item(pos, id, 1);
+  if (p && p->item_count > 0) {
+    p->counts[p->item_count - 1] = count;
+    p->iv6[p->item_count - 1] = c2_item_has_iv6(id) ? iv6 : -1.f;
+  }
   return p;
 }
 
@@ -265,6 +290,7 @@ LootPile* LootSystem::spawn_airdrop(Vec2 pos, Rng& rng, const WeaponUnlockState*
         if (!loot_unlock_allows(unlocks, p->items[i])) {
           p->items[i] = p->items[p->item_count - 1];
           p->counts[i] = p->counts[p->item_count - 1];
+          p->iv6[i] = p->iv6[p->item_count - 1];
           --p->item_count;
           --i;
         }
@@ -350,6 +376,7 @@ LootPile* LootSystem::spawn_military(Vec2 pos, Rng& rng, const WeaponUnlockState
         if (!loot_unlock_allows(unlocks, p->items[i])) {
           p->items[i] = p->items[p->item_count - 1];
           p->counts[i] = p->counts[p->item_count - 1];
+          p->iv6[i] = p->iv6[p->item_count - 1];
           --p->item_count;
           --i;
         }

@@ -168,6 +168,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_chop.cpp
     tests/test_trees.cpp
     tests/test_melee.cpp
+    tests/test_durability.cpp
   )
   target_link_libraries(mdaz_tests PRIVATE mdaz_core)
   add_custom_command(TARGET mdaz_tests POST_BUILD

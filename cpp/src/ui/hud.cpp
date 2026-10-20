@@ -4,6 +4,8 @@
 // Sprites/frames are the original C2 ones (gui_panel, gui_*_bar, gui_time_bg, minimap_*,
 // gui_item_backpack, gui_car_*, sub_menu*, item on_ground frames).
 #include "mdaz/hud.hpp"
+#include "mdaz/ui_strings.hpp"
+#include "mdaz/loot.hpp"
 #include "mdaz/weapon_unlocks.hpp"
 #include "mdaz/balance_globals.hpp"
 #include "mdaz/craft.hpp"
@@ -261,17 +263,26 @@ void draw_hotbar(IPlatform& platform, const Game& game) {
     }
     if (eq) outline(platform, sx - 1.f, kHotY - 1.f, kHotSlot + 2.f, kHotSlot + 2.f, 0.95f, 0.8f, 0.3f, 1.f);
   }
-  // Equipped name (left of hotbar) + magazine (right of hotbar).
+  // Equipped name (line 2 above the hotbar) + condition / magazine (line 1, right-aligned).
   const InvSlot& eq = game.inventory().slot(game.equipped_slot());
   if (!eq.empty())
-    text_fit(platform, x0, kHotY - kLineH, 120.f, item_name(game, eq.id), 0.9f, 0.9f, 0.75f);
+    text_fit(platform, x0, kHotY - 2.f * kLineH, 120.f, item_name(game, eq.id), 0.9f, 0.9f, 0.75f);
+  // Items_update: weapon slot texts t629 (IV2) / t728 (IV42) / t628 (IV5 melee) =
+  // int(t909 IV6) & "%", "Ruined" (ui 301) when IV6 < 0. Port: one text for the held t909
+  // weapon (weapons live in bag cells). Knives keep their condition in the cell counter.
+  char cbuf[32] = {0};
+  if (!eq.empty() && c2_item_has_iv6(eq.id) && !is_gear_item(eq.id)) {
+    if (eq.iv6 < 0.f) std::snprintf(cbuf, sizeof(cbuf), "%s", ui_string(301));
+    else std::snprintf(cbuf, sizeof(cbuf), "%d%%", static_cast<int>(eq.iv6));
+  }
   const int ammo = game.ammo_for_equipped();
   const int cap = game.mag_capacity_equipped();
-  if (ammo >= 0 || cap > 0) {
-    char abuf[32];
-    if (cap > 0) std::snprintf(abuf, sizeof(abuf), "%d/%d +%d", game.mag_rounds(), cap, ammo > 0 ? ammo : 0);
-    else std::snprintf(abuf, sizeof(abuf), "%d", ammo);
-    text_right(platform, x0 + total, kHotY - kLineH, abuf, 0.95f, 0.85f, 0.5f);
+  {
+    char abuf[64] = {0};
+    if (cap > 0) std::snprintf(abuf, sizeof(abuf), "%s%s%d/%d +%d", cbuf, cbuf[0] ? "  " : "", game.mag_rounds(), cap, ammo > 0 ? ammo : 0);
+    else if (ammo >= 0) std::snprintf(abuf, sizeof(abuf), "%s%s%d", cbuf, cbuf[0] ? "  " : "", ammo);
+    else std::snprintf(abuf, sizeof(abuf), "%s", cbuf);
+    if (abuf[0]) text_right(platform, x0 + total, kHotY - kLineH, abuf, 0.95f, 0.85f, 0.5f);
   }
 }
 
@@ -388,7 +399,21 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
   for (int r = 0; r < 4; ++r) {
     const ClothingRegion region = kRows[r];
     const bool avail = inv.clothing().region_available(region);
-    text(platform, lx, ry, kRowName[r], avail ? 0.85f : 0.4f, avail ? 0.8f : 0.4f, avail ? 0.6f : 0.38f);
+    // Items_update t493/t492/t491/t494: worn piece name (t533 @ IV15) + " (IV6%)" or "Ruined"
+    // (ui 301) when IV6 <= 0; no piece -> port row label.
+    int wpi = -1;
+    for (int i = 0; i < inv.worn_count(); ++i)
+      if (Inventory::chain_region_of(inv.worn_at(i)) == region) { wpi = i; break; }
+    if (wpi >= 0) {
+      const float wv = inv.worn_iv6(wpi);
+      char cond[24];
+      if (wv > 0.f) std::snprintf(cond, sizeof(cond), "(%g%%)", wv);   // raw IV6 (no int())
+      else std::snprintf(cond, sizeof(cond), "%s", ui_string(301));
+      text_fit(platform, lx, ry - 4.f, 50.f, item_name(game, inv.worn_at(wpi)), 0.85f, 0.8f, 0.6f);
+      text(platform, lx, ry + 5.f, cond, wv > 0.f ? 0.75f : 0.9f, wv > 0.f ? 0.75f : 0.35f, wv > 0.f ? 0.7f : 0.3f);
+    } else {
+      text(platform, lx, ry, kRowName[r], avail ? 0.85f : 0.4f, avail ? 0.8f : 0.4f, avail ? 0.6f : 0.38f);
+    }
     const int nslots = avail ? inv.clothing().region_size(region) : 1;
     for (int s = 0; s < nslots; ++s) {
       const float sx = lx + 52.f + s * (kClothSlot + 2.f);

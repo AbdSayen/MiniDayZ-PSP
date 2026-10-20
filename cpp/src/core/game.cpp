@@ -1366,7 +1366,6 @@ void Game::try_melee_attack() {
   } else {
     dmg = static_cast<float>(c2_melee_swing_dmg(iv4));
     attack_cd_ = c2_melee_reload(id);
-    // t909 IV6 <= 0 -> IV0 15 (broken): no per-item IV6 in the port (KNOWN_ISSUES).
   }
   bool crit = false;
   const int chance = c2_melee_crit_chance(iv4, player_.perks.has(Perk_MeleeAtk));
@@ -1374,6 +1373,8 @@ void Game::try_melee_attack() {
     const int roll = static_cast<int>(rng_.next_float() * 100.f + 0.5f);   // round(random(100))
     if (roll <= chance) { dmg += dmg; crit = true; }                       // IV0 += IV0, IV6
   }
+  // sid352128501177198 (after the crit events): held t909 IV6 <= 0 -> swing IV0 = 15.
+  if (iv4 != 0 && held_condition(eq) <= 0.f) dmg = 15.f;
   // Melee_2_auto IV4 1 / 5 -> IV7 (chops a trunk it collides with, game_chop.cpp).
   spawn_melee_swing(player_.facing_deg, iv4 == 1 || iv4 == 5, dmg, crit, id);
 }
@@ -1401,11 +1402,20 @@ void Game::try_ranged_attack() {
   if (!w || w->stats.is_melee) return;
   // gun_jammed_: no "jam"/"misfire" events in 1.4.1 export — flag kept for save compat only.
   gun_jammed_ = false;
+  // Firearm shooting: t909 IV6 <= 0 -> client_log 11 "Weapon ruined!" + empty_click (the shot
+  // events need IV6 > 0).
+  if (c2_item_has_iv6(eq.id) && eq.iv6 <= 0.f) {
+    show_toast(c2_log_weapon_ruined());
+    sfx2d("empty_click", 0.f);
+    attack_cd_ = 0.25f;
+    return;
+  }
 
   if (w->ammo_id > 0) {
     if (w->mag_capacity > 0) {
       // Chambered magazine
       if (mag_rounds_ <= 0) {
+        show_toast(c2_log_mag_empty());   // t909 IV3 <= 0 -> client_log 10 "Mag empty."
         sfx2d("empty_click", 0.f); // C2 empty mag: empty_click
         attack_cd_ = 0.25f;
         return;
@@ -1422,6 +1432,7 @@ void Game::try_ranged_attack() {
         }
       }
       if (!spent) {
+        show_toast(c2_log_mag_empty());   // t909 IV3 <= 0 -> client_log 10
         sfx2d("empty_click", 0.f);
         attack_cd_ = 0.2f;
         return;
@@ -1430,6 +1441,14 @@ void Game::try_ranged_attack() {
   }
 
   attack_cd_ = w->stats.fire_interval;
+  // Firearm shooting: t909 SubInstanceVar IV6 per shot (player IV1 / IV43 weapon class).
+  {
+    InvSlot& ws = inventory_.slot(equipped_slot_);
+    if (c2_item_has_iv6(ws.id)) {
+      ws.iv6 -= c2_fire_wear(ws.id);
+      if (ws.iv6 < 0.f) ws.iv6 = 0.f;   // Items_update: IV6 < 0 -> 0
+    }
+  }
   // Silencer 5.45/5.56 (80/81) only match ammo family (14/15 ≈5.45/7.62x39; 11=5.56)
   bool silenced = false;
   {
@@ -1535,11 +1554,12 @@ void Game::try_ranged_attack() {
   }
 }
 
-void Game::drop_gear_and_overflow(ItemId old, const GearBox* box) {
+void Game::drop_gear_and_overflow(ItemId old, const GearBox* box, float iv6) {
   // Drop_pants/_outerwear/_vest/_backpack: the old piece goes on the ground ("on_ground") and
-  // its container array (owned by the item instance in C2) travels with it.
+  // its container array and IV6 (owned by the item instance in C2) travel with it.
   if (old) {
-    LootPile* np = loot_.spawn_item(Vec2(player_.pos.x, player_.pos.y + 15.f), old, 1);
+    LootPile* np = loot_.spawn_item_iv6(Vec2(player_.pos.x, player_.pos.y + 15.f), old, 1,
+                                        iv6 < -1.5f ? 100.f : iv6);
     if (np && box && np->item_count > 0) np->boxes[np->item_count - 1] = *box;
   }
   drop_inventory_spill();
@@ -1549,7 +1569,7 @@ void Game::drop_inventory_spill() {
   InvSlot sp[kInventorySlots];
   const int n = inventory_.take_spill(sp, kInventorySlots);
   for (int k = 0; k < n && k < kInventorySlots; ++k)
-    loot_.spawn_item(Vec2(player_.pos.x + 8.f, player_.pos.y + 15.f), sp[k].id, sp[k].count);
+    loot_.spawn_item_iv6(Vec2(player_.pos.x + 8.f, player_.pos.y + 15.f), sp[k].id, sp[k].count, sp[k].iv6);
 }
 
 void Game::try_pickup_loot() {
@@ -1561,6 +1581,7 @@ void Game::try_pickup_loot() {
     int remaining = 0;
     ItemId olds[8];
     GearBox oldbox[8];
+    float oldiv6[8];
     int nold = 0;
     ItemId snd_pick_id = 0;
     bool gear_changed = false;
@@ -1573,14 +1594,15 @@ void Game::try_pickup_loot() {
       if (is_gear_item(p->items[j])) {
         ItemId old = 0;
         GearBox ob;
-        if (inventory_.equip_gear(p->items[j], &old, &p->boxes[j], &ob)) {
+        float oiv = -1.f;
+        if (inventory_.equip_gear(p->items[j], &old, &p->boxes[j], &ob, p->iv6[j], &oiv)) {
           taken = true;
           gear_changed = true;
           p->boxes[j].clear();
-          if (old && nold < 8) { oldbox[nold] = ob; olds[nold++] = old; }
+          if (old && nold < 8) { oldbox[nold] = ob; oldiv6[nold] = oiv; olds[nold++] = old; }
         }
       } else {
-        taken = inventory_.add_item_new_slot(p->items[j], p->counts[j]);
+        taken = inventory_.add_item_new_slot(p->items[j], p->counts[j], p->iv6[j]);
       }
       if (taken) {
         snd_pick_id = p->items[j];
@@ -1600,6 +1622,7 @@ void Game::try_pickup_loot() {
         if (p->items[j] <= 0) continue;
         p->items[w] = p->items[j];
         p->counts[w] = p->counts[j];
+        p->iv6[w] = p->iv6[j];
         if (w != j) { p->boxes[w] = p->boxes[j]; p->boxes[j].clear(); }
         ++w;
       }
@@ -1607,7 +1630,7 @@ void Game::try_pickup_loot() {
       inv_full_flash_ = 1.5f;
     }
     if (gear_changed) {
-      for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k], &oldbox[k]);
+      for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k], &oldbox[k], oldiv6[k]);
     }
     // Pick_player_item / Check_space_*: per-item pick sound (c2_pickup_sfx).
     if (snd_pick_id) sfx_play(c2_pickup_sfx(snd_pick_id, is_gear_item(snd_pick_id), sfx_rng_), player_.pos);
@@ -2046,11 +2069,12 @@ void Game::try_drop_slot(int slot_idx) {
   if (s.empty()) return;
   // C2 Drop_slot -> Spawn_drop_from_player(id, x, y, count): the whole array cell goes to the
   // ground (IV1 = count, i.e. the stack or the item state), then id/count are set to 0.
+  // A t909 item (weapon / melee / gear) carries its IV6 (Spawn_drop param3).
   const ItemId id = s.id;
   const int cnt = s.count;
+  const float iv6 = s.iv6;
   s = InvSlot();
-  LootPile* dp = loot_.spawn_item(Vec2(player_.pos.x + 12.f, player_.pos.y), id, 1);
-  if (dp && dp->item_count > 0) dp->counts[dp->item_count - 1] = cnt;
+  loot_.spawn_item_iv6(Vec2(player_.pos.x + 12.f, player_.pos.y), id, cnt, iv6);
   sfx_play(c2_drop_sfx(is_gear_item(id), sfx_rng_), player_.pos);   // Drop_* drop1/2 | geardrop1/2
 }
 
@@ -2737,6 +2761,7 @@ void Game::pack_loot_view(LootSaveView& out) const {
       s.items[k] = k < n ? p->items[k] : 0;
       const int c = k < n ? p->counts[k] : 0;
       s.counts[k] = static_cast<unsigned char>(c < 0 ? 0 : (c > 255 ? 255 : c));
+      out.iv6[out.count - 1][k] = k < n ? p->iv6[k] : -1.f;
       if (k < n && !p->boxes[k].empty() && out.box_count < LootSaveView::kMaxBoxes) {
         SavedGearBox& b = out.boxes[out.box_count++];
         b.x = p->pos.x; b.y = p->pos.y; b.item = p->items[k];
@@ -2744,6 +2769,7 @@ void Game::pack_loot_view(LootSaveView& out) const {
           b.ids[q] = p->boxes[k].s[q].id;
           const int bc = p->boxes[k].s[q].count;
           b.counts[q] = static_cast<unsigned char>(bc < 0 ? 0 : (bc > 255 ? 255 : bc));
+          out.box_iv6[out.box_count - 1][q] = p->boxes[k].s[q].iv6;
         }
       }
     }
@@ -2753,7 +2779,7 @@ void Game::pack_loot_view(LootSaveView& out) const {
 void Game::apply_loot_view(const LootSaveView& in) {
   // C2 Load_loot replaces the ground piles; saves without loot (count 0) keep the new world.
   if (in.count <= 0) return;
-  loot_.load_from_save(in.piles, in.count);
+  loot_.load_from_save(in.piles, in.count, in.iv6);
   for (int b = 0; b < in.box_count && b < LootSaveView::kMaxBoxes; ++b) {
     const SavedGearBox& sb = in.boxes[b];
     bool placed = false;
@@ -2765,6 +2791,8 @@ void Game::apply_loot_view(const LootSaveView& in) {
         for (int q = 0; q < kClothingContainerSlots; ++q) {
           p->boxes[k].s[q].id = sb.ids[q];
           p->boxes[k].s[q].count = sb.counts[q];
+          const float bv = in.box_iv6[b][q];
+          p->boxes[k].s[q].iv6 = !c2_item_has_iv6(sb.ids[q]) ? -1.f : (bv < -1.5f ? 100.f : bv);
         }
         placed = true;
         break;
@@ -4306,18 +4334,10 @@ void Game::use_equipped_item() {
             used_special = true;
             sfx_play(c2_item_activate_sfx(25), player_.pos);   // Whiskey -10 dB
           }
-        } else if (eq.id == 36) { // Cleaning kit — clear jam / maintain firearm
-          const WeaponDef* ew = find_weapon(eq.id);
-          (void)ew;
-          bool has_gun = false;
-          for (int i = 0; i < inventory_.slot_count(); ++i) {
-            const WeaponDef* w = find_weapon(inventory_.slot(i).id);
-            if (w && !w->stats.is_melee && w->mag_capacity > 0) { has_gun = true; break; }
-          }
-          if ((gun_jammed_ || has_gun) && inventory_.remove_at(equipped_slot_, 1)) {
-            gun_jammed_ = false;
-            used_special = true;
-          }
+        } else if (eq.id == 36) { // item_activate 36 (cleaning kit): t909 IV6 += 25 on IV2 / IV42
+          const int r = c2_cleaning_kit();
+          if (r != -2) inventory_.slot(equipped_slot_) = InvSlot();   // return <= 0 -> id/count = 0
+          used_special = true;
         } else if (eq.id == 35) { // Sewing kit — dry/repair clothes
           if (wetness_ > 5.f || inventory_.worn_count() > 0) {
             if (inventory_.remove_at(equipped_slot_, 1)) {
@@ -4415,6 +4435,7 @@ void Game::update(float dt) {
   drop_inventory_spill();  // wear-from-bag leftovers (Inventory::take_spill)
   LootSystem::set_farmer(player_.perks.has(Perk_Farmer));
   tick_drink(dt);
+  tick_ruined_containers();
 
   // FPS counter — average over 0.5s windows.
   fps_frames_ += 1;

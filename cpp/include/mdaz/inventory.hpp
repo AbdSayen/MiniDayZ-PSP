@@ -15,7 +15,8 @@ static const int kHotbarSlots = 4;
 struct WornSlot {
   ItemId id;
   float iv6;
-  WornSlot() : id(0), iv6(0.f) {}
+  bool cut;   // C2 Cut_arrays ran on this piece's container (array size 0)
+  WornSlot() : id(0), iv6(0.f), cut(false) {}
 };
 
 int clothing_container_slots(ItemId id);
@@ -34,12 +35,14 @@ public:
   // C2 Combine_ammo on bag slots; -1 = Combine not offered, else the C2 return value.
   int combine_slots(int src, int dst, const ItemDatabase& db);
   // C2 Check_space_*: write id+count into ONE empty slot within capacity (no stack merge).
-  bool add_item_new_slot(ItemId id, int count);
+  // iv6: the instance's t909 IV6 (-2 = C2 layout default: 100 for t909 items, else -1).
+  bool add_item_new_slot(ItemId id, int count, float iv6 = -2.f);
   // C2 Pick_player_item: gear (ids 250..499) is worn straight from the ground; the piece
   // previously worn in that region is returned in *old_out (C2 Drop_* puts it on the ground).
   // C2 Pick_player_item: the new piece brings its own container array (*new_box, may be 0 =
   // empty); the old piece's array is returned in *old_box (Drop_* moves it with the piece).
-  bool equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box = 0, GearBox* old_box = 0);
+  bool equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box = 0, GearBox* old_box = 0,
+                  float new_iv6 = -2.f, float* old_iv6 = 0);
   bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db, Rng* rng = 0);
   // Equip clothing: moves it out of the bag into its worn region (swap with old piece).
   bool wear_clothing(int slot, const ItemDatabase& db);
@@ -52,6 +55,12 @@ public:
   void apply_hit_armor_wear(class Rng& rng, bool bullet_hit, bool heavy_melee_wear,
                             bool skip_vest_slot_if_gasmask);
   float worn_iv6(int i) const;
+  // C2 SubInstanceVar IV6 on a worn piece (clamped at 0); returns false if i is not worn.
+  bool set_worn_iv6(int i, float v);
+  // C2 Cut_arrays(region): the worn piece's array is cleared and sized 0.
+  void cut_region(ClothingRegion r);
+  // Check_space chain region of a worn piece (pants/outerwear/vest/backpack), else Count.
+  static ClothingRegion chain_region_of(ItemId id);
 
   ClothingContainers& clothing() { return clothing_; }
   const ClothingContainers& clothing() const { return clothing_; }
@@ -73,7 +82,7 @@ public:
 private:
   static const int kMaxWorn = 6;
   void resync_sizes();
-  void spill(ItemId id, int count);
+  void spill(ItemId id, int count, float iv6 = -2.f);
   InvSlot base_;          // C2 t381/t382 (1 slot)
   InvSlot spill_[kInventorySlots];
   int spill_n_;

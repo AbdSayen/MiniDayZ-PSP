@@ -1,4 +1,5 @@
 #include "mdaz/save_game.hpp"
+#include "mdaz/loot.hpp"
 
 #include <cstring>
 
@@ -128,7 +129,10 @@ void pack_loot(const LootSaveView* loot, SaveBlob& out) {
   out.gear_box_count = 0;
   if (loot) {
     const int nb = loot->box_count < LootSaveView::kMaxBoxes ? loot->box_count : LootSaveView::kMaxBoxes;
-    for (int i = 0; i < nb; ++i) out.gear_boxes[out.gear_box_count++] = loot->boxes[i];
+    for (int i = 0; i < nb; ++i) {
+      for (int k = 0; k < kClothingContainerSlots; ++k) out.gear_box_iv6[out.gear_box_count][k] = loot->box_iv6[i][k];
+      out.gear_boxes[out.gear_box_count++] = loot->boxes[i];
+    }
   }
   out.loot_count = 0;
   out.loot_ext_count = 0;
@@ -137,11 +141,15 @@ void pack_loot(const LootSaveView* loot, SaveBlob& out) {
   const int n = loot->count < LootSaveView::kMax ? loot->count : LootSaveView::kMax;
   for (int i = 0; i < n; ++i) {
     if (loot->piles[i].item_count <= 0) continue;
+    const int row = out.loot_count + out.loot_ext_count;
     if (out.loot_count < LootSaveView::kLegacyMax) {
       out.loot_piles[out.loot_count++] = loot->piles[i];
     } else if (out.loot_ext_count < LootSaveView::kExtMax) {
       out.loot_ext_piles[out.loot_ext_count++] = loot->piles[i];
+    } else {
+      continue;
     }
+    for (int k = 0; k < 8; ++k) out.loot_iv6[row][k] = loot->iv6[i][k];
   }
 }
 
@@ -151,13 +159,18 @@ void unpack_loot(const SaveBlob& in, LootSaveView* loot) {
   loot->box_count = 0;
   if (in.version >= 21) {
     const int nb = in.gear_box_count < LootSaveView::kMaxBoxes ? in.gear_box_count : LootSaveView::kMaxBoxes;
-    for (int i = 0; i < nb; ++i) loot->boxes[loot->box_count++] = in.gear_boxes[i];
+    for (int i = 0; i < nb; ++i) {
+      for (int k = 0; k < kClothingContainerSlots; ++k)
+        loot->box_iv6[loot->box_count][k] = in.version >= 22 ? in.gear_box_iv6[i][k] : kIv6Roll;
+      loot->boxes[loot->box_count++] = in.gear_boxes[i];
+    }
   }
   if (in.version < 14) return;
   const int n0 = in.loot_count < LootSaveView::kLegacyMax ? in.loot_count : LootSaveView::kLegacyMax;
   for (int i = 0; i < n0; ++i) {
     if (in.loot_piles[i].item_count <= 0) continue;
     if (loot->count >= LootSaveView::kMax) break;
+    for (int k = 0; k < 8; ++k) loot->iv6[loot->count][k] = in.version >= 22 ? in.loot_iv6[i][k] : kIv6Roll;
     loot->piles[loot->count++] = in.loot_piles[i];
   }
   if (in.version >= 18) {
@@ -166,6 +179,8 @@ void unpack_loot(const SaveBlob& in, LootSaveView* loot) {
     for (int i = 0; i < ne; ++i) {
       if (in.loot_ext_piles[i].item_count <= 0) continue;
       if (loot->count >= LootSaveView::kMax) break;
+      for (int k = 0; k < 8; ++k)
+        loot->iv6[loot->count][k] = in.version >= 22 ? in.loot_iv6[n0 + i][k] : kIv6Roll;
       loot->piles[loot->count++] = in.loot_ext_piles[i];
     }
   }
@@ -204,6 +219,7 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   for (int i = 0; i < kInventorySlots; ++i) {
     out.inv_ids[i] = inv.slot(i).id;
     out.inv_counts[i] = inv.slot(i).count;
+    out.inv_iv6[i] = inv.slot(i).iv6;
   }
   out.worn_count = inv.worn_count();
   if (out.worn_count > 6) out.worn_count = 6;
@@ -315,6 +331,8 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   for (int i = 0; i < kInventorySlots && i < inv.capacity(); ++i) {
     inv.slot(i).id = in.inv_ids[i];
     inv.slot(i).count = in.inv_counts[i];
+    // v22 IV6; older saves: weapons/gear in the bag get the C2 layout default 100.
+    inv.slot(i).iv6 = in.version >= 22 ? in.inv_iv6[i] : (c2_item_has_iv6(in.inv_ids[i]) ? 100.f : -1.f);
   }
   if (in.version >= 17 && in.version <= 20) {
     // v17-v20 kept a separate 4x4 "IV93" stash (not C2); fold it into free container cells.

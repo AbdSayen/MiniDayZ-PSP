@@ -48,6 +48,10 @@ struct FireSaveView;
 int c2_melee_iv4(ItemId id);                   // player_collision_base IV4 for an equipped melee item
 float c2_melee_reload(ItemId id);              // t909 IV4 Reloading_time_melee (0 = fist / not melee)
 int c2_melee_swing_dmg(int iv4);               // melee_swing_general IV0
+float c2_fire_wear(ItemId id);                  // Firearm shooting: t909 IV6 -= N per shot
+float c2_melee_npc_wear(ItemId id);             // melee NPC hit: t909 IV6 -= N by IV15
+const char* c2_log_weapon_ruined();             // l_eng_log 11
+const char* c2_log_mag_empty();                 // l_eng_log 10
 int c2_melee_crit_chance(int iv4, bool perk);  // round(random(100)) <= N, -1 = no crit event
 
 class Game {
@@ -611,7 +615,16 @@ private:
   void try_throw_projectile();
   void try_bunker_enter_exit();
   void spawn_bunker_zeds(Vec2 at);   // C2 Bunker_spawn_zeds(x, y)
-  void drop_gear_and_overflow(ItemId old, const GearBox* box);
+  void drop_gear_and_overflow(ItemId old, const GearBox* box, float iv6 = -2.f);
+  // Condition of a held item: t909 IV6, knives 42-44 (knife_any IV6 = array Condition) -> count;
+  // 100 for items without a condition.
+  float held_condition(const InvSlot& s) const;
+  // Melee swing wear on the held melee (player IV5 t909) if it is still `weapon`.
+  void wear_held_melee(ItemId weapon, float amount);
+  // item_activate 36 (cleaning kit) on the IV2 / IV42 firearms; returns the C2 caller code.
+  int c2_cleaning_kit();
+  // Items_update: worn container IV6 <= 0 -> Drop_slot its cells + Cut_arrays (tear_fabric).
+  void tick_ruined_containers();
   void drop_inventory_spill();
   bool bullet_hits_obstacle(Vec2 a, Vec2 b) const;
   void install_los();
@@ -710,7 +723,8 @@ public:
   bool harness_fence_try(int sticks);
   void harness_perks(int step);
   void harness_gearbox(int step);
-  void harness_bottle(int step);   // item 10: XP + perk menu shots
+  void harness_bottle(int step);
+  void harness_durability(int step);   // item 11c shots   // item 10: XP + perk menu shots
   const PerkState& perks() const;
   int perk_menu_sel() const { return perk_sel_; }
   bool perk_menu_open() const { return show_perks_; }

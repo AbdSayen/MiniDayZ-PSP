@@ -100,7 +100,7 @@ int test_save() {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 21) {
+  if (blob.version != 22) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -326,7 +326,7 @@ int test_save() {
                                            0, 0, 0, &ex19) ||
         !mdaz::SaveSystem::read_from_buffer(blob19, p4, inv4, w4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                             &ex19r) ||
-        blob19.version != 21 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
+        blob19.version != 22 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
         ex19r.ach_gta != 7) {
       std::printf("FAIL v19 trunks/ach_gta roundtrip\n");
       ++fail;

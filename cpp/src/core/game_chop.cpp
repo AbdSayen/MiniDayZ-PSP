@@ -265,6 +265,10 @@ void Game::update_melee_swings(float dt) {
       const float q = s.dmg * 0.25f;
       bool hit_npc = false;
       const Vec2 s0 = s.pos, s1(s.pos.x + cx * 10.f, s.pos.y + cy * 10.f);
+      // C2 t910 OnCollision (IV1 = player, IV5 melee): t909 PickByUID player IV5 (held melee)
+      // IV6 -= wear; zeds 941 / tank 847 / wolf 469 / puncher 540 by IV15, screamer 710 -1;
+      // other NPC types have no IV6 event. IV6 < 0 -> 0, then Items_update.
+      float wear = 0.f;
       for (Zombie* z = zombies_.begin(); z != zombies_.end() && !hit_npc; ++z) {
         if (!z->alive) continue;
         const float hw = (z->type == Zed_Tank) ? 20.f : 15.f;
@@ -275,6 +279,7 @@ void Game::update_melee_swings(float dt) {
         hurt_zombie(*z, d, s.weapon);
         xp_src_ = 0;
         hit_npc = true;
+        wear = z->type == Zed_Screamer ? 1.f : c2_melee_npc_wear(s.weapon);
       }
       for (int ai = 0; ai < animals_.count() && !hit_npc; ++ai) {
         Animal* a = animals_.at(ai);
@@ -282,20 +287,23 @@ void Game::update_melee_swings(float dt) {
         const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
         spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
         xp_src_ = 2; xp_src_wpn_ = s.weapon;
+        const bool wolf = a->type == Animal_Wolf;
         hurt_animal(*a, d);
         xp_src_ = 0;
         hit_npc = true;
+        if (wolf) wear = c2_melee_npc_wear(s.weapon);
       }
       for (Bandit* b = bandits_.begin(); b != bandits_.end() && !hit_npc; ++b) {
         if (!b->alive || !seg_hits_box(s0, s1, b->pos.x - 15.f, b->pos.y - 15.f, b->pos.x + 15.f, b->pos.y + 15.f)) continue;
         const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
         xp_src_ = 2; xp_src_wpn_ = s.weapon;
+        const bool puncher = b->c2_obj == 540;
         hurt_bandit(*b, d);
         xp_src_ = 0;
         hit_npc = true;
+        if (puncher) wear = c2_melee_npc_wear(s.weapon);
       }
-      // t909 IV6 -= 0.2 / 0.5 / 1 by IV15 (durability): port has no per-item IV6 (KNOWN_ISSUES).
-      if (hit_npc) { ++melee_hits_; s.alive = false; continue; }
+      if (hit_npc) { wear_held_melee(s.weapon, wear); ++melee_hits_; s.alive = false; continue; }
     }
     if (in_bunker_) continue;
     // OnCollision obst_base: the 10 px strip ahead of the origin against the trunk triangles.
@@ -312,7 +320,9 @@ void Game::update_melee_swings(float dt) {
       // IV7 (chop) branch: frame 10 obst overlapping the tree with IV0 > 0; Else: hard_ground.
       if (s.chop && tree_frame_[hit] == 0 && tree_hp_[hit] > 0) chop_tree_hit(hit, s.pos);
       else swing_hard_ground(s.pos);
-      // t909 IV6 -= 1 (durability) + Items_update: port has no per-item IV6 (KNOWN_ISSUES).
+      // IV7 branch: t909 (player IV5) IV6 -= 1 + Items_update on any obst_base hit (the Else
+      // branch of a plain swing has no IV6 event).
+      if (s.chop) wear_held_melee(s.weapon, 1.f);
       spawn_fx(Fx_Hit, s.pos, 0.f, 0.2f);      // test_bullet_hit + Destroy
       s.alive = false;
       continue;
@@ -321,6 +331,7 @@ void Game::update_melee_swings(float dt) {
     // Player_Hear_radius: the swing is always within 20 px of the player) + Destroy.
     if (building_blocks(s.pos, Vec2(s.pos.x + cx * 10.f, s.pos.y + cy * 10.f))) {
       swing_hard_ground(s.pos);
+      wear_held_melee(s.weapon, 1.f);   // IV1 = player, IV5: t909 IV6 -= 1, < 0 -> 0
       spawn_fx(Fx_Hit, s.pos, 0.f, 0.2f);
       s.alive = false;
     }

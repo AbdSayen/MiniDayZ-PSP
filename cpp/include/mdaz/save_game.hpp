@@ -86,7 +86,13 @@ struct LootSaveView {
   static const int kMaxBoxes = 32;
   int box_count;
   SavedGearBox boxes[kMaxBoxes];
-  LootSaveView() : count(0), box_count(0) {}
+  // v22 - C2 t909 IV6 of each pile item (row i = piles[i]; -1 = none)
+  float iv6[kMax][8];
+  float box_iv6[kMaxBoxes][kClothingContainerSlots];   // v22: IV6 of items inside boxes[b]
+  LootSaveView() : count(0), box_count(0) {
+    for (int i = 0; i < kMax; ++i) for (int k = 0; k < 8; ++k) iv6[i][k] = -1.f;
+    for (int i = 0; i < kMaxBoxes; ++i) for (int k = 0; k < kClothingContainerSlots; ++k) box_iv6[i][k] = -1.f;
+  }
 };
 
 struct SaveBlob {
@@ -175,6 +181,11 @@ struct SaveBlob {
   // v21 - gear container arrays on the ground (LootSaveView::boxes)
   int gear_box_count;
   SavedGearBox gear_boxes[LootSaveView::kMaxBoxes];
+  // v22 - C2 t909 IV6 (weapon / melee / gear condition) of bag cells and ground pile items
+  // (pile rows in pack order: loot_piles then loot_ext_piles).
+  float inv_iv6[kInventorySlots];
+  float loot_iv6[LootSaveView::kMax][8];
+  float gear_box_iv6[LootSaveView::kMaxBoxes][kClothingContainerSlots];
 };
 
 struct WorldExtras {
@@ -197,7 +208,7 @@ struct WorldExtras {
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 21;
+  static const int kVersion = 22;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,

@@ -29,6 +29,7 @@ struct LootPile {
   Vec2 pos;
   ItemId items[8];
   int counts[8];
+  float iv6[8];          // C2 t909 IV6 of each item (-1 = no t909 instance)
   GearBox boxes[8];      // C2: container array of a gear item (travels with Drop_*)
   int item_count;
   bool active;
@@ -42,6 +43,11 @@ struct LootPile {
 static const int kMaxLootPiles = 96;
 
 int c2_spawn_drop_iv1(ItemId id, Rng& rng, bool farmer);
+// C2 Spawn_drop IV6: true for ids whose Spawn_drop branch sets IV6 (t909 weapons/melee/gear).
+bool c2_item_has_iv6(ItemId id);
+// Spawn_drop IV6 roll (choose list); -1 for ids without a t909 instance.
+float c2_spawn_drop_iv6(ItemId id, Rng& rng);
+static const float kIv6Roll = -2.f;   // push_item: roll the Spawn_drop IV6
 
 class LootSystem {
 public:
@@ -66,12 +72,14 @@ public:
   LootPile* spawn_quest_reward(Vec2 pos, ItemId id, int count);
   // C2 Spawn_drop_from_player — item id + count at player position (obj172 XY).
   LootPile* spawn_drop_from_player(Vec2 player_pos, ItemId id, int count);
+  // Same pile, carrying the dropped instance's IV6 (Spawn_drop param3 != -1).
+  LootPile* spawn_item_iv6(Vec2 pos, ItemId id, int count, float iv6);
   LootPile* spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int table_len, int min_n, int max_n);
   int count() const { return count_; }
   LootPile* at(int i) { return &piles_[i]; }
   const LootPile* at(int i) const { return &piles_[i]; }
   // Restore piles from save (Load_loot subset); clears existing piles first.
-  void load_from_save(const struct SavedLootPile* piles, int n);
+  void load_from_save(const struct SavedLootPile* piles, int n, const float (*iv6)[8] = 0);
   // Per-pile LOOT_respawn stagger (obj209 anim 3/4/5 → wait 3/4/5s then Trigger_spawn).
   void schedule_respawn(LootPile& p);
   void tick_respawn(float dt, Rng& rng);
@@ -79,7 +87,9 @@ public:
 private:
   LootPile piles_[kMaxLootPiles];
   int count_;
-  void push_item(LootPile& p, ItemId id, int n);
+  void push_item(LootPile& p, ItemId id, int n, float iv6 = kIv6Roll);
+  void push_item_unlock(LootPile& p, ItemId id, int n, const struct WeaponUnlockState* unlocks);
+  Rng iv6_rng_;   // Spawn_drop IV6 choose() (C2 Math.random; separate stream)
 };
 
 } // namespace mdaz

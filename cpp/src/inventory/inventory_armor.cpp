@@ -61,6 +61,12 @@ void subtract_iv6(WornSlot& w, float amount) {
 
 } // namespace
 
+bool Inventory::set_worn_iv6(int i, float v) {
+  if (i < 0 || i >= worn_count_) return false;
+  worn_[i].iv6 = v < 0.f ? 0.f : v;
+  return true;
+}
+
 float Inventory::worn_iv6(int i) const {
   if (i < 0 || i >= worn_count_) return 0.f;
   return worn_[i].iv6;
@@ -73,8 +79,9 @@ void Inventory::restore_worn_iv6(const ItemId* ids, const float* iv6, int count)
   for (int i = 0; i < count; ++i) {
     if (ids[i] <= 0) continue;
     worn_[worn_count_].id = ids[i];
+    worn_[worn_count_].cut = false;
     worn_[worn_count_].iv6 =
-        (iv6 && iv6[i] > 0.f) ? iv6[i] : clothing_iv6_max(ids[i]);
+        (iv6 && iv6[i] >= 0.f) ? iv6[i] : clothing_iv6_max(ids[i]);   // 0 = ruined, kept
     ++worn_count_;
   }
   clothing_.clear();

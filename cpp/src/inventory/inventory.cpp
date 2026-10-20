@@ -1,4 +1,5 @@
 #include "mdaz/inventory.hpp"
+#include "mdaz/loot.hpp"
 
 #include "mdaz/combat.hpp"
 
@@ -21,14 +22,27 @@ void Inventory::resync_sizes() {
   for (int wi = 0; wi < worn_count_; ++wi) {
     const ClothingRegion r = chain_region(worn_[wi].id);
     if (r >= 0 && r < ClothingRegion_Count)
-      clothing_.set_region_size(r, clothing_container_slots(worn_[wi].id));
+      clothing_.set_region_size(r, worn_[wi].cut ? 0 : clothing_container_slots(worn_[wi].id));
   }
 }
 
-void Inventory::spill(ItemId id, int count) {
+ClothingRegion Inventory::chain_region_of(ItemId id) { return chain_region(id); }
+
+void Inventory::cut_region(ClothingRegion r) {
+  for (int wi = 0; wi < worn_count_; ++wi) {
+    if (chain_region(worn_[wi].id) != r) continue;
+    GearBox gone;
+    clothing_.take_box(r, &gone);   // Arr.Clear
+    worn_[wi].cut = true;           // SetSize 0
+  }
+  resync_sizes();
+}
+
+void Inventory::spill(ItemId id, int count, float iv6) {
   if (id <= 0 || count < 0 || spill_n_ >= kInventorySlots) return;
   spill_[spill_n_].id = id;
   spill_[spill_n_].count = count;
+  spill_[spill_n_].iv6 = c2_item_has_iv6(id) ? (iv6 < -1.5f ? 100.f : iv6) : -1.f;
   ++spill_n_;
 }
 
@@ -147,17 +161,25 @@ int Inventory::combine_slots(int src, int dst, const ItemDatabase& db) {
 
 bool is_gear_item(ItemId id) { return id >= 250 && id < 500; }
 
-bool Inventory::add_item_new_slot(ItemId id, int count) {
+bool Inventory::add_item_new_slot(ItemId id, int count, float iv6) {
   if (id <= 0 || count < 0) return false;   // count 0 = empty bottle/canteen state
   const int cap = capacity();
   for (int i = 0; i < cap; ++i) {
-    if (slot(i).empty()) { slot(i).id = id; slot(i).count = count; return true; }
+    if (slot(i).empty()) {
+      slot(i).id = id;
+      slot(i).count = count;
+      // t909 instance: its own IV6, or the layout default IV6 = 100 (every t909 type).
+      slot(i).iv6 = !c2_item_has_iv6(id) ? -1.f : (iv6 < -1.5f ? 100.f : iv6);
+      return true;
+    }
   }
   return false;
 }
 
-bool Inventory::equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box, GearBox* old_box) {
+bool Inventory::equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box, GearBox* old_box,
+                           float new_iv6, float* old_iv6) {
   if (old_out) *old_out = 0;
+  if (old_iv6) *old_iv6 = -1.f;
   if (old_box) old_box->clear();
   if (!is_gear_item(id)) return false;
   const int reg = clothing_region(id);
@@ -167,8 +189,9 @@ bool Inventory::equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box, G
   if (wi < 0) {
     if (worn_count_ >= kMaxWorn) return false;
     wi = worn_count_++;
-  } else if (old_out) {
-    *old_out = worn_[wi].id;
+  } else {
+    if (old_out) *old_out = worn_[wi].id;
+    if (old_iv6) *old_iv6 = worn_[wi].iv6;
   }
   const ClothingRegion cr = chain_region(id);
   if (cr >= 0 && cr < ClothingRegion_Count) {
@@ -178,7 +201,8 @@ bool Inventory::equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box, G
     clothing_.put_box(cr, new_box);
   }
   worn_[wi].id = id;
-  worn_[wi].iv6 = clothing_iv6_max(id);
+  worn_[wi].cut = false;
+  worn_[wi].iv6 = new_iv6 < -1.5f ? clothing_iv6_max(id) : (new_iv6 < 0.f ? 0.f : new_iv6);
   resync_sizes();
   return true;
 }
@@ -187,10 +211,7 @@ bool Inventory::remove_at(int slot_i, int count) {
   if (slot_i < 0 || slot_i >= kInventorySlots) return false;
   if (slot(slot_i).empty() || slot(slot_i).count < count) return false;
   slot(slot_i).count -= count;
-  if (slot(slot_i).count <= 0) {
-    slot(slot_i).id = 0;
-    slot(slot_i).count = 0;
-  }
+  if (slot(slot_i).count <= 0) slot(slot_i) = InvSlot();
   return true;
 }
 
@@ -286,6 +307,7 @@ void Inventory::restore_worn(const ItemId* ids, int count) {
   for (int i = 0; i < count; ++i) {
     if (ids[i] > 0) {
       worn_[worn_count_].id = ids[i];
+      worn_[worn_count_].cut = false;
       worn_[worn_count_].iv6 = clothing_iv6_max(ids[i]);
       ++worn_count_;
     }
@@ -319,7 +341,9 @@ bool Inventory::wear_clothing(int slot_i, const ItemDatabase& db) {
   // goes back into the vacated slot (swap). Port-only path (C2 wears gear from the ground via
   // Pick_player_item); the old piece's pockets cannot live in a bag slot, so they spill.
   ItemId old_id = 0;
-  if (wi >= 0) old_id = worn_[wi].id; else wi = worn_count_++;
+  float old_iv6 = -1.f;
+  const float new_iv6 = slot(slot_i).iv6;
+  if (wi >= 0) { old_id = worn_[wi].id; old_iv6 = worn_[wi].iv6; } else wi = worn_count_++;
   if (slot(slot_i).count > 1) slot(slot_i).count -= 1;
   else slot(slot_i) = InvSlot();
   const ClothingRegion cr = chain_region(nid);
@@ -327,13 +351,14 @@ bool Inventory::wear_clothing(int slot_i, const ItemDatabase& db) {
     GearBox old;
     clothing_.take_box(cr, &old);
     for (int k = 0; k < kClothingContainerSlots; ++k)
-      if (!old.s[k].empty()) spill(old.s[k].id, old.s[k].count);
+      if (!old.s[k].empty()) spill(old.s[k].id, old.s[k].count, old.s[k].iv6);
   }
   worn_[wi].id = nid;
-  worn_[wi].iv6 = clothing_iv6_max(nid);
+  worn_[wi].cut = false;
+  worn_[wi].iv6 = new_iv6 >= 0.f ? new_iv6 : clothing_iv6_max(nid);   // the instance's IV6
   resync_sizes();
   (void)db;
-  if (old_id && !add_item_new_slot(old_id, 1)) spill(old_id, 1);
+  if (old_id && !add_item_new_slot(old_id, 1, old_iv6)) spill(old_id, 1, old_iv6);
   return true;
 }
 

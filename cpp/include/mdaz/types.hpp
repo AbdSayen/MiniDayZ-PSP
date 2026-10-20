@@ -11,7 +11,10 @@ typedef std::uint32_t EntityId;
 struct InvSlot {
   ItemId id;
   int count;
-  InvSlot() : id(0), count(0) {}
+  // C2 t909 IV6 (condition 0..100) of a weapon / melee / gear instance that sits in this cell
+  // (port: such items live in bag cells, see KNOWN_ISSUES); -1 = item has no t909 instance.
+  float iv6;
+  InvSlot() : id(0), count(0), iv6(-1.f) {}
   // C2 arrays: a slot is free iff its id is 0 (Contains(0)); count 0 is a valid item state
   // (empty bottle / canteen: item_activate return "zero").
   bool empty() const { return id == 0; }

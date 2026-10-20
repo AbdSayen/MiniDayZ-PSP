@@ -265,14 +265,10 @@ float roll_bullet_damage(float base_damage, Rng& rng) {
 }
 
 float clothing_iv6_max(ItemId id) {
-  if (id >= 400 && id <= 405) return 100.f;
-  if (id == 251 || id == 263 || id == 400 || id == 404) return 100.f;
-  if (id == 252 || id == 253 || id == 259 || id == 262 || id == 265 || id == 267) return 80.f;
-  if ((id >= 350 && id <= 365) || id == 353) return 80.f;
-  if (id >= 300 && id <= 306) return 70.f;
-  if (id == 454 || id == 455 || (id >= 450 && id <= 457)) return 60.f;
-  if (id == 250 || id == 83 || id == 260) return 40.f;
-  return 50.f;
+  // data.js layouts: every t909 type (weapons, melee, all gear) has instance IV6 default 100;
+  // the former per-class 40..100 table was invented.
+  (void)id;
+  return 100.f;
 }
 
 bool roll_player_melee_def_block(Rng& rng, MeleeDefPercentTier tier, float perk_meleedef) {

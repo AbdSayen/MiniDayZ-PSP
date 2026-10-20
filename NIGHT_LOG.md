@@ -117,3 +117,8 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 - По data.js разобран Spawn_drop (198 веток). IV1 хранит состояние предмета, у оружия есть IV6/IV3.
 - item_activate и item_activate2 для 54/55 перенесены дословно. Строки логов взяты из l_eng_log.xml.
 - Прочность IV6 и drag-and-drop — в следующем коммите (11c/11d).
+
+## 2026-10-20 — пункт 11c
+- IV6 декодирован по data.js (Firearm shooting, Melee_2_auto, item_activate 36, Items_update, Spawn_drop). Значения — из дампа t909 (iv6.txt).
+- Выдуманная таблица clothing_iv6_max убрана.
+- Дальше 11d: drag-and-drop курсором (GUI_Drag) и Combine из кучи.
