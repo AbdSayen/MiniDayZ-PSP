@@ -2228,15 +2228,14 @@ void Game::apply_fires_view(const FireSaveView& in) {
 // deploys obst_barricade (solid, no timer; only zed_tank / vehicles break it) at player.x + 50.
 bool Game::try_build_fence(int variant) {
   if (variant != 1 && variant != 2) return false;
-  // C2 checks one stick stack >= 5; the port item db has no stick stack size yet (sticks
-  // take one slot each), so the same 5 are counted over all slots (craft_build_fence*_can).
   int wood = -1;
   for (int i = 0; i < inventory_.slot_count(); ++i) {
     const InvSlot& sl = inventory_.slot(i);
     if (sl.id == 50 && sl.count > 0 && wood < 0) wood = i;
   }
+  const int sticks = fence_stick_slot(inventory_);   // one stack >= required_count (5)
   const bool can = (variant == 1) ? craft_build_fence1_can(inventory_) : craft_build_fence2_can(inventory_);
-  if (!can || wood < 0) return false;
+  if (!can || wood < 0 || sticks < 0) return false;
   PlaceTrap* t = 0;
   for (int i = 0; i < trap_count_; ++i) {
     if (!traps_[i].active) { t = &traps_[i]; break; }
@@ -2251,13 +2250,7 @@ bool Game::try_build_fence(int variant) {
   t->active = true;
   t->sprung = false;
   inventory_.remove_at(wood, inventory_.slot(wood).count);
-  int left = 5;
-  for (int i = 0; i < inventory_.slot_count() && left > 0; ++i) {
-    if (inventory_.slot(i).id != 38) continue;
-    const int take = inventory_.slot(i).count < left ? inventory_.slot(i).count : left;
-    inventory_.remove_at(i, take);
-    left -= take;
-  }
+  inventory_.remove_at(sticks, 5);   // SetX(X - required_count); 0 -> slot cleared
   return true;
 }
 

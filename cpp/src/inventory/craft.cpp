@@ -135,16 +135,25 @@ bool craft_any_possible(const Inventory& inv, bool at_fire) {
   return false;
 }
 
+// C2 build_fence1/2: VAR required_count = 5; the ONE stick (38) slot the woodpile was dropped
+// on must hold >= 5 (else client_log 64). PSP adaptation (no drag): the first bag slot with
+// sticks >= 5 is used. Returns its index or -1.
+int fence_stick_slot(const Inventory& inv) {
+  for (int i = 0; i < inv.slot_count(); ++i)
+    if (inv.slot(i).id == 38 && inv.slot(i).count >= 5) return i;
+  return -1;
+}
+
 bool craft_build_fence1_can(const Inventory& inv) {
   (void)kC2_Craft_32;
   (void)kC2_build_fence1;
-  return count_of(inv, 38) >= 5;
+  return fence_stick_slot(inv) >= 0;
 }
 
 bool craft_build_fence2_can(const Inventory& inv) {
   (void)kC2_Craft_31;
   (void)kC2_build_fence2;
-  return count_of(inv, 38) >= 5 && count_of(inv, 50) >= 1;
+  return fence_stick_slot(inv) >= 0 && count_of(inv, 50) >= 1;
 }
 
 } // namespace mdaz

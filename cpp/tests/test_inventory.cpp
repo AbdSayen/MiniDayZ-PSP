@@ -1,3 +1,4 @@
+#include "mdaz/craft.hpp"
 #include "mdaz/ammo.hpp"
 #include "mdaz/inventory.hpp"
 #include "mdaz/inventory_ui.hpp"
@@ -222,6 +223,20 @@ int test_inventory() {
     ok = ok && ci.combine_slots(1, 2, sdb) == -1;                      // different ids
     if (!ok) { std::printf("FAIL item9 Combine_ammo\n"); ++fail; }
     else std::printf("OK   item9 Combine_ammo stacks/overflow/no-merge pickup\n");
+  }
+
+  {
+    // build_fence: VAR required_count = 5 on ONE stick slot (not a sum over slots).
+    mdaz::Inventory fi;
+    const mdaz::ItemId fw[2] = {350, 300};
+    fi.restore_worn(fw, 2);
+    fi.add_item_new_slot(38, 3); fi.add_item_new_slot(38, 2); fi.add_item_new_slot(50, 1);
+    bool ok = !mdaz::craft_build_fence1_can(fi) && mdaz::fence_stick_slot(fi) == -1;
+    fi.remove_at(1, 2); fi.slot_count();
+    fi.remove_at(0, 3); fi.add_item_new_slot(38, 5);
+    ok = ok && mdaz::fence_stick_slot(fi) == 0 && mdaz::craft_build_fence2_can(fi);
+    if (!ok) { std::printf("FAIL fence one-stack-of-5\n"); ++fail; }
+    else std::printf("OK   fence needs one stick stack >= 5 (3+2 refused)\n");
   }
 
   {

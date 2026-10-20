@@ -96,3 +96,6 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 ### 2026-10-20 — пункт 9 (стаки)
 - Дамп: Combine_ammo + Call_sub_menu_craft + Check_space_* (c2dump full). Таблица одинакова во всех 5 ветках контейнеров. Порт: c2_combine_stack / c2_combine_menu, Inventory::combine_slots, Check_space без слияния, удалён ×2 патронташа, UI R+Cross.
 - KNOWN_ISSUES: устаревшая запись о том, что у воды нет коллизии, исправлена (пункт 8); записи 57/177 обновлены.
+
+### 2026-10-20 — пункт 9b
+- Подсказка Combine в нижней панели; build_fence использует fence_stick_slot (один стак ≥ 5), как в C2 (sid build_fence1, required_count).

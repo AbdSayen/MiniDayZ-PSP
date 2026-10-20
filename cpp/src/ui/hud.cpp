@@ -460,6 +460,7 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Use/Wear"};
     h[n++] = Hint{Btn_None, Btn_Triangle, "C", "To hand"};
     h[n++] = Hint{Btn_None, Btn_Square, "R", "Drop"};
+    h[n++] = Hint{Btn_R, Btn_Cross, "F", ui.combine_src >= 0 ? "Combine here" : "Combine"};  // PSP adaptation of C2 drag + "Combine"
   }
   h[n++] = Hint{Btn_None, Btn_Circle, "ESC", "Close"};
   hint_bar(platform, h, n);
