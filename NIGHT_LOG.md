@@ -92,3 +92,7 @@ Buildings_shadows для NPC в игре нет (только Menu_Events). Сд
 
 ### 8 (вода)
 water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
+
+### 2026-10-20 — пункт 9 (стаки)
+- Дамп: Combine_ammo + Call_sub_menu_craft + Check_space_* (c2dump full). Таблица одинакова во всех 5 ветках контейнеров. Порт: c2_combine_stack / c2_combine_menu, Inventory::combine_slots, Check_space без слияния, удалён ×2 патронташа, UI R+Cross.
+- KNOWN_ISSUES: устаревшая запись о том, что у воды нет коллизии, исправлена (пункт 8); записи 57/177 обновлены.

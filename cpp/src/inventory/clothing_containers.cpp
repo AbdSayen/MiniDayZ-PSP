@@ -13,10 +13,6 @@ int slot_index(ClothingRegion r, int i) {
   return static_cast<int>(r) * kClothingContainerSlots + i;
 }
 
-int stack_max_for_cloth(const ItemDatabase& db, ItemId id) {
-  const ItemDef* def = db.find(id);
-  return def ? def->stack_max : 1;
-}
 
 } // namespace
 
@@ -64,50 +60,22 @@ bool ClothingContainers::region_available(ClothingRegion r) const {
   return gates_[r] > 0;
 }
 
+// C2 Check_space_pants/outerwear/vest/backpack: Contains(0) -> SetX(IndexOf(0)); no merge.
 bool ClothingContainers::can_add(ClothingRegion r, ItemId id, int count,
                                  const ItemDatabase& db) const {
+  (void)db;
   if (id <= 0 || count <= 0 || !region_available(r)) return false;
-  const int stack_max = stack_max_for_cloth(db, id);
-  if (stack_max <= 0) return false;
-  int remaining = count;
-  for (int i = 0; i < kClothingContainerSlots && remaining > 0; ++i) {
-    const InvSlot& s = slot(r, i);
-    if (s.id == id && s.count < stack_max) {
-      const int space = stack_max - s.count;
-      remaining -= (remaining < space ? remaining : space);
-    }
-  }
-  for (int i = 0; i < kClothingContainerSlots && remaining > 0; ++i) {
-    if (slot(r, i).empty()) {
-      const int take = remaining < stack_max ? remaining : stack_max;
-      remaining -= take;
-    }
-  }
-  return remaining == 0;
+  for (int i = 0; i < kClothingContainerSlots; ++i) if (slot(r, i).empty()) return true;
+  return false;
 }
 
 bool ClothingContainers::add(ClothingRegion r, ItemId id, int count, const ItemDatabase& db) {
   if (!can_add(r, id, count, db)) return false;
-  int stack_max = stack_max_for_cloth(db, id);
-  for (int i = 0; i < kClothingContainerSlots && count > 0; ++i) {
+  for (int i = 0; i < kClothingContainerSlots; ++i) {
     InvSlot& s = slot_mut(r, i);
-    if (s.id == id && s.count < stack_max) {
-      const int space = stack_max - s.count;
-      const int take = count < space ? count : space;
-      s.count += take;
-      count -= take;
-    }
+    if (s.empty()) { s.id = id; s.count = count; return true; }
   }
-  for (int i = 0; i < kClothingContainerSlots && count > 0; ++i) {
-    InvSlot& s = slot_mut(r, i);
-    if (s.empty()) {
-      const int take = count < stack_max ? count : stack_max;
-      s.id = id;
-      s.count = take;
-      count -= take;
-    }
-  }
-  return count == 0;
+  return false;
 }
 
 bool ClothingContainers::can_add_cascade(ItemId id, int count, const ItemDatabase& db) const {

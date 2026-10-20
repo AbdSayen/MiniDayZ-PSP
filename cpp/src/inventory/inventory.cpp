@@ -64,84 +64,44 @@ int Inventory::capacity() const {
   return cap;
 }
 
-namespace {
-
-int stack_max_for(const Inventory& inv, ItemId id, int count, const ItemDatabase& db) {
-  if (id <= 0 || count <= 0) return 0;
-  const ItemDef* def = db.find(id);
-  int stack_max = def ? def->stack_max : 1;
-  if (def && def->category == ItemCat_Ammo) {
-    bool has_band = false;
-    for (int i = 0; i < kInventorySlots; ++i) {
-      if (inv.slot(i).id == 83 && inv.slot(i).count > 0) { has_band = true; break; }
-    }
-    for (int i = 0; i < inv.worn_count() && !has_band; ++i) {
-      if (inv.worn_at(i) == 83) has_band = true;
-    }
-    if (has_band) stack_max *= 2;
-  }
-  return stack_max;
-}
-
-} // namespace
-
+// C2 Check_space_inventory -> pants -> outerwear -> vest -> backpack: each step only
+// tests Contains(0) and writes id+count into IndexOf(0). No merge into existing stacks,
+// no split by stack size (stack limits apply only to Combine_ammo).
 bool Inventory::can_add_item(ItemId id, int count, const ItemDatabase& db) const {
+  (void)db;
   if (id <= 0 || count <= 0) return false;
-  const int stack_max = stack_max_for(*this, id, count, db);
-  if (stack_max <= 0) return false;
-  int remaining = count;
   const int cap = capacity();
-  for (int i = 0; i < cap && remaining > 0; ++i) {
-    const InvSlot& s = slots_[i];
-    if (s.id == id && s.count < stack_max) {
-      const int space = stack_max - s.count;
-      remaining -= (remaining < space ? remaining : space);
-    }
-  }
-  for (int i = 0; i < cap && remaining > 0; ++i) {
-    if (slots_[i].empty()) {
-      const int take = remaining < stack_max ? remaining : stack_max;
-      remaining -= take;
-    }
-  }
-  return remaining == 0;
+  for (int i = 0; i < cap; ++i) if (slots_[i].empty()) return true;
+  return false;
 }
 
 bool Inventory::add_item(ItemId id, int count, const ItemDatabase& db) {
-  if (id <= 0 || count <= 0) return false;
   if (!can_add_item(id, count, db)) return false;
-  const ItemDef* def = db.find(id);
-  int stack_max = def ? def->stack_max : 1;
-  // Bandolier (83) doubles ammo stack size
-  if (def && def->category == ItemCat_Ammo) {
-    bool has_band = false;
-    for (int i = 0; i < kInventorySlots; ++i) {
-      if (slots_[i].id == 83 && slots_[i].count > 0) { has_band = true; break; }
-    }
-    for (int i = 0; i < worn_count_ && !has_band; ++i) {
-      if (worn_[i].id == 83) has_band = true;
-    }
-    if (has_band) stack_max *= 2;
-  }
-  const int cap = capacity();
+  return add_item_new_slot(id, count);
+}
 
-  for (int i = 0; i < cap && count > 0; ++i) {
-    if (slots_[i].id == id && slots_[i].count < stack_max) {
-      const int space = stack_max - slots_[i].count;
-      const int take = count < space ? count : space;
-      slots_[i].count += take;
-      count -= take;
-    }
+// C2 sub_menu "Combine" -> Combine_ammo(param0 = source amount, param1 = target uid):
+//   target X >= stack: return param0 (nothing moves);
+//   target X <  stack: X += param0, return X - stack; then X > stack -> X = stack.
+// Caller: return > 0 -> source amount = return; return <= 0 -> source id/amount = 0.
+int Inventory::combine_slots(int src, int dst, const ItemDatabase& db) {
+  (void)db;
+  const int cap = capacity();
+  if (src < 0 || dst < 0 || src >= cap || dst >= cap || src == dst) return -1;
+  InvSlot& a = slots_[src];
+  InvSlot& b = slots_[dst];
+  if (a.empty() || b.empty() || a.id != b.id || !c2_combine_menu(a.id)) return -1;
+  const int stack = c2_combine_stack(a.id);
+  int ret;
+  if (b.count >= stack) ret = a.count;
+  else {
+    b.count += a.count;
+    ret = b.count - stack;
+    if (b.count > stack) b.count = stack;
   }
-  for (int i = 0; i < cap && count > 0; ++i) {
-    if (slots_[i].empty()) {
-      const int take = count < stack_max ? count : stack_max;
-      slots_[i].id = id;
-      slots_[i].count = take;
-      count -= take;
-    }
-  }
-  return count == 0;
+  if (ret > 0) a.count = ret;
+  else { a.id = 0; a.count = 0; }
+  return ret;
 }
 
 bool is_gear_item(ItemId id) { return id >= 250 && id < 500; }

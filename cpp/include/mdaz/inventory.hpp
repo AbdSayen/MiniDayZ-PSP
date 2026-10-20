@@ -31,6 +31,8 @@ public:
   bool can_add_item(ItemId id, int count, const ItemDatabase& db) const;
   bool add_item(ItemId id, int count, const ItemDatabase& db);
   bool remove_at(int slot, int count);
+  // C2 Combine_ammo on bag slots; -1 = Combine not offered, else the C2 return value.
+  int combine_slots(int src, int dst, const ItemDatabase& db);
   // C2 Check_space_*: write id+count into ONE empty slot within capacity (no stack merge).
   bool add_item_new_slot(ItemId id, int count);
   // C2 Pick_player_item: gear (ids 250..499) is worn straight from the ground; the piece

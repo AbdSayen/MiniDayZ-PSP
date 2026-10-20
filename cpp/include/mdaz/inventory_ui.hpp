@@ -83,10 +83,12 @@ struct InventoryUiState {
   int focus_bag_slot;
   ClothingRegion focus_cloth_region;
   int focus_cloth_sub;
+  // PSP input adaptation of C2 drag-onto-slot + sub_menu "Combine": marked source bag slot.
+  int combine_src;
 
   InventoryUiState()
     : opened(false), focus_bag_slot(-1), focus_cloth_region(ClothingRegion_Count),
-      focus_cloth_sub(-1) {}
+      focus_cloth_sub(-1), combine_src(-1) {}
 
   void open();
   void close_inventory();

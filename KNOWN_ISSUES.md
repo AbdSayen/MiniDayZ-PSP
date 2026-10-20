@@ -35,7 +35,7 @@ Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented me
 - Perks/XP system is not ported: tip 10 only sets the tutorial XP value 316.
 - Car trunk loot (car_loot_point Spawn_drop) is not ported; the car encounter (id 4) still shows its hint.
 - tree_block frames 1–3 are drawn and collided as frame 0 (big_obstacle_base 17). Chopped trees vanish instead of leaving the stump frame / obst_base 8.
-- b_exit is not solid and water has no collision (the player can walk onto the boat and the sea).
+- b_exit is not solid (the player can walk onto the boat). Water collision: fixed in item 8 (Water tilemap t199 Solid, 2026-10-20).
 - Day_cold=1 of the tutorial start is not applied. Final-script text fade length (1 s) is an assumption; the Wait timings are from data.js.
 - Saving is disabled while the tutorial runs. The camera_roll id 8 string (476) does not exist in l_eng_ui.xml.
 - `--shots-tutorial` uses test-only placements and a Wood piles grant to reach later steps.
@@ -54,7 +54,7 @@ Last updated: 2026-10-19 (step 1–3 queue: 13/17 bodies restored, 3 invented me
 | Small fonts: data.js Text objects use system/web fonts (Arial 8–18pt, Pixel Cyr 8pt, Tahoma, Calibri Light); there is no bitmap font in the assets, the port uses its 5x7 fallback ("HUD font: 5x7 fallback"). No change made — needs a decision on target size | Text style differs | Исследована |
 | Found while restoring step 1 (not changed): quest completes automatically when the condition is met (C2: player presses the quest-pad complete button); C2 also adds expierence_points +30/+40/+50 and char_unlock_15_progress (no XP/character-unlock system in the port) | Quest flow differs | Исследована |
 | Bunker spawners: the port table `kBunkerZedSpawners` (21) comes from the Polygon test layout; on Map, Bunker_generate creates 5 / 13 / 21 spawners per bunker level at HotspotX/Y offsets (C2 30 px tiles, level 1..3), and the port has one bunker map at 8 px/tile. Spawn logic is faithful, positions are approximate | Spawn positions approximate | Исследована |
-| Item stack sizes are a name heuristic (item_db.cpp classify); sticks (38) do not stack, so build_fence counts 5 sticks over all slots (C2: one stack >= 5) | Inventory differs | Исследована |
+| Item stack sizes: fixed in item 9 (C2 Combine_ammo table, 2026-10-20). Remaining: build_fence counts 5 sticks over all slots (C2: one stack >= 5) | Inventory differs | open |
 | Molotov also places a short campfire (port visual for the flame_medium/flame_small sprites); zed kills drop loot_.spawn_random — both not yet checked against data.js | Possible deviations | Не исследована |
 | ~~Invented mechanics: crows scavenge zed corpses, zed corpse life ×1.15, animals take 0.8× explosion damage~~ — **removed 2026-10-19 (step 2)**: on_zed_killed spawns no crows, corpse life = Bot_corpse_stay_time, explosion damage to animals unscaled. Tests: "zed kills spawn no crows", "zed corpse life = Bot_corpse_stay_time" | — | Протестирована |
 | Same seed (140), different map per platform (desktop helicrashes (15061,8125) (8367,10625) (1673,13125) vs PSP (7252,16875) (9483,9375) (11714,1875)). **Cause found (step 3):** not RNG/float/int width — C++ leaves the evaluation order of function arguments unspecified. `add(t, rng.next_int(..x..), rng.next_int(..y..))` and `Vec2(x + rng.range(), y + rng.range())` drew y first on MinGW/x86 and x first on psp-gcc (the swapped x/y is visible in the coordinates). **Fix:** `Rng::int_pair` / `Rng::range_pair` (sequenced, x first); mapgen place/bunker entrance + 25 jitter sites in game.cpp, bandit.cpp, spawn_global.cpp, spawn_params.cpp rewritten; a scan finds no statement left with two rng calls in one argument list. `MapGenerator::poi_hash()` (FNV over type/sector) is logged on new game ("poi hash ...") on both platforms. Test: prints the full seed-140 POI list + hash and checks POI #0 equals a hand replay of the x-then-y draws. Note: the map for a given seed changed on desktop (old saves made on desktop load into a different world) | Cross-platform | **Протестирована** 20:36: PPSSPP log and desktop stdout of the same build both give helicrash (7252,16875) (9483,9375) (11714,1875), poi hash 7cbc5967 |
@@ -174,7 +174,7 @@ Assets and game design belong to Bohemia Interactive / original authors. This tr
 ## Inventory slots (2026-10-19 21:05)
 - Container sizes for Bulletproof vest 400 / Kevlar 404 not found in data.js -> 0 slots; Molle vest (t119, 3 slots) has no port item id.
 - C2 drops a container's contents when the piece is taken off/replaced (Cut_arrays); the port keeps items in the flat 24-slot array, slots above capacity() are just inaccessible.
-- Pickup still merges into existing stacks (port); C2 Check_space_* writes into an empty slot. Ammo stack_max bandolier bonus still from the port (not verified).
+- Pickup stack merge and the bandolier x2 ammo bonus: removed in item 9 (C2 Check_space_* writes into an empty slot; 2026-10-20).
 - Only Player_skin_type 1 starter ported (skins 2..15 have other Spawn_drop sets; no skin selection in port). Starter perks per difficulty are still a port scaffold.
 
 ## Trees (2026-10-19 21:05)
@@ -425,3 +425,10 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 - Water tilemap t199 имеет поведение Solid (data.js). Портирована коллизия: статичные tilemap_water слоя Map и Water t199 каждой ячейки create_map_location, полигоны тайлов из data.js (null = весь тайл, тайл 11 вырожденный - без коллизии). Применяется к игроку, NPC (npc_forest_block) и машинам (кроме лодки порта).
 - Не сделано / вопросы: лодка Vehicle_Boat порта (в C2 boat_arrive - анимация прибытия, не транспорт) - в аудит; пули через воду: C2 Bullet не учитывает Solid тайлмапов - не проверено, порт пули водой не блокирует.
 - Запись в начале файла «water has no collision» устарела.
+
+## Пункт 9 — стаки (2026-10-20)
+- Исправлено: размеры стаков берутся из C2 Combine_ammo (sid4428966087350586), а не из эвристики по именам. Подбор (Check_space_*) кладёт предмет в первый пустой слот без слияния. Бонус патронташа (83) ×2 удалён: в C2 его нет, 83 там — насадка-ремень на оружие (Belt_name_id / Detach_belt).
+- PSP-адаптация ввода: в C2 надо перетащить предмет на слот с тем же кадром и выбрать «Combine» в sub_menu. В порте: R+Cross по исходному слоту (он подсвечивается зелёным), потом R+Cross по целевому; на десктопе — F. Это задокументированная адаптация.
+- Не портировано: Combine для слотов одежды (pants/outerwear/vest/backpack, массивы 226/227/268/225) и для предмета на земле (ветка IV18) — относится к пункту 11. Работает только сетка сумки.
+- В таблице Combine_ammo у предмета 31 стак 3, но в Call_sub_menu_craft для 31 нет пункта «Combine», так что 31 объединить нельзя (как в C2).
+- В порте инвентарь — плоский список с суммарной вместимостью, а в C2 это цепочка массивов inventory→pants→outerwear→vest→backpack (пункт 11).

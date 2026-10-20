@@ -181,6 +181,16 @@ public:
       }
       return frame_ < 345;
     }
+    if (std::getenv("MDAZ_HARNESS_COMBINE")) {   // 9: Combine_ammo via PSP R+Cross adaptation
+      if (frame_ == 200 && game_) game_->harness_combine_setup();
+      if (frame_ == 210) { in.bag = in.bag_pressed = true; }
+      if (frame_ == 220 || frame_ == 224) in.move_x = 1.f;   // focus slot 2 (25 rounds)
+      if (frame_ == 230) in.throw_pressed = true;            // mark source
+      if (frame_ == 250) in.move_x = -1.f;                   // focus slot 1 (30 rounds)
+      if (frame_ == 260) in.throw_pressed = true;            // Combine
+      if (game_ && (frame_ == 245 || frame_ == 275)) game_->harness_combine_log();
+      return frame_ < 290;
+    }
     if (std::getenv("MDAZ_HARNESS_BOTZ")) {   // 8d: Bot_puncher_zindex
       if (frame_ == 200 && game_) game_->harness_bot_zindex(-3.f);
       if (frame_ == 280 && game_) game_->harness_bot_zindex(10.f);
@@ -462,6 +472,7 @@ public:
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
         { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
         { 201, "botz_0_bot_survivors2_under_house" }, { 210, "water_0_start" }, { 336, "water_1_blocked_at_edge" }, { 281, "botz_1_bot_survivors" },
+        { 240, "combine_0_source_marked" }, { 272, "combine_1_after" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;

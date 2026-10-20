@@ -13,12 +13,35 @@ ItemDef::ItemDef()
     food_restore(0), water_restore(0), heal_amount(0),
     stack_max(1), known_stats(false) {}
 
+// C2 Combine_ammo (t180 function, sid4428966087350586): per-frame stack limit, the same
+// table in all 5 container branches (IV12->226 pants, IV13->227 outerwear, IV15->268 vest,
+// IV11->225 backpack, IV16->382 inventory). Items not listed never stack (limit 1).
+int c2_combine_stack(ItemId id) {
+  switch (id) {
+    case 11: case 14: case 15: case 16: case 101: return 30;
+    case 12: case 69: case 100: return 40;
+    case 13: return 20;
+    case 17: return 15;
+    case 24: return 10;
+    case 58: return 50;
+    case 20: case 27: case 38: case 51: case 52: case 73: case 74: return 5;
+    case 5: case 6: case 7: case 18: case 26: case 31: case 32: case 33: return 3;
+    default: return 1;
+  }
+}
+
+// C2 Call_sub_menu_craft: "Combine" is offered only when dragged frame == slot frame and
+// the frame is one of these (31 is in the Combine_ammo table but has no Combine entry).
+bool c2_combine_menu(ItemId id) {
+  return id != 31 && c2_combine_stack(id) > 1;
+}
+
 void ItemDatabase::classify(ItemDef& d) {
   const std::string& n = d.name;
+  d.stack_max = c2_combine_stack(d.id);
   // Heuristic categories from English names (display only until C2 stats extracted).
   if (n.find("ammo") != std::string::npos || n.find("Ammo") != std::string::npos) {
     d.category = ItemCat_Ammo;
-    d.stack_max = 30;
   } else if (n.find("Bandage") != std::string::npos || n.find("Blood bag") != std::string::npos ||
              n.find("Saline") != std::string::npos || n.find("Morphine") != std::string::npos ||
              n.find("Tetracycline") != std::string::npos || n.find("Vitamins") != std::string::npos) {
@@ -66,7 +89,6 @@ void ItemDatabase::classify(ItemDef& d) {
              n.find("Perch") != std::string::npos || n.find("fillet") != std::string::npos ||
              n.find("fish") != std::string::npos) {
     d.category = ItemCat_Food;
-    d.stack_max = 5;
     // food_restore only from item_activate IV13/14 (id overrides below).
   } else {
     d.category = ItemCat_Misc;

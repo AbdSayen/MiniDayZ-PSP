@@ -644,6 +644,25 @@ float Game::harness_place_near_water() {
   return -1.f;
 }
 
+// Harness (item 9): bag slots 1/2 = .45 ammo (12) x30 / x25 for the Combine shots.
+void Game::harness_combine_setup() {
+  for (int i = 1; i < inventory_.capacity(); ++i)
+    if (!inventory_.slot(i).empty()) inventory_.remove_at(i, inventory_.slot(i).count);
+  inventory_.add_item_new_slot(12, 30);
+  inventory_.add_item_new_slot(12, 25);
+  harness_combine_log();
+}
+
+void Game::harness_combine_log() {
+  char line[160];
+  std::snprintf(line, sizeof(line), "combine: cap=%d s1=%d/%d s2=%d/%d src=%d focus=%d",
+                inventory_.capacity(), (int)inventory_.slot(1).id, inventory_.slot(1).count,
+                (int)inventory_.slot(2).id, inventory_.slot(2).count, inventory_ui_.combine_src,
+                inventory_ui_.focus_bag_slot);
+  std::printf("%s\n", line);
+  if (platform_) platform_->log_line(line);
+}
+
 void Game::mark_sector_visited() {
   const SectorCoord c = world_.sector_at(player_.pos);
   // Reveal a 3×3 neighbourhood (original fog clears nearby cells as you walk).
@@ -3001,6 +3020,19 @@ void Game::update_inventory_ui(const InputState& in) {
   if (in.nav_down && s + cols < cap) s += cols;
   ui.focus_bag_slot = s;
 
+  // PSP adaptation (C2: drag item onto a slot with the same frame -> sub_menu "Combine"):
+  // R+Cross marks the source slot, R+Cross on another slot runs Combine_ammo.
+  if (in.throw_pressed) {
+    if (ui.combine_src < 0) {
+      const InvSlot& src = inventory_.slot(s);
+      if (!src.empty() && c2_combine_menu(src.id)) ui.combine_src = s;
+    } else {
+      if (ui.combine_src != s && inventory_.combine_slots(ui.combine_src, s, items_) != -1)
+        sfx2d("eject", 0.f);   // Combine_ammo: PlayByName "eject" 0 dB
+      ui.combine_src = -1;
+    }
+    return;
+  }
   if (in.confirm_pressed || in.attack_pressed) use_bag_slot(s);          // Cross: use / wear
   else if (in.inventory_pressed) equip_bag_slot(s);                      // Triangle: to hand
   else if (in.mag_reload_pressed || in.reload_pressed) try_drop_slot(s); // Square: drop

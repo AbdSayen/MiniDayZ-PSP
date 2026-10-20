@@ -197,6 +197,34 @@ int test_inventory() {
   }
 
   {
+    // Item 9: C2 Combine_ammo table + semantics (sid4428966087350586).
+    mdaz::ItemDatabase sdb;
+    sdb.load_from_json_string("{\"items\":[{\"id\":12,\"name\":\"A\"},{\"id\":38,\"name\":\"S\"},"
+                              "{\"id\":1,\"name\":\"Canned beans\"},{\"id\":31,\"name\":\"B\"}]}");
+    const mdaz::ItemDef* d12 = sdb.find(12); const mdaz::ItemDef* d1 = sdb.find(1);
+    bool ok = d12 && d12->stack_max == 40 && d1 && d1->stack_max == 1 &&
+              mdaz::c2_combine_stack(58) == 50 && mdaz::c2_combine_stack(38) == 5 &&
+              mdaz::c2_combine_stack(31) == 3 && !mdaz::c2_combine_menu(31) && mdaz::c2_combine_menu(101);
+    mdaz::Inventory ci;
+    const mdaz::ItemId cw[2] = {350, 300};
+    ci.restore_worn(cw, 2);
+    ci.add_item(12, 30, sdb); ci.add_item(12, 25, sdb); ci.add_item(1, 1, sdb);
+    ok = ok && ci.slot(0).count == 30 && ci.slot(1).count == 25;      // pickup: no merge
+    int r = ci.combine_slots(1, 0, sdb);                               // 30+25=55 -> 40, src 15
+    ok = ok && r == 15 && ci.slot(0).count == 40 && ci.slot(1).id == 12 && ci.slot(1).count == 15;
+    r = ci.combine_slots(1, 0, sdb);                                   // target full -> return 15
+    ok = ok && r == 15 && ci.slot(1).count == 15 && ci.slot(0).count == 40;
+    r = ci.combine_slots(0, 1, sdb);                                   // 15+40=55 -> 40, src 15
+    ok = ok && r == 15 && ci.slot(1).count == 40 && ci.slot(0).count == 15;
+    ci.remove_at(1, 30);                                               // slot1 = 10
+    r = ci.combine_slots(0, 1, sdb);                                   // 10+15=25 -> src cleared
+    ok = ok && r == -15 && ci.slot(1).count == 25 && ci.slot(0).empty();
+    ok = ok && ci.combine_slots(1, 2, sdb) == -1;                      // different ids
+    if (!ok) { std::printf("FAIL item9 Combine_ammo\n"); ++fail; }
+    else std::printf("OK   item9 Combine_ammo stacks/overflow/no-merge pickup\n");
+  }
+
+  {
     mdaz::ItemDatabase casedb;
     casedb.load_from_json_string(
       "{\"items\":[{\"id\":88,\"name\":\"Protector Case\"}]}");

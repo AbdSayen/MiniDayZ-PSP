@@ -35,6 +35,9 @@ struct ItemDef {
   ItemDef();
 };
 
+int c2_combine_stack(ItemId id);
+bool c2_combine_menu(ItemId id);
+
 class ItemDatabase {
 public:
   bool load_from_json_file(const char* path);

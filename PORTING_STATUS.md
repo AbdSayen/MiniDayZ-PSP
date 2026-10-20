@@ -734,3 +734,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - 8d: Bot_puncher_zindex (Survivors2), поправка про Buildings_shadows.
 
 - 8: вода t199 Solid (игрок, NPC, машины).
+
+- Пункт 9 (стаки): таблица Combine_ammo на 27 предметов (30/40/20/15/10/50/5/3); переполнение возвращается в исходный слот; подбор без слияния; бонус патронташа удалён. Тест: «item9 Combine_ammo». Адаптация PSP: R+Cross ×2.

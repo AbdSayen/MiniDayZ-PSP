@@ -415,6 +415,7 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     }
     if (eq) outline(platform, sx, sy, kBagSlot, kBagSlot, 0.95f, 0.8f, 0.3f, 1.f);
     if (focus) focus_frame(platform, sx - 1.f, sy - 1.f, kBagSlot + 2.f, kBagSlot + 2.f, t);
+    if (i == ui.combine_src) outline(platform, sx + 1.f, sy + 1.f, kBagSlot - 2.f, kBagSlot - 2.f, 0.3f, 0.95f, 0.3f, 1.f);  // PSP combine source marker
   }
 
   // Details of the focused item.
