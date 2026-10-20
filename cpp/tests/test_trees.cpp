@@ -79,6 +79,28 @@ int test_trees() {
   for (int i = 0; i < g.tree_count_for_test(); ++i) { const int s = g.tree_sub_for_test(i); if (s >= 7 && s <= 10) ++tb[s]; }
   std::printf("     tutorial tree_block: 7=%d 8=%d 9=%d 10=%d\n", tb[7], tb[8], tb[9], tb[10]);
   check(tb[10] > 0, "tutorial tree_block frame 3 -> sub 10 (was drawn/collided as frame 0)");
+  // 7b: t920 car (origin rule, stateful) and t914/t930 Imagepoint 2 rule.
+  {
+    Player& p = g.player_mut(); bool roof = false; const Vec2 o(1000.f, 1000.f);
+    p.pos = Vec2(1000.f, 990.f);
+    check(g.location_above_for_test(3, "car_police-sheet0", o, roof), "car: player Y < origin -> Buildings");
+    p.pos = Vec2(1000.f, 1010.f);
+    check(!g.location_above_for_test(3, "car_police-sheet0", o, roof), "car: player Y >= origin -> Buildings_bg");
+    p.pos = Vec2(1300.f, 1300.f);
+    check(!g.location_above_for_test(3, "car_police-sheet0", o, roof), "car: no reset when not overlapping");
+    p.pos = Vec2(1000.f, 1000.f);   // van ip2 = (0.71186-0.50847)*59 = 12 px below origin
+    check(g.location_above_for_test(4, "car_van_red-sheet0", o, roof), "van (t930): Y <= ip2 -> Buildings");
+    p.pos = Vec2(1000.f, 1020.f);
+    check(!g.location_above_for_test(4, "car_van_red-sheet0", o, roof), "van (t930): Y > ip2 -> Buildings_bg");
+    p.pos = Vec2(1300.f, 1300.f);
+    check(!g.location_above_for_test(4, "car_van_red-sheet0", o, roof), "van: not overlapping -> Buildings_bg");
+    p.pos = Vec2(1000.f, 970.f);   // barrack ip1 = 18 px above origin
+    check(g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && roof, "house t928: Y < ip1 -> opacity 25 + Buildings");
+    p.pos = Vec2(1000.f, 1000.f);
+    check(g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && !roof, "house t928: ip1 <= Y <= ip2 -> opacity 100, Buildings");
+    p.pos = Vec2(1500.f, 1500.f);
+    check(!g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && !roof, "house t928: not overlapping -> Buildings_bg, 100");
+  }
   delete gp;
   return g_fail;
 }

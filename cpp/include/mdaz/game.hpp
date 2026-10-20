@@ -593,6 +593,14 @@ public:
 private:
   bool building_blocks(Vec2 a, Vec2 b) const; // C2 *_int Solid polygons
   bool tree_above_player(int ti) const;        // Obstacles_transparenting layer swap
+  bool player_overlaps_prop(const void* prop, Vec2 o) const;
+  bool location_above_player(int li, const char* sheet, Vec2 o, bool& roof_fade);
+  unsigned char car_fg_[512];                  // t920 layer state (1 = Buildings), per location
+  bool car_layer_tick_ = false;                // Every 0.5 s (House_transparenting t920 rule)
+  float car_layer_t_ = 0.f;
+public:
+  bool location_above_for_test(int li, const char* sheet, Vec2 o, bool& roof) { car_layer_tick_ = true; return location_above_player(li, sheet, o, roof); }
+private:
   void zed_check_bunker();           // C2 Zed_check_bunker (every 3 s while inBunker)
   bool bunker_spawner_used_[32];
   float bunker_zed_check_t_;
