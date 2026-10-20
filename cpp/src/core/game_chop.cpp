@@ -271,7 +271,9 @@ void Game::update_melee_swings(float dt) {
         if (!seg_hits_box(s0, s1, z->pos.x - hw, z->pos.y - hw, z->pos.x + hw, z->pos.y + hw)) continue;
         const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
         spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
+        xp_src_ = 2; xp_src_wpn_ = s.weapon;
         hurt_zombie(*z, d, s.weapon);
+        xp_src_ = 0;
         hit_npc = true;
       }
       for (int ai = 0; ai < animals_.count() && !hit_npc; ++ai) {
@@ -279,13 +281,17 @@ void Game::update_melee_swings(float dt) {
         if (!a->alive || !animal_swing_hit(ai, s0, s1)) continue;
         const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
         spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
+        xp_src_ = 2; xp_src_wpn_ = s.weapon;
         hurt_animal(*a, d);
+        xp_src_ = 0;
         hit_npc = true;
       }
       for (Bandit* b = bandits_.begin(); b != bandits_.end() && !hit_npc; ++b) {
         if (!b->alive || !seg_hits_box(s0, s1, b->pos.x - 15.f, b->pos.y - 15.f, b->pos.x + 15.f, b->pos.y + 15.f)) continue;
         const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+        xp_src_ = 2; xp_src_wpn_ = s.weapon;
         hurt_bandit(*b, d);
+        xp_src_ = 0;
         hit_npc = true;
       }
       // t909 IV6 -= 0.2 / 0.5 / 1 by IV15 (durability): port has no per-item IV6 (KNOWN_ISSUES).

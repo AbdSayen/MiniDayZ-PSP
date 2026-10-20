@@ -588,6 +588,12 @@ void draw_debug_hud(IPlatform& platform, const Game& game) {
       platform.draw_sprite_frame("gui_btn_perks-sheet0", px, py, 29.f * s, 32.f * s, 1, 1, 29, 32, 0.f, 1.f);
     else if (spr(platform, "player_skin_def_1-sheet0"))
       platform.draw_sprite_frame("player_skin_def_1-sheet0", px, py, 29.f * s, 29.f * s, 1, 1, 30, 30, 0.f, 1.f);
+    // gui_btn_perks_notify (11x11, hotspot 0.545) at gui_btn_perks imagepoint "notify"
+    // (1.103, 1.469 of the 29x32 frame): visible while expierence_points >= perk_cost.
+    if (pl.perks.notify_visible() && spr(platform, "gui_btn_perks_notify-sheet0")) {
+      const float nx = px + 1.103448f * 29.f * s, ny = py + 1.46875f * 32.f * s;
+      platform.draw_sprite("gui_btn_perks_notify-sheet0", nx - 6.f * s, ny - 6.f * s, 11.f * s, 11.f * s, 0.f, 1.f);
+    }
   }
 
   // Vitals: blood, water, food, heat (C2 GUI_layout order; colours = the C2 1x5 bar strips).

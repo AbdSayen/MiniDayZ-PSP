@@ -23,30 +23,6 @@ void unpack_visited(const unsigned char in[32], bool* visited, int len) {
   }
 }
 
-int pack_perks(const Player& p) {
-  int f = 0;
-  if (p.perk_metabolism) f |= 1;
-  if (p.perk_hamster) f |= 2;
-  if (p.perk_camel) f |= 4;
-  if (p.perk_runner) f |= 8;
-  if (p.perk_hunter) f |= 16;
-  if (p.perk_farmer) f |= 32;
-  if (p.perk_regen) f |= 64;
-  if (p.perk_snowborn) f |= 128;
-  return f;
-}
-
-void unpack_perks(Player& p, int f) {
-  p.perk_metabolism = (f & 1) != 0;
-  p.perk_hamster = (f & 2) != 0;
-  p.perk_camel = (f & 4) != 0;
-  p.perk_runner = (f & 8) != 0;
-  p.perk_hunter = (f & 16) != 0;
-  p.perk_farmer = (f & 32) != 0;
-  p.perk_regen = (f & 64) != 0;
-  p.perk_snowborn = (f & 128) != 0;
-}
-
 void pack_vehicles(const VehicleSystem* vs, SaveBlob& out) {
   out.vehicle_count = 0;
   if (!vs) return;
@@ -243,7 +219,11 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   out.animals_killed = player.animals_killed;
   out.quest_active = quest_active;
   out.quest_progress = quest_progress;
-  out.perk_flags = pack_perks(player);
+  out.perk_flags = 0; // v4..v19 field (old port-invented perks); v20 uses perk_bits
+  out.perk_bits = player.perks.pack_bits();
+  out.perk_xp_raw = player.perks.xp_raw;
+  out.perk_learnt = player.perks.learnt;
+  out.perk_cost = player.perks.cost;
   out.mag_rounds = mag_rounds;
   out.wetness = wetness;
   out.gasmask_filter = gasmask_filter;
@@ -304,6 +284,13 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   if (in.magic != kMagic) return false;
   if (in.version < 2 || in.version > kVersion) return false;
   player.reset_new_game(in.difficulty);
+  // v20: C2 perk state. Older saves held port-invented perk flags only -> Restart_game values.
+  if (in.version >= 20) {
+    player.perks.unpack_bits(in.perk_bits);
+    player.perks.xp_raw = in.perk_xp_raw;
+    player.perks.learnt = in.perk_learnt;
+    player.perks.cost = in.perk_cost;
+  }
   player.pos.x = in.pos_x;
   player.pos.y = in.pos_y;
   player.survival.food = in.food;
@@ -349,7 +336,6 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   }
   if (in.version >= 4) {
     player.animals_killed = in.animals_killed;
-    unpack_perks(player, in.perk_flags);
     if (torch_battery) *torch_battery = in.torch_battery;
     if (quest_active) *quest_active = in.quest_active;
     if (quest_progress) *quest_progress = in.quest_progress;

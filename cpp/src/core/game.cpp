@@ -514,6 +514,7 @@ Game::Game()
   // Members not covered by the init list (were read uninitialised before 2026-10-19).
   fire_anim_t_ = 0.f; energy_sprint_t_ = 0.f; vitamins_buff_t_ = 0.f; item_use_lock_t_ = 0.f;
   bunker_reopen_t_ = 0.f; show_craft_menu_ = false; show_controls_ = false; craft_menu_index_ = 0;
+  show_perks_ = false; perk_sel_ = 13; perk_buy_lit_ = false; xp_src_ = 0; xp_src_wpn_ = 0; xp_every_t_ = 0.f;
   hit_effect_t_ = 0.f; fps_ = 0.f; fps_accum_ = 0.f; fps_frames_ = 0;
   molotov_dmg_cd_ = 0.f; molotov_reload_t_ = 0.f; vss_bleed_unlock_cd_ = 0.f;
   wpn_unlock_toast_t_ = 0.f; wpn_unlock_toast_id_ = 0;
@@ -860,18 +861,10 @@ void Game::start_new_game(Difficulty d) {
   reset_chop_state();
   install_los();
   player_.reset_new_game(d);
+  show_perks_ = false; xp_every_t_ = 0.f;
   set_npc_damage_for_difficulty(d);
-  // Free starter perks by difficulty (scaffold — original perk shop not ported)
-  if (d == Difficulty_Novice) {
-    player_.perk_metabolism = true;
-    player_.perk_hamster = true;
-  } else if (d == Difficulty_Regular) {
-    player_.perk_metabolism = true;
-    player_.perk_farmer = true;
-  } else {
-    player_.perk_runner = true; // Veteran: speed over comfort
-    player_.perk_hunter = true;
-  }
+  // (item 10) removed: port-invented difficulty starter perks. C2 Restart_game sets every
+  // perk_* to 0; starter perks come only from skins 4..15 (the port has skin 1 only).
   inventory_.clear();
   // C2 start (Player_skin_type 1, the default skin): Spawn_drop T-shirt 350 + Jeans 300,
   // "picky" x2 equips them, then base inventory t381[0] = 42 (Hunter knife).
@@ -1328,7 +1321,7 @@ void Game::try_melee_attack() {
     // t909 IV6 <= 0 -> IV0 15 (broken): no per-item IV6 in the port (KNOWN_ISSUES).
   }
   bool crit = false;
-  const int chance = c2_melee_crit_chance(iv4, balance::perk_meleeatk != 0);
+  const int chance = c2_melee_crit_chance(iv4, player_.perks.has(Perk_MeleeAtk));
   if (chance >= 0) {
     const int roll = static_cast<int>(rng_.next_float() * 100.f + 0.5f);   // round(random(100))
     if (roll <= chance) { dmg += dmg; crit = true; }                       // IV0 += IV0, IV6
@@ -1655,6 +1648,7 @@ void Game::hurt_zombie(Zombie& z, float amount, ItemId killer_weapon) {
   if (!z.alive) return;
   const float applied = npc_apply_damage(z.hp, npc_damage_kind_for_zed(z.type), amount);
   dmg_hints_.spawn(z.pos, away_from(z.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (xp_src_ != 0 && z.type == Zed_Screamer) xp_add(6);   // screamer hit by a player t910
   if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
 }
 
@@ -1663,6 +1657,7 @@ void Game::hurt_zombie_bullet(Zombie& z, float amount, bool armor_pierce_iv8, It
   const float applied = zed_apply_bullet_hit_damage(z.hp, npc_damage_kind_for_zed(z.type), amount,
                                                     z.type, armor_pierce_iv8, rng_);
   dmg_hints_.spawn(z.pos, away_from(z.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
+  if (xp_src_ != 0 && z.type == Zed_Screamer) xp_add(6);   // screamer hit by a player t910
   if (z.hp <= 0.f) on_zed_killed(z, killer_weapon);
 }
 
@@ -1670,7 +1665,10 @@ void Game::hurt_animal(Animal& a, float amount) {
   if (!a.alive) return;
   const float applied = npc_apply_damage(a.hp, npc_damage_kind_for_animal(a.type), amount);
   dmg_hints_.spawn(a.pos, away_from(a.pos, player_.pos), static_cast<int>(applied + 0.5f), false);
-  if (a.hp <= 0.f) on_animal_killed(a);
+  if (a.hp <= 0.f) {
+    if (xp_src_ != 0 && a.type == Animal_Wolf) xp_add(5);   // wolf_skin IV1 <= 0, player t910
+    on_animal_killed(a);
+  }
 }
 
 void Game::hurt_bandit(Bandit& b, float amount) {
@@ -1680,6 +1678,13 @@ void Game::hurt_bandit(Bandit& b, float amount) {
   if (b.hp <= 0.f) {
     b.alive = false;
     player_.bandits_killed += 1;
+    if (xp_src_ != 0) {
+      // t910 OnCollision bot_*, IV1 = player uid, hp <= 0: puncher 540 +10, shooter 243 +15,
+      // bandit 827 Karma(10) + 10. Friend 522 / teammate 549: see KNOWN_ISSUES 10.
+      if (b.c2_obj == 540) xp_add(10);
+      else if (b.c2_obj == 243) xp_add(15);
+      else if (b.c2_obj == 827) { quest_.karma += 10; xp_add(10); }
+    }
     spawn_corpse(Corpse_Bandit, b.pos, 0.f, 0);
     spawn_fx(Fx_Hit, b.pos, 0.f, 0.2f);
     loot_.spawn_bandit(b.pos, rng_);
@@ -1691,18 +1696,18 @@ void Game::hurt_bandit(Bandit& b, float amount) {
 void Game::on_animal_killed(Animal& a) {
   a.alive = false;
   player_.animals_killed += 1;
-  if (player_.animals_killed >= 5) player_.perk_hunter = true;
+  // (item 10) removed: port-invented perk_hunter grant after 5 kills and hunter meat bonus.
   ItemId meat = 60; // Raw steak default (deer / large)
-  int n = player_.perk_hunter ? 2 : 1;
+  int n = 1;
   CorpseKind ck = Corpse_Other;
   if (a.type == Animal_Rabbit || a.type == Animal_Crow) {
     meat = 71; // Rabbit meat
   } else if (a.type == Animal_Deer) {
-    n = player_.perk_hunter ? 3 : 2; // deer yields more
+    n = 2; // deer yields more
     ck = Corpse_Deer;
   } else if (a.type == Animal_Wolf) {
     meat = 60;
-    n = player_.perk_hunter ? 2 : 1;
+    n = 1;
     ck = Corpse_Wolf;
   } else if (a.type == Animal_Dog) {
     meat = 60;
@@ -1723,6 +1728,7 @@ void Game::on_animal_killed(Animal& a) {
 
 void Game::on_zed_killed(Zombie& z, ItemId killer_weapon) {
   z.alive = false;
+  xp_on_zed_killed(z);
   // Bullets_dmg_deal: zed kill with a cluster weapon bumps *_unlock_progress -> unlock_wpn_*.
   notify_weapon_unlock(weapon_unlock_on_zed_kill(wpn_unlocks_, killer_weapon, player_.difficulty));
   player_.zeds_killed += 1;
@@ -1926,7 +1932,9 @@ void Game::resolve_bullet_hits() {
       if (dist2(b->pos, z->pos) < 18.f * 18.f) {
         spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
         b->alive = false;
+        xp_src_ = 1; xp_src_wpn_ = b->source_weapon;
         hurt_zombie_bullet(*z, b->damage, b->armor_pierce_iv8, b->source_weapon);
+        xp_src_ = 0;
         break;
       }
     }
@@ -1937,7 +1945,9 @@ void Game::resolve_bullet_hits() {
       if (dist2(b->pos, a->pos) < 16.f * 16.f) {
         spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
         b->alive = false;
+        xp_src_ = 1; xp_src_wpn_ = b->source_weapon;
         hurt_animal(*a, b->damage);
+        xp_src_ = 0;
         break;
       }
     }
@@ -1946,7 +1956,9 @@ void Game::resolve_bullet_hits() {
       if (!bd->alive) continue;
       if (dist2(b->pos, bd->pos) < 16.f * 16.f) {
         b->alive = false;
+        xp_src_ = 1; xp_src_wpn_ = b->source_weapon;
         hurt_bandit(*bd, b->damage);
+        xp_src_ = 0;
         break;
       }
     }
@@ -2110,7 +2122,6 @@ void Game::try_place_campfire() {
   }
   // Hand-drill chance: still approximate (no proven C2 literals) — rain/night mods only.
   float chance = 0.25f;
-  if (player_.perk_farmer) chance += 0.10f;
   if (weather_.rain < 0.3f && !weather_.is_night) chance += 0.08f;
   if (rng_.next_float() < chance) {
     campfires_.place(player_.pos, 50.f);
@@ -2137,7 +2148,7 @@ bool Game::try_plant_seed(ItemId seed_id) {
   slot->pos = player_.pos;
   slot->crop_id = crop;
   // Grow time: ~50s base; farmer faster; rain helps a bit
-  float grow = player_.perk_farmer ? 35.f : 50.f;
+  float grow = 50.f;
   if (weather_.rain > 0.4f) grow *= 0.85f;
   slot->grow_t = grow;
   slot->ready = false;
@@ -2814,10 +2825,10 @@ void Game::update_pause(float dt, const InputState& in) {
       show_controls_ = false;
     return;
   }
-  // 0 RESUME, 1 SAVE, 2 LOAD, 3 CANCEL TASK, 4 CONTROLS,
-  // [PSP only: 5 HALF RES, 6 MS OVERLAY], last MAIN MENU
+  // 0 RESUME, 1 SAVE, 2 LOAD, 3 CANCEL TASK, 4 CONTROLS, 5 PERKS (item 10 PSP adaptation),
+  // [PSP only: 6 HALF RES, 7 MS OVERLAY], last MAIN MENU
   const bool hr = platform_ && platform_->supports_half_res();
-  const int kItems = hr ? 8 : 6;
+  const int kItems = hr ? 9 : 7;
   if (in.nav_up) pause_focus_ = (pause_focus_ + kItems - 1) % kItems;
   if (in.nav_down) pause_focus_ = (pause_focus_ + 1) % kItems;
   if (in.pause_pressed || in.back_pressed) { state_ = AppState_Playing; return; }
@@ -2833,9 +2844,10 @@ void Game::update_pause(float dt, const InputState& in) {
       else show_toast("NO ACTIVE TASK");
       break;
     case 4: show_controls_ = true; break;
-    case 5: if (hr) { toggle_half_res(); break; }
+    case 5: state_ = AppState_Playing; open_perk_menu(); break;
+    case 6: if (hr) { toggle_half_res(); break; }
             state_ = AppState_Menu; menu_focus_ = 0; break;
-    case 6: if (hr) { toggle_perf_overlay(); break; }
+    case 7: if (hr) { toggle_perf_overlay(); break; }
             state_ = AppState_Menu; menu_focus_ = 0; break;
     default: state_ = AppState_Menu; menu_focus_ = 0; break;
     }
@@ -2846,7 +2858,7 @@ void Game::update_pause(float dt, const InputState& in) {
 //  task 1 item:   Check_item_inventory(Q_target_sid, 1) removes that slot, reward box, Karma(10)
 //  task 3 case:   Check_item_inventory(88, 1), reward box, Karma(10)
 //  task 2 bandits: reward box, Karma(20)
-// (expierence_points +30/+40/+50 and char_unlock_15_progress have no port system yet.)
+// expierence_points +30 / +40 / +50 per button (item 10); char_unlock_15_progress: no port system.
 void Game::on_quest_completed(int task_before) {
   ItemId remove_id = 0;
   if (task_before == 1) remove_id = static_cast<ItemId>(quest_.q_target_sid);
@@ -2860,6 +2872,8 @@ void Game::on_quest_completed(int task_before) {
     }
   }
   quest_.karma += (task_before == 2) ? 20 : 10;
+  // menu_btn_wood 161 (item) +30, 164 (case) +40, 163 (bandits) +50
+  xp_add(task_before == 1 ? 30 : task_before == 3 ? 40 : 50);
   quest_.spawn_reward_box(loot_, player_.pos);
   quest_.finish_reward();
   quest_bandits_spawned_ = false;
@@ -3075,6 +3089,10 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   } else if (show_craft_menu_) {
     update_craft_menu(in_raw);
     in = InputState();
+  } else if (show_perks_) {
+    // perkmenu_on: the world keeps running (C2 does not pause), the player gets no input.
+    update_perk_menu(in_raw);
+    in = InputState();
   } else {
     if (in_raw.pause_pressed) {
       state_ = AppState_Paused;
@@ -3092,6 +3110,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       in = InputState();
     }
   }
+
+  tick_xp(dt);   // item 10: EXpierence Every 10 s + MD_Perk_2
 
   if ((in.slot_digit >= 1 && in.slot_digit <= 8) || in.equip_delta != 0) {
     equipped_slot_ = next_hotbar_slot(equipped_slot_, in.slot_digit, in.equip_delta);
@@ -3418,35 +3438,10 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     if (indoor_t_ > 0.f) insulation += 4.f; // building shelter stub
     insulation += inventory_.clothing_insulation();
     insulation += campfires_.warmth_near(player_.pos) * 6.f; // fire warmth
-    if (player_.perk_snowborn) insulation += 4.f;
     if (insulation > 18.f) insulation = 18.f;
     if (insulation < 0.f) insulation = 0.f;
-    // Endure freeze → unlock snowborn; thirsty → camel
-    if (!player_.perk_snowborn && player_.survival.temperature < 22.f) {
-      player_.cold_endure_t_ += dt;
-      if (player_.cold_endure_t_ >= 120.f) player_.perk_snowborn = true;
-    }
-    if (!player_.perk_camel && player_.survival.water < 25.f) {
-      player_.thirst_endure_t_ += dt;
-      if (player_.thirst_endure_t_ >= 100.f) player_.perk_camel = true;
-    }
-    if (!player_.perk_hamster && player_.survival.food < 25.f) {
-      player_.starve_endure_t_ += dt;
-      if (player_.starve_endure_t_ >= 100.f) player_.perk_hamster = true;
-    }
-    if (!player_.perk_regen && player_.survival.blood < 40.f &&
-        player_.survival.bleeding <= 0.f) {
-      player_.wound_endure_t_ += dt;
-      if (player_.wound_endure_t_ >= 90.f) player_.perk_regen = true;
-    }
-    if (!player_.perk_runner && player_.running) {
-      player_.sprint_t_ += dt;
-      if (player_.sprint_t_ >= 180.f) player_.perk_runner = true;
-    }
-    if (!player_.perk_metabolism && player_.survival.bleeding > 0.f) {
-      player_.bleed_endure_t_ += dt;
-      if (player_.bleed_endure_t_ >= 60.f) player_.perk_metabolism = true;
-    }
+    // (item 10) removed: port-invented "endure X -> unlock perk" grants (snowborn, camel,
+    // hamster, regen, runner, metabolism). C2 perks are bought in the perk menu only.
     {
       float rain_on_fire = (!in_bunker_ && indoor_t_ <= 0.f) ? weather_.rain : 0.f;
       // Tent shelters nearby fire from rain soak
@@ -3491,7 +3486,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     berry_t_ -= dt;
     if (berry_t_ <= 0.f && berry_idx_ >= 0 && berry_idx_ < c2_props_.count()) {
       const int item = MapProps::berry_item(c2_props_.at(berry_idx_).def);
-      if (item) inventory_.add_item(static_cast<ItemId>(item), balance::perk_agronom == 1 ? 2 : 1, items_);
+      if (item) inventory_.add_item(static_cast<ItemId>(item), player_.perks.has(Perk_Agronom) ? 2 : 1, items_);
       berry_idx_ = -1;
     }
   }
@@ -3896,8 +3891,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       for (int i = 0; i < inventory_.slot_count(); ++i) {
         if (inventory_.slot(i).id == 87 || inventory_.slot(i).id == 86) { has_rod = true; break; }
       }
-      const float fish_chance = player_.perk_farmer ? 0.45f : 0.35f;
-      const float bush_chance = player_.perk_farmer ? 0.4f : 0.25f;
+      const float fish_chance = 0.35f;
+      const float bush_chance = 0.25f;
       // Removed (not in data.js): shovel digging. C2 shovel is a melee weapon only.
       const ItemId eqid = inventory_.slot(equipped_slot_).id;
       {
@@ -3967,11 +3962,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
           CropPlot& c = crops_[ci];
           if (!c.active || !c.ready) continue;
           if (dist2(c.pos, player_.pos) > 28.f * 28.f) continue;
-          const int n = 1 + (player_.perk_farmer ? 1 : 0);
-          inventory_.add_item(c.crop_id, n, items_);
+          inventory_.add_item(c.crop_id, 1, items_);
           c.active = false;
           player_.forage_count += 1;
-          if (player_.forage_count >= 8) player_.perk_farmer = true;
           harvested = true;
           break;
         }
@@ -4294,6 +4287,7 @@ void Game::use_equipped_item() {
         if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
           use_anim_t_ = 0.5f;
           if (before == 45) adrenaline_t_ = 18.f;
+          if (before == 62) player_.perks.xp_raw += 50;   // item_activate 62: AddVar expierence_points 50
           play_consume(before);
           (void)was_bleed;
         }
@@ -5398,6 +5392,7 @@ void Game::render() {
     platform_->profile_mark(IPlatform::Prof_Hud);
     if (!(tut_.active && tut_.final_step > 0)) draw_debug_hud(*platform_, *this);   // final: GUI hidden
     if (tut_.active) render_tutorial_overlay();
+    if (show_perks_ && state_ == AppState_Playing) render_perk_menu();
     if (state_ == AppState_Paused) render_pause_menu();
   } else if (state_ == AppState_Dead) {
     render_dead_screen();
@@ -6219,7 +6214,7 @@ int Game::spawn_drop_count(ItemId id) {
     if (r.id != id) continue;
     int n = r.kind == 1 ? rng_.next_int(r.a, r.b - 1)     // int(random(a, b))
                         : r.list[rng_.next_int(0, r.n - 1)];
-    if (r.farmer && player_.perk_farmer) n += r.farmer;
+    if (r.farmer && player_.perks.has(Perk_Farmer)) n += r.farmer;
     return n;
   }
   return 1;

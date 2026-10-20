@@ -51,20 +51,7 @@ Player::Player()
     fish_caught(0),
     forage_count(0),
     hear_radius(static_cast<float>(balance::Player_Hear_radius)),
-    perk_camel(false),
-    perk_hamster(false),
-    perk_regen(false),
-    perk_metabolism(false),
-    perk_runner(false),
-    perk_hunter(false),
-    perk_farmer(false),
-    perk_snowborn(false),
-    cold_endure_t_(0.f),
-    thirst_endure_t_(0.f),
-    starve_endure_t_(0.f),
-    wound_endure_t_(0.f),
-    sprint_t_(0.f),
-    bleed_endure_t_(0.f) {
+    perks() {
   touch_player_attack_audit();
 }
 
@@ -82,20 +69,7 @@ void Player::reset_new_game(Difficulty d) {
   animals_killed = 0;
   fish_caught = 0;
   forage_count = 0;
-  perk_camel = false;
-  perk_hamster = false;
-  perk_regen = false;
-  perk_metabolism = false;
-  perk_runner = false;
-  perk_hunter = false;
-  perk_farmer = false;
-  perk_snowborn = false;
-  cold_endure_t_ = 0.f;
-  thirst_endure_t_ = 0.f;
-  starve_endure_t_ = 0.f;
-  wound_endure_t_ = 0.f;
-  sprint_t_ = 0.f;
-  bleed_endure_t_ = 0.f;
+  perks.reset(); // Restart_game
   survival.reset_full();
   hear_radius = static_cast<float>(balance::Player_Hear_radius);
 }
@@ -115,7 +89,6 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
   }
 
   float run_mul = run_multiplier;
-  if (perk_runner) run_mul += 0.2f; // stub until perk_runner extract
   const float spd = move_speed * (running ? run_mul : 1.f);
   vel = Vec2(move_x * spd, move_y * spd);
   pos.x += vel.x * dt;
@@ -130,7 +103,8 @@ void Player::apply_input(float move_x, float move_y, bool want_run, float dt) {
 void Player::update_survival(float dt, float weather_temp, bool is_night, bool is_raining,
                              float clothing_insulation, bool vitamins_buff) {
   survival.update(dt, rates_for_difficulty(difficulty), weather_temp, running,
-                  is_night, is_raining, perk_camel, perk_hamster, perk_regen, perk_metabolism,
+                  is_night, is_raining, perks.has(Perk_Camel), perks.has(Perk_Hamster), perks.has(Perk_Regen),
+                  perks.has(Perk_Metabolism),
                   clothing_insulation, vitamins_buff);
 }
 

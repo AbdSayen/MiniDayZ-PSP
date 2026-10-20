@@ -103,7 +103,7 @@ struct SaveBlob {
   int animals_killed;
   int quest_active;
   int quest_progress;
-  int perk_flags; // packed hunter/farmer/regen/camel/hamster/runner/metabolism
+  int perk_flags; // v4..v19: port-invented perk flags (ignored since v20)
   // v5 extras
   int mag_rounds;
   float wetness;
@@ -154,6 +154,12 @@ struct SaveBlob {
   // v19 - opened car trunks (map_element IV3 = 1 per MapProps index) + ach_gta counter
   unsigned char trunks_opened[kSaveTrunkBytes];
   int ach_gta;
+  // v20 - C2 perks: perk_* bits (index = gui_perk_icon frame), expierence_points,
+  // perks_learnt_count, perk_cost
+  int perk_bits;
+  int perk_xp_raw;
+  int perk_learnt;
+  int perk_cost;
 };
 
 struct WorldExtras {
@@ -176,7 +182,7 @@ struct WorldExtras {
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 19;
+  static const int kVersion = 20;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,

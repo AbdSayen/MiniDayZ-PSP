@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mdaz/perks.hpp"
 #include "mdaz/survival.hpp"
 #include "mdaz/types.hpp"
 
@@ -21,7 +22,7 @@ struct Player {
   int bandits_killed;
   int animals_killed;
   int fish_caught;
-  int forage_count; // bush forages toward perk_farmer
+  int forage_count;
   float hear_radius;
 
   Player();
@@ -32,20 +33,7 @@ struct Player {
                        float clothing_insulation = 0.f, bool vitamins_buff = false);
   Aabb bounds() const;
 
-  bool perk_camel;
-  bool perk_hamster;
-  bool perk_regen;
-  bool perk_metabolism;
-  bool perk_runner;
-  bool perk_hunter; // extra meat on animal kills
-  bool perk_farmer; // better bush forage odds
-  bool perk_snowborn; // cold resistance after enduring freeze
-  float cold_endure_t_; // seconds spent freezing toward snowborn
-  float thirst_endure_t_; // seconds thirsty toward camel
-  float starve_endure_t_; // seconds starving toward hamster
-  float wound_endure_t_; // seconds low-blood toward regen
-  float sprint_t_; // cumulative sprint toward runner
-  float bleed_endure_t_; // cumulative bleeding toward metabolism
+  PerkState perks; // C2 expierence_points / perk_* / perks_learnt_count / perk_cost
 };
 
 } // namespace mdaz

@@ -15,10 +15,12 @@ set(MDAZ_CORE_SOURCES
   src/core/game_audio.cpp
   src/core/game_pump.cpp
   src/core/game_chop.cpp
+  src/core/game_perks.cpp
   src/core/time.cpp
   src/core/rng.cpp
   src/core/c2_session_globals.cpp
   src/player/player.cpp
+  src/player/perks.cpp
   src/player/survival.cpp
   src/player/player_drop.cpp
   src/player/player_worn_visual.cpp
@@ -158,6 +160,7 @@ if(MDAZ_BUILD_TESTS)
     tests/test_map_fidelity.cpp
     tests/test_player_visual.cpp
     tests/test_selection.cpp
+    tests/test_perks.cpp
     tests/test_fidelity2.cpp
     tests/test_audio.cpp
     tests/test_pump.cpp

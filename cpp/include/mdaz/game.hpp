@@ -428,6 +428,20 @@ private:
   InventoryUiState inventory_ui_;
   bool show_craft_menu_;
   bool show_controls_; // READ ONLY controls help (menu / pause)
+  // --- item 10: C2 XP + perk menu ---
+  bool show_perks_;      // perkmenu_on (PSP: opened from the pause menu, see KNOWN_ISSUES 10)
+  int perk_sel_;         // selected gui_perk_icon frame (gui_perk_icon IV0 = 1)
+  bool perk_buy_lit_;    // gui_perk_icon_buy frame 1
+  int xp_src_;           // damage source of the current hurt_* call: 0 other, 1 player bullet, 2 player melee
+  ItemId xp_src_wpn_;    // player weapon item id of a bullet source
+  float xp_every_t_;     // EXpierence "Every 10 seconds" accumulator
+  void xp_add(int n);    // AddVar expierence_points (Map layout only: tutorial excluded)
+  void tick_xp(float dt);
+  void open_perk_menu();
+  void update_perk_menu(const InputState& in);
+  void render_perk_menu() const;
+  void perk_select(int frame);
+  void xp_on_zed_killed(const Zombie& z);
   int craft_menu_index_;
   Difficulty menu_difficulty_;
   void draw_controls_help() const;
@@ -682,6 +696,14 @@ public:
   float harness_place_near_water();
   void harness_combine_setup();
   bool harness_fence_try(int sticks);
+  void harness_perks(int step);   // item 10: XP + perk menu shots
+  const PerkState& perks() const;
+  int perk_menu_sel() const { return perk_sel_; }
+  bool perk_menu_open() const { return show_perks_; }
+  bool perk_buy_lit() const { return perk_buy_lit_; }
+  // test hooks: route damage as a player bullet (weapon id) / melee swing
+  void test_hurt_zombie_by_player(Zombie& z, float dmg, ItemId weapon, bool melee);
+  void test_tick_xp(float dt) { tick_xp(dt); }
   void harness_combine_log();
 private:
   void update_bot_zindex();

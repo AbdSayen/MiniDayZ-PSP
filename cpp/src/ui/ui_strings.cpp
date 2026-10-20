@@ -36,6 +36,25 @@ const Fallback kFallbacks[] = {
   {383, "A group of survivors asked me to deal with bandits."},
   {384, "Time left:"},
   {386, "Bandits eliminated. I need to get back to survivors for my reward."},
+  // item 10: perk menu (l_eng_ui.xml 337, 400..415, 536)
+  {337, "XP "},
+  {400, "Sharpshooter\nIncreases a chance of headshot with a ranged weapon."},
+  {401, "Scout\nYou can spot enemy survivors from a greater distance."},
+  {402, "Sprinter\nRun speed increases by 10%."},
+  {403, "Camel\nThirst rate decreases by 15%."},
+  {404, "Hamster\nHunger rate decreases by 15%."},
+  {405, "Snowborn\nCold resistance increases by 20%."},
+  {406, "The Bullet Farmer\nEach ammo stack you find contains +3 bullets."},
+  {407, "Survivalist\nRegeneration speed doubles if your blood drops under 50%."},
+  {408, "Blocker\nIncreases chance to block enemy attacks in melee fight."},
+  {409, "Puncher\nIncreases chance to deal multiple damage attack in melee fight."},
+  {410, "Trunk Digger\nIncreases chance to find loot in car trunks."},
+  {411, "Hunter\nAnimals have a smaller chance to spot the player."},
+  {412, "Sweet home\nStaying inside buildings adds 50% more heat."},
+  {413, "Red+\nLowers the blood loss when the player is bleeding or feels sick."},
+  {414, "Nightcrawler\nYou see a little better in the night."},
+  {415, "Agronomist\nYou gather more berries. None of your plants will ever wither."},
+  {536, "Score to unlock: "},
 };
 
 // User-requested PSP wording for l_eng_ui.xml lines that name touch controls

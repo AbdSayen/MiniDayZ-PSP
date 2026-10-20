@@ -76,6 +76,11 @@ struct GameTestAccess {
   static ItemId toast_id(Game& g) { return g.wpn_unlock_toast_id_; }
   static QuestState& quest(Game& g) { return g.quest_; }
   static void quest_done(Game& g, int task) { g.on_quest_completed(task); }
+  static void perk_ui(Game& g, const InputState& in) { g.update_perk_menu(in); }
+  static void perk_open(Game& g) { g.open_perk_menu(); }
+  static void hurt_b_player(Game& g, Bandit& b, float d) { g.xp_src_ = 1; g.xp_src_wpn_ = 160; g.hurt_bandit(b, d); g.xp_src_ = 0; }
+  static void hurt_a_player(Game& g, Animal& a, float d) { g.xp_src_ = 1; g.xp_src_wpn_ = 160; g.hurt_animal(a, d); g.xp_src_ = 0; }
+  static bool tut_active(Game& g) { return g.tut_.active; }
   static void quest_bandits(Game& g) { g.maybe_spawn_quest_bandits(); }
   static bool fence(Game& g, int v) { return g.try_build_fence(v); }
   static void drive(Game& g, bool d) { g.vehicles_.set_driving_for_test(d); }
@@ -211,6 +216,75 @@ static void test_restored_step1(Game& g) {
   A::inv(g).add_item(50, 1, A::db(g));
   check(!A::fence(g, 1) && g.toast_text() && std::strcmp(g.toast_text(), "I need more wooden sticks for that.") == 0,
         "build_fence 1 stick: client_log 64");
+  // --- item 10: XP sources + perk menu (C2 expierence_points / perkmenu).
+  {
+    check(!A::tut_active(g), "item10: Map layout (tutorial off)");
+    PerkState& ps = A::pl(g).perks;
+    ps.reset();
+    check(ps.xp_raw == 16 && ps.cost == 200 && ps.shown_xp() == 0 && ps.shown_cost() == 184,
+          "Restart_game: XP 16 (shown 0), perk_cost 200 (shown 184)");
+    Zombie* z1 = A::zeds(g).spawn(Zed_Normal, Vec2(6000.f, 6000.f));
+    g.test_hurt_zombie_by_player(*z1, 100000.f, 160, false);   // AK-74 bullet "ak74"
+    check(ps.xp_raw == 24, "zed killed by a player ak74 bullet: +8");
+    Zombie* z2 = A::zeds(g).spawn(Zed_Normal, Vec2(6000.f, 6040.f));
+    g.test_hurt_zombie_by_player(*z2, 100000.f, 184, false);   // Groza: bullet t881 "groza"
+    check(ps.xp_raw == 24, "zed killed by groza bullet: no XP (name not listed)");
+    Zombie* z3 = A::zeds(g).spawn(Zed_Normal, Vec2(6040.f, 6000.f));
+    g.test_hurt_zombie_by_player(*z3, 100000.f, 42, true);     // melee swing (t910 IV5)
+    check(ps.xp_raw == 32, "zed killed by melee: +8");
+    Zombie* z4 = A::zeds(g).spawn(Zed_Normal, Vec2(6040.f, 6040.f));
+    A::hurt_z(g, *z4, 100000.f);                                 // trap / fire / explosion
+    check(ps.xp_raw == 32, "zed killed by a non-t910 source: no XP");
+    Zombie* tk = A::zeds(g).spawn(Zed_Tank, Vec2(6080.f, 6000.f));
+    g.test_hurt_zombie_by_player(*tk, 100000.f, 156, false);   // Mosin "mosin"
+    check(ps.xp_raw == 52, "tank killed by a mosin bullet: +20");
+    Zombie* tk2 = A::zeds(g).spawn(Zed_Tank, Vec2(6080.f, 6040.f));
+    g.test_hurt_zombie_by_player(*tk2, 100000.f, 187, false);  // Madsen: zed list only
+    check(ps.xp_raw == 52, "tank killed by madsen: no XP (not in the tank lists)");
+    Zombie* sc = A::zeds(g).spawn(Zed_Screamer, Vec2(6120.f, 6000.f));
+    g.test_hurt_zombie_by_player(*sc, 1.f, 160, false);
+    check(ps.xp_raw == 58, "screamer hit by a player bullet: +6 per hit");
+    Animal* wf = A::animals(g).spawn(Animal_Wolf, Vec2(6160.f, 6000.f));
+    A::hurt_a_player(g, *wf, 100000.f);
+    check(ps.xp_raw == 63, "wolf killed by the player: +5");
+    Bandit* bp = A::bandits(g).spawn(Vec2(6200.f, 6000.f), false);
+    bp->c2_obj = 243;
+    A::hurt_b_player(g, *bp, 100000.f);
+    check(ps.xp_raw == 78, "bot_enemy_shooter 243 killed: +15");
+    const int x0 = ps.xp_raw;
+    A::quest_done(g, 1);
+    check(ps.xp_raw == x0 + 30, "quest item (menu_btn_wood 161): +30");
+    g.test_tick_xp(9.9f);
+    check(ps.xp_raw == x0 + 30, "EXpierence: nothing before 10 s");
+    g.test_tick_xp(0.2f);
+    check(ps.xp_raw == x0 + 31, "EXpierence Every 10 s, CurrentLevel 0: +1");
+    // Perk menu: XP below cost -> buy refused; XP >= cost -> buy, no XP deducted, cost 516.
+    ps.xp_raw = 150;
+    A::perk_open(g);
+    check(g.perk_menu_open() && g.perk_menu_sel() == 13 && g.perk_buy_lit(),
+          "perkmenu open: Red+ (13) selected, buy lit (XP >= 100, sid808068840237150)");
+    InputState cross; cross.confirm_pressed = true;
+    A::perk_ui(g, cross);
+    check(!ps.has(Perk_Metabolism) && ps.learnt == 0, "buy refused: XP 150 < perk_cost 200");
+    check(!ps.notify_visible(), "notify hidden while XP < perk_cost");
+    ps.xp_raw = 200;
+    check(ps.notify_visible(), "notify visible at XP >= perk_cost");
+    InputState right; right.nav_right = true;
+    A::perk_ui(g, right);
+    check(g.perk_menu_sel() == 1, "D-pad right: upper row 13 -> 1 (Scout)");
+    InputState down; down.nav_down = true;
+    A::perk_ui(g, down);
+    check(g.perk_menu_sel() == 5, "D-pad down: lower row -> 5 (Snowborn)");
+    A::perk_ui(g, cross);
+    check(ps.has(Perk_Snowborn) && ps.learnt == 1 && ps.xp_raw == 200 && ps.cost == 516 &&
+          ps.shown_cost() == 500, "buy Snowborn: owned, XP kept, perk_cost 216*2+100-16 = 516");
+    A::perk_ui(g, cross);
+    check(ps.learnt == 1, "owned perk cannot be bought again");
+    InputState back; back.back_pressed = true;
+    A::perk_ui(g, back);
+    check(!g.perk_menu_open(), "Circle closes the perk menu");
+    ps.reset();
+  }
   // --- Location stream (recovered sync_location_stream / spawn_loot_for_poi / spawn_hostiles_for_poi).
   MapGenerator& m = A::map(g);
   m.generate_new_game(140);

@@ -17,7 +17,7 @@ int test_save() {
   p.survival.blood = 77.f;
   p.zeds_killed = 3;
   p.animals_killed = 7;
-  p.perk_hunter = true;
+  p.perks.owned[mdaz::Perk_Hunter] = true; p.perks.xp_raw = 777; p.perks.learnt = 1; p.perks.cost = 516;
   p.nvg_on = true;
 
   mdaz::ItemDatabase db;
@@ -100,7 +100,7 @@ int test_save() {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 19) {
+  if (blob.version != 20) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -160,10 +160,10 @@ int test_save() {
     ++fail;
   } else std::printf("OK   visited fog roundtrip\n");
 
-  if (batt != 66.f || qact != 2 || qprog != 4 || !p2.perk_hunter || !p2.nvg_on ||
+  if (batt != 66.f || qact != 2 || qprog != 4 || !p2.perks.has(mdaz::Perk_Hunter) || p2.perks.xp_raw != 777 || p2.perks.learnt != 1 || p2.perks.cost != 516 || !p2.nvg_on ||
       p2.animals_killed != 7) {
     std::printf("FAIL v4 fields batt=%.1f q=%d/%d hunt=%d nvg=%d animals=%d\n",
-                batt, qact, qprog, (int)p2.perk_hunter, (int)p2.nvg_on, p2.animals_killed);
+                batt, qact, qprog, (int)p2.perks.has(mdaz::Perk_Hunter), (int)p2.nvg_on, p2.animals_killed);
     ++fail;
   } else std::printf("OK   v4 battery/quest/perks\n");
 
@@ -297,7 +297,7 @@ int test_save() {
                                            0, 0, 0, &ex19) ||
         !mdaz::SaveSystem::read_from_buffer(blob19, p4, inv4, w4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                             &ex19r) ||
-        blob19.version != 19 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
+        blob19.version != 20 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
         ex19r.ach_gta != 7) {
       std::printf("FAIL v19 trunks/ach_gta roundtrip\n");
       ++fail;

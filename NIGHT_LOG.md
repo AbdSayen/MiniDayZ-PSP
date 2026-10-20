@@ -102,3 +102,6 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 
 ### 2026-10-20 — пункт 9c
 - IV44 = в машине (Set при входе в t946). Добавлены client_log 90/64 в try_build_fence, тесты, харнесс MDAZ_HARNESS_FENCE.
+
+### 2026-10-20 — пункт 10
+- Добавлены perks.hpp/perks.cpp (PerkState) и game_perks.cpp (XP, меню, харнесс MDAZ_HARNESS_PERKS). Удалены старые bool-перки Player. Сопоставление оружия и имени пули t910 IV4 сделано по data.js.

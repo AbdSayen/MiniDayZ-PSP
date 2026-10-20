@@ -740,3 +740,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Пункт 9b: подсказка R+✕ Combine; забор требует один стак из 5 палок (тест «fence needs one stick stack»).
 
 - Пункт 9c: build_fence: в машине — сообщение 90, нет стака из 5 палок — сообщение 64 (тесты test_selection).
+
+- Пункт 10: XP (expierence_points) со всеми источниками C2, 16 перков, perk_cost, меню перков (пауза → PERKS), значок notify, MD_Perk_1/2, сохранение v20. Удалены выдуманные портом выдачи перков. Тесты: test_perks, test_selection (item10).
