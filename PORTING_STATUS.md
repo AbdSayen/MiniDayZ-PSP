@@ -703,3 +703,7 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Атака (Melee_2_auto) топором тоже даёт рубящий взмах (IV7).
 - Попадание по стволу с IV0 > 0: IV0 -= 1, chop/chop2/3/4 в точке взмаха. IV0 ≤ 0: treefall_02/03 (-5 дБ, не позиционно), дерево -> кадр 1 (пень/лежащий ствол, спрайт из data.js), obst_base -> кадр 8 (своя коллизия), Spawn_drop по типу дерева: t175/t569 50,50; t198 38,38,50; t200 38,38,50,37; t570 50,50,38; t574 50,50,38,38 (x ± random 30, y + 40 + random 10 от позиции спрайта дерева); tutorTreeChopped = 1; ach_lumberjack += 1. Взмах уничтожается (test_bullet_hit).
 - Тесты: test_chop (17 проверок). Скриншоты: docs/screenshots/chop_*.png.
+
+## Пункт 6 — коллизия деревьев: ГОТОВО (2026-10-20)
+- tree_block кадры 0..3 → big_obstacle_base 17/21/22/23 (полигоны из data.js), туториал sub = 7 + frame; выдуманный «машина валит деревья» удалён.
+- Тест test_trees (8 проверок), скриншоты trees_0_north_of_block / trees_1_blocked (игрок упирается в tree_block кадр 2 на y=трунк+2).

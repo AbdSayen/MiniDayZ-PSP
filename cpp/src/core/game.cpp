@@ -204,16 +204,20 @@ void draw_player_c2(IPlatform* p, const CharAnims* anims, float sx, float sy, fl
 // data.js tree objects spawned by create_map_element cat 1: frame 0 rect, hotspot and
 // Imagepoint 1 (where the Solid obst_base / big_obstacle_base is spawned).
 struct C2TreeSprite { const char* sheet; int fx, fy, fw, fh; float w, h, hx, hy, ipx, ipy; };
-const C2TreeSprite kC2Trees[7] = {
+const C2TreeSprite kC2Trees[10] = {
   {"tree_pine-sheet0", 1, 1, 47, 92, 47, 92, 0.5106f, 0.5f, 0.5319f, 0.9239f},          // sub 1 t175
   {"tree_leaves-sheet0", 1, 1, 53, 97, 53, 97, 0.5094f, 0.5052f, 0.4151f, 0.9175f},     // sub 2 t198
   {"tree_leaves_2-sheet0", 0, 0, 57, 94, 57, 94, 0.4561f, 0.5106f, 0.4561f, 0.9149f},   // sub 3 t200
   {"tree_pine2-sheet0", 0, 0, 50, 119, 50, 119, 0.52f, 0.5126f, 0.54f, 0.9496f},        // sub 4 t569
   {"tree_leaves_new2-sheet0", 0, 0, 53, 117, 53, 117, 0.5094f, 0.5043f, 0.4151f, 0.9316f}, // 5 t570
   {"tree_leaves_new3-sheet0", 0, 0, 64, 115, 64, 115, 0.5156f, 0.513f, 0.5f, 0.9217f},  // sub 6 t574
-  {"tree_block-sheet0", 152, 1, 146, 166, 146, 166, 0.5068f, 0.4759f, 0.5f, 0.5f},     // 7..10 t201
+  // tree_block t201: create_map_element sub 7..10 = frames 0..3 (SetAnimFrame), Imagepoint 1.
+  {"tree_block-sheet0", 152, 1, 146, 166, 146, 166, 0.5068f, 0.4759f, 0.5f, 0.5f},       // sub 7 frame 0
+  {"tree_block-sheet0", 152, 170, 160, 132, 160, 132, 0.5f, 0.5f, 0.5f, 0.5f},          // sub 8 frame 1
+  {"tree_block-sheet0", 300, 1, 140, 167, 140, 167, 0.5f, 0.50299f, 0.5f, 0.50299f},    // sub 9 frame 2
+  {"tree_block-sheet0", 1, 1, 149, 169, 149, 169, 0.50336f, 0.50296f, 0.50336f, 0.50296f}, // sub 10 frame 3
 };
-const C2TreeSprite& c2_tree_sprite(int sub) { return kC2Trees[(sub >= 1 && sub <= 6) ? sub - 1 : 6]; }
+const C2TreeSprite& c2_tree_sprite(int sub) { return kC2Trees[(sub >= 1 && sub <= 10) ? sub - 1 : 6]; }
 
 // Draw a C2 tree whose trunk (Imagepoint 1) is at screen (sx, sy); sc = world->screen scale.
 void draw_c2_tree(IPlatform* p, int sub, float sx, float sy, float sc) {
@@ -3151,28 +3155,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
     } else {
       snd_crash_latch_ = false;
     }
-    // Hit a tree while driving — damage vehicle + fell tree
-    if (vehicles_.player_driving()) {
-      for (int ti = 0; ti < tree_count_; ++ti) {
-        if (dist2(trees_[ti], player_.pos) > 28.f * 28.f) continue;
-        Vehicle* v = vehicles_.driven();
-        if (v) {
-          v->hp -= 15.f;
-          if (v->hp < 0.f) v->hp = 0.f;
-          apply_incoming_damage(4.f, true);
-        }
-        // Snap tree into sticks loot
-        const Vec2 fell = trees_[ti];
-        loot_.spawn_item(fell, 38, 2 + rng_.next_int(0, 2));
-        trees_[ti] = trees_[tree_count_ - 1];
-        tree_sub_[ti] = tree_sub_[tree_count_ - 1];
-        tree_hp_[ti] = tree_hp_[tree_count_ - 1];
-        tree_frame_[ti] = tree_frame_[tree_count_ - 1];
-        tree_count_ -= 1;
-        sfx_at(c2_choose_treefall(sfx_rng_), -5.f, fell);
-        break;
-      }
-    }
+    // Removed (not in data.js): car felling trees. Vehicle collisions only destroy obst_base
+    // tied to obst_fence 310 / obst_trash_container 305 / 306 (speed > 50); trees are untouched.
   }
   const bool vehicle_interact = was_driving || vehicles_.player_driving();
   if (fuel_warn_cd_ > 0.f) fuel_warn_cd_ -= dt;
@@ -5218,19 +5202,24 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
   // and sets it to frame 10 (15x17, hotspot 0.47/0.65, triangle collision poly). trees_[] are
   // stored at that trunk point. Size = natural frame size (see KNOWN_ISSUES: template size).
   if (!in_bunker_) {
-    static const float kTri[6] = {0.f * 15.f, -0.59f * 17.f, 0.53f * 15.f, 0.24f * 17.f,
-                                  -0.47f * 15.f, 0.24f * 17.f};
-    // tree_block (sub 7..10): big_obstacle_base frame 17 (145x172, hotspot 0.414/0.5), 6-point poly.
-    static const float kBlk[12] = {-0.3172f, 0.1424f, -0.1379f, -0.0145f, 0.2569f, -0.0465f,
-                                   0.5216f, -0.0058f, 0.4759f, 0.1919f, 0.1103f, 0.4506f};
+    // tree_block (sub 7..10 = frame 0..3) spawns big_obstacle_base at Imagepoint 1 with frame
+    // 17 / 21 / 22 / 23 (data.js polys, relative to the frame hotspot = the spawn point).
+    struct BigPoly { float w, h; int n; float p[12]; };
+    static const BigPoly kBig[4] = {
+      {145.f, 172.f, 6, {-0.3172f, 0.1424f, -0.1379f, -0.0145f, 0.2569f, -0.0465f, 0.5216f, -0.0058f, 0.4759f, 0.1919f, 0.1103f, 0.4506f}},
+      {160.f, 132.f, 4, {-0.39375f, 0.20455f, 0.34375f, 0.20455f, 0.34375f, 0.36364f, -0.39375f, 0.40909f}},
+      {140.f, 167.f, 4, {-0.04643f, -0.02096f, 0.32143f, 0.24252f, 0.06071f, 0.38922f, -0.40714f, 0.11976f}},
+      {149.f, 169.f, 4, {-0.27852f, -0.02959f, 0.28188f, -0.0503f, 0.33222f, 0.31361f, -0.31544f, 0.30769f}},
+    };
     for (int ti = 0; ti < tree_count_; ++ti) {
       const float px = b.x - trees_[ti].x, py = b.y - trees_[ti].y;
       if (tree_sub_[ti] >= 7) {
         if (px * px + py * py > 110.f * 110.f) continue;
+        const BigPoly& bp = kBig[(tree_sub_[ti] - 7) & 3];
         bool in = false;
-        for (int e = 0, f = 5; e < 6; f = e++) {
-          const float xi = kBlk[e * 2] * 145.f, yi = kBlk[e * 2 + 1] * 172.f;
-          const float xj = kBlk[f * 2] * 145.f, yj = kBlk[f * 2 + 1] * 172.f;
+        for (int e = 0, f = bp.n - 1; e < bp.n; f = e++) {
+          const float xi = bp.p[e * 2] * bp.w, yi = bp.p[e * 2 + 1] * bp.h;
+          const float xj = bp.p[f * 2] * bp.w, yj = bp.p[f * 2 + 1] * bp.h;
           if (((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)) in = !in;
         }
         if (in) return true;

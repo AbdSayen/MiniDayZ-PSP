@@ -24,6 +24,7 @@ int test_fidelity2();
 int test_audio();
 int test_pump();
 int test_chop();
+int test_trees();
 int test_fidelity2_more();
 
 int main(int argc, char** argv) {
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
   failed += test_audio();
   if (!pump_last) failed += test_pump();
   failed += test_chop();
+  failed += test_trees();
   failed += test_balance();
   failed += test_weather();
   failed += test_survival();

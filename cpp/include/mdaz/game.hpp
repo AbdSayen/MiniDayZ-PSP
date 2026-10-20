@@ -66,6 +66,18 @@ public:
   void harness_set_pos(float x, float y) { player_.pos = Vec2(x, y); }
   // TEST HARNESS ONLY (--shots-chop): stand 25 px south of the nearest tree (sub 1..6) with a
   // hatchet (204) equipped. Returns the tree index or -1.
+  // TEST HARNESS ONLY (MDAZ_HARNESS_TREES): stand 70 px north of the nearest tree_block of `sub`.
+  int harness_place_at_tree_block(int sub) {
+    int best = -1; float bd = 1e30f;
+    for (int i = 0; i < tree_count_; ++i) {
+      if (tree_sub_[i] != sub) continue;
+      const float dx = trees_[i].x - player_.pos.x, dy = trees_[i].y - player_.pos.y;
+      if (dx * dx + dy * dy < bd) { bd = dx * dx + dy * dy; best = i; }
+    }
+    if (best >= 0) player_.pos = Vec2(trees_[best].x, trees_[best].y - 70.f);
+    return best;
+  }
+  Vec2 harness_player_pos() const { return player_.pos; }
   int harness_place_at_tree() {
     int best = -1; float bd = 1e30f;
     for (int i = 0; i < tree_count_; ++i) {
@@ -331,6 +343,7 @@ public:
   void global_respawn_pumps_for_test() { global_respawn_pumps(); }
   // Item 5 test accessors.
   int tree_count_for_test() const { return tree_count_; }
+  bool blocks_for_test(Vec2 p) const { return building_blocks(p, p); }
   int tree_sub_for_test(int i) const { return tree_sub_[i]; }
   int tree_iv0_for_test(int i) const { return tree_hp_[i]; }
   int tree_frame_for_test(int i) const { return tree_frame_[i]; }

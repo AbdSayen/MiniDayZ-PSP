@@ -96,6 +96,16 @@ public:
       if (game_ && frame_ == 1001) std::printf("[trunk] opened=%d found=%d alive=%d\n", game_->trunk_opened_, game_->trunk_found_, game_->harness_trunks_alive());
       return frame_ < 1010;
     }
+    if (chop_ && std::getenv("MDAZ_HARNESS_TREES")) {   // item 6: walk south into a tree_block frame 2
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (game_ && frame_ == 200) {
+        const int t = game_->harness_place_at_tree_block(9);
+        std::printf("[trees] tree=%d trunk=%.1f,%.1f\n", t, t >= 0 ? game_->tree_trunk_for_test(t).x : 0.f, t >= 0 ? game_->tree_trunk_for_test(t).y : 0.f);
+      }
+      if (frame_ > 210 && frame_ < 330) in.move_y = 1.f;
+      if (game_ && frame_ % 20 == 0 && frame_ >= 200) std::printf("[trees] f%d player=%.1f,%.1f\n", frame_, game_->harness_player_pos().x, game_->harness_player_pos().y);
+      return frame_ < 340;
+    }
     if (chop_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (game_ && frame_ == 200) { chop_tree_ = game_->harness_place_at_tree(); chop_log("placed"); }
@@ -350,6 +360,13 @@ public:
       return;
     }
     if (chop_) {
+      static const bool trees = std::getenv("MDAZ_HARNESS_TREES") != nullptr;
+      if (trees && (frame_ == 205 || frame_ == 335)) {
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, frame_ == 205 ? "trees_0_north_of_block" : "trees_1_blocked");
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      if (trees) { inner_->end_frame(); return; }
       static const struct { int frame; const char* name; } kC[] = {
         { 235, "chop_0_before_prompt" }, { 300, "chop_1_hit1" }, { 440, "chop_2_hit2_stump_drop" }, { 595, "chop_3_inventory" },
       };

@@ -135,7 +135,8 @@ void Game::start_tutorial() {
   for (int i = 0; i < tut_tree_count() && tree_count_ < kMaxTrees; ++i) {
     const TutTree& tr = tut_tree(i);
     trees_[tree_count_] = Vec2(tr.x, tr.y);
-    tree_sub_[tree_count_] = static_cast<unsigned char>(tr.sub);
+    // tree_block (sub 7) keeps its layout frame 0..3 -> port sub 7..10 (big_obstacle_base 17/21/22/23).
+    tree_sub_[tree_count_] = static_cast<unsigned char>(tr.sub == 7 ? 7 + (tr.frame & 3) : tr.sub);
     tree_hp_[tree_count_] = 2;
     ++tree_count_;
   }
