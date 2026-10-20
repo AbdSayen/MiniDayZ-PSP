@@ -96,6 +96,22 @@ public:
       if (game_ && frame_ == 1001) std::printf("[trunk] opened=%d found=%d alive=%d\n", game_->trunk_opened_, game_->trunk_found_, game_->harness_trunks_alive());
       return frame_ < 1010;
     }
+    if (chop_ && std::getenv("MDAZ_HARNESS_MELEE")) {   // item 5b: fist swing hits a zed in front
+      if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+      if (game_ && frame_ == 200) {
+        game_->clear_zeds_for_test();
+        game_->unequip_for_test();
+        game_->player_mut().facing_deg = 0.f;
+        const mdaz::Vec2 pp = game_->harness_player_pos();
+        mdaz::Zombie* z = game_->spawn_zed_for_test(mdaz::Vec2(pp.x + 22.f, pp.y));
+        std::printf("[melee] zed hp %.0f\n", z ? z->hp : -1.f);
+        melee_z_ = z;
+      }
+      if (frame_ == 215 || frame_ == 260) in.attack = in.attack_pressed = true;
+      if (game_ && melee_z_ && (frame_ == 214 || frame_ == 240 || frame_ == 290))
+        std::printf("[melee] f%d zed hp %.0f alive %d hits %d\n", frame_, melee_z_->hp, melee_z_->alive, game_->melee_hits_for_test());
+      return frame_ < 300;
+    }
     if (chop_ && std::getenv("MDAZ_HARNESS_TREES")) {   // item 6: walk south into a tree_block frame 2
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (game_ && frame_ == 200) {
@@ -360,6 +376,13 @@ public:
       return;
     }
     if (chop_) {
+      static const bool melee = std::getenv("MDAZ_HARNESS_MELEE") != nullptr;
+      if (melee && (frame_ == 218 || frame_ == 226)) {
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, frame_ == 218 ? "melee_0_swing" : "melee_1_hit_hint");
+        std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+      }
+      if (melee) { inner_->end_frame(); return; }
       static const bool trees = std::getenv("MDAZ_HARNESS_TREES") != nullptr;
       if (trees && (frame_ == 205 || frame_ == 335)) {
         char path[512];
@@ -444,6 +467,7 @@ public:
   bool carhit_ = false;
   float carhit_y1_ = 0.f;
   int chop_tree_ = -1;
+  mdaz::Zombie* melee_z_ = nullptr;
   void chop_log(const char* tag) {
     std::printf("[chop] %s tree=%d hp=%d trees=%d ground: sticks(38)=%d firewood(50)=%d bag: sticks=%d firewood=%d\n", tag, chop_tree_,
                 game_->harness_tree_hp(chop_tree_), game_->harness_tree_count(), game_->harness_loot_count(38),

@@ -58,9 +58,55 @@ bool in_tri(const float* t, float px, float py) {
   }
   return true;
 }
-// t909 IV4 (melee reload, items_on_ground defaults in data.js).
-float melee_reload_iv4(ItemId id) { return id == 202 ? 1.5f : id == 204 ? 1.6f : 0.f; }
+inline float dist2(Vec2 a, Vec2 b) { const float x = a.x - b.x, y = a.y - b.y; return x * x + y * y; }
+float melee_reload_iv4(ItemId id) { return c2_melee_reload(id); }
 } // namespace
+
+// Pick-up events (Items_on_ground -> player_collision_base IV4) and Drop_melee (knives 7/8/9 ->
+// items 44/42/43): Split Axe 1, shovel 2, Pipe Wrench 3, Baseball Bat 4, Fireaxe 5, Crowbar 6,
+// Pickaxe 10, Pitchfork 11, Sledgehammer 12, sword 15, pan 16. 0 = Fist.
+int c2_melee_iv4(ItemId id) {
+  switch (id) {
+    case 202: return 1;  case 201: return 2;  case 200: return 3;  case 203: return 4;
+    case 204: return 5;  case 205: return 6;  case 44: return 7;   case 42: return 8;
+    case 43: return 9;   case 206: return 10; case 207: return 11; case 208: return 12;
+    case 209: return 15; case 210: return 16;
+    default: return 0;
+  }
+}
+// t909 IV4 = Reloading_time_melee Wait (layout instance defaults; knives = knife_any t637 0.8).
+float c2_melee_reload(ItemId id) {
+  switch (id) {
+    case 202: return 1.5f; case 201: return 1.2f; case 200: return 1.3f; case 203: return 1.f;
+    case 204: return 1.6f; case 205: return 1.2f; case 42: case 43: case 44: return 0.8f;
+    case 206: return 1.3f; case 207: return 1.2f; case 208: return 1.8f; case 209: return 1.5f;
+    case 210: return 0.9f;
+    default: return 0.f;
+  }
+}
+// Melee_2_auto (sid2098275646157213) melee_swing_general IV0 per player_collision_base IV4.
+int c2_melee_swing_dmg(int iv4) {
+  switch (iv4) {
+    case 1: return 50;  case 2: return 25;  case 3: return 30;  case 4: return 35;  case 5: return 60;
+    case 6: return 25;  case 7: return 21;  case 8: return 20;  case 9: return 19;  case 10: return 44;
+    case 11: return 44; case 12: return 40; case 13: return 48; case 15: return 75; case 16: return 33;
+    default: return 10;  // melee_swing_general instance default IV0
+  }
+}
+// Crit chance (round(random(100)) <= N) for perk_meleeatk 0 / 1.
+int c2_melee_crit_chance(int iv4, bool perk) {
+  int base;
+  switch (iv4) {
+    case 0: case 9: base = 10; break;
+    case 2: case 8: case 10: case 11: case 12: case 13: base = 15; break;
+    case 7: base = 20; break;
+    case 1: case 3: case 4: case 5: case 6: base = 25; break;
+    case 15: base = 35; break;
+    case 16: base = 40; break;
+    default: return -1;   // IV4 14: no crit event
+  }
+  return base + (perk ? 10 : 0);
+}
 
 // Stump draw (tree frame 1). sx, sy = trunk point (Imagepoint 1 of frame 0) on screen.
 void draw_c2_tree_stump(IPlatform* p, int sub, float sx, float sy, float sc) {
@@ -101,16 +147,26 @@ int Game::nearest_tree_obst(Vec2 p, float& d2) const {
   return best;
 }
 
-void Game::spawn_melee_swing(float ang_deg, bool chop) {
+void Game::spawn_melee_swing(float ang_deg, bool chop, float dmg, bool crit, ItemId weapon) {
   for (int i = 0; i < kMaxSwings; ++i) {
     if (swings_[i].alive) continue;
     swings_[i].pos = player_.pos;
     swings_[i].ang = ang_deg * 0.01745329252f;
     swings_[i].life = 0.2f;     // Fade: wait 0.1 + fade out 0.1, destroy
     swings_[i].chop = chop;
+    swings_[i].dmg = dmg;
+    swings_[i].crit = crit;
+    swings_[i].weapon = weapon;
     swings_[i].alive = true;
     return;
   }
+}
+
+// Hitting_obstacles Else / obstacle branches: hard_ground_1/2 at the bullet, tag ground_hit,
+// only when that tag is not already playing.
+void Game::swing_hard_ground(Vec2 at) {
+  if (audio_ && audio_->is_tag_playing("ground_hit")) return;
+  sfx_at((sfx_rng_.next_u32() & 1u) ? "hard_ground_2" : "hard_ground_1", 0.f, at, "ground_hit");
 }
 
 void Game::chop_tree_hit(int ti, Vec2 at) {
@@ -140,6 +196,39 @@ void Game::update_melee_swings(float dt) {
     const float cx = std::cos(s.ang), cy = std::sin(s.ang);
     s.pos.x += cx * 100.f * dt;
     s.pos.y += cy * 100.f * dt;
+    // OnCollision with NPCs (zeds 941, animals, bots): dmg = round(IV0 + random(-IV0/4, IV0/4)),
+    // NPC_get_damage, test_bodyhit, Destroy. Hit radii = the port's bullet radii (resolve_bullet_hits).
+    {
+      const float q = s.dmg * 0.25f;
+      bool hit_npc = false;
+      for (int k = 0; k <= 10 && !hit_npc; ++k) {
+        const Vec2 pt(s.pos.x + cx * k, s.pos.y + cy * k);
+        for (Zombie* z = zombies_.begin(); z != zombies_.end() && !hit_npc; ++z) {
+          if (!z->alive || dist2(pt, z->pos) >= 18.f * 18.f) continue;
+          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+          spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
+          hurt_zombie(*z, d, s.weapon);
+          hit_npc = true;
+        }
+        for (int ai = 0; ai < animals_.count() && !hit_npc; ++ai) {
+          Animal* a = animals_.at(ai);
+          if (!a->alive || dist2(pt, a->pos) >= 16.f * 16.f) continue;
+          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+          spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
+          hurt_animal(*a, d);
+          hit_npc = true;
+        }
+        for (Bandit* b = bandits_.begin(); b != bandits_.end() && !hit_npc; ++b) {
+          if (!b->alive || dist2(pt, b->pos) >= 16.f * 16.f) continue;
+          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+          hurt_bandit(*b, d);
+          hit_npc = true;
+        }
+      }
+      // t909 IV6 -= 0.2 / 0.5 / 1 by IV15 (durability): port has no per-item IV6 (KNOWN_ISSUES).
+      if (hit_npc) { ++melee_hits_; s.alive = false; continue; }
+    }
+    if (in_bunker_) continue;
     // OnCollision obst_base: the 10 px strip ahead of the origin against the trunk triangles.
     int hit = -1;
     for (int ti = 0; ti < tree_count_ && hit < 0; ++ti) {
@@ -150,13 +239,22 @@ void Game::update_melee_swings(float dt) {
         if (tree_obst_contains(ti, s.pos.x + cx * k, s.pos.y + cy * k)) { hit = ti; break; }
       }
     }
-    if (hit < 0) continue;
-    // IV7 (chop) branch; frame 10 obst overlapping the tree with IV0 > 0. Non-chop swings
-    // are not spawned by the port (KNOWN_ISSUES), so the Else (hard_ground) branch is unused.
-    if (s.chop && tree_frame_[hit] == 0 && tree_hp_[hit] > 0) chop_tree_hit(hit, s.pos);
-    // t909 IV6 -= 1 (durability) + Items_update: port has no per-item IV6 (KNOWN_ISSUES).
-    spawn_fx(Fx_Hit, s.pos, 0.f, 0.2f);      // IV2 0 <= choose(1,2): test_bullet_hit + Destroy
-    s.alive = false;
+    if (hit >= 0) {
+      // IV7 (chop) branch: frame 10 obst overlapping the tree with IV0 > 0; Else: hard_ground.
+      if (s.chop && tree_frame_[hit] == 0 && tree_hp_[hit] > 0) chop_tree_hit(hit, s.pos);
+      else swing_hard_ground(s.pos);
+      // t909 IV6 -= 1 (durability) + Items_update: port has no per-item IV6 (KNOWN_ISSUES).
+      spawn_fx(Fx_Hit, s.pos, 0.f, 0.2f);      // test_bullet_hit + Destroy
+      s.alive = false;
+      continue;
+    }
+    // Hitting_obstacles: buildings 927 / obstacles 202,339,755 -> hard_ground (within
+    // Player_Hear_radius: the swing is always within 20 px of the player) + Destroy.
+    if (building_blocks(s.pos, Vec2(s.pos.x + cx * 10.f, s.pos.y + cy * 10.f))) {
+      swing_hard_ground(s.pos);
+      spawn_fx(Fx_Hit, s.pos, 0.f, 0.2f);
+      s.alive = false;
+    }
   }
 }
 
@@ -186,7 +284,10 @@ bool Game::tick_chop_walk(InputState& in) {
     const ItemId eq = inventory_.slot(equipped_slot_).id;
     const float iv4 = melee_reload_iv4(eq);
     if (attack_cd_ <= 0.f && iv4 > 0.f) {            // Reloading_time_melee == 0, melee t909
-      spawn_melee_swing(player_.facing_deg, true);     // IV4 1 / 5 -> IV7
+      // walk_marker IV0 = 8 path (sid4081213929954104): IV4 1 -> IV0 45, IV4 5 -> IV0 60, IV7.
+      const int pc4 = c2_melee_iv4(eq);
+      const bool chop = pc4 == 1 || pc4 == 5;
+      spawn_melee_swing(player_.facing_deg, chop, pc4 == 1 ? 45.f : pc4 == 5 ? 60.f : 10.f, false, eq);
       sfx_at(c2_choose_punch(sfx_rng_), 0.f, player_.pos, "zmb");
       melee_anim_t_ = 0.35f;
       attack_cd_ = iv4;

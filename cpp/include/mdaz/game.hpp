@@ -41,6 +41,12 @@ struct C2Sfx;
 struct TrapSaveView;
 struct FireSaveView;
 
+// Melee_2_auto 1:1 tables (game_chop.cpp).
+int c2_melee_iv4(ItemId id);                   // player_collision_base IV4 for an equipped melee item
+float c2_melee_reload(ItemId id);              // t909 IV4 Reloading_time_melee (0 = fist / not melee)
+int c2_melee_swing_dmg(int iv4);               // melee_swing_general IV0
+int c2_melee_crit_chance(int iv4, bool perk);  // round(random(100)) <= N, -1 = no crit event
+
 class Game {
 public:
   Game();
@@ -314,7 +320,9 @@ private:
   bool pump_overlaps_player(int k) const;
   void pump_drink(int k);
   // ---- Item 5: chopping (Hitting_obstacles sid5202978245239527 + walk_marker IV0 = 8) ----
-  struct MeleeSwing { Vec2 pos; float ang; float life; bool chop; bool alive; };
+  struct MeleeSwing { Vec2 pos; float ang; float life; float dmg; ItemId weapon; bool chop; bool crit; bool alive; };
+  int melee_hits_ = 0;               // swings that hit an NPC (test counter)
+  void swing_hard_ground(Vec2 at);
   static const int kMaxSwings = 4;
   MeleeSwing swings_[kMaxSwings];
   int chop_walk_ = -1;              // walk_marker IV0 = 8 target tree
@@ -325,7 +333,7 @@ private:
   bool tree_obst_contains(int ti, float px, float py) const;  // obst_base frame 10 / 8 poly
   Vec2 tree_object_pos(int ti) const;                         // tree sprite position (hotspot)
   int nearest_tree_obst(Vec2 p, float& d2) const;             // PickDistance obst_base (trees)
-  void spawn_melee_swing(float ang_deg, bool chop);
+  void spawn_melee_swing(float ang_deg, bool chop, float dmg, bool crit, ItemId weapon);
   void update_melee_swings(float dt);
   void chop_tree_hit(int ti, Vec2 at);
   bool start_chop_walk();
@@ -349,7 +357,13 @@ public:
   int tree_frame_for_test(int i) const { return tree_frame_[i]; }
   Vec2 tree_trunk_for_test(int i) const { return trees_[i]; }
   Vec2 tree_pos_for_test(int i) const { return tree_object_pos(i); }
-  void swing_for_test(float ang_deg, bool chop) { spawn_melee_swing(ang_deg, chop); }
+  void swing_for_test(float ang_deg, bool chop) { spawn_melee_swing(ang_deg, chop, chop ? 50.f : 10.f, false, 0); }
+  Zombie* spawn_zed_for_test(Vec2 p) { return zombies_.spawn(Zed_Normal, p); }
+  void clear_zeds_for_test() { for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) z->alive = false; }
+  void melee_attack_for_test() { try_melee_attack(); }
+  bool unequip_for_test() { for (int s = 0; s < inventory_.slot_count(); ++s) if (inventory_.slot(s).empty()) { equipped_slot_ = s; return true; } return false; }
+  int melee_hits_for_test() const { return melee_hits_; }
+  float swing_dmg_for_test(int i) const { return swings_[i].alive ? swings_[i].dmg : -1.f; }
   void tick_swings_for_test(float dt) { update_melee_swings(dt); }
   int ach_lumberjack_for_test() const { return ach_lumberjack_; }
   bool start_chop_for_test() { return start_chop_walk(); }

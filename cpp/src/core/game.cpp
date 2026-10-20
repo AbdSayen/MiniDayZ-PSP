@@ -1146,50 +1146,35 @@ bool Game::near_vehicle() const {
 }
 
 void Game::try_melee_attack() {
-  WeaponStats stats = default_melee_stats();
+  // Melee_2_auto (Game_events/Interaction/Melee fight): every melee attack spawns
+  // melee_swing_general#195 (t910 bullet family) at the player toward the target; damage is dealt
+  // by the swing's collisions (update_melee_swings), not by a radius check.
+  // PSP: SetTowardPosition(gui_target) -> facing direction; LOS(interactor -> gui_target) holds
+  // for a target placed along the facing (input adaptation, KNOWN_ISSUES).
   const InvSlot& eq = inventory_.slot(equipped_slot_);
-  bool using_melee_item = false;
-  if (!eq.empty()) {
-    const WeaponDef* w = find_weapon(eq.id);
-    if (w && w->stats.is_melee) {
-      stats = w->stats;
-      using_melee_item = true;
-    }
-  }
-  attack_cd_ = stats.fire_interval;
+  const ItemId id = eq.empty() ? 0 : eq.id;
+  const WeaponDef* w = id ? find_weapon(id) : 0;
+  const int iv4 = (w && w->stats.is_melee) ? c2_melee_iv4(id) : 0;
   melee_anim_t_ = 0.35f; // C2 axe_* ~3 frames @ speed 10
-  // C2 Punch_Swipes_0/1 [zmb] at the player only for fists (player_weapons IV4 == 0).
-  if (!using_melee_item) sfx_at(c2_choose_punch(sfx_rng_), 0.f, player_.pos, "zmb");
-  // Melee_2_auto sid6326427994993125 (+ Merged pick sid1571569711919539): IV4 == 1 (Split Axe 202) / 5 (Fireaxe 204) -> the
-  // melee_swing_general gets IV7 and chops a trunk it collides with (game_chop.cpp).
-  if (using_melee_item && (eq.id == 202 || eq.id == 204)) spawn_melee_swing(player_.facing_deg, true);
-
-  bool hit_something = false;
-  for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
-    if (!z->alive) continue;
-    if (dist2(z->pos, player_.pos) <= stats.range * stats.range) {
-      hurt_zombie(*z, stats.damage, equipped_id_or_zero());
-      hit_something = true;
-    }
+  sfx_at(c2_choose_punch(sfx_rng_), 0.f, player_.pos, "zmb");   // Punch_Swipes_0/1 [zmb]
+  float dmg;
+  if (iv4 == 0) {
+    // Fist (sid2144307765286239): IV0 default 10 + choose(-5..5); Wait 0.5.
+    dmg = 10.f + static_cast<float>(static_cast<int>(rng_.next_u32() % 11u) - 5);
+    attack_cd_ = 0.5f;
+  } else {
+    dmg = static_cast<float>(c2_melee_swing_dmg(iv4));
+    attack_cd_ = c2_melee_reload(id);
+    // t909 IV6 <= 0 -> IV0 15 (broken): no per-item IV6 in the port (KNOWN_ISSUES).
   }
-  for (int i = 0; i < animals_.count(); ++i) {
-    Animal* a = animals_.at(i);
-    if (!a->alive) continue;
-    if (dist2(a->pos, player_.pos) <= stats.range * stats.range) {
-      hurt_animal(*a, stats.damage);
-      hit_something = true;
-    }
+  bool crit = false;
+  const int chance = c2_melee_crit_chance(iv4, balance::perk_meleeatk != 0);
+  if (chance >= 0) {
+    const int roll = static_cast<int>(rng_.next_float() * 100.f + 0.5f);   // round(random(100))
+    if (roll <= chance) { dmg += dmg; crit = true; }                       // IV0 += IV0, IV6
   }
-  for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b) {
-    if (!b->alive) continue;
-    if (dist2(b->pos, player_.pos) <= stats.range * stats.range) {
-      hurt_bandit(*b, stats.damage);
-      hit_something = true;
-    }
-  }
-  // Melee durability break: no C2 string/event in 1.4.1 export — not invented.
-  (void)hit_something;
-  (void)using_melee_item;
+  // Melee_2_auto IV4 1 / 5 -> IV7 (chops a trunk it collides with, game_chop.cpp).
+  spawn_melee_swing(player_.facing_deg, iv4 == 1 || iv4 == 5, dmg, crit, id);
 }
 
 // data.js "Firearm shooting": noice() radius per fired bullet type (the bullet spawned in the same
