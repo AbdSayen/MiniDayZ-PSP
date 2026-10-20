@@ -730,3 +730,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - 8a: машины рисуются видимыми car_uaz_anims/car_volga_anims (12 ракурсов по углу), тест кадров в test_trees.
 
 - 8b: двери door#340 — спавн, авто-открытие/закрытие по «in», блокер 339, звуки, прозрачность 100/25.
+
+- 8d: Bot_puncher_zindex (Survivors2), поправка про Buildings_shadows.

@@ -3077,6 +3077,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   if (car_layer_tick_) car_layer_t_ -= 0.5f;
   update_house_layers(dt);
   update_doors(dt);
+  update_bot_zindex();
   update_obstacle_layers();
   update_car_breaks_props(dt);
   update_prop_pieces(dt);
@@ -4496,6 +4497,32 @@ void Game::render() {
       }
       if (layer == 0) draw_loot();
     };
+    auto draw_bandits = [&](int mode) {   // 0 Survivors, 1 player (#827), 2 Survivors2
+      {
+        for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
+          if (!bd->alive || ((bd->c2_obj == 827) != (mode == 1))) continue;
+          if (mode != 1 && bd->layer2 != (mode == 2)) continue;
+          if (!view.vis(bd->pos, sc, 32.f)) continue;
+          float sx = cx + (bd->pos.x - camv.x) * sc;
+          float sy = cy + (bd->pos.y - camv.y) * sc;
+          const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
+          const float d2b = dist2(bd->pos, player_.pos);
+          const char* bprefix = (d2b < 220.f * 220.f) ? "run" : "idle";
+          const float bt = state_timer_ + static_cast<float>(bd->id) * 0.13f;
+          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
+          if (platform_->has_sprite("bandit_skin-sheet0"))
+            draw_c2_char(platform_, &char_anims_, sx, sy, 30.f, "bandit_skin", fdeg, bt, bprefix);
+          else
+            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
+          if (platform_->has_sprite("bot_bandit_melee_marker-sheet0"))
+            platform_->draw_sprite("bot_bandit_melee_marker-sheet0",
+              sx - 5.f, sy - 28.f, 10.f, 8.f, 0.f, 0.9f);
+          if (bd->hp < bd->max_hp * 0.99f)
+            platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+        }
+      }
+
+    };
     if (in_bunker_ && bunker_.width > 0) {
       platform_->ground_cache_invalidate();
       // World cell 8×8 (collision); atlas tilemap_bunker 150×300 = 5×10 of 30×30
@@ -4744,36 +4771,12 @@ void Game::render() {
             }
       }
 
+      if (!in_bunker_) draw_bandits(2);      // Survivors2 10 (Bot_puncher_zindex)
       draw_world_objects(0);   // Buildings_base 17 (interiors) + items_on_ground 18 (loot)
     }
     if (!loot_drawn) draw_loot();
 
     // Bandits: camp/friend bots on Survivors (22); bot_enemy_bandit#827 is spawned on layer player (32).
-    auto draw_bandits = [&](bool on_player_layer) {
-      {
-        for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
-          if (!bd->alive || ((bd->c2_obj == 827) != on_player_layer)) continue;
-          if (!view.vis(bd->pos, sc, 32.f)) continue;
-          float sx = cx + (bd->pos.x - camv.x) * sc;
-          float sy = cy + (bd->pos.y - camv.y) * sc;
-          const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
-          const float d2b = dist2(bd->pos, player_.pos);
-          const char* bprefix = (d2b < 220.f * 220.f) ? "run" : "idle";
-          const float bt = state_timer_ + static_cast<float>(bd->id) * 0.13f;
-          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
-          if (platform_->has_sprite("bandit_skin-sheet0"))
-            draw_c2_char(platform_, &char_anims_, sx, sy, 30.f, "bandit_skin", fdeg, bt, bprefix);
-          else
-            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
-          if (platform_->has_sprite("bot_bandit_melee_marker-sheet0"))
-            platform_->draw_sprite("bot_bandit_melee_marker-sheet0",
-              sx - 5.f, sy - 28.f, 10.f, 8.f, 0.f, 0.9f);
-          if (bd->hp < bd->max_hp * 0.99f)
-            platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
-        }
-      }
-
-    };
     // items_on_ground 18 (campfires, traps, crops) < Bullets 21 < Survivors 22 < Zeds 29 < vehicles 30.
     if (!in_bunker_) {
       // Campfires (flicker between fireplace sheets)
@@ -4886,7 +4889,7 @@ void Game::render() {
     }
 
     if (!in_bunker_) {
-      draw_bandits(false);
+      draw_bandits(0);
     }
     // Zombies — C2 idle/walk/run/attack sheets
     {
@@ -5044,7 +5047,7 @@ void Game::render() {
 
     if (!in_bunker_) draw_world_objects(1);   // Buildings_bg 31
     if (!in_bunker_) draw_props(1);
-    if (!in_bunker_) draw_bandits(true);       // player 32: bot_enemy_bandit#827
+    if (!in_bunker_) draw_bandits(1);       // player 32: bot_enemy_bandit#827
     // Player — C2 idle/run/axe/pistol/twohand/using_item
     {
       const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
@@ -5570,6 +5573,94 @@ void Game::harness_door_state(char* buf, int n) const {
   std::snprintf(buf, n, "door anim=%s frame=%d blocker=%d opacity=%.2f player_y=%.1f in_y=%.1f %s",
                 kDoorAnimNames[d.anim], d.frame, d.blk ? 1 : 0, d.opacity, player_.pos.y, in_y,
                 player_.pos.y < in_y ? "north_of_in" : "south_of_in");
+}
+
+// Bot_puncher_zindex (always active): t943 skin with IV1 (bots 549/243/540/522) OnCollision t928:
+// Y <= Imagepoint 1 -> layer Survivors2, Y >= Imagepoint 1 -> Survivors (later event wins on ==).
+void Game::update_bot_zindex() {
+  if (in_bunker_) return;
+  for (Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
+    if (!bd->alive || bd->c2_obj == 827) continue;
+    short now[4] = {-1, -1, -1, -1};
+    int nn = 0;
+    for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations; ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      if (!L.active || dist2(L.pos, bd->pos) > 600.f * 600.f) continue;
+      const BuildingShape* bs = loc_shape(L);
+      if (!bs) continue;
+      const LayerProp* g = find_layer_prop(bs->ext_sprite);
+      if (!g || !(g->groups & G928)) continue;
+      float gx[24], gy[24];
+      const int gn = layer_prop_poly(*g, L.pos, gx, gy);
+      if (!rect_poly_overlap(bd->pos.x - 15.f, bd->pos.y - 15.f, bd->pos.x + 15.f, bd->pos.y + 15.f, gx, gy, gn)) continue;
+      if (nn < 4) now[nn++] = static_cast<short>(i);
+      bool was = false;
+      for (int k = 0; k < 4; ++k) if (bd->ov928[k] == i) was = true;
+      if (was) continue;   // OnCollision fires only on the first overlapping tick
+      const float ip1 = L.pos.y + (g->ip1y - g->hy) * g->h;
+      if (bd->pos.y <= ip1) bd->layer2 = true;
+      if (bd->pos.y >= ip1) bd->layer2 = false;
+    }
+    for (int k = 0; k < 4; ++k) bd->ov928[k] = now[k];
+  }
+}
+
+// Test: camp bot (#540) entering the first t928 house at Y = Imagepoint 1 + dy.
+int Game::bot_zindex_probe_for_test(float dy) {
+  for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations; ++i) {
+    MapLocation& L = mapgen_.location_mut(i);
+    const BuildingShape* bs = loc_shape(L);
+    if (!bs) continue;
+    const LayerProp* g = find_layer_prop(bs->ext_sprite);
+    if (!g || !(g->groups & G928)) continue;
+    L.active = true;
+    Bandit* bd = 0;
+    for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b) if (b->alive && b->c2_obj == 540) bd = b;
+    if (!bd) { bd = bandits_.spawn(L.pos, false, false); if (!bd) return -2; bd->c2_obj = 540; }
+    const float ip1 = L.pos.y + (g->ip1y - g->hy) * g->h;
+    bd->pos = Vec2(L.pos.x + 90000.f, ip1);   // leave: no overlap
+    update_bot_zindex();
+    bd->pos = Vec2(L.pos.x + (bs->has_wz ? bs->wz_x0 + 12.f : 0.f), ip1 + dy);
+    update_bot_zindex();
+    bool ov = false;
+    for (int k = 0; k < 4; ++k) if (bd->ov928[k] >= 0) ov = true;
+    if (!ov) return -1;
+    harness_botz_loc_ = i;
+    return bd->layer2 ? 1 : 0;
+  }
+  return -3;
+}
+
+// Harness (--shots-building + MDAZ_HARNESS_BOTZ): camp bot entering a house, player south of it.
+int Game::harness_bot_zindex(float dy) {
+  int r = bot_zindex_probe_for_test(dy);
+  if (harness_botz_loc_ >= 0) {
+    const MapLocation& L = mapgen_.location(harness_botz_loc_);
+    const BuildingShape* bs = loc_shape(L);
+    const LayerProp* g = bs ? find_layer_prop(bs->ext_sprite) : 0;
+    // Player inside the warmzone: roof hidden, interior on Buildings_base (17), so a bot on
+    // Survivors2 (10) is under the floor and a bot on Survivors (22) is drawn over it.
+    if (g && bs->has_wz) player_.pos = Vec2(L.pos.x + (bs->wz_x0 + bs->wz_x1) * 0.5f, L.pos.y + (bs->wz_y0 + bs->wz_y1) * 0.5f);
+    player_.vel = Vec2();
+    mapgen_.reload_locations(player_.pos, LocationReload_AfterSave);
+    mapgen_.rebuild_collision(world_);
+    r = bot_zindex_probe_for_test(dy);
+    // Walk the bot (still overlapping the same t928, so no new OnCollision) to the warmzone
+    // centre next to the player: its layer stays what the entry Y decided.
+    for (Bandit* b = bandits_.begin(); b != bandits_.end(); ++b)
+      if (b->alive && b->c2_obj == 540 && bs && bs->has_wz) {
+        b->pos = Vec2(player_.pos.x + 24.f, player_.pos.y);
+        update_bot_zindex();
+        r = b->layer2 ? 1 : 0;
+      }
+    if (platform_) {
+      char line[160];
+      std::snprintf(line, sizeof(line), "harness: botz dy %.0f -> %s (loc %d %s)", dy,
+                    r == 1 ? "Survivors2" : r == 0 ? "Survivors" : "no-overlap", harness_botz_loc_, bs ? bs->ext_sprite : "?");
+      platform_->log_line(line);
+    }
+  }
+  return r;
 }
 
 void Game::update_doors(float dt) {

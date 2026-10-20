@@ -171,6 +171,11 @@ public:
       if (frame_ == 360 && game_) { game_->harness_place_at_prop(305, 40.f); std::printf("broken %d\n", game_->harness_break_prop()); }
       return frame_ < 400;
     }
+    if (std::getenv("MDAZ_HARNESS_BOTZ")) {   // 8d: Bot_puncher_zindex
+      if (frame_ == 200 && game_) game_->harness_bot_zindex(-3.f);
+      if (frame_ == 280 && game_) game_->harness_bot_zindex(10.f);
+      return frame_ < 320;
+    }
     if (std::getenv("MDAZ_HARNESS_ROOF")) {   // 7d: transparent roof + Tint + Outline
       if (frame_ == 200 && game_) game_->harness_place_at_building(4);
       if (frame_ == 300 && game_) game_->harness_place_at_building(1);   // south: roof opaque
@@ -446,6 +451,7 @@ public:
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
         { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
+        { 201, "botz_0_bot_survivors2_under_house" }, { 281, "botz_1_bot_survivors" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;

@@ -415,3 +415,8 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 - House_transparenting: каждые 0.1 с при overlap t928 — вне warmzone двери, пересекающие t928, → 100; в warmzone двери, пересекающие warmzone, → 25.
 - Не портировано: walk_marker IV0=2 (открытие по тапу — режим Movement_tap, на PSP нет тапа; PSP-адаптация), Outline подсветки взаимодействия дверей (каждые 0.5 с выключается; включение не найдено для дверей — в аудит). Пересоздание дверей при выгрузке/загрузке сектора привязано к MapLocation.active (допущение).
 - Порядок отрисовки: двери после экстерьеров слоя Buildings, но деревья (43) порт рисует раньше зданий — существующее отклонение.
+
+## 8d. «Buildings_shadows NPC» — поправка и Bot_puncher_zindex (сделано)
+- Поправка к прежней записи: в Game_events NPC на Buildings_shadows НЕ переносятся. Единственный MoveToLayer на Buildings_shadows (t941 OnCollision t928) — в листе Menu_Events (меню), Game_events его не включает. На Buildings_shadows в игре спавнятся только капли крови blood_drop#242 от ботов.
+- Портирована группа Bot_puncher_zindex (активна всегда): скин t943 с IV1=1 (боты 549/243/540/522) OnCollision t928: Y ≤ Imagepoint 1 → слой Survivors2 (10, под Buildings_base), Y ≥ Imagepoint 1 → Survivors (на равенстве побеждает позднее событие). Порт: Bandit::layer2, отрисовка в слоте Survivors2 перед интерьерами. Коллизия скина — прямоугольник 30x30.
+- Не портировано: перенос пиннутой одежды t909 на s_*2 (порт не одевает ботов — существующий пробел); bot_enemy_bandit#827 (bandit_skin, не t943) правилу не подлежит — как в оригинале.

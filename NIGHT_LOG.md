@@ -86,3 +86,6 @@
 
 ### 8c (доказательство закрытия двери)
 --shots-door теперь идёт дальше на север и печатает состояние двери: f350 frame=1 blocker=0 south_of_in; f385..f700 frame=0 blocker=1 opacity=0.25 north_of_in (player_y 3614.5 < in_y 3669). Скриншоты door8c_*. Поправка к 8b: на door8b_1 дверь уже была закрыта (frame 0), а не открыта.
+
+### 8d
+Buildings_shadows для NPC в игре нет (только Menu_Events). Сделан Bot_puncher_zindex, тесты + MDAZ_HARNESS_BOTZ.

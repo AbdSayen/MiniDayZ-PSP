@@ -159,6 +159,13 @@ int test_trees() {
       check(d.frame == 0 && d.blk, "door: player north of 'in' -> closed, blocker respawned");
     }
   }
+  // 8d: Bot_puncher_zindex (t943 bot skins OnCollision t928 vs Imagepoint 1).
+  {
+    g.start_new_game(Difficulty_Regular);
+    check(g.bot_zindex_probe_for_test(10.f) == 0, "bot enters house below Imagepoint 1 -> Survivors");
+    check(g.bot_zindex_probe_for_test(-3.f) == 1, "bot enters house above Imagepoint 1 -> Survivors2");
+    check(g.bot_zindex_probe_for_test(0.f) == 0, "bot at Y == Imagepoint 1 -> Survivors (later event wins)");
+  }
   delete gp;
   return g_fail;
 }

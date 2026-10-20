@@ -677,6 +677,7 @@ private:
   bool door_open_prev_ = false, door_close_prev_ = false;   // TriggerOnce
   Rng door_rng_;
   void build_doors();
+  void update_bot_zindex();
   void update_doors(float dt);
   void door_spawn_blocker(DoorInst& d);
   int door_poly(const DoorInst& d, float* xs, float* ys) const;
@@ -686,6 +687,9 @@ public:
   int door_count_for_test() { if (!doors_built_) build_doors(); return door_count_; }
   const DoorInst& door_for_test(int i) const { return doors_[i]; }
   void doors_tick_for_test(float dt) { update_doors(dt); }
+  int bot_zindex_probe_for_test(float dy);
+  int harness_bot_zindex(float dy);
+  int harness_botz_loc_ = -1;
   void harness_door_state(char* buf, int n) const;
   void door_activate_for_test(int i) { mapgen_.location_mut(doors_[i].loc).active = true; }
   bool doors_block_for_test(Vec2 a, Vec2 b) const { return doors_block(a, b, 1.f); }

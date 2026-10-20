@@ -27,6 +27,9 @@ struct Bandit {
   // C2 object: 827 bot_enemy_bandit (bandit_skin, layer player), 243 shooter / 540 puncher
   // (camp bots, layer Survivors), 522 friend (Survivors).
   int c2_obj = 827;
+  // Bot_puncher_zindex: pinned t943 skin (IV1 = 1) on layer Survivors2 (10) instead of Survivors (22).
+  bool layer2 = false;
+  short ov928[4] = {-1, -1, -1, -1};   // t928 instances overlapped last tick (OnCollision edge)
   Bandit();
   void setup(Vec2 p, EntityId eid, bool gun, bool ally = false, int weapon_iv14 = 1,
              int weapon_iv11 = 0);
