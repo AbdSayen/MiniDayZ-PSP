@@ -379,11 +379,14 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     const ClothingRegion region = kRows[r];
     const bool avail = inv.clothing().region_available(region);
     text(platform, lx, ry, kRowName[r], avail ? 0.85f : 0.4f, avail ? 0.8f : 0.4f, avail ? 0.6f : 0.38f);
-    for (int s = 0; s < kClothingContainerSlots; ++s) {
+    const int nslots = avail ? inv.clothing().region_size(region) : 1;
+    for (int s = 0; s < nslots; ++s) {
       const float sx = lx + 52.f + s * (kClothSlot + 2.f);
       const float sy = ry - 6.f;
       if (!avail) { platform.draw_rect(sx, sy, kClothSlot, kClothSlot, 0.1f, 0.1f, 0.09f, 0.6f); continue; }
-      const bool focus = ui.focus_cloth_region == region && ui.focus_cloth_sub == s;
+      const int flat = inv.flat_index(region, s);
+      const bool focus = (ui.focus_cloth_region == region && ui.focus_cloth_sub == s) ||
+                         (flat >= 0 && flat == ui.focus_bag_slot);
       draw_slot_bg(platform, sx, sy, kClothSlot, kClothSlot, focus);
       const InvSlot& cs = inv.clothing().slot(region, s);
       if (!cs.empty()) {

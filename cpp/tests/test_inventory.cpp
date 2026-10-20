@@ -190,11 +190,24 @@ int test_inventory() {
     g.equip_gear(452, &old);                     // mountain backpack -> 10 slots
     for (int k = 0; k < 6; ++k) g.add_item_new_slot(1, 1);
     if (old != 0 || g.capacity() != 10) { std::printf("FAIL equip backpack cap %d\n", g.capacity()); ++fail; }
-    g.equip_gear(453, &old);                     // school backpack -> 5 slots
-    mdaz::InvSlot over[24];
-    const int n = g.take_overflow(over, 24);
-    if (old != 452 || g.capacity() != 5 || n != 3) { std::printf("FAIL gear swap old=%d cap=%d over=%d\n", (int)old, g.capacity(), n); ++fail; }
-    else std::printf("OK   backpack swap returns old piece, 3 items overflow\n");
+    // Backpack array = flat 4..10 (base 1 + t-shirt 0... 350 has 0, pants 300 = 2).
+    mdaz::GearBox ob;
+    g.equip_gear(453, &old, 0, &ob);             // school backpack -> 5 slots
+    int moved = 0;
+    for (int k = 0; k < mdaz::kClothingContainerSlots; ++k) if (!ob.s[k].empty()) ++moved;
+    if (old != 452 || g.capacity() != 5 || moved != 5 || g.slot(0).id != 12 || g.slot(1).id != 12 ||
+        g.slot(2).id != 1 || !g.slot(3).empty())
+    { std::printf("FAIL gear swap old=%d cap=%d box=%d\n", (int)old, g.capacity(), moved); ++fail; }
+    else std::printf("OK   Drop_backpack: old piece takes its 5 items, new piece brings empty array\n");
+    old = 0;
+    g.equip_gear(452, &old, &ob, 0);              // pick the old one back with its array
+    if (old != 453 || g.capacity() != 10 || g.slot(3).id != 1 || g.slot(7).id != 1 || !g.slot(8).empty())
+    { std::printf("FAIL re-wear box cap=%d\n", g.capacity()); ++fail; }
+    else std::printf("OK   Pick_player_item: worn piece brings its own container array\n");
+    if (g.flat_index(mdaz::ClothingRegion_Pants, 0) != 1 || g.flat_index(mdaz::ClothingRegion_Backpack, 0) != 3 ||
+        g.flat_index(mdaz::ClothingRegion_Vest, 0) != -1)
+    { std::printf("FAIL flat_index chain\n"); ++fail; }
+    else std::printf("OK   flat view = t381, pants, outerwear, vest, backpack (Check_space order)\n");
   }
 
   {
@@ -300,53 +313,38 @@ int test_inventory() {
       "{\"items\":[{\"id\":12,\"name\":\".45 ACP ammo\",\"stack_max\":20},"
       "{\"id\":303,\"name\":\"Cargo pants\",\"category\":\"clothing\"}]}");
     mdaz::Inventory cinv;
-    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; cinv.restore_worn(tw_, 4); } // test: 16 C2 slots
-    cinv.add_item(303, 1, cdb);
-    cinv.wear_clothing(0, cdb);
-    cinv.sync_clothing_gates(cdb);
-    if (!cinv.clothing().region_available(mdaz::ClothingRegion_Pants)) {
-      std::printf("FAIL clothing pants gate\n");
-      ++fail;
-    } else if (!cinv.clothing().add(mdaz::ClothingRegion_Pants, 12, 10, cdb)) {
-      std::printf("FAIL clothing add ammo\n");
+    { const mdaz::ItemId tw_[1] = {303}; cinv.restore_worn(tw_, 1); }  // pants 303 = 3 cells
+    cinv.add_item(1, 1, cdb);                     // base t381
+    if (mdaz::pick_inventory_item(cinv, cdb, 12, 10) != mdaz::PickInv_Ok ||
+        cinv.clothing().slot(mdaz::ClothingRegion_Pants, 0).id != 12) {
+      std::printf("FAIL Check_space_pants after full t381\n");
       ++fail;
     } else if (mdaz::consume_ammo_for_reload(cinv, 12, 3) != 3 ||
-               cinv.clothing().count_ammo(12) != 7) {
-      std::printf("FAIL clothing ammo consume\n");
+               cinv.clothing().slot(mdaz::ClothingRegion_Pants, 0).count != 7) {
+      std::printf("FAIL reload from pants array\n");
       ++fail;
     } else {
-      std::printf("OK   Check_ammo_pants / clothing reload\n");
+      std::printf("OK   Check_space_pants / reload from pants array\n");
     }
-    mdaz::Inventory full;
-    full.add_item(303, 1, cdb);
-    full.wear_clothing(0, cdb);
-    full.sync_clothing_gates(cdb);
-    for (int i = 0; i < full.capacity(); ++i) full.add_item(1, 1, cdb);
-    for (int i = 0; i < mdaz::kClothingContainerSlots; ++i)
-      (void)full.clothing().add(mdaz::ClothingRegion_Pants, 12, 30, cdb);
-    mdaz::ItemDatabase bagdb;
-    bagdb.load_from_json_string("{\"items\":[{\"id\":1,\"name\":\"X\",\"stack_max\":1}]}");
-    if (mdaz::pick_inventory_item(full, bagdb, 12, 1) != mdaz::PickInv_NoSpace) {
-      std::printf("FAIL pick with no clothing space\n");
-      ++fail;
-    } else if (mdaz::pick_inventory_item(full, bagdb, 12, 1) != mdaz::PickInv_NoSpace) {
-      std::printf("FAIL pick still no space\n");
+    (void)cinv.add_item(1, 1, cdb);
+    (void)cinv.add_item(1, 1, cdb);
+    if (mdaz::pick_inventory_item(cinv, cdb, 12, 1) != mdaz::PickInv_NoSpace) {
+      std::printf("FAIL full chain must refuse\n");
       ++fail;
     } else {
-      std::printf("OK   Check_space_pants full cascade\n");
+      std::printf("OK   Check_space chain full -> no pickup\n");
     }
-    mdaz::Inventory cascade;
-    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; cascade.restore_worn(tw_, 4); } // test: 16 C2 slots
-    cascade.add_item(303, 1, cdb);
-    cascade.wear_clothing(0, cdb);
-    cascade.sync_clothing_gates(cdb);
-    for (int i = 0; i < cascade.capacity(); ++i) cascade.add_item(1, 1, cdb);
-    if (mdaz::pick_inventory_item(cascade, bagdb, 12, 3) != mdaz::PickInv_Ok ||
-        cascade.clothing().count_ammo(12) != 3) {
-      std::printf("FAIL pick into clothing cascade\n");
+    // Combine across containers (backpack-bar slot in any array).
+    mdaz::Inventory cb;
+    { const mdaz::ItemId tw_[2] = {303, 452}; cb.restore_worn(tw_, 2); }
+    cb.slot(1).id = 12; cb.slot(1).count = 5;     // pants cell 0
+    cb.slot(5).id = 12; cb.slot(5).count = 3;     // backpack cell 1
+    if (cb.combine_slots(1, 5, cdb) == -1 || !cb.slot(1).empty() ||
+        cb.clothing().slot(mdaz::ClothingRegion_Backpack, 1).count != 8) {
+      std::printf("FAIL Combine pants -> backpack\n");
       ++fail;
     } else {
-      std::printf("OK   Check_space_pants pickup cascade\n");
+      std::printf("OK   Combine_ammo between container arrays\n");
     }
   }
 
@@ -385,24 +383,20 @@ int test_inventory() {
     pdb.load_from_json_string(
       "{\"items\":[{\"id\":12,\"name\":\"Ammo\",\"stack_max\":30,\"category\":\"ammo\"},"
       "{\"id\":303,\"name\":\"Cargo pants\",\"category\":\"clothing\"}]}");
+    mdaz::ItemDatabase wdb;
+    wdb.load_from_json_string("{\"items\":[{\"id\":300,\"name\":\"Jeans\",\"category\":\"clothing\"}]}");
     mdaz::Inventory inv;
-    { const mdaz::ItemId tw_[4] = {303, 355, 403, 452}; inv.restore_worn(tw_, 4); } // test: 16 C2 slots
-    inv.add_item(303, 1, pdb);
-    inv.wear_clothing(0, pdb);
-    inv.sync_clothing_gates(pdb);
-    (void)inv.clothing().add(mdaz::ClothingRegion_Pants, 12, 5, pdb);
-    if (mdaz::pick_player_item(inv, pdb, mdaz::ClothingRegion_Pants, 0) != mdaz::PickPlayer_Ok ||
-        mdaz::count_item_in_inventory(inv, 12) != 5 ||
-        !inv.clothing().slot(mdaz::ClothingRegion_Pants, 0).empty()) {
-      std::printf("FAIL pick_player_item to bag\n");
+    { const mdaz::ItemId tw_[1] = {303}; inv.restore_worn(tw_, 1); }
+    inv.add_item(300, 1, wdb);                    // other pants in t381
+    inv.slot(2).id = 12; inv.slot(2).count = 5;   // ammo in worn pants' pocket
+    inv.wear_clothing(0, wdb);                    // port wear-from-bag: old pants' pocket spills
+    mdaz::InvSlot sp[24];
+    const int ns = inv.take_spill(sp, 24);
+    if (ns != 1 || sp[0].id != 12 || inv.slot(0).id != 303 || inv.capacity() != 3) {
+      std::printf("FAIL wear-from-bag spill n=%d cap=%d\n", ns, inv.capacity());
       ++fail;
     } else {
-      std::printf("OK   Pick_player_item clothing→bag\n");
-    }
-    if (mdaz::pick_player_item(inv, pdb, mdaz::ClothingRegion_Pants, 0) !=
-        mdaz::PickPlayer_Empty) {
-      std::printf("FAIL pick_player_item empty slot\n");
-      ++fail;
+      std::printf("OK   wear from bag: old pants back to bag, its pocket to ground\n");
     }
   }
 

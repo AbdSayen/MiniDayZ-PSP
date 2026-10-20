@@ -100,7 +100,7 @@ int test_save() {
     std::printf("FAIL write\n");
     return 1;
   }
-  if (blob.version != 20) {
+  if (blob.version != 21) {
     std::printf("FAIL save version %d\n", blob.version);
     ++fail;
   }
@@ -286,6 +286,35 @@ int test_save() {
         std::printf("OK   v18 extended loot piles (96 max)\n");
       }
     }
+    // v21: gear container arrays on the ground + worn container cells in the flat view
+    {
+      mdaz::LootSaveView lv;
+      lv.count = 1;
+      lv.piles[0].x = 10.f; lv.piles[0].y = 20.f; lv.piles[0].item_count = 1;
+      lv.piles[0].items[0] = 452; lv.piles[0].counts[0] = 1;
+      lv.box_count = 1;
+      lv.boxes[0].x = 10.f; lv.boxes[0].y = 20.f; lv.boxes[0].item = 452;
+      for (int q = 0; q < mdaz::kClothingContainerSlots; ++q) { lv.boxes[0].ids[q] = 0; lv.boxes[0].counts[q] = 0; }
+      lv.boxes[0].ids[2] = 12; lv.boxes[0].counts[2] = 9;
+      mdaz::Inventory i21;
+      { const mdaz::ItemId tw_[1] = {303}; i21.restore_worn(tw_, 1); }
+      i21.slot(3).id = 31; i21.slot(3).count = 2;   // pants cell 2
+      mdaz::SaveBlob b21;
+      mdaz::LootSaveView lr;
+      mdaz::Player p21; mdaz::Inventory r21; mdaz::WeatherState w21;
+      if (!mdaz::SaveSystem::write_to_buffer(p, i21, w, 3, b21, 0, 0, 66.f, 0, 0, 0, 0.f, 100.f, 0,
+                                             0, 0, 0, 0, 0, &lv) ||
+          !mdaz::SaveSystem::read_from_buffer(b21, p21, r21, w21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                              0, 0, &lr) ||
+          lr.box_count != 1 || lr.boxes[0].item != 452 || lr.boxes[0].ids[2] != 12 ||
+          lr.boxes[0].counts[2] != 9 || r21.capacity() != 4 ||
+          r21.clothing().slot(mdaz::ClothingRegion_Pants, 2).id != 31) {
+        std::printf("FAIL v21 gear boxes / container cells roundtrip\n");
+        ++fail;
+      } else {
+        std::printf("OK   v21 gear container arrays saved (ground + worn)\n");
+      }
+    }
     // v19: opened car trunks bitset + ach_gta
     mdaz::WorldExtras ex19;
     ex19.trunks_opened[0] = 0x05; ex19.trunks_opened[750] = 0x80; ex19.ach_gta = 7;
@@ -297,7 +326,7 @@ int test_save() {
                                            0, 0, 0, &ex19) ||
         !mdaz::SaveSystem::read_from_buffer(blob19, p4, inv4, w4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                             &ex19r) ||
-        blob19.version != 20 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
+        blob19.version != 21 || ex19r.trunks_opened[0] != 0x05 || ex19r.trunks_opened[750] != 0x80 ||
         ex19r.ach_gta != 7) {
       std::printf("FAIL v19 trunks/ach_gta roundtrip\n");
       ++fail;

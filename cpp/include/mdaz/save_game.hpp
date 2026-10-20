@@ -68,6 +68,13 @@ struct SavedLootPile {
   unsigned char counts[8];
 };
 
+struct SavedGearBox {
+  float x, y;
+  ItemId item;
+  ItemId ids[kClothingContainerSlots];
+  unsigned char counts[kClothingContainerSlots];
+};
+
 struct LootSaveView {
   // Runtime loot system allows kMaxLootPiles (96); v14–v17 saves stored 32 in-blob.
   static const int kMax = 96;
@@ -75,7 +82,11 @@ struct LootSaveView {
   static const int kExtMax = 64; // kLegacyMax + kExtMax == kMax
   int count;
   SavedLootPile piles[kMax];
-  LootSaveView() : count(0) {}
+  // v21 - container arrays of gear lying in piles (matched back by pile pos + item id).
+  static const int kMaxBoxes = 32;
+  int box_count;
+  SavedGearBox boxes[kMaxBoxes];
+  LootSaveView() : count(0), box_count(0) {}
 };
 
 struct SaveBlob {
@@ -146,8 +157,9 @@ struct SaveBlob {
   int wpn_vss_progress;
   unsigned char wpn_unlock_flags; // bit0 aug,1 mac10,2 sv98,3 saiga12,4 vss
   // v17 — C2 IV93 clothing containers (4 regions × 4 slots)
-  ItemId cloth_ids[ClothingRegion_Count * kClothingContainerSlots];
-  int cloth_counts[ClothingRegion_Count * kClothingContainerSlots];
+  // (v21: unused — container arrays live in inv_ids via the flat view; kept for layout)
+  ItemId cloth_ids[ClothingRegion_Count * 4];
+  int cloth_counts[ClothingRegion_Count * 4];
   // v18 — ground loot piles 32..95 (v14–v17 kept first 32 in loot_piles only)
   int loot_ext_count;
   SavedLootPile loot_ext_piles[LootSaveView::kExtMax];
@@ -160,6 +172,9 @@ struct SaveBlob {
   int perk_xp_raw;
   int perk_learnt;
   int perk_cost;
+  // v21 - gear container arrays on the ground (LootSaveView::boxes)
+  int gear_box_count;
+  SavedGearBox gear_boxes[LootSaveView::kMaxBoxes];
 };
 
 struct WorldExtras {
@@ -182,7 +197,7 @@ struct WorldExtras {
 class SaveSystem {
 public:
   static const int kMagic = 0x4D44415A; // 'MDAZ'
-  static const int kVersion = 20;
+  static const int kVersion = 21;
 
   static bool write_to_buffer(const Player& player, const Inventory& inv,
                               const WeatherState& weather, int equipped_slot,

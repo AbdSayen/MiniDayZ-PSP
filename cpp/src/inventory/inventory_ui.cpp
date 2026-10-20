@@ -56,17 +56,12 @@ PickInventoryResult pick_inventory_item(Inventory& inv, const ItemDatabase& db, 
   touch_inventory_ui_audit_anchors();
   if (id <= 0 || count <= 0) return PickInv_Invalid;
   (void)kC2_Check_space_inventory;
-  if (inv.can_add_item(id, count, db)) {
-    if (!inv.add_item(id, count, db)) return PickInv_NoSpace;
-  } else {
-    (void)kC2_Check_space_pants;
-    (void)kC2_Check_space_outerwear;
-    (void)kC2_Check_space_vest;
-    (void)kC2_Check_space_backpack;
-    inv.sync_clothing_gates(db);
-    if (!inv.clothing().can_add_cascade(id, count, db)) return PickInv_NoSpace;
-    if (!inv.clothing().add_cascade(id, count, db)) return PickInv_NoSpace;
-  }
+  // Flat view = t381 then pants/outerwear/vest/backpack arrays: one pass is the whole chain.
+  (void)kC2_Check_space_pants;
+  (void)kC2_Check_space_outerwear;
+  (void)kC2_Check_space_vest;
+  (void)kC2_Check_space_backpack;
+  if (!inv.add_item(id, count, db)) return PickInv_NoSpace;
   (void)kC2_Items_update;
   return PickInv_Ok;
 }
@@ -178,7 +173,7 @@ InventoryUiHit inventory_ui_hit_test(float mx, float my, const Inventory& inv) {
   for (int r = 0; r < 4; ++r) {
     const ClothingRegion region = kRows[r];
     if (!inv.clothing().region_available(region)) continue;
-    for (int s = 0; s < kClothingContainerSlots; ++s) {
+    for (int s = 0; s < inv.clothing().region_size(region); ++s) {
       float x = 0.f, y = 0.f, w = 0.f, h = 0.f;
       cloth_row_rect(L, region, s, x, y, w, h);
       if (mx >= x && mx < x + w && my >= y && my < y + h) {
@@ -192,28 +187,6 @@ InventoryUiHit inventory_ui_hit_test(float mx, float my, const Inventory& inv) {
   return hit;
 }
 
-PickPlayerItemResult pick_player_item(Inventory& inv, const ItemDatabase& db, ClothingRegion region,
-                                      int sub_slot) {
-  touch_inventory_ui_audit_anchors();
-  (void)kC2_Pick_player_item;
-  if (region < 0 || region >= ClothingRegion_Count || sub_slot < 0 ||
-      sub_slot >= kClothingContainerSlots)
-    return PickPlayer_Invalid;
-  if (!inv.clothing().region_available(region)) return PickPlayer_Invalid;
-  InvSlot& cs = inv.clothing().slot_mut(region, sub_slot);
-  if (cs.empty()) return PickPlayer_Empty;
-  const ItemId id = cs.id;
-  const int count = cs.count;
-  if (!inv.can_add_item(id, count, db)) return PickPlayer_NoSpace;
-  cs.id = 0;
-  cs.count = 0;
-  if (!inv.add_item(id, count, db)) {
-    (void)inv.clothing().add(region, id, count, db);
-    return PickPlayer_NoSpace;
-  }
-  (void)kC2_Items_update;
-  return PickPlayer_Ok;
-}
 
 static bool same_cloth_focus(const InventoryUiState& ui, ClothingRegion r, int sub) {
   return ui.focus_cloth_region == r && ui.focus_cloth_sub == sub;
@@ -224,13 +197,9 @@ bool inventory_ui_handle_pointer(InventoryUiState& ui, Inventory& inv, const Ite
                                float* inv_full_flash_out) {
   if (!ui.opened) return false;
   bool acted = false;
-  if (pick_confirm && ui.focus_cloth_region >= 0 && ui.focus_cloth_region < ClothingRegion_Count &&
-      ui.focus_cloth_sub >= 0) {
-    const PickPlayerItemResult pr =
-      pick_player_item(inv, db, ui.focus_cloth_region, ui.focus_cloth_sub);
-    if (pr == PickPlayer_NoSpace && inv_full_flash_out) *inv_full_flash_out = 0.35f;
-    acted = (pr == PickPlayer_Ok);
-  }
+  (void)db;
+  (void)pick_confirm;
+  (void)inv_full_flash_out;
   if (!left_pressed) return acted;
   const InventoryUiHit hit = inventory_ui_hit_test(mx, my, inv);
   if (hit.kind == InvHit_BagSlot) {
@@ -239,13 +208,7 @@ bool inventory_ui_handle_pointer(InventoryUiState& ui, Inventory& inv, const Ite
     ui.focus_cloth_sub = -1;
     acted = true;
   } else if (hit.kind == InvHit_ClothSlot) {
-    if (same_cloth_focus(ui, hit.cloth_region, hit.cloth_sub)) {
-      const PickPlayerItemResult pr =
-        pick_player_item(inv, db, hit.cloth_region, hit.cloth_sub);
-      if (pr == PickPlayer_NoSpace && inv_full_flash_out) *inv_full_flash_out = 0.35f;
-      acted = (pr == PickPlayer_Ok);
-      if (pr == PickPlayer_Ok) ui.clear_focus();
-    } else {
+    if (!same_cloth_focus(ui, hit.cloth_region, hit.cloth_sub)) {
       ui.focus_cloth_region = hit.cloth_region;
       ui.focus_cloth_sub = hit.cloth_sub;
       ui.focus_bag_slot = -1;

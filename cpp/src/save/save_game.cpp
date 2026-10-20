@@ -125,6 +125,11 @@ void unpack_fires(const SaveBlob& in, FireSaveView* fires) {
 }
 
 void pack_loot(const LootSaveView* loot, SaveBlob& out) {
+  out.gear_box_count = 0;
+  if (loot) {
+    const int nb = loot->box_count < LootSaveView::kMaxBoxes ? loot->box_count : LootSaveView::kMaxBoxes;
+    for (int i = 0; i < nb; ++i) out.gear_boxes[out.gear_box_count++] = loot->boxes[i];
+  }
   out.loot_count = 0;
   out.loot_ext_count = 0;
   out.loot_respawn_t = 0.f;
@@ -143,6 +148,11 @@ void pack_loot(const LootSaveView* loot, SaveBlob& out) {
 void unpack_loot(const SaveBlob& in, LootSaveView* loot) {
   if (!loot) return;
   loot->count = 0;
+  loot->box_count = 0;
+  if (in.version >= 21) {
+    const int nb = in.gear_box_count < LootSaveView::kMaxBoxes ? in.gear_box_count : LootSaveView::kMaxBoxes;
+    for (int i = 0; i < nb; ++i) loot->boxes[loot->box_count++] = in.gear_boxes[i];
+  }
   if (in.version < 14) return;
   const int n0 = in.loot_count < LootSaveView::kLegacyMax ? in.loot_count : LootSaveView::kLegacyMax;
   for (int i = 0; i < n0; ++i) {
@@ -200,14 +210,6 @@ bool SaveSystem::write_to_buffer(const Player& player, const Inventory& inv,
   for (int i = 0; i < out.worn_count; ++i) {
     out.worn_ids[i] = inv.worn_at(i);
     out.worn_iv6[i] = inv.worn_iv6(i);
-  }
-  for (int ri = 0; ri < ClothingRegion_Count; ++ri) {
-    const ClothingRegion reg = static_cast<ClothingRegion>(ri);
-    for (int si = 0; si < kClothingContainerSlots; ++si) {
-      const int idx = ri * kClothingContainerSlots + si;
-      out.cloth_ids[idx] = inv.clothing().slot(reg, si).id;
-      out.cloth_counts[idx] = inv.clothing().slot(reg, si).count;
-    }
   }
   out.day_phase = weather.day_phase;
   out.rain = weather.rain;
@@ -305,26 +307,20 @@ bool SaveSystem::read_from_buffer(const SaveBlob& in, Player& player, Inventory&
   player.zeds_killed = in.zeds_killed;
   player.bandits_killed = in.bandits_killed;
   inv.clear();
-  for (int i = 0; i < kInventorySlots; ++i) {
-    inv.slot(i).id = in.inv_ids[i];
-    inv.slot(i).count = in.inv_counts[i];
-  }
+  // Worn pieces first: they define the container arrays the flat slots 1.. map into.
   if (in.version >= 15)
     inv.restore_worn_iv6(in.worn_ids, in.worn_iv6, in.worn_count);
   else
     inv.restore_worn(in.worn_ids, in.worn_count);
-  if (in.version >= 17) {
-    for (int ri = 0; ri < ClothingRegion_Count; ++ri) {
-      const ClothingRegion reg = static_cast<ClothingRegion>(ri);
-      ItemId ids[kClothingContainerSlots];
-      int counts[kClothingContainerSlots];
-      for (int si = 0; si < kClothingContainerSlots; ++si) {
-        const int idx = ri * kClothingContainerSlots + si;
-        ids[si] = in.cloth_ids[idx];
-        counts[si] = in.cloth_counts[idx];
-      }
-      inv.clothing().restore_region(reg, ids, counts, kClothingContainerSlots);
-    }
+  for (int i = 0; i < kInventorySlots && i < inv.capacity(); ++i) {
+    inv.slot(i).id = in.inv_ids[i];
+    inv.slot(i).count = in.inv_counts[i];
+  }
+  if (in.version >= 17 && in.version <= 20) {
+    // v17-v20 kept a separate 4x4 "IV93" stash (not C2); fold it into free container cells.
+    for (int k = 0; k < ClothingRegion_Count * 4; ++k)
+      if (in.cloth_ids[k] > 0 && in.cloth_counts[k] > 0)
+        (void)inv.add_item_new_slot(in.cloth_ids[k], in.cloth_counts[k]);
   }
   weather.day_phase = in.day_phase;
   weather.rain = in.rain;

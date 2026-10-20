@@ -457,6 +457,7 @@ private:
   void show_toast(const char* msg);
   void update_pause(float dt, const InputState& in);
   void update_inventory_ui(const InputState& in);
+  void inventory_slot_actions(const InputState& in, int s);
   void update_craft_menu(const InputState& in);
   bool load_game_from_disk();
   void save_game_to_disk();
@@ -600,7 +601,8 @@ private:
   void try_throw_projectile();
   void try_bunker_enter_exit();
   void spawn_bunker_zeds(Vec2 at);   // C2 Bunker_spawn_zeds(x, y)
-  void drop_gear_and_overflow(ItemId old);
+  void drop_gear_and_overflow(ItemId old, const GearBox* box);
+  void drop_inventory_spill();
   bool bullet_hits_obstacle(Vec2 a, Vec2 b) const;
   void install_los();
 public:
@@ -696,7 +698,8 @@ public:
   float harness_place_near_water();
   void harness_combine_setup();
   bool harness_fence_try(int sticks);
-  void harness_perks(int step);   // item 10: XP + perk menu shots
+  void harness_perks(int step);
+  void harness_gearbox(int step);   // item 10: XP + perk menu shots
   const PerkState& perks() const;
   int perk_menu_sel() const { return perk_sel_; }
   bool perk_menu_open() const { return show_perks_; }

@@ -27,13 +27,12 @@ int consume_ammo_from_bag(Inventory& inv, ItemId ammo_id, int need) {
 }
 
 int count_ammo_for_reload(const Inventory& inv, ItemId ammo_id) {
-  return count_ammo_in_bag(inv, ammo_id) + inv.clothing().count_ammo(ammo_id);
+  return count_ammo_in_bag(inv, ammo_id);  // flat view already covers container arrays
 }
 
 int consume_ammo_for_reload(Inventory& inv, ItemId ammo_id, int need) {
   if (ammo_id <= 0 || need <= 0) return 0;
   int taken = consume_ammo_from_bag(inv, ammo_id, need);
-  if (taken < need) taken += inv.clothing().consume_ammo(ammo_id, need - taken);
   return taken;
 }
 

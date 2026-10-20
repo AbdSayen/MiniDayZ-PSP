@@ -20,15 +20,7 @@ PickInventoryResult pick_inventory_item(Inventory& inv, const ItemDatabase& db, 
                                         int count);
 
 // C2 Pick_player_item — move one stack from worn clothing IV93 sub-slot into bag (no drag UI).
-enum PickPlayerItemResult {
-  PickPlayer_Ok = 0,
-  PickPlayer_Empty,
-  PickPlayer_NoSpace,
-  PickPlayer_Invalid
-};
 
-PickPlayerItemResult pick_player_item(Inventory& inv, const ItemDatabase& db, ClothingRegion region,
-                                      int sub_slot);
 
 // C2 Check_item_inventory / check_item_exists — bag slots only (not worn clothing containers).
 int count_item_in_inventory(const Inventory& inv, ItemId id);

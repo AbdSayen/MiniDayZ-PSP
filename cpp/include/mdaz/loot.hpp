@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mdaz/clothing_containers.hpp"
+
 #include "mdaz/rng.hpp"
 #include "mdaz/types.hpp"
 
@@ -27,6 +29,7 @@ struct LootPile {
   Vec2 pos;
   ItemId items[8];
   int counts[8];
+  GearBox boxes[8];      // C2: container array of a gear item (travels with Drop_*)
   int item_count;
   bool active;
   bool is_airdrop;

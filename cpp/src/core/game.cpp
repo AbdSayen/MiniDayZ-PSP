@@ -665,6 +665,53 @@ bool Game::harness_fence_try(int sticks) {
   return ok;
 }
 
+// Harness (item 11): worn pants 303 + backpack 452 with filled arrays; then pick backpack 453
+// from the ground (Pick_player_item) -> 452 drops with its array (Drop_backpack).
+void Game::harness_gearbox(int step) {
+  if (step == 0) {
+    ItemId old = 0;
+    inventory_.equip_gear(303, &old);
+    if (old) drop_gear_and_overflow(old, 0);
+    inventory_.equip_gear(452, &old);
+    if (old) drop_gear_and_overflow(old, 0);
+    for (int i = 1; i < inventory_.capacity(); ++i) inventory_.slot(i) = InvSlot();
+    inventory_.slot(inventory_.flat_index(ClothingRegion_Pants, 0)) = InvSlot();
+    inventory_.add_item_new_slot(12, 30);
+    inventory_.add_item_new_slot(12, 25);
+    inventory_.add_item_new_slot(38, 5);
+    inventory_.add_item_new_slot(1, 1);
+    inventory_.add_item_new_slot(31, 2);
+  } else if (step == 1) {
+    for (int i = 0; i < loot_.count(); ++i) {
+      LootPile* p = loot_.at(i);
+      if (p->active && dist2(p->pos, player_.pos) < 60.f * 60.f) { p->active = false; p->item_count = 0; }
+    }
+    loot_.spawn_item(player_.pos, 453, 1);
+    try_pickup_loot();
+  }
+  int ground_box = -1;
+  for (int i = 0; i < loot_.count(); ++i) {
+    const LootPile* p = loot_.at(i);
+    if (!p->active) continue;
+    for (int k = 0; k < p->item_count; ++k)
+      if (p->items[k] == 452) {
+        ground_box = 0;
+        for (int q = 0; q < kClothingContainerSlots; ++q) if (!p->boxes[k].s[q].empty()) ++ground_box;
+      }
+  }
+  char line[200];
+  std::snprintf(line, sizeof(line),
+                "harness_gearbox step=%d cap=%d pants=%d back=%d b0=%d/%d b1=%d/%d ground452_cells=%d",
+                step, inventory_.capacity(), inventory_.clothing().region_size(ClothingRegion_Pants),
+                inventory_.clothing().region_size(ClothingRegion_Backpack),
+                (int)inventory_.clothing().slot(ClothingRegion_Backpack, 0).id,
+                inventory_.clothing().slot(ClothingRegion_Backpack, 0).count,
+                (int)inventory_.clothing().slot(ClothingRegion_Backpack, 1).id,
+                inventory_.clothing().slot(ClothingRegion_Backpack, 1).count, ground_box);
+  std::printf("%s\n", line);
+  if (platform_) platform_->log_line(line);
+}
+
 void Game::harness_combine_log() {
   char line[160];
   std::snprintf(line, sizeof(line), "combine: cap=%d s1=%d/%d s2=%d/%d src=%d focus=%d",
@@ -1487,15 +1534,21 @@ void Game::try_ranged_attack() {
   }
 }
 
-void Game::drop_gear_and_overflow(ItemId old) {
-  // Drop_pants/_outerwear/_vest/_backpack: the old piece goes on the ground; in C2 its
-  // container array travels with it. The port has one flat array, so items that no longer fit
-  // (index >= capacity) are dropped next to it (see KNOWN_ISSUES).
-  if (old) loot_.spawn_item(Vec2(player_.pos.x, player_.pos.y + 15.f), old, 1);
-  InvSlot over[kInventorySlots];
-  const int n = inventory_.take_overflow(over, kInventorySlots);
+void Game::drop_gear_and_overflow(ItemId old, const GearBox* box) {
+  // Drop_pants/_outerwear/_vest/_backpack: the old piece goes on the ground ("on_ground") and
+  // its container array (owned by the item instance in C2) travels with it.
+  if (old) {
+    LootPile* np = loot_.spawn_item(Vec2(player_.pos.x, player_.pos.y + 15.f), old, 1);
+    if (np && box && np->item_count > 0) np->boxes[np->item_count - 1] = *box;
+  }
+  drop_inventory_spill();
+}
+
+void Game::drop_inventory_spill() {
+  InvSlot sp[kInventorySlots];
+  const int n = inventory_.take_spill(sp, kInventorySlots);
   for (int k = 0; k < n && k < kInventorySlots; ++k)
-    loot_.spawn_item(Vec2(player_.pos.x + 8.f, player_.pos.y + 15.f), over[k].id, over[k].count);
+    loot_.spawn_item(Vec2(player_.pos.x + 8.f, player_.pos.y + 15.f), sp[k].id, sp[k].count);
 }
 
 void Game::try_pickup_loot() {
@@ -1506,6 +1559,7 @@ void Game::try_pickup_loot() {
     if (dist2(p->pos, player_.pos) > reach * reach) continue;
     int remaining = 0;
     ItemId olds[8];
+    GearBox oldbox[8];
     int nold = 0;
     ItemId snd_pick_id = 0;
     bool gear_changed = false;
@@ -1517,10 +1571,12 @@ void Game::try_pickup_loot() {
       bool taken = false;
       if (is_gear_item(p->items[j])) {
         ItemId old = 0;
-        if (inventory_.equip_gear(p->items[j], &old)) {
+        GearBox ob;
+        if (inventory_.equip_gear(p->items[j], &old, &p->boxes[j], &ob)) {
           taken = true;
           gear_changed = true;
-          if (old && nold < 8) olds[nold++] = old;
+          p->boxes[j].clear();
+          if (old && nold < 8) { oldbox[nold] = ob; olds[nold++] = old; }
         }
       } else {
         taken = inventory_.add_item_new_slot(p->items[j], p->counts[j]);
@@ -1542,14 +1598,14 @@ void Game::try_pickup_loot() {
         if (p->counts[j] <= 0) continue;
         p->items[w] = p->items[j];
         p->counts[w] = p->counts[j];
+        if (w != j) { p->boxes[w] = p->boxes[j]; p->boxes[j].clear(); }
         ++w;
       }
       p->item_count = w;
       inv_full_flash_ = 1.5f;
     }
     if (gear_changed) {
-      for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k]);
-      drop_gear_and_overflow(0);
+      for (int k = 0; k < nold; ++k) drop_gear_and_overflow(olds[k], &oldbox[k]);
     }
     // Pick_player_item / Check_space_*: per-item pick sound (c2_pickup_sfx).
     if (snd_pick_id) sfx_play(c2_pickup_sfx(snd_pick_id, is_gear_item(snd_pick_id), sfx_rng_), player_.pos);
@@ -2662,6 +2718,7 @@ void Game::pack_loot_view(LootSaveView& out) const {
   // Port save of ground piles (position + up to 8 id/count pairs). NOT C2 Save_loot:
   // C2 Save_loot/Load_loot is the Level_change carry-over CSV (see PORTING_STATUS item 11).
   out.count = 0;
+  out.box_count = 0;
   for (int i = 0; i < loot_.count() && out.count < LootSaveView::kMax; ++i) {
     const LootPile* p = loot_.at(i);
     if (!p->active || p->item_count <= 0 || p->quest_reward_case) continue;
@@ -2674,6 +2731,15 @@ void Game::pack_loot_view(LootSaveView& out) const {
       s.items[k] = k < n ? p->items[k] : 0;
       const int c = k < n ? p->counts[k] : 0;
       s.counts[k] = static_cast<unsigned char>(c < 0 ? 0 : (c > 255 ? 255 : c));
+      if (k < n && !p->boxes[k].empty() && out.box_count < LootSaveView::kMaxBoxes) {
+        SavedGearBox& b = out.boxes[out.box_count++];
+        b.x = p->pos.x; b.y = p->pos.y; b.item = p->items[k];
+        for (int q = 0; q < kClothingContainerSlots; ++q) {
+          b.ids[q] = p->boxes[k].s[q].id;
+          const int bc = p->boxes[k].s[q].count;
+          b.counts[q] = static_cast<unsigned char>(bc < 0 ? 0 : (bc > 255 ? 255 : bc));
+        }
+      }
     }
   }
 }
@@ -2682,6 +2748,23 @@ void Game::apply_loot_view(const LootSaveView& in) {
   // C2 Load_loot replaces the ground piles; saves without loot (count 0) keep the new world.
   if (in.count <= 0) return;
   loot_.load_from_save(in.piles, in.count);
+  for (int b = 0; b < in.box_count && b < LootSaveView::kMaxBoxes; ++b) {
+    const SavedGearBox& sb = in.boxes[b];
+    bool placed = false;
+    for (int i = 0; i < loot_.count() && !placed; ++i) {
+      LootPile* p = loot_.at(i);
+      if (!p->active || p->pos.x != sb.x || p->pos.y != sb.y) continue;
+      for (int k = 0; k < p->item_count; ++k) {
+        if (p->items[k] != sb.item || !p->boxes[k].empty()) continue;
+        for (int q = 0; q < kClothingContainerSlots; ++q) {
+          p->boxes[k].s[q].id = sb.ids[q];
+          p->boxes[k].s[q].count = sb.counts[q];
+        }
+        placed = true;
+        break;
+      }
+    }
+  }
 }
 
 void Game::save_game_to_disk() {
@@ -2992,7 +3075,8 @@ void Game::update_inventory_ui(const InputState& in) {
     for (int r = 0; r < 4; ++r) if (kRows[r] == ui.focus_cloth_region) row = r;
     if (in.nav_left && ui.focus_cloth_sub > 0) ui.focus_cloth_sub -= 1;
     if (in.nav_right) {
-      if (ui.focus_cloth_sub < kClothingContainerSlots - 1) ui.focus_cloth_sub += 1;
+      if (ui.focus_cloth_sub < inventory_.clothing().region_size(ui.focus_cloth_region) - 1)
+        ui.focus_cloth_sub += 1;
       else {
         int target = (row < 3 ? row : 2) * cols;
         if (target >= cap) target = cap - 1;
@@ -3007,15 +3091,24 @@ void Game::update_inventory_ui(const InputState& in) {
       for (int k = 1; k <= 4; ++k) {
         const int r = row + dir * k;
         if (r < 0 || r > 3) break;
-        if (inventory_.clothing().region_available(kRows[r])) { ui.focus_cloth_region = kRows[r]; break; }
+        if (inventory_.clothing().region_available(kRows[r])) {
+          ui.focus_cloth_region = kRows[r];
+          const int n = inventory_.clothing().region_size(kRows[r]);
+          if (ui.focus_cloth_sub >= n) ui.focus_cloth_sub = n - 1;
+          break;
+        }
       }
     }
-    if (in.confirm_pressed || in.attack_pressed) {
-      const PickPlayerItemResult res =
-          pick_player_item(inventory_, items_, ui.focus_cloth_region, ui.focus_cloth_sub);
-      if (res == PickPlayer_Ok) sfx2d("gearpick", 0.f);   // Pick_player_item wearable
-      else if (res == PickPlayer_NoSpace) inv_full_flash_ = 1.f;
+    // The container rows are the same C2 arrays as the flat slots (no separate stash):
+    // act on the flat index of the focused container cell.
+    const int fs = inventory_.flat_index(ui.focus_cloth_region, ui.focus_cloth_sub);
+    if (fs < 0) {
+      ui.focus_cloth_region = ClothingRegion_Count;
+      ui.focus_cloth_sub = -1;
+      ui.focus_bag_slot = 0;
+      return;
     }
+    inventory_slot_actions(in, fs);
     return;
   }
 
@@ -3030,7 +3123,7 @@ void Game::update_inventory_ui(const InputState& in) {
         const int r = (row + k) % 4;
         if (inventory_.clothing().region_available(kRows[r])) {
           ui.focus_cloth_region = kRows[r];
-          ui.focus_cloth_sub = kClothingContainerSlots - 1;
+          ui.focus_cloth_sub = inventory_.clothing().region_size(kRows[r]) - 1;
           ui.focus_bag_slot = -1;
           return;
         }
@@ -3041,7 +3134,11 @@ void Game::update_inventory_ui(const InputState& in) {
   if (in.nav_up && s - cols >= 0) s -= cols;
   if (in.nav_down && s + cols < cap) s += cols;
   ui.focus_bag_slot = s;
+  inventory_slot_actions(in, s);
+}
 
+void Game::inventory_slot_actions(const InputState& in, int s) {
+  InventoryUiState& ui = inventory_ui_;
   // PSP adaptation (C2: drag item onto a slot with the same frame -> sub_menu "Combine"):
   // R+Cross marks the source slot, R+Cross on another slot runs Combine_ammo.
   if (in.throw_pressed) {
@@ -4186,7 +4283,7 @@ void Game::use_equipped_item() {
             sfx2d("tentpack", 0.f);
           }
         } else if (eq.id == 250) { // Gasmask — wear
-          used_special = inventory_.wear_clothing(equipped_slot_, items_);
+          used_special = inventory_.wear_clothing(equipped_slot_, items_); drop_inventory_spill();
         } else if (eq.id == 45) { // Morphine — heal + adrenaline sprint
           if (inventory_.use_consumable(equipped_slot_, player_.survival, items_, &rng_)) {
             adrenaline_t_ = 18.f;
@@ -4253,13 +4350,13 @@ void Game::use_equipped_item() {
         } else if (eq.id == 39) {
           // Duct tape melee reinforce: no C2 craft/jam strings — blocked (do not invent).
         } else if (eq.id == 260) { // Headlamp — wear + enable torch
-          used_special = inventory_.wear_clothing(equipped_slot_, items_);
+          used_special = inventory_.wear_clothing(equipped_slot_, items_); drop_inventory_spill();
           if (used_special) {
             has_headlamp_ = true;
             if (torch_battery_ > 1.f) { player_.torch_on = true; sfx2d("torch_on", 0.f); }
           }
         } else if (eq.id == 83) { // Bandolier — wear for ammo stacks + slots
-          used_special = inventory_.wear_clothing(equipped_slot_, items_);
+          used_special = inventory_.wear_clothing(equipped_slot_, items_); drop_inventory_spill();
         } else if (eq.id == 82) { // Hacksaw — cut nearest wire/fence trap
           float best = 55.f * 55.f;
           int best_i = -1;
@@ -4304,6 +4401,7 @@ void Game::update_dead(float dt, const InputState& in) {
 
 void Game::update(float dt) {
   if (!platform_) return;
+  drop_inventory_spill();  // wear-from-bag leftovers (Inventory::take_spill)
 
   // FPS counter — average over 0.5s windows.
   fps_frames_ += 1;

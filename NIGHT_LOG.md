@@ -105,3 +105,10 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 
 ### 2026-10-20 — пункт 10
 - Добавлены perks.hpp/perks.cpp (PerkState) и game_perks.cpp (XP, меню, харнесс MDAZ_HARNESS_PERKS). Удалены старые bool-перки Player. Сопоставление оружия и имени пули t910 IV4 сделано по data.js.
+
+## 2026-10-20 — пункт 11
+- Разобрал по csi.txt цепочку Check_space_* и функции Drop_*, Pick_player_item, sub_menu «Combine».
+  - Массивы содержимого принадлежат экземпляру вещи.
+- Переписал Inventory: базовый слот + массивы надетых вещей. Плоский API slot(i) оставлен, поэтому хотбар и экипировка работают без изменений.
+- Земля: у каждой вещи в куче есть GearBox. Данные сохраняются в save v21.
+- Combine на кучи («pickpile») отложен до аудита, см. KNOWN_ISSUES.

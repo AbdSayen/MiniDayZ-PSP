@@ -68,7 +68,7 @@ float Inventory::worn_iv6(int i) const {
 
 void Inventory::restore_worn_iv6(const ItemId* ids, const float* iv6, int count) {
   worn_count_ = 0;
-  if (!ids || count <= 0) return;
+  if (!ids || count <= 0) { clothing_.clear(); resync_sizes(); return; }
   if (count > kMaxWorn) count = kMaxWorn;
   for (int i = 0; i < count; ++i) {
     if (ids[i] <= 0) continue;
@@ -77,6 +77,8 @@ void Inventory::restore_worn_iv6(const ItemId* ids, const float* iv6, int count)
         (iv6 && iv6[i] > 0.f) ? iv6[i] : clothing_iv6_max(ids[i]);
     ++worn_count_;
   }
+  clothing_.clear();
+  resync_sizes();
 }
 
 void Inventory::apply_hit_armor_wear(Rng& rng, bool bullet_hit, bool heavy_melee_wear,

@@ -37,9 +37,9 @@ public:
   bool add_item_new_slot(ItemId id, int count);
   // C2 Pick_player_item: gear (ids 250..499) is worn straight from the ground; the piece
   // previously worn in that region is returned in *old_out (C2 Drop_* puts it on the ground).
-  bool equip_gear(ItemId id, ItemId* old_out);
-  // Slots at index >= capacity() after a container was removed: take them out (to drop).
-  int take_overflow(InvSlot* out, int max);
+  // C2 Pick_player_item: the new piece brings its own container array (*new_box, may be 0 =
+  // empty); the old piece's array is returned in *old_box (Drop_* moves it with the piece).
+  bool equip_gear(ItemId id, ItemId* old_out, const GearBox* new_box = 0, GearBox* old_box = 0);
   bool use_consumable(int slot, SurvivalState& survival, const ItemDatabase& db, Rng* rng = 0);
   // Equip clothing: moves it out of the bag into its worn region (swap with old piece).
   bool wear_clothing(int slot, const ItemDatabase& db);
@@ -55,19 +55,28 @@ public:
 
   ClothingContainers& clothing() { return clothing_; }
   const ClothingContainers& clothing() const { return clothing_; }
-  void sync_clothing_gates(const ItemDatabase& db);
+  // Port-only wear-from-bag path: items that could not stay (old piece's pockets, old piece
+  // when no free slot) are parked here for the caller to drop on the ground.
+  int take_spill(InvSlot* out, int max);
 
   InvSlot& slot(int i);
   const InvSlot& slot(int i) const;
   int slot_count() const { return kInventorySlots; }
-  // Usable slots: 1 base (C2 t381) + container sizes of worn pieces.
+  // Flat view: index 0 = base t381, then pants/outerwear/vest/backpack arrays in Check_space
+  // chain order (sizes = worn piece's container). Indices >= capacity() are an empty dummy.
   int capacity() const;
+  // Flat index of container cell (region, sub); -1 if the region has no such cell.
+  int flat_index(ClothingRegion r, int sub) const;
   int worn_count() const { return worn_count_; }
   ItemId worn_at(int i) const { return (i >= 0 && i < worn_count_) ? worn_[i].id : 0; }
 
 private:
   static const int kMaxWorn = 6;
-  InvSlot slots_[kInventorySlots];
+  void resync_sizes();
+  void spill(ItemId id, int count);
+  InvSlot base_;          // C2 t381/t382 (1 slot)
+  InvSlot spill_[kInventorySlots];
+  int spill_n_;
   WornSlot worn_[kMaxWorn];
   int worn_count_;
   ClothingContainers clothing_;

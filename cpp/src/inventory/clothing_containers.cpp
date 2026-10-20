@@ -1,37 +1,56 @@
 #include "mdaz/clothing_containers.hpp"
 
-#include "mdaz/inventory.hpp"
-#include "mdaz/inventory.hpp"
-#include "mdaz/item_db.hpp"
-#include "mdaz/inventory.hpp"
-
 namespace mdaz {
 
 namespace {
-
-int slot_index(ClothingRegion r, int i) {
-  return static_cast<int>(r) * kClothingContainerSlots + i;
+InvSlot g_dummy;
 }
-
-
-} // namespace
 
 ClothingContainers::ClothingContainers() { clear(); }
 
 void ClothingContainers::clear() {
-  for (int i = 0; i < ClothingRegion_Count * kClothingContainerSlots; ++i) {
-    slots_[i].id = 0;
-    slots_[i].count = 0;
-  }
-  for (int i = 0; i < ClothingRegion_Count; ++i) gates_[i] = 0;
+  for (int i = 0; i < ClothingRegion_Count; ++i) { boxes_[i].clear(); sizes_[i] = 0; }
+}
+
+void ClothingContainers::set_region_size(ClothingRegion r, int n) {
+  if (r < 0 || r >= ClothingRegion_Count) return;
+  if (n < 0) n = 0;
+  if (n > kClothingContainerSlots) n = kClothingContainerSlots;
+  sizes_[r] = n;
 }
 
 const InvSlot& ClothingContainers::slot(ClothingRegion r, int i) const {
-  return slots_[slot_index(r, i)];
+  if (r < 0 || r >= ClothingRegion_Count || i < 0 || i >= kClothingContainerSlots) return g_dummy;
+  return boxes_[r].s[i];
 }
 
 InvSlot& ClothingContainers::slot_mut(ClothingRegion r, int i) {
-  return slots_[slot_index(r, i)];
+  if (r < 0 || r >= ClothingRegion_Count || i < 0 || i >= kClothingContainerSlots) {
+    g_dummy = InvSlot();
+    return g_dummy;
+  }
+  return boxes_[r].s[i];
+}
+
+void ClothingContainers::take_box(ClothingRegion r, GearBox* out) {
+  if (r < 0 || r >= ClothingRegion_Count) { if (out) out->clear(); return; }
+  if (out) *out = boxes_[r];
+  boxes_[r].clear();
+}
+
+void ClothingContainers::put_box(ClothingRegion r, const GearBox* in) {
+  if (r < 0 || r >= ClothingRegion_Count) return;
+  if (in) boxes_[r] = *in; else boxes_[r].clear();
+}
+
+void ClothingContainers::restore_region(ClothingRegion r, const ItemId* ids, const int* counts,
+                                        int n) {
+  if (r < 0 || r >= ClothingRegion_Count) return;
+  boxes_[r].clear();
+  for (int i = 0; i < n && i < kClothingContainerSlots; ++i) {
+    boxes_[r].s[i].id = ids ? ids[i] : 0;
+    boxes_[r].s[i].count = counts ? counts[i] : 0;
+  }
 }
 
 ClothingRegion clothing_region_for_worn_item(ItemId id, const ItemDef* def) {
@@ -49,104 +68,6 @@ ClothingRegion clothing_region_for_worn_item(ItemId id, const ItemDef* def) {
       id == 365)
     return ClothingRegion_Outerwear;
   return ClothingRegion_Count;
-}
-
-void ClothingContainers::set_region_gate(ClothingRegion r, int value) {
-  if (r >= 0 && r < ClothingRegion_Count) gates_[r] = value;
-}
-
-bool ClothingContainers::region_available(ClothingRegion r) const {
-  if (r < 0 || r >= ClothingRegion_Count) return false;
-  return gates_[r] > 0;
-}
-
-// C2 Check_space_pants/outerwear/vest/backpack: Contains(0) -> SetX(IndexOf(0)); no merge.
-bool ClothingContainers::can_add(ClothingRegion r, ItemId id, int count,
-                                 const ItemDatabase& db) const {
-  (void)db;
-  if (id <= 0 || count <= 0 || !region_available(r)) return false;
-  for (int i = 0; i < kClothingContainerSlots; ++i) if (slot(r, i).empty()) return true;
-  return false;
-}
-
-bool ClothingContainers::add(ClothingRegion r, ItemId id, int count, const ItemDatabase& db) {
-  if (!can_add(r, id, count, db)) return false;
-  for (int i = 0; i < kClothingContainerSlots; ++i) {
-    InvSlot& s = slot_mut(r, i);
-    if (s.empty()) { s.id = id; s.count = count; return true; }
-  }
-  return false;
-}
-
-bool ClothingContainers::can_add_cascade(ItemId id, int count, const ItemDatabase& db) const {
-  static const ClothingRegion kOrder[] = {ClothingRegion_Pants, ClothingRegion_Outerwear,
-                                          ClothingRegion_Vest, ClothingRegion_Backpack};
-  for (int o = 0; o < 4; ++o) {
-    const ClothingRegion r = kOrder[o];
-    if (region_available(r) && can_add(r, id, count, db)) return true;
-  }
-  return false;
-}
-
-bool ClothingContainers::add_cascade(ItemId id, int count, const ItemDatabase& db) {
-  static const ClothingRegion kOrder[] = {ClothingRegion_Pants, ClothingRegion_Outerwear,
-                                          ClothingRegion_Vest, ClothingRegion_Backpack};
-  for (int o = 0; o < 4; ++o) {
-    const ClothingRegion r = kOrder[o];
-    if (region_available(r) && add(r, id, count, db)) return true;
-  }
-  return false;
-}
-
-int ClothingContainers::count_ammo(ItemId ammo_id) const {
-  if (ammo_id <= 0) return 0;
-  int n = 0;
-  for (int ri = 0; ri < ClothingRegion_Count; ++ri) {
-    for (int si = 0; si < kClothingContainerSlots; ++si) {
-      const InvSlot& s = slots_[slot_index(static_cast<ClothingRegion>(ri), si)];
-      if (s.id == ammo_id) n += s.count;
-    }
-  }
-  return n;
-}
-
-int ClothingContainers::consume_ammo(ItemId ammo_id, int need) {
-  if (ammo_id <= 0 || need <= 0) return 0;
-  static const ClothingRegion kOrder[] = {ClothingRegion_Pants, ClothingRegion_Outerwear,
-                                          ClothingRegion_Vest, ClothingRegion_Backpack};
-  int taken = 0;
-  for (int o = 0; o < 4 && taken < need; ++o) {
-    const ClothingRegion r = kOrder[o];
-    if (!region_available(r)) continue;
-    for (int i = 0; i < kClothingContainerSlots && taken < need; ++i) {
-      InvSlot& s = slot_mut(r, i);
-      if (s.id != ammo_id || s.count <= 0) continue;
-      const int want = need - taken;
-      const int chunk = s.count < want ? s.count : want;
-      s.count -= chunk;
-      if (s.count <= 0) {
-        s.id = 0;
-        s.count = 0;
-      }
-      taken += chunk;
-    }
-  }
-  return taken;
-}
-
-void ClothingContainers::restore_region(ClothingRegion r, const ItemId* ids, const int* counts,
-                                        int n) {
-  if (r < 0 || r >= ClothingRegion_Count || !ids || !counts) return;
-  if (n > kClothingContainerSlots) n = kClothingContainerSlots;
-  for (int i = 0; i < kClothingContainerSlots; ++i) {
-    InvSlot& s = slot_mut(r, i);
-    s.id = 0;
-    s.count = 0;
-  }
-  for (int i = 0; i < n; ++i) {
-    slot_mut(r, i).id = ids[i];
-    slot_mut(r, i).count = counts[i];
-  }
 }
 
 } // namespace mdaz

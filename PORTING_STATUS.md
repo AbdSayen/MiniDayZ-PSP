@@ -742,3 +742,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Пункт 9c: build_fence: в машине — сообщение 90, нет стака из 5 палок — сообщение 64 (тесты test_selection).
 
 - Пункт 10: XP (expierence_points) со всеми источниками C2, 16 перков, perk_cost, меню перков (пауза → PERKS), значок notify, MD_Perk_1/2, сохранение v20. Удалены выдуманные портом выдачи перков. Тесты: test_perks, test_selection (item10).
+
+| 2026-10-20 | **Пункт 11:** контейнеры одежды принадлежат вещи (C2 t924/t916/t921/t913) | - плоский вид t381 + штаны/верх/жилет/рюкзак = порядок Check_space; - Drop_*/Pick_player_item переносят массив вместе с вещью (LootPile::boxes, save v21); - Combine между любыми ячейками контейнеров; - удалены take_overflow и дубль IV93 4×4; - тесты test_inventory/test_save, харнесс MDAZ_HARNESS_GEARBOX |

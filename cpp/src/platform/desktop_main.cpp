@@ -187,6 +187,13 @@ public:
       if (frame_ == 255 && game_) game_->harness_perks(1);    // select Camel + learn
       return frame_ < 300;
     }
+    if (std::getenv("MDAZ_HARNESS_GEARBOX")) {   // 11: container arrays owned by worn pieces
+      if (frame_ == 200 && game_) game_->harness_gearbox(0);   // pants 303 + backpack 452 filled
+      if (frame_ == 205 || frame_ == 230 || frame_ == 245) { in.bag = in.bag_pressed = true; }
+      if (frame_ == 238 && game_) game_->harness_gearbox(1);   // pick school backpack 453 from ground
+      if (frame_ == 270 && game_) game_->harness_gearbox(2);   // log only
+      return frame_ < 280;
+    }
     if (std::getenv("MDAZ_HARNESS_FENCE")) {   // 9c: build_fence client_log 64 / success
       if (frame_ == 200 && game_) game_->harness_fence_try(3);
       if (frame_ == 300 && game_) game_->harness_fence_try(5);
@@ -483,6 +490,7 @@ public:
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
         { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
         { 201, "botz_0_bot_survivors2_under_house" }, { 210, "water_0_start" }, { 336, "water_1_blocked_at_edge" }, { 281, "botz_1_bot_survivors" },
+        { 226, "gearbox_0_inv_rows" }, { 266, "gearbox_1_after_swap" },
         { 222, "perks_0_hud_notify" }, { 248, "perks_1_menu_open" }, { 285, "perks_2_camel_learnt" },
         { 240, "combine_0_source_marked" }, { 215, "fence_0_msg64_three_sticks" }, { 320, "fence_1_built_five_sticks" }, { 272, "combine_1_after" },
       };

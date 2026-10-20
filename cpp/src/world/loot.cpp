@@ -64,6 +64,7 @@ void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
     if (s.item_count <= 0) continue;
     if (count_ >= kMaxLootPiles) break;
     LootPile& p = piles_[count_++];
+    for (int bx = 0; bx < 8; ++bx) p.boxes[bx].clear();
     p.pos = Vec2(s.x, s.y);
     p.item_count = 0;
     p.active = true;
@@ -108,6 +109,7 @@ LootPile* LootSystem::spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int t
                                   int min_n, int max_n) {
   if (count_ >= kMaxLootPiles || !table || table_len <= 0) return 0;
   LootPile& p = piles_[count_++];
+    for (int bx = 0; bx < 8; ++bx) p.boxes[bx].clear();
   p.pos = pos;
   p.item_count = 0;
   p.active = true;
@@ -129,6 +131,7 @@ LootPile* LootSystem::spawn_table(Vec2 pos, Rng& rng, const ItemId* table, int t
 LootPile* LootSystem::spawn_random(Vec2 pos, Rng& rng) {
   if (count_ >= kMaxLootPiles) return 0;
   LootPile& p = piles_[count_++];
+    for (int bx = 0; bx < 8; ++bx) p.boxes[bx].clear();
   p.pos = pos;
   p.item_count = 0;
   p.active = true;
@@ -152,6 +155,7 @@ LootPile* LootSystem::spawn_random(Vec2 pos, Rng& rng) {
 LootPile* LootSystem::spawn_item(Vec2 pos, ItemId id, int n) {
   if (count_ >= kMaxLootPiles) return 0;
   LootPile& p = piles_[count_++];
+    for (int bx = 0; bx < 8; ++bx) p.boxes[bx].clear();
   p.pos = pos;
   p.item_count = 0;
   p.active = true;
