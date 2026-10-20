@@ -54,7 +54,7 @@ void touch_inventory_ui_audit_anchors() {
 PickInventoryResult pick_inventory_item(Inventory& inv, const ItemDatabase& db, ItemId id,
                                         int count) {
   touch_inventory_ui_audit_anchors();
-  if (id <= 0 || count <= 0) return PickInv_Invalid;
+  if (id <= 0 || count < 0) return PickInv_Invalid;
   (void)kC2_Check_space_inventory;
   // Flat view = t381 then pants/outerwear/vest/backpack arrays: one pass is the whole chain.
   (void)kC2_Check_space_pants;

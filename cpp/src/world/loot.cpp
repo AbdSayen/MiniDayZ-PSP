@@ -33,11 +33,27 @@ ItemId pick_weighted(Rng& rng, const DropW* tab, int n) {
   return tab[n - 1].id;
 }
 
-int ammo_qty(ItemId id, Rng& rng) {
-  if (id >= 11 && id <= 17) return rng.next_int(4, 16);
-  if (id == 69 || id == 12 || id == 58 || id == 100 || id == 101) return rng.next_int(4, 14);
+struct SpawnDropCount { int id, kind, a, b, farmer, n; int list[5]; };
+#include "spawn_drop_count.inc"
+
+} // namespace
+
+// C2 Spawn_drop IV1 (array count): stack size or item state; ids without an IV1 row -> 1.
+int c2_spawn_drop_iv1(ItemId id, Rng& rng, bool farmer) {
+  for (unsigned i = 0; i < sizeof(kSpawnDropCount) / sizeof(kSpawnDropCount[0]); ++i) {
+    const SpawnDropCount& r = kSpawnDropCount[i];
+    if (r.id != id) continue;
+    int n = r.kind == 1 ? rng.next_int(r.a, r.b - 1)     // int(random(a, b))
+                        : r.list[rng.next_int(0, r.n - 1)];
+    if (r.farmer && farmer) n += r.farmer;
+    return n;
+  }
   return 1;
 }
+
+namespace {
+bool g_loot_farmer = false;
+int ammo_qty(ItemId id, Rng& rng) { return c2_spawn_drop_iv1(id, rng, g_loot_farmer); }
 
 const float kLootRespawnStaggerSec[] = {3.f, 4.f, 5.f};
 const char kC2_LOOT_respawn[] = "LOOT_respawn";
@@ -52,6 +68,8 @@ static unsigned char next_loot_stagger_sec(unsigned char prev) {
 } // namespace
 
 LootSystem::LootSystem() : count_(0) { touch_loot_respawn_audit(); }
+
+void LootSystem::set_farmer(bool on) { g_loot_farmer = on; }
 
 void LootSystem::clear() { count_ = 0; }
 
@@ -75,7 +93,7 @@ void LootSystem::load_from_save(const SavedLootPile* piles, int n) {
     p.respawn_sec = 0;
     const int ic = s.item_count > 8 ? 8 : s.item_count;
     for (int j = 0; j < ic; ++j) {
-      if (s.items[j] <= 0 || s.counts[j] <= 0) continue;
+      if (s.items[j] <= 0 || s.counts[j] < 0) continue;
       push_item(p, s.items[j], s.counts[j]);
     }
     if (p.item_count <= 0) {

@@ -577,7 +577,9 @@ int test_selection() {
   // 6. Drop focused / equipped slot.
   reset(g); put(g, 0, kApple, 1); put(g, 3, kPipsi, 2);
   A::drop(g, 3);
-  check(A::inv(g).slot(3).count == 1 && A::inv(g).slot(0).count == 1, "drop slot 3 drops from slot 3 only");
+  check(A::inv(g).slot(3).empty() && A::inv(g).slot(0).count == 1,
+        "C2 Drop_slot: the whole cell of slot 3 (count 2) goes to the ground, slot 0 untouched");
+  put(g, 3, kPipsi, 2);
   A::eq(g) = 3; A::drop_eq(g);
   check(A::inv(g).slot(3).empty() && A::inv(g).slot(0).count == 1, "drop equipped (3) drops from slot 3 only");
   // 7. Equip: hotbar slot selects; bag slot swaps into the hand slot.

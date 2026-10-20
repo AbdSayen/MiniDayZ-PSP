@@ -1,3 +1,5 @@
+#include "mdaz/loot.hpp"
+#include "mdaz/rng.hpp"
 #include "mdaz/craft.hpp"
 #include "mdaz/ammo.hpp"
 #include "mdaz/inventory.hpp"
@@ -383,6 +385,20 @@ int test_inventory() {
     pdb.load_from_json_string(
       "{\"items\":[{\"id\":12,\"name\":\"Ammo\",\"stack_max\":30,\"category\":\"ammo\"},"
       "{\"id\":303,\"name\":\"Cargo pants\",\"category\":\"clothing\"}]}");
+    {
+      // Item state in the array count: C2 Spawn_drop IV1 for 54 = choose(0,25,50,75,100).
+      mdaz::Rng r(7);
+      bool okv = true;
+      for (int k = 0; k < 40; ++k) {
+        const int v = mdaz::c2_spawn_drop_iv1(54, r, false);
+        if (v != 0 && v != 25 && v != 50 && v != 75 && v != 100) okv = false;
+      }
+      const int knife = mdaz::c2_spawn_drop_iv1(42, r, false);
+      mdaz::Inventory bi;
+      const bool kept = bi.add_item_new_slot(54, 0) && !bi.slot(0).empty() && bi.slot(0).count == 0;
+      if (!okv || (knife % 25) != 0 || !kept) { std::printf("FAIL item state counts\n"); ++fail; }
+      else std::printf("OK   Spawn_drop IV1 item state (bottle 0..100, knife 25..100); empty bottle keeps its slot\n");
+    }
     mdaz::ItemDatabase wdb;
     wdb.load_from_json_string("{\"items\":[{\"id\":300,\"name\":\"Jeans\",\"category\":\"clothing\"}]}");
     mdaz::Inventory inv;

@@ -35,6 +35,8 @@
 #include "mdaz/map_props.hpp"
 
 namespace mdaz {
+
+bool c2_item_has_use2_fill(ItemId id);
 bool seg_hits_box(Vec2 a, Vec2 b, float x0, float y0, float x1, float y1);
 
 struct CropSaveView;
@@ -315,6 +317,9 @@ private:
   int pump_walk_ = -1;                    // walk_marker IV0 = 5 target pump
   float pump_lock_t_ = 0.f;               // player_collision_base IV21 = 1 for Wait 2
   float pump_add_water_ = 0.f;            // IV14 added after the Wait
+  float drink_t_ = 0.f;                   // bottle/canteen Wait 2 before IV14 += / log
+  float drink_add_ = 0.f;
+  const char* drink_log_ = 0;
   void init_pump_water(Rng& rng, bool tutorial);
   void update_avalible_interaction(float dt);
   int nearest_pump(Vec2 p, float& d2) const;
@@ -458,6 +463,11 @@ private:
   void update_pause(float dt, const InputState& in);
   void update_inventory_ui(const InputState& in);
   void inventory_slot_actions(const InputState& in, int s);
+public:
+  bool c2_drink_container(int slot);   // item_activate 54/55
+  bool c2_fill_container(int slot);    // item_activate2 54/55 ("Fill with water")
+private:
+  void tick_drink(float dt);
   void update_craft_menu(const InputState& in);
   bool load_game_from_disk();
   void save_game_to_disk();
@@ -699,7 +709,8 @@ public:
   void harness_combine_setup();
   bool harness_fence_try(int sticks);
   void harness_perks(int step);
-  void harness_gearbox(int step);   // item 10: XP + perk menu shots
+  void harness_gearbox(int step);
+  void harness_bottle(int step);   // item 10: XP + perk menu shots
   const PerkState& perks() const;
   int perk_menu_sel() const { return perk_sel_; }
   bool perk_menu_open() const { return show_perks_; }

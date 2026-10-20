@@ -12,7 +12,9 @@ struct InvSlot {
   ItemId id;
   int count;
   InvSlot() : id(0), count(0) {}
-  bool empty() const { return id == 0 || count <= 0; }
+  // C2 arrays: a slot is free iff its id is 0 (Contains(0)); count 0 is a valid item state
+  // (empty bottle / canteen: item_activate return "zero").
+  bool empty() const { return id == 0; }
 };
 
 enum AppState {

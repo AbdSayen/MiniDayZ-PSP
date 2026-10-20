@@ -229,6 +229,16 @@ public:
   // --shots-wreck: test-only placements at a Humvee wreck, a heli wreck and a zed_resp_point.
   bool poll_wreck(mdaz::InputState& in) {
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (std::getenv("MDAZ_HARNESS_BOTTLE")) {   // 11b: bottle 54 fill at the pump + drink (count = water)
+      if (frame_ == 200 && game_) game_->harness_place_at_pump();
+      if (frame_ == 270) in.interact = in.interact_pressed = true;   // walk into the pump (drinks too)
+      if (frame_ == 470 && game_) game_->harness_bottle(0);   // Use2 "Fill with water"
+      if (frame_ == 600) { in.bag = in.bag_pressed = true; }   // open the inventory (counters)
+      if (frame_ == 605 && game_) game_->harness_bottle(2);
+      if (frame_ == 620 && game_) game_->harness_bottle(1);   // Use "Drink"
+      if (frame_ == 755 && game_) game_->harness_bottle(2);
+      return frame_ < 760;
+    }
     if (std::getenv("MDAZ_HARNESS_PUMP")) {   // waterpump: prompt, Circle, drink
       if (frame_ == 200 && game_) game_->harness_place_at_pump();
       if (frame_ == 270) in.interact = in.interact_pressed = true;
@@ -378,6 +388,19 @@ public:
       static const struct { int frame; const char* name; } kP[] = {
         { 260, "pump_1_prompt" }, { 300, "pump_2_walk" }, { 330, "pump_3_drinking" }, { 450, "pump_4_drunk" },
       };
+      static const struct { int frame; const char* name; } kB[] = {
+        { 610, "bottle_0_filled" }, { 758, "bottle_1_drunk" },
+      };
+      if (std::getenv("MDAZ_HARNESS_BOTTLE")) {
+        for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
+          if (kB[i].frame != frame_) continue;
+          char path[512];
+          std::snprintf(path, sizeof(path), "%s/%s.bmp", dir_, kB[i].name);
+          std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
+        }
+        inner_->end_frame();
+        return;
+      }
       if (std::getenv("MDAZ_HARNESS_PUMP")) {
         for (unsigned i = 0; i < sizeof(kP) / sizeof(kP[0]); ++i) {
           if (kP[i].frame != frame_) continue;

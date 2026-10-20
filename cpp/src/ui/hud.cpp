@@ -111,10 +111,20 @@ void draw_slot_bg(IPlatform& p, float x, float y, float w, float h, bool hi) {
   outline(p, x, y, w, h, 0.42f, 0.35f, 0.22f, 1.f);
 }
 
-void draw_count(IPlatform& p, float x, float y, float w, float h, int count) {
-  if (count <= 1) return;
-  char cb[8];
-  std::snprintf(cb, sizeof(cb), "%d", count);
+// C2 Items_update: counter text t224 = array count, "%" appended for state items
+// (22,42,43,44,54,55,47,48,68,75,86,87,85); the text is hidden only when it reads "0".
+bool c2_count_is_percent(ItemId id) {
+  switch (id) {
+    case 22: case 42: case 43: case 44: case 54: case 55: case 47: case 48: case 68:
+    case 75: case 86: case 87: case 85: return true;
+    default: return false;
+  }
+}
+
+void draw_count(IPlatform& p, float x, float y, float w, float h, int count, ItemId id) {
+  char cb[12];
+  std::snprintf(cb, sizeof(cb), c2_count_is_percent(id) ? "%d%%" : "%d", count);
+  if (std::strcmp(cb, "0") == 0) return;
   text_right(p, x + w - 1.f, y + h - kCharH - 1.f, cb, 0.98f, 0.92f, 0.6f);
 }
 
@@ -247,7 +257,7 @@ void draw_hotbar(IPlatform& platform, const Game& game) {
     const InvSlot& sl = game.inventory().slot(i);
     if (!sl.empty()) {
       draw_item_fit(platform, sl.id, sx + 2.f, kHotY + 2.f, kHotSlot - 4.f, kHotSlot - 4.f);
-      draw_count(platform, sx, kHotY, kHotSlot, kHotSlot, sl.count);
+      draw_count(platform, sx, kHotY, kHotSlot, kHotSlot, sl.count, sl.id);
     }
     if (eq) outline(platform, sx - 1.f, kHotY - 1.f, kHotSlot + 2.f, kHotSlot + 2.f, 0.95f, 0.8f, 0.3f, 1.f);
   }
@@ -391,7 +401,7 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
       const InvSlot& cs = inv.clothing().slot(region, s);
       if (!cs.empty()) {
         draw_item_fit(platform, cs.id, sx + 2.f, sy + 2.f, kClothSlot - 4.f, kClothSlot - 4.f);
-        draw_count(platform, sx, sy, kClothSlot, kClothSlot, cs.count);
+        draw_count(platform, sx, sy, kClothSlot, kClothSlot, cs.count, cs.id);
       }
       if (focus) focus_frame(platform, sx - 1.f, sy - 1.f, kClothSlot + 2.f, kClothSlot + 2.f, t);
     }
@@ -414,7 +424,7 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     const InvSlot& sl = inv.slot(i);
     if (!sl.empty()) {
       draw_item_fit(platform, sl.id, sx + 2.f, sy + 2.f, kBagSlot - 4.f, kBagSlot - 4.f);
-      draw_count(platform, sx, sy, kBagSlot, kBagSlot, sl.count);
+      draw_count(platform, sx, sy, kBagSlot, kBagSlot, sl.count, sl.id);
     }
     if (eq) outline(platform, sx, sy, kBagSlot, kBagSlot, 0.95f, 0.8f, 0.3f, 1.f);
     if (focus) focus_frame(platform, sx - 1.f, sy - 1.f, kBagSlot + 2.f, kBagSlot + 2.f, t);
@@ -437,15 +447,9 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
     platform.draw_rect(dx, dy, dw, 24.f, 0.f, 0.f, 0.f, 0.35f);
     if (fid > 0) {
       draw_item_fit(platform, fid, dx + 2.f, dy + 2.f, 20.f, 20.f);
-      char line[80];
-      if (fcount > 1) std::snprintf(line, sizeof(line), "%s x%d", item_name(game, fid), fcount);
-      else std::snprintf(line, sizeof(line), "%s", item_name(game, fid));
-      text_fit(platform, dx + 26.f, dy + 3.f, dw - 30.f, line, 0.95f, 0.92f, 0.75f);
-      const bool hand = ui.focus_bag_slot >= 0 && ui.focus_bag_slot < 8 &&
-                        ui.focus_cloth_region == ClothingRegion_Count;
-      text_fit(platform, dx + 26.f, dy + 13.f, dw - 30.f,
-               hand ? "IN HOTBAR" : (ui.focus_cloth_region != ClothingRegion_Count ? "IN CLOTHING" : "IN BAG"),
-               0.6f, 0.65f, 0.5f);
+      // C2 sub_menu title t643 = item name only (no description text exists in data.js).
+      (void)fcount;
+      text_fit(platform, dx + 26.f, dy + 8.f, dw - 30.f, item_name(game, fid), 0.95f, 0.92f, 0.75f);
     } else {
       text(platform, dx + 6.f, dy + 8.f, "EMPTY SLOT", 0.5f, 0.5f, 0.45f);
     }
@@ -457,11 +461,10 @@ void draw_inventory_panel(IPlatform& platform, const Game& game) {
   Hint h[6];
   int n = 0;
   h[n++] = Hint{Btn_None, Btn_DPad, "ARROWS", "Move"};
-  if (in_cloth) {
-    h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Take"};
-  } else {
+  (void)in_cloth;
+  {
     h[n++] = Hint{Btn_None, Btn_Cross, "ENTER", "Use/Wear"};
-    h[n++] = Hint{Btn_None, Btn_Triangle, "C", "To hand"};
+    h[n++] = Hint{Btn_None, Btn_Triangle, "C", c2_item_has_use2_fill(fid) ? "Fill" : "To hand"};
     h[n++] = Hint{Btn_None, Btn_Square, "R", "Drop"};
     h[n++] = Hint{Btn_R, Btn_Cross, "F", ui.combine_src >= 0 ? "Combine here" : "Combine"};  // PSP adaptation of C2 drag + "Combine"
   }

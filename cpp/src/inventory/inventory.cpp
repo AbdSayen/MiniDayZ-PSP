@@ -26,7 +26,7 @@ void Inventory::resync_sizes() {
 }
 
 void Inventory::spill(ItemId id, int count) {
-  if (id <= 0 || count <= 0 || spill_n_ >= kInventorySlots) return;
+  if (id <= 0 || count < 0 || spill_n_ >= kInventorySlots) return;
   spill_[spill_n_].id = id;
   spill_[spill_n_].count = count;
   ++spill_n_;
@@ -110,7 +110,7 @@ int Inventory::flat_index(ClothingRegion r, int sub) const {
 // no split by stack size (stack limits apply only to Combine_ammo).
 bool Inventory::can_add_item(ItemId id, int count, const ItemDatabase& db) const {
   (void)db;
-  if (id <= 0 || count <= 0) return false;
+  if (id <= 0 || count < 0) return false;
   const int cap = capacity();
   for (int i = 0; i < cap; ++i) if (slot(i).empty()) return true;
   return false;
@@ -148,7 +148,7 @@ int Inventory::combine_slots(int src, int dst, const ItemDatabase& db) {
 bool is_gear_item(ItemId id) { return id >= 250 && id < 500; }
 
 bool Inventory::add_item_new_slot(ItemId id, int count) {
-  if (id <= 0 || count <= 0) return false;
+  if (id <= 0 || count < 0) return false;   // count 0 = empty bottle/canteen state
   const int cap = capacity();
   for (int i = 0; i < cap; ++i) {
     if (slot(i).empty()) { slot(i).id = id; slot(i).count = count; return true; }

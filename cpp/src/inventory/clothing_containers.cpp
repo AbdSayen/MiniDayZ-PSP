@@ -59,8 +59,8 @@ ClothingRegion clothing_region_for_worn_item(ItemId id, const ItemDef* def) {
   if (id >= 450 && id <= 457) return ClothingRegion_Backpack;
   if (id == 454 || id == 455) return ClothingRegion_Backpack;
   if (id >= 400 && id <= 405) return ClothingRegion_Vest;
-  if (id == 355 || id == 303 || id == 300 || id == 301 || id == 302 || id == 304 || id == 305 ||
-      id == 306)
+  // C2 Pick_player_item: "gorka jacket" (355) -> Drop_outerwear, "gorka pants" (303) -> Drop_pants.
+  if (id == 303 || id == 300 || id == 301 || id == 302 || id == 304 || id == 305 || id == 306)
     return ClothingRegion_Pants;
   if (def && def->category == ItemCat_Clothing) return ClothingRegion_Outerwear;
   if (id == 353 || id == 350 || id == 351 || id == 352 || id == 354 || id == 356 || id == 357 ||

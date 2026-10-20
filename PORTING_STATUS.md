@@ -744,3 +744,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Пункт 10: XP (expierence_points) со всеми источниками C2, 16 перков, perk_cost, меню перков (пауза → PERKS), значок notify, MD_Perk_1/2, сохранение v20. Удалены выдуманные портом выдачи перков. Тесты: test_perks, test_selection (item10).
 
 | 2026-10-20 | **Пункт 11:** контейнеры одежды принадлежат вещи (C2 t924/t916/t921/t913) | - плоский вид t381 + штаны/верх/жилет/рюкзак = порядок Check_space; - Drop_*/Pick_player_item переносят массив вместе с вещью (LootPile::boxes, save v21); - Combine между любыми ячейками контейнеров; - удалены take_overflow и дубль IV93 4×4; - тесты test_inventory/test_save, харнесс MDAZ_HARNESS_GEARBOX |
+
+| 2026-10-20 | **Пункт 11b:** состояние предметов в count (Spawn_drop IV1 целиком), бутылка/фляга: питьё и наполнение по item_activate/item_activate2, счётчики «%» как в Items_update, Drop_slot всей ячейкой, регион 355 = outerwear по Pick_player_item, убран выдуманный текст описаний | тест item state, харнесс MDAZ_HARNESS_BOTTLE |

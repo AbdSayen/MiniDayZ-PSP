@@ -16,6 +16,7 @@ set(MDAZ_CORE_SOURCES
   src/core/game_pump.cpp
   src/core/game_chop.cpp
   src/core/game_perks.cpp
+  src/core/game_items.cpp
   src/core/time.cpp
   src/core/rng.cpp
   src/core/c2_session_globals.cpp

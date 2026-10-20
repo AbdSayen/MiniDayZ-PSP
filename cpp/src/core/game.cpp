@@ -914,12 +914,13 @@ void Game::start_new_game(Difficulty d) {
   // perk_* to 0; starter perks come only from skins 4..15 (the port has skin 1 only).
   inventory_.clear();
   // C2 start (Player_skin_type 1, the default skin): Spawn_drop T-shirt 350 + Jeans 300,
-  // "picky" x2 equips them, then base inventory t381[0] = 42 (Hunter knife).
+  // "picky" x2 equips them, then base inventory t381[0] = 42 (Hunter knife), t382[0] = 100
+  // (knife condition kept in the count).
   {
     const ItemId worn[2] = {350, 300};
     inventory_.restore_worn(worn, 2);
   }
-  inventory_.add_item(42, 1, items_);
+  inventory_.add_item(42, 100, items_);
   equipped_slot_ = 0;
   mag_weapon_id_ = 0;
   mag_rounds_ = 0;
@@ -1564,7 +1565,7 @@ void Game::try_pickup_loot() {
     ItemId snd_pick_id = 0;
     bool gear_changed = false;
     for (int j = 0; j < p->item_count; ++j) {
-      if (p->counts[j] <= 0) continue;
+      if (p->items[j] <= 0) continue;   // taken (count 0 is a valid state: empty bottle)
       // C2 picky: gear (clothes/vests/backpacks/headwear) -> Pick_player_item (worn at once,
       // the old piece is dropped); everything else -> Pick_inventory_item -> Check_space_*
       // (one empty slot, no stack merge).
@@ -1583,6 +1584,7 @@ void Game::try_pickup_loot() {
       }
       if (taken) {
         snd_pick_id = p->items[j];
+        p->items[j] = 0;
         p->counts[j] = 0;
       } else {
         ++remaining;
@@ -1595,7 +1597,7 @@ void Game::try_pickup_loot() {
       // Compact remaining items in pile
       int w = 0;
       for (int j = 0; j < p->item_count; ++j) {
-        if (p->counts[j] <= 0) continue;
+        if (p->items[j] <= 0) continue;
         p->items[w] = p->items[j];
         p->counts[w] = p->counts[j];
         if (w != j) { p->boxes[w] = p->boxes[j]; p->boxes[j].clear(); }
@@ -2042,9 +2044,13 @@ void Game::try_drop_slot(int slot_idx) {
   // (Removed: invented vehicle trunk stash - not in data.js; Trunk_count is never used in events.)
   InvSlot& s = inventory_.slot(slot_idx);
   if (s.empty()) return;
+  // C2 Drop_slot -> Spawn_drop_from_player(id, x, y, count): the whole array cell goes to the
+  // ground (IV1 = count, i.e. the stack or the item state), then id/count are set to 0.
   const ItemId id = s.id;
-  if (!inventory_.remove_at(slot_idx, 1)) return;
-  loot_.spawn_item(Vec2(player_.pos.x + 12.f, player_.pos.y), id, 1);
+  const int cnt = s.count;
+  s = InvSlot();
+  LootPile* dp = loot_.spawn_item(Vec2(player_.pos.x + 12.f, player_.pos.y), id, 1);
+  if (dp && dp->item_count > 0) dp->counts[dp->item_count - 1] = cnt;
   sfx_play(c2_drop_sfx(is_gear_item(id), sfx_rng_), player_.pos);   // Drop_* drop1/2 | geardrop1/2
 }
 
@@ -3153,7 +3159,11 @@ void Game::inventory_slot_actions(const InputState& in, int s) {
     return;
   }
   if (in.confirm_pressed || in.attack_pressed) use_bag_slot(s);          // Cross: use / wear
-  else if (in.inventory_pressed) equip_bag_slot(s);                      // Triangle: to hand
+  else if (in.inventory_pressed) {                                       // Triangle
+    // C2 sub_menu "Use2" (ui 322 "Fill with water") for 54/55; elsewhere the port's to-hand.
+    if (c2_item_has_use2_fill(inventory_.slot(s).id)) c2_fill_container(s);
+    else equip_bag_slot(s);
+  }
   else if (in.mag_reload_pressed || in.reload_pressed) try_drop_slot(s); // Square: drop
 }
 
@@ -4211,6 +4221,7 @@ void Game::use_equipped_item() {
     // temporarily for the inventory focus). Bug 2026-10-19: this used to scan the whole
     // inventory for gasoline/toolbox and fall back to the first consumable.
     if (equipped_slot_ < 0 || equipped_slot_ >= inventory_.slot_count()) return;
+    if (c2_drink_container(equipped_slot_)) return;   // 54/55: water level in the count
     // Gasoline (53) refuel / Car toolbox (59) repair
     bool vehicle_item = false;
     {
@@ -4402,6 +4413,8 @@ void Game::update_dead(float dt, const InputState& in) {
 void Game::update(float dt) {
   if (!platform_) return;
   drop_inventory_spill();  // wear-from-bag leftovers (Inventory::take_spill)
+  LootSystem::set_farmer(player_.perks.has(Perk_Farmer));
+  tick_drink(dt);
 
   // FPS counter — average over 0.5s windows.
   fps_frames_ += 1;
@@ -4536,7 +4549,7 @@ void Game::render() {
           // never drawn in game (it was the "colored stacks" placeholder).
           int drawn = 0;
           for (int j = 0; j < p->item_count && drawn < 3; ++j) {
-            if (p->counts[j] <= 0) continue;
+            if (p->items[j] <= 0) continue;
             const ItemIcon* ic = find_item_ground_icon(p->items[j]);
             if (!ic || !platform_->has_sprite(ic->sprite)) continue;
             // C2 on_ground frame at native size (same 1:1 scale as characters: 30px sheet -> 30px).
@@ -6303,19 +6316,8 @@ bool Game::try_trunk_interact() {
 // C2 Spawn_drop IV1 (stack count) per item, data.js Function "Spawn_drop" (spawn_drop_count.inc).
 // Items whose IV1 is a condition / charge / fill (knives, canteen, batteries...) are spawned with
 // count 1 here (KNOWN_ISSUES: ground items carry no IV1 / IV6 in the port).
-namespace { struct SpawnDropCount { int id, kind, a, b, farmer, n; int list[5]; };
-#include "../world/spawn_drop_count.inc"
-}
 int Game::spawn_drop_count(ItemId id) {
-  for (unsigned i = 0; i < sizeof(kSpawnDropCount) / sizeof(kSpawnDropCount[0]); ++i) {
-    const SpawnDropCount& r = kSpawnDropCount[i];
-    if (r.id != id) continue;
-    int n = r.kind == 1 ? rng_.next_int(r.a, r.b - 1)     // int(random(a, b))
-                        : r.list[rng_.next_int(0, r.n - 1)];
-    if (r.farmer && player_.perks.has(Perk_Farmer)) n += r.farmer;
-    return n;
-  }
-  return 1;
+  return c2_spawn_drop_iv1(id, rng_, player_.perks.has(Perk_Farmer));
 }
 
 // C2 trunk open: direct (Circle while overlapping, sid1792234758292318 -> sid3302144065259174)

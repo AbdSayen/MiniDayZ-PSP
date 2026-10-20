@@ -41,8 +41,11 @@ struct LootPile {
 
 static const int kMaxLootPiles = 96;
 
+int c2_spawn_drop_iv1(ItemId id, Rng& rng, bool farmer);
+
 class LootSystem {
 public:
+  static void set_farmer(bool on);  // perk_farmer: Spawn_drop AddInstanceVar IV1
   LootSystem();
   void clear();
   LootPile* spawn_random(Vec2 pos, Rng& rng);
