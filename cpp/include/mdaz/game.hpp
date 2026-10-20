@@ -35,6 +35,7 @@
 #include "mdaz/map_props.hpp"
 
 namespace mdaz {
+bool seg_hits_box(Vec2 a, Vec2 b, float x0, float y0, float x1, float y1);
 
 struct CropSaveView;
 struct C2Sfx;
@@ -592,6 +593,7 @@ public:
   bool los_blocked_world(Vec2 a, Vec2 b) const; // buildings + big obstacles (C2 LOS)
 private:
   bool building_blocks(Vec2 a, Vec2 b) const; // C2 *_int Solid polygons
+  bool animal_swing_hit(int ai, Vec2 a, Vec2 b);
   bool tree_above_player(int ti) const;        // Obstacles_transparenting layer swap
   bool player_overlaps_prop(const void* prop, Vec2 o) const;
   bool location_above_player(int li, const char* sheet, Vec2 o, bool& roof_fade);

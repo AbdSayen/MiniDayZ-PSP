@@ -239,7 +239,7 @@ void spawn_bandit_camp(BanditSystem& bandits, Vec2 anchor, Rng& rng) {
     float _j1x = 0.f, _j1y = 0.f;
     rng.range_pair(-12.f, 12.f, -12.f, 12.f, _j1x, _j1y);
     Vec2 p(anchor.x + kCampOffsets[i].x + _j1x, anchor.y + kCampOffsets[i].y + _j1y);
-    bandits.spawn(p, kCampGun[i]);
+    if (Bandit* b = bandits.spawn(p, kCampGun[i])) b->c2_obj = kCampGun[i] ? 243 : 540;
   }
 }
 
@@ -257,6 +257,7 @@ Bandit* BanditSystem::spawn(Vec2 p, bool gun, bool ally) {
     iv11 = bot_bandit_iv11_for_iv14(iv14);
   }
   b.setup(p, next_id_++, gun, ally, iv14, iv11);
+  b.c2_obj = ally ? 522 : 827;
   return &b;
 }
 

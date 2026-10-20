@@ -24,6 +24,9 @@ struct Bandit {
   int mag_rounds;  // IV9 rounds in mag
   bool reloading;  // IV10 reload in progress
   float reload_timer;
+  // C2 object: 827 bot_enemy_bandit (bandit_skin, layer player), 243 shooter / 540 puncher
+  // (camp bots, layer Survivors), 522 friend (Survivors).
+  int c2_obj = 827;
   Bandit();
   void setup(Vec2 p, EntityId eid, bool gun, bool ally = false, int weapon_iv14 = 1,
              int weapon_iv11 = 0);

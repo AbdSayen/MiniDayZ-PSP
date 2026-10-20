@@ -187,6 +187,68 @@ void Game::chop_tree_hit(int ti, Vec2 at) {
   if (balance::SEED_RUN == 0) ++ach_lumberjack_;   // Check_ach_unlocks: KNOWN_ISSUES
 }
 
+namespace {
+struct NpcHitPoly { const char* base; const char* anim; int frame, w, h; float hx, hy; int n; float p[16]; };
+const NpcHitPoly kNpcHitPolys[] = {
+#include "npc_hit_polys.inc"
+};
+bool seg_cross(float ax, float ay, float bx, float by, float cx, float cy, float dx, float dy) {
+  const float d1 = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+  const float d2 = (bx - ax) * (dy - ay) - (by - ay) * (dx - ax);
+  const float d3 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx);
+  const float d4 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
+  return ((d1 > 0) != (d2 > 0)) && ((d3 > 0) != (d4 > 0));
+}
+bool pt_in_poly(float x, float y, const float* px, const float* py, int n) {
+  bool in = false;
+  for (int i = 0, j = n - 1; i < n; j = i++)
+    if (((py[i] > y) != (py[j] > y)) && (x < (px[j] - px[i]) * (y - py[i]) / (py[j] - py[i]) + px[i])) in = !in;
+  return in;
+}
+bool seg_hits_poly(Vec2 a, Vec2 b, const float* px, const float* py, int n) {
+  if (pt_in_poly(a.x, a.y, px, py, n) || pt_in_poly(b.x, b.y, px, py, n)) return true;
+  for (int i = 0, j = n - 1; i < n; j = i++)
+    if (seg_cross(a.x, a.y, b.x, b.y, px[j], py[j], px[i], py[i])) return true;
+  return false;
+}
+} // namespace
+
+bool seg_hits_box(Vec2 a, Vec2 b, float x0, float y0, float x1, float y1) {
+  const float px[4] = {x0, x1, x1, x0}, py[4] = {y0, y0, y1, y1};
+  return seg_hits_poly(a, b, px, py, 4);
+}
+
+// Collision poly of an animal's current frame, sampled with the same anim/time as the renderer.
+bool Game::animal_swing_hit(int ai, Vec2 a, Vec2 b) {
+  const Animal* an = animals_.at(ai);
+  const Vec2 o = an->pos;
+  if (an->type == Animal_Rabbit) return seg_hits_box(a, b, o.x - 9.f, o.y - 9.f, o.x + 9.f, o.y + 9.f);
+  if (an->type == Animal_Dog || (an->type != Animal_Wolf && an->type != Animal_Deer))
+    return seg_hits_box(a, b, o.x - 15.f, o.y - 15.f, o.x + 15.f, o.y + 15.f);   // dog_eyes 30x30
+  const char* base = (an->type == Animal_Wolf) ? "wolf_skin" : "deer_skin";
+  const float fdeg = std::atan2(player_.pos.y - o.y, player_.pos.x - o.x) * 57.2957795f;
+  const char* prefix = (dist2(o, player_.pos) < 140.f * 140.f) ? "run" : "idle";
+  char aname[40];
+  CharAnims::make_name(aname, (int)sizeof(aname), prefix, fdeg);
+  int fi = 0;
+  if (const CharAnim* ca = char_anims_.find(base, aname))
+    char_anims_.sample(ca, state_timer_ + static_cast<float>(ai) * 0.23f, &fi);
+  const NpcHitPoly* hp = 0;
+  for (unsigned k = 0; k < sizeof(kNpcHitPolys) / sizeof(kNpcHitPolys[0]); ++k) {
+    const NpcHitPoly& e = kNpcHitPolys[k];
+    if (std::strcmp(e.base, base) == 0 && std::strcmp(e.anim, aname) == 0 && e.frame == fi) { hp = &e; break; }
+  }
+  if (!hp) return false;
+  float px[8], py[8]; int n = hp->n;
+  if (n == 0) {
+    const float l = o.x - hp->hx * hp->w, t = o.y - hp->hy * hp->h;
+    px[0] = l; py[0] = t; px[1] = l + hp->w; py[1] = t; px[2] = l + hp->w; py[2] = t + hp->h; px[3] = l; py[3] = t + hp->h; n = 4;
+  } else {
+    for (int k = 0; k < n; ++k) { px[k] = o.x + hp->p[k * 2] * hp->w; py[k] = o.y + hp->p[k * 2 + 1] * hp->h; }
+  }
+  return seg_hits_poly(a, b, px, py, n);
+}
+
 void Game::update_melee_swings(float dt) {
   for (int i = 0; i < kMaxSwings; ++i) {
     MeleeSwing& s = swings_[i];
@@ -196,34 +258,35 @@ void Game::update_melee_swings(float dt) {
     const float cx = std::cos(s.ang), cy = std::sin(s.ang);
     s.pos.x += cx * 100.f * dt;
     s.pos.y += cy * 100.f * dt;
-    // OnCollision with NPCs (zeds 941, animals, bots): dmg = round(IV0 + random(-IV0/4, IV0/4)),
-    // NPC_get_damage, test_bodyhit, Destroy. Hit radii = the port's bullet radii (resolve_bullet_hits).
+    // OnCollision with NPCs. The swing poly (frame 10x21, hotspot 0/0.571) is the 10x1 strip
+    // ahead of the origin; NPC collision polys from data.js: zed skins 30x30 bbox (tank 40x40),
+    // bots 30x30, dog_eyes 30x30, rabbit_skin 18x18, wolf_skin/deer_skin per animation frame.
     {
       const float q = s.dmg * 0.25f;
       bool hit_npc = false;
-      for (int k = 0; k <= 10 && !hit_npc; ++k) {
-        const Vec2 pt(s.pos.x + cx * k, s.pos.y + cy * k);
-        for (Zombie* z = zombies_.begin(); z != zombies_.end() && !hit_npc; ++z) {
-          if (!z->alive || dist2(pt, z->pos) >= 18.f * 18.f) continue;
-          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
-          spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
-          hurt_zombie(*z, d, s.weapon);
-          hit_npc = true;
-        }
-        for (int ai = 0; ai < animals_.count() && !hit_npc; ++ai) {
-          Animal* a = animals_.at(ai);
-          if (!a->alive || dist2(pt, a->pos) >= 16.f * 16.f) continue;
-          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
-          spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
-          hurt_animal(*a, d);
-          hit_npc = true;
-        }
-        for (Bandit* b = bandits_.begin(); b != bandits_.end() && !hit_npc; ++b) {
-          if (!b->alive || dist2(pt, b->pos) >= 16.f * 16.f) continue;
-          const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
-          hurt_bandit(*b, d);
-          hit_npc = true;
-        }
+      const Vec2 s0 = s.pos, s1(s.pos.x + cx * 10.f, s.pos.y + cy * 10.f);
+      for (Zombie* z = zombies_.begin(); z != zombies_.end() && !hit_npc; ++z) {
+        if (!z->alive) continue;
+        const float hw = (z->type == Zed_Tank) ? 20.f : 15.f;
+        if (!seg_hits_box(s0, s1, z->pos.x - hw, z->pos.y - hw, z->pos.x + hw, z->pos.y + hw)) continue;
+        const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+        spawn_fx(Fx_Hit, z->pos, 0.f, 0.12f);
+        hurt_zombie(*z, d, s.weapon);
+        hit_npc = true;
+      }
+      for (int ai = 0; ai < animals_.count() && !hit_npc; ++ai) {
+        Animal* a = animals_.at(ai);
+        if (!a->alive || !animal_swing_hit(ai, s0, s1)) continue;
+        const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+        spawn_fx(Fx_Hit, a->pos, 0.f, 0.12f);
+        hurt_animal(*a, d);
+        hit_npc = true;
+      }
+      for (Bandit* b = bandits_.begin(); b != bandits_.end() && !hit_npc; ++b) {
+        if (!b->alive || !seg_hits_box(s0, s1, b->pos.x - 15.f, b->pos.y - 15.f, b->pos.x + 15.f, b->pos.y + 15.f)) continue;
+        const float d = std::floor(s.dmg - q + rng_.next_float() * 2.f * q + 0.5f);
+        hurt_bandit(*b, d);
+        hit_npc = true;
       }
       // t909 IV6 -= 0.2 / 0.5 / 1 by IV15 (durability): port has no per-item IV6 (KNOWN_ISSUES).
       if (hit_npc) { ++melee_hits_; s.alive = false; continue; }

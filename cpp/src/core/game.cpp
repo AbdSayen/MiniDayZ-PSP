@@ -4663,6 +4663,32 @@ void Game::render() {
     }
     if (!loot_drawn) draw_loot();
 
+    // Bandits: camp/friend bots on Survivors (22); bot_enemy_bandit#827 is spawned on layer player (32).
+    auto draw_bandits = [&](bool on_player_layer) {
+      {
+        for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
+          if (!bd->alive || ((bd->c2_obj == 827) != on_player_layer)) continue;
+          if (!view.vis(bd->pos, sc, 32.f)) continue;
+          float sx = cx + (bd->pos.x - camv.x) * sc;
+          float sy = cy + (bd->pos.y - camv.y) * sc;
+          const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
+          const float d2b = dist2(bd->pos, player_.pos);
+          const char* bprefix = (d2b < 220.f * 220.f) ? "run" : "idle";
+          const float bt = state_timer_ + static_cast<float>(bd->id) * 0.13f;
+          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
+          if (platform_->has_sprite("bandit_skin-sheet0"))
+            draw_c2_char(platform_, &char_anims_, sx, sy, 30.f, "bandit_skin", fdeg, bt, bprefix);
+          else
+            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
+          if (platform_->has_sprite("bot_bandit_melee_marker-sheet0"))
+            platform_->draw_sprite("bot_bandit_melee_marker-sheet0",
+              sx - 5.f, sy - 28.f, 10.f, 8.f, 0.f, 0.9f);
+          if (bd->hp < bd->max_hp * 0.99f)
+            platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
+        }
+      }
+
+    };
     // items_on_ground 18 (campfires, traps, crops) < Bullets 21 < Survivors 22 < Zeds 29 < vehicles 30.
     if (!in_bunker_) {
       // Campfires (flicker between fireplace sheets)
@@ -4762,30 +4788,7 @@ void Game::render() {
     }
 
     if (!in_bunker_) {
-      // Bandits — C2 run/idle
-      {
-        for (const Bandit* bd = bandits_.begin(); bd != bandits_.end(); ++bd) {
-          if (!bd->alive) continue;
-          if (!view.vis(bd->pos, sc, 32.f)) continue;
-          float sx = cx + (bd->pos.x - camv.x) * sc;
-          float sy = cy + (bd->pos.y - camv.y) * sc;
-          const float fdeg = std::atan2(player_.pos.y - bd->pos.y, player_.pos.x - bd->pos.x) * 57.2957795f;
-          const float d2b = dist2(bd->pos, player_.pos);
-          const char* bprefix = (d2b < 220.f * 220.f) ? "run" : "idle";
-          const float bt = state_timer_ + static_cast<float>(bd->id) * 0.13f;
-          platform_->draw_rect(sx - 10.f, sy + 10.f, 20.f, 3.f, 0.f, 0.f, 0.f, 0.25f);
-          if (platform_->has_sprite("bandit_skin-sheet0"))
-            draw_c2_char(platform_, &char_anims_, sx, sy, 30.f, "bandit_skin", fdeg, bt, bprefix);
-          else
-            platform_->draw_rect(sx - 5, sy - 5, 10, 10, 0.25f, 0.4f, 0.75f, 1.f);
-          if (platform_->has_sprite("bot_bandit_melee_marker-sheet0"))
-            platform_->draw_sprite("bot_bandit_melee_marker-sheet0",
-              sx - 5.f, sy - 28.f, 10.f, 8.f, 0.f, 0.9f);
-          if (bd->hp < bd->max_hp * 0.99f)
-            platform_->draw_rect(sx - 5, sy - 24, 10.f * (bd->hp / bd->max_hp), 2, 0.9f, 0.2f, 0.15f, 1.f);
-        }
-      }
-
+      draw_bandits(false);
     }
     // Zombies — C2 idle/walk/run/attack sheets
     {
@@ -4929,6 +4932,7 @@ void Game::render() {
     }
 
     if (!in_bunker_) draw_world_objects(1);   // Buildings_bg 31
+    if (!in_bunker_) draw_bandits(true);       // player 32: bot_enemy_bandit#827
     // Player — C2 idle/run/axe/pistol/twohand/using_item
     {
       const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;

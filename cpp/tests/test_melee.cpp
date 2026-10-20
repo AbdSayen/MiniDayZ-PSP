@@ -1,3 +1,4 @@
+#include "mdaz/bandit.hpp"
 // Item 5b: Melee_2_auto 1:1 — every melee attack (fist and items) spawns melee_swing_general
 // (t910) that deals damage on collision; no radius damage.
 #include "mdaz/game.hpp"
@@ -75,5 +76,18 @@ int test_melee() {
   for (int k = 0; k < 15; ++k) g.tick_swings_for_test(1.f / 60.f);
   check(front->hp == h2, "zed at 60 px: swing fades before reaching it");
   delete gp;
+  // NPC hit polys (data.js): zed skin 30x30 bbox = 15 px half-size; swing strip is 10 px long.
+  check(seg_hits_box(Vec2(-24.f, 0.f), Vec2(-14.f, 0.f), -15.f, -15.f, 15.f, 15.f), "swing tip enters 30x30 zed bbox");
+  check(!seg_hits_box(Vec2(-26.f, 0.f), Vec2(-16.f, 0.f), -15.f, -15.f, 15.f, 15.f), "swing 1 px short of 30x30 bbox misses");
+  check(seg_hits_box(Vec2(0.f, 16.f), Vec2(0.f, 26.f), -16.f, -15.f, 16.f, 17.f) == true, "box test inclusive of start inside");
+  {
+    BanditSystem bs; Rng r(5);
+    spawn_bandit_camp(bs, Vec2(0.f, 0.f), r);
+    int n243 = 0, n540 = 0;
+    for (const Bandit* b = bs.begin(); b != bs.end(); ++b) { n243 += b->c2_obj == 243; n540 += b->c2_obj == 540; }
+    check(n243 == 2 && n540 == 2, "camp bots = 2 shooter#243 + 2 puncher#540 (Survivors layer)");
+    Bandit* rb = bs.spawn(Vec2(0.f, 0.f), true);
+    check(rb && rb->c2_obj == 827, "roaming bandit = bot_enemy_bandit#827 (player layer)");
+  }
   return g_fail;
 }
