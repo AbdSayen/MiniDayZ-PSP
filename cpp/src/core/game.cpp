@@ -5556,6 +5556,22 @@ static void door_sound(IAudio* au, int anim, bool open) {
     au->play(open ? "open_door" : "close_door", false, 0.f, "");
 }
 
+// Harness: nearest door's frame / blocker / opacity and the player Y against its 'in' point.
+void Game::harness_door_state(char* buf, int n) const {
+  int best = -1; float bd = 1e18f;
+  for (int i = 0; i < door_count_; ++i) {
+    const float d2 = dist2(Vec2(doors_[i].x, doors_[i].y), player_.pos);
+    if (d2 < bd) { bd = d2; best = i; }
+  }
+  if (best < 0) { std::snprintf(buf, n, "door none"); return; }
+  const DoorInst& d = doors_[best];
+  const DoorFrame& f = kDoorFrames[d.anim][d.frame];
+  const float in_y = d.y + (f.in_y - f.hy) * f.h;
+  std::snprintf(buf, n, "door anim=%s frame=%d blocker=%d opacity=%.2f player_y=%.1f in_y=%.1f %s",
+                kDoorAnimNames[d.anim], d.frame, d.blk ? 1 : 0, d.opacity, player_.pos.y, in_y,
+                player_.pos.y < in_y ? "north_of_in" : "south_of_in");
+}
+
 void Game::update_doors(float dt) {
   if (!doors_built_) build_doors();
   if (in_bunker_) { door_open_prev_ = door_close_prev_ = false; return; }

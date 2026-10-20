@@ -686,6 +686,7 @@ public:
   int door_count_for_test() { if (!doors_built_) build_doors(); return door_count_; }
   const DoorInst& door_for_test(int i) const { return doors_[i]; }
   void doors_tick_for_test(float dt) { update_doors(dt); }
+  void harness_door_state(char* buf, int n) const;
   void door_activate_for_test(int i) { mapgen_.location_mut(doors_[i].loc).active = true; }
   bool doors_block_for_test(Vec2 a, Vec2 b) const { return doors_block(a, b, 1.f); }
 public:

@@ -298,7 +298,10 @@ public:
       if (game_->harness_player_rel().y > 60.f) in.move_y = -1.f;      // stop once inside
       else door_phase_ = 2;
     }
-    return frame_ < 620;
+    if (door_phase_ == 2 && frame_ > 310) {                             // keep walking north
+      if (++door_north_ <= 40) in.move_y = -1.f; else door_phase_ = 3; // past the 'in' point
+    }
+    return frame_ < 720;
   }
 
   void end_frame() {
@@ -315,7 +318,9 @@ public:
       return;
     }
     if (door_) {
-      if (frame_ >= 210 && frame_ <= 600 && (frame_ - 210) % 35 == 0) {
+      if (frame_ >= 210 && frame_ <= 700 && (frame_ - 210) % 35 == 0) {
+        char st[160];
+        if (game_) { game_->harness_door_state(st, sizeof(st)); std::printf("f%d %s\n", frame_, st); }
         char path[512];
         std::snprintf(path, sizeof(path), "%s/door_%02d_f%d.bmp", dir_, (frame_ - 210) / 35, frame_);
         std::printf("%s %s\n", inner_->save_screenshot(path) ? "saved" : "FAILED", path);
@@ -498,6 +503,7 @@ private:
   bool intro_ = false;
   bool shot_done_[8] = {};
   int door_phase_ = 0;
+  int door_north_ = 0;
 };
 
 } // namespace
