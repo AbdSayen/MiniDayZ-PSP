@@ -681,6 +681,7 @@ public:
   bool water_solid(Vec2 p) const;   // C2 Water tilemap t199 (Solid)
   float harness_place_near_water();
   void harness_combine_setup();
+  bool harness_fence_try(int sticks);
   void harness_combine_log();
 private:
   void update_bot_zindex();

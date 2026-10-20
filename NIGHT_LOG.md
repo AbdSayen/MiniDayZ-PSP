@@ -99,3 +99,6 @@ water_tile_polys.inc из data.js, MDAZ_HARNESS_WATER.
 
 ### 2026-10-20 — пункт 9b
 - Подсказка Combine в нижней панели; build_fence использует fence_stick_slot (один стак ≥ 5), как в C2 (sid build_fence1, required_count).
+
+### 2026-10-20 — пункт 9c
+- IV44 = в машине (Set при входе в t946). Добавлены client_log 90/64 в try_build_fence, тесты, харнесс MDAZ_HARNESS_FENCE.

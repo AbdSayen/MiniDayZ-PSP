@@ -86,6 +86,7 @@ public:
   bool update(float dt, Vec2& player_pos, float move_x, float move_y, bool interact_pressed,
               bool has_paddle = true);
   bool player_driving() const { return driving_; }
+  void set_driving_for_test(bool d) { driving_ = d; }
   Vehicle* driven();
   const Vehicle* driven() const;
   int count() const { return count_; }

@@ -653,6 +653,17 @@ void Game::harness_combine_setup() {
   harness_combine_log();
 }
 
+// Harness (item 9c): one stick stack of `sticks` + woodpile, then build_fence1.
+bool Game::harness_fence_try(int sticks) {
+  for (int i = 1; i < inventory_.capacity(); ++i)
+    if (!inventory_.slot(i).empty()) inventory_.remove_at(i, inventory_.slot(i).count);
+  inventory_.add_item_new_slot(38, sticks);
+  inventory_.add_item_new_slot(50, 1);
+  const bool ok = try_build_fence(1);
+  std::printf("fence: sticks=%d ok=%d toast=%s\n", sticks, ok ? 1 : 0, toast_text() ? toast_text() : "-");
+  return ok;
+}
+
 void Game::harness_combine_log() {
   char line[160];
   std::snprintf(line, sizeof(line), "combine: cap=%d s1=%d/%d s2=%d/%d src=%d focus=%d",
@@ -2228,6 +2239,9 @@ void Game::apply_fires_view(const FireSaveView& in) {
 // deploys obst_barricade (solid, no timer; only zed_tank / vehicles break it) at player.x + 50.
 bool Game::try_build_fence(int variant) {
   if (variant != 1 && variant != 2) return false;
+  // C2 build_fence1/2: player_collision_base IV44 (set when entering a vehicle t946,
+  // sid174413933392514) -> client_log 90, else the stick check.
+  if (vehicles_.player_driving()) { show_toast("I can't do it from inside of the car."); return false; }  // l_eng_log 90
   int wood = -1;
   for (int i = 0; i < inventory_.slot_count(); ++i) {
     const InvSlot& sl = inventory_.slot(i);
@@ -2235,6 +2249,7 @@ bool Game::try_build_fence(int variant) {
   }
   const int sticks = fence_stick_slot(inventory_);   // one stack >= required_count (5)
   const bool can = (variant == 1) ? craft_build_fence1_can(inventory_) : craft_build_fence2_can(inventory_);
+  if (wood >= 0 && sticks < 0) { show_toast("I need more wooden sticks for that."); return false; }  // l_eng_log 64
   if (!can || wood < 0 || sticks < 0) return false;
   PlaceTrap* t = 0;
   for (int i = 0; i < trap_count_; ++i) {

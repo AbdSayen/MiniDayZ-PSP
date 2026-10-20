@@ -181,6 +181,11 @@ public:
       }
       return frame_ < 345;
     }
+    if (std::getenv("MDAZ_HARNESS_FENCE")) {   // 9c: build_fence client_log 64 / success
+      if (frame_ == 200 && game_) game_->harness_fence_try(3);
+      if (frame_ == 300 && game_) game_->harness_fence_try(5);
+      return frame_ < 330;
+    }
     if (std::getenv("MDAZ_HARNESS_COMBINE")) {   // 9: Combine_ammo via PSP R+Cross adaptation
       if (frame_ == 200 && game_) game_->harness_combine_setup();
       if (frame_ == 210) { in.bag = in.bag_pressed = true; }
@@ -472,7 +477,7 @@ public:
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
         { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
         { 201, "botz_0_bot_survivors2_under_house" }, { 210, "water_0_start" }, { 336, "water_1_blocked_at_edge" }, { 281, "botz_1_bot_survivors" },
-        { 240, "combine_0_source_marked" }, { 272, "combine_1_after" },
+        { 240, "combine_0_source_marked" }, { 215, "fence_0_msg64_three_sticks" }, { 320, "fence_1_built_five_sticks" }, { 272, "combine_1_after" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;

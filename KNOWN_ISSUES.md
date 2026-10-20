@@ -437,3 +437,6 @@ C2 group House_transparenting (Every 0.1 s, player_collision_base overlapping t9
 - В нижней панели инвентаря теперь есть подсказка «R+✕ Combine»; когда источник уже отмечен, она меняется на «Combine here». На десктопе — F.
 - build_fence1/2 исправлено: нужен ОДИН стак палок (38) с количеством ≥ 5 (VAR required_count = 5), из него и вычитается 5. 3+2 в разных слотах больше не подходят. PSP-адаптация (без перетаскивания): берётся первый слот сумки, где палок ≥ 5. В C2 проверяется именно тот слот, на который бросили дрова, и при нехватке выводится client_log 64.
 - Не портировано: проверка IV44 игрока в build_fence (client_log 90).
+
+## Пункт 9c — проверка IV44 в build_fence (2026-10-20)
+- Портировано: в C2 IV44 у player_collision_base выставляется при посадке в машину (t946, sid174413933392514). build_fence1/2 при IV44 выводит client_log 90 «I can't do it from inside of the car.», иначе идёт проверка палок; при нехватке выводится client_log 64 «I need more wooden sticks for that.». В порте IV44 = vehicles_.player_driving(), сообщения показываются через toast.

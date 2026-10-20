@@ -1,3 +1,4 @@
+#include <cstring>
 #include "mdaz/cell_tilemaps.hpp"
 #include "mdaz/rng.hpp"
 #include "mdaz/c2_mapgen.hpp"
@@ -77,6 +78,7 @@ struct GameTestAccess {
   static void quest_done(Game& g, int task) { g.on_quest_completed(task); }
   static void quest_bandits(Game& g) { g.maybe_spawn_quest_bandits(); }
   static bool fence(Game& g, int v) { return g.try_build_fence(v); }
+  static void drive(Game& g, bool d) { g.vehicles_.set_driving_for_test(d); }
   static int trap_count(Game& g) { return g.trap_count_; }
   static float trap_life(Game& g, int i) { return g.traps_[i].life; }
   static int trap_kind(Game& g, int i) { return g.traps_[i].kind; }
@@ -195,12 +197,20 @@ static void test_restored_step1(Game& g) {
   { const ItemId tw_[4] = {303, 355, 403, 452}; A::inv(g).restore_worn(tw_, 4); } // test: 16 C2 slots
   A::inv(g).add_item(38, 6, A::db(g));
   A::inv(g).add_item(50, 1, A::db(g));
+  A::drive(g, true);
+  check(!A::fence(g, 1) && inv_count(g, 38) == 6 && g.toast_text() &&
+        std::strcmp(g.toast_text(), "I can't do it from inside of the car.") == 0,
+        "build_fence in car: refused, client_log 90");
+  A::drive(g, false);
   const int tc = A::trap_count(g);
   const bool ok = A::fence(g, 1);
   check(ok && inv_count(g, 38) == 1 && inv_count(g, 50) == 0, "build_fence: -5 sticks, woodpile cleared");
   check(A::trap_count(g) == tc + 1 && A::trap_kind(g, tc) == 2 && A::trap_life(g, tc) > 1.0e8f,
         "fence placed, no lifetime");
   check(!A::fence(g, 2), "build_fence needs 5 sticks + woodpile");
+  A::inv(g).add_item(50, 1, A::db(g));
+  check(!A::fence(g, 1) && g.toast_text() && std::strcmp(g.toast_text(), "I need more wooden sticks for that.") == 0,
+        "build_fence 1 stick: client_log 64");
   // --- Location stream (recovered sync_location_stream / spawn_loot_for_poi / spawn_hostiles_for_poi).
   MapGenerator& m = A::map(g);
   m.generate_new_game(140);
