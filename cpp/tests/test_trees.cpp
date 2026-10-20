@@ -98,7 +98,11 @@ int test_trees() {
     check(g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && roof, "house t928: Y < ip1 -> opacity 25 + Buildings");
     p.pos = Vec2(1000.f, 1000.f);
     check(g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && !roof, "house t928: ip1 <= Y <= ip2 -> opacity 100, Buildings");
-    p.pos = Vec2(1500.f, 1500.f);
+    p.pos = Vec2(1000.f, 970.f);
+    g.house_layers_tick_for_test();
+    p.pos = Vec2(-90000.f, -90000.f);   // overlaps no t928 -> TriggerOnce reset
+    g.house_layers_tick_for_test();
+    check(!g.iv41_for_test(), "IV41 cleared when not overlapping any house (t943 Outline width 0)");
     check(!g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && !roof, "house t928: not overlapping -> Buildings_bg, 100");
   }
   delete gp;

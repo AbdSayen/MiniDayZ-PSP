@@ -720,3 +720,6 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 
 ## 7c (2026-10-20)
 - Хитбоксы NPC для замаха по полигонам data.js (+3 теста); бандит #827 в слое player, боты лагеря в Survivors (+2 теста).
+
+## 7d (2026-10-20)
+- Tint/Outline в платформах SDL/PSP; House_transparenting с таймером 0.1 s, интерьер под прозрачной крышей с Tint 0.5, аутлайн игрока (IV41). Режим скриншотов --shots-building + MDAZ_HARNESS_ROOF.

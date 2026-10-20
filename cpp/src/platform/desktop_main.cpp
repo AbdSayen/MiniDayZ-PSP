@@ -43,6 +43,8 @@ public:
                                   int sx, int sy, int sw, int sh, float al) {
     inner_->draw_sprite_frame_mirrored(n, dx, dy, dw, dh, sx, sy, sw, sh, al);
   }
+  void set_sprite_tint(float r, float g, float b) { inner_->set_sprite_tint(r, g, b); }
+  void set_sprite_silhouette(bool on) { inner_->set_sprite_silhouette(on); }
   bool read_file(const char* p, char** d, std::size_t* s) { return inner_->read_file(p, d, s); }
   bool write_file(const char* p, const void* d, std::size_t s) { return inner_->write_file(p, d, s); }
   int screen_w() const { return inner_->screen_w(); }
@@ -163,6 +165,11 @@ public:
   // --shots-building: test-only placement next to a Solid building, then walk into its walls.
   bool poll_building(mdaz::InputState& in) {
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (std::getenv("MDAZ_HARNESS_ROOF")) {   // 7d: transparent roof + Tint + Outline
+      if (frame_ == 200 && game_) game_->harness_place_at_building(4);
+      if (frame_ == 300 && game_) game_->harness_place_at_building(1);   // south: roof opaque
+      return frame_ < 360;
+    }
     if (frame_ == 200 && game_) game_->harness_place_at_building(std::getenv("MDAZ_HARNESS_LOOT") ? 3 : 1); // south of the building
     if (frame_ > 260 && frame_ < 420) in.move_y = -1.f;              // walk north into the wall
     if (frame_ == 480 && game_) game_->harness_place_at_building(0); // inside (warmzone)
@@ -426,6 +433,7 @@ public:
     if (building_) {
       static const struct { int frame; const char* name; } kB[] = {
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
+        { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;

@@ -187,7 +187,7 @@ public:
       tgt_w_(480), tgt_h_(272), scale_(1.f), in_world_(false), hr_(false), force_hr_(false),
       clear_c_(0xff000000u),
       gc_valid_(false), gc_cur_(0), gc_cam_x_(0), gc_cam_y_(0), gc_key_(0), gc_w_(0), gc_h_(0),
-      recording_(false), ndirty_(0), ngc_(0), ntext_(0),
+      recording_(false), tint_bgr_(0x00ffffffu), sil_(false), ndirty_(0), ngc_(0), ntext_(0),
       prof_stage_(-1), prof_last_(0), prev_frame_end_(0),
       sum_vs_(0), max_vs_(0), avg_vs_(0), last_max_vs_(0),
       sum_frame_(0), max_frame_(0), avg_frame_(0), last_max_frame_(0), nframe_(0),
@@ -307,11 +307,24 @@ public:
     if (sy + sh > t->h) sh = t->h - sy;
     if (sw <= 0 || sh <= 0) return;
     if (alpha > 1.f) alpha = 1.f;
-    const unsigned int c = ((unsigned)(alpha * 255.f + 0.5f) << 24) | 0x00ffffffu;
+    const unsigned int c = ((unsigned)(alpha * 255.f + 0.5f) << 24) | tint_bgr_;
     x *= scale_; y *= scale_; w *= scale_; h *= scale_;
     if (recording_) { record(t, x, y, w, h, sx, sy, sw, sh, c); return; }
     if (std::fabs(angle_deg) > 0.01f) { emit_rotated(t, x, y, w, h, sx, sy, sw, sh, angle_deg, c); return; }
     emit_sprite(t, x, y, w, h, (float)sx, (float)sy, (float)sw, (float)sh, c);
+  }
+
+  // C2 Tint: vertex colour modulates the texture (GU_TFX_MODULATE).
+  void set_sprite_tint(float r, float g, float b) {
+    const unsigned ri = (unsigned)(r * 255.f + 0.5f), gi = (unsigned)(g * 255.f + 0.5f), bi = (unsigned)(b * 255.f + 0.5f);
+    tint_bgr_ = (bi << 16) | (gi << 8) | ri;
+  }
+  // Silhouette: GU_TFX_ADD (C = Cf + Ct clamps to the vertex colour when it is white, A = Af * At).
+  void set_sprite_silhouette(bool on) {
+    if (on == sil_) return;
+    flush();
+    sil_ = on;
+    sceGuTexFunc(on ? GU_TFX_ADD : GU_TFX_MODULATE, GU_TCC_RGBA);
   }
 
   void draw_sprite_frame_mirrored(const char* name, float x, float y, float w, float h,
@@ -1183,6 +1196,8 @@ private:
   unsigned gc_key_;
   int gc_w_, gc_h_;
   bool recording_;
+  unsigned int tint_bgr_;
+  bool sil_;
   Rect dirty_[3];
   int ndirty_;
   GroundCmd gc_[kMaxGroundCmds];

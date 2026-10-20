@@ -598,10 +598,18 @@ private:
   bool player_overlaps_prop(const void* prop, Vec2 o) const;
   bool location_above_player(int li, const char* sheet, Vec2 o, bool& roof_fade);
   unsigned char car_fg_[512];                  // t920 layer state (1 = Buildings), per location
-  bool car_layer_tick_ = false;                // Every 0.5 s (House_transparenting t920 rule)
+  bool car_layer_tick_ = false;
+  void update_house_layers(float dt);
+  unsigned char house_roof_[512] = {0};        // t928 opacity 25 (Y < Imagepoint 1)
+  unsigned char house_fg_[512] = {0};          // t928 on Buildings (1) / Buildings_bg (0)
+  bool house_tick_ = false, house_any_ov_ = false;
+  float house_t_ = 0.f;
+  bool iv41_ = false;                          // player_collision_base IV41 -> t943 Outline                // Every 0.5 s (House_transparenting t920 rule)
   float car_layer_t_ = 0.f;
 public:
-  bool location_above_for_test(int li, const char* sheet, Vec2 o, bool& roof) { car_layer_tick_ = true; return location_above_player(li, sheet, o, roof); }
+  bool iv41_for_test() const { return iv41_; }
+  void house_layers_tick_for_test() { house_any_ov_ = true; update_house_layers(0.1f); }
+  bool location_above_for_test(int li, const char* sheet, Vec2 o, bool& roof) { car_layer_tick_ = true; house_tick_ = true; return location_above_player(li, sheet, o, roof); }
 private:
   void zed_check_bunker();           // C2 Zed_check_bunker (every 3 s while inBunker)
   bool bunker_spawner_used_[32];

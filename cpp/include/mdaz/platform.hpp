@@ -90,6 +90,11 @@ public:
                                           int sx, int sy, int sw, int sh, float alpha = 1.f) {
     draw_sprite_frame(name, dx, dy, dw, dh, sx, sy, sw, sh, 0.f, alpha);
   }
+  // C2 "Tint" effect (front * vec4(r, g, b, 1)) for the following sprite draws; 1,1,1 = off.
+  virtual void set_sprite_tint(float /*r*/, float /*g*/, float /*b*/) {}
+  // Flat-colour silhouette (texture alpha, tint colour as RGB) used to build the C2 "Outline"
+  // effect from offset draws.
+  virtual void set_sprite_silhouette(bool /*on*/) {}
   virtual void end_frame() = 0;
   // Saves the current back buffer as BMP; call before end_frame().
   virtual bool save_screenshot(const char* /*path*/) { return false; }

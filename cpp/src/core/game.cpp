@@ -153,7 +153,8 @@ const char* player_body_skin(const Inventory& inv) {
 
 void draw_player_c2(IPlatform* p, const CharAnims* anims, float sx, float sy, float size,
                     float facing_deg, float move_anim_t, float melee_anim_t, float use_anim_t,
-                    bool moving, bool running, HoldPose hold, const char* body_skin) {
+                    bool moving, bool running, HoldPose hold, const char* body_skin,
+                    bool outline = false) {
   if (!p) return;
   if (!body_skin) body_skin = "player_skin_def_1";
   char probe[64];
@@ -188,6 +189,16 @@ void draw_player_c2(IPlatform* p, const CharAnims* anims, float sx, float sy, fl
   }
 
   if (anims && anims->loaded() && anims->find(body_skin, aname)) {
+    if (outline) {
+      // C2 Outline on t943 (red 255 green 255 blue 255, width 1, justoutline 0): the skin's
+      // alpha dilated by 1 source px in 8 directions in white, the skin itself drawn on top.
+      const float px = size / 30.f, dg = 0.7071f * px;
+      const float ox[8] = {-dg, dg, -dg, dg, -px, px, 0.f, 0.f};
+      const float oy[8] = {dg, -dg, -dg, dg, 0.f, 0.f, px, -px};
+      p->set_sprite_silhouette(true);
+      for (int k = 0; k < 8; ++k) anims->draw(*p, body_skin, aname, t, sx + ox[k], sy + oy[k], size, size);
+      p->set_sprite_silhouette(false);
+    }
     anims->draw(*p, body_skin, aname, t, sx, sy, size, size);
     if (anims->find("player_hands_white", aname))
       anims->draw(*p, "player_hands_white", aname, t, sx, sy, size, size);
@@ -3024,6 +3035,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   car_layer_t_ += dt;                       // t920 rule runs Every 0.5 seconds
   car_layer_tick_ = car_layer_t_ >= 0.5f;
   if (car_layer_tick_) car_layer_t_ -= 0.5f;
+  update_house_layers(dt);
   trunk_walk_drive_ = pump_drive;   // AltMove SetSpeed 100 (pump / chop walk_marker too)
   if (trunk_walk_ >= 0) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
@@ -4370,11 +4382,7 @@ void Game::render() {
           bool roof = false;
           const bool fg = location_above_player(i, sheet, L.pos, roof);
           if (fg != (layer == 2)) continue;
-          if (roof && bs) {   // opacity 25 + interior shown (moved to Buildings_base_top)
-            ext_a = 0.25f;
-            draw_hotspot_sprite(platform_, sx, sy, bs->int_sprite, bs->int_w, bs->int_h,
-                                bs->int_hx, bs->int_hy, sc);
-          }
+          if (roof && bs) ext_a = 0.25f;   // interior: draw_roof_interiors (Buildings_base_top)
         } else if (layer == 2) continue;
         if (bs) {
           if (inside) {
@@ -4763,6 +4771,19 @@ void Game::render() {
         }
       }
     }
+    // Buildings_base_top 20: interiors whose house roof is at opacity 25, with Tint (0.5, 0.5, 0.5).
+    if (!in_bunker_) {
+      for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations; ++i) {
+        if (!house_roof_[i]) continue;
+        const MapLocation& L = mapgen_.location(i);
+        const BuildingShape* bs = loc_shape(L);
+        if (!bs || building_in_warmzone(*bs, L.pos, player_.pos)) continue;
+        const float sx = cx + (L.pos.x - camv.x) * sc, sy = cy + (L.pos.y - camv.y) * sc;
+        platform_->set_sprite_tint(0.5f, 0.5f, 0.5f);
+        draw_hotspot_sprite(platform_, sx, sy, bs->int_sprite, bs->int_w, bs->int_h, bs->int_hx, bs->int_hy, sc);
+        platform_->set_sprite_tint(1.f, 1.f, 1.f);
+      }
+    }
     // Bullets — grenade / molotov fly sprites, else zed_bullet strip
     {
       const float bsc = in_bunker_ ? 1.f : sc;
@@ -4949,7 +4970,7 @@ void Game::render() {
           platform_->has_sprite("player_skin_def_1-sheet0"))
         draw_player_c2(platform_, &char_anims_, pcx, pcy, psz, player_.facing_deg,
                        player_anim_t_, melee_anim_t_, use_anim_t_,
-                       moving, player_.running, hold, body);
+                       moving, player_.running, hold, body, iv41_);
       else
         platform_->draw_rect(pcx - 6, pcy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
       // Gasmask / helmet badge overlay (inventory icon cropped small on head)
@@ -5292,9 +5313,18 @@ bool Game::location_above_player(int li, const char* sheet, Vec2 o, bool& roof_f
   const float ip1 = o.y + (g->ip1y - g->hy) * g->h, ip2 = o.y + (g->ip2y - g->hy) * g->h;
   bool fg = false;
   if (g->groups & G928) {
-    // Overlap: Y < Imagepoint 1 -> opacity 25 (+ interior on Buildings_base_top); layer by
-    // Imagepoint 2 (>= -> Buildings_bg, <= -> Buildings). Leaving: opacity 100, Buildings_bg.
-    if (ov) { roof_fade = py < ip1; fg = py <= ip2; }
+    // House_transparenting, Every 0.1 s while overlapping (outside the warmzone): Y < ip1 ->
+    // opacity 25 (interior Tint + Buildings_base_top, IV41); Y >= ip1 -> opacity 100;
+    // Y >= ip2 -> Buildings_bg, then Y <= ip2 -> Buildings. Not overlapping any t928
+    // (TriggerOnce): every house opacity 100 + Buildings_bg (reset in update_house_layers).
+    if (li >= 0 && li < kMaxLocations) {
+      if (house_tick_ && ov) {
+        house_roof_[li] = py < ip1 ? 1 : 0;
+        house_fg_[li] = py <= ip2 ? 1 : 0;
+      }
+      roof_fade = house_roof_[li] != 0;
+      fg = house_fg_[li] != 0;
+    }
   }
   if (g->groups & G920) {
     if (li >= 0 && li < kMaxLocations) {
@@ -5304,6 +5334,45 @@ bool Game::location_above_player(int li, const char* sheet, Vec2 o, bool& roof_f
   }
   if (g->groups & (G914 | G930)) fg = ov && py <= ip2;   // reset to Buildings_bg when not overlapping
   return fg;
+}
+
+// House_transparenting bookkeeping: the 0.1 s timer, the TriggerOnce reset when the player
+// overlaps no t928, and player IV41 (-> t943 Outline width 1 / 0).
+void Game::update_house_layers(float dt) {
+  house_t_ += dt;
+  house_tick_ = house_t_ >= 0.1f;
+  if (house_tick_) house_t_ -= 0.1f;
+  bool any = false;
+  if (!in_bunker_) {
+    for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations && !any; ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      const BuildingShape* bs = loc_shape(L);
+      if (!bs) continue;
+      const LayerProp* g = find_layer_prop(bs->ext_sprite);
+      if (g && (g->groups & G928) && player_overlaps_prop(g, L.pos)) any = true;
+    }
+  }
+  if (!any) {
+    if (house_any_ov_) {   // TriggerOnce
+      std::memset(house_roof_, 0, sizeof(house_roof_));
+      std::memset(house_fg_, 0, sizeof(house_fg_));
+    }
+    iv41_ = false;
+  } else if (house_tick_) {
+    // IV41 = 1 while some overlapped house has its roof faded (Y < ip1), else 0.
+    bool roof = false;
+    for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations; ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      const BuildingShape* bs = loc_shape(L);
+      if (!bs || building_in_warmzone(*bs, L.pos, player_.pos)) continue;
+      const LayerProp* g = find_layer_prop(bs->ext_sprite);
+      if (!g || !(g->groups & G928) || !player_overlaps_prop(g, L.pos)) continue;
+      const float ip1 = L.pos.y + (g->ip1y - g->hy) * g->h;
+      if (player_.pos.y < ip1) roof = true;
+    }
+    iv41_ = roof;
+  }
+  house_any_ov_ = any;
 }
 
 bool Game::tree_above_player(int ti) const {
@@ -5462,6 +5531,10 @@ bool Game::harness_place_at_building(int mode) {
         const Vec2 p(L.pos.x + x, L.pos.y + y);
         if (!building_blocks_move(*s, L.pos, p, p, 2.f)) { target = p; found = true; }
       }
+  } else if (mode == 4) {
+    // --shots-building + MDAZ_HARNESS_ROOF: inside the t928 shell north of Imagepoint 1, outside
+    // the warmzone -> roof at opacity 25, tinted interior, player outline.
+    target = Vec2(L.pos.x, L.pos.y - s->ext_hy * s->ext_h + 22.f);
   } else if (mode == 2) {
     // --shots-door: south of the building, 30 px east of the hotspot (in front of solid wall).
     target = Vec2(L.pos.x + 30.f, L.pos.y + (1.f - s->int_hy) * s->int_h + 40.f);

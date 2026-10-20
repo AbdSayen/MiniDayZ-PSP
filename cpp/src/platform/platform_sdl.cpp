@@ -182,11 +182,12 @@ public:
                          float x, float y, float w, float h,
                          int sx, int sy, int sw, int sh,
                          float angle_deg, float alpha) {
-    SDL_Texture* tex = texture_of(name);
+    SDL_Texture* tex = sil_ ? silhouette_of(name) : texture_of(name);
     if (!tex || w <= 0.f || h <= 0.f) return;
     if (alpha < 0.f) alpha = 0.f;
     if (alpha > 1.f) alpha = 1.f;
     SDL_SetTextureAlphaMod(tex, (Uint8)(alpha * 255.f));
+    SDL_SetTextureColorMod(tex, tint_[0], tint_[1], tint_[2]);
     SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
     SDL_Rect dst = { (int)x, (int)y, (int)w, (int)h };
     SDL_Rect src_storage;
@@ -207,11 +208,12 @@ public:
 
   void draw_sprite_frame_mirrored(const char* name, float x, float y, float w, float h,
                                   int sx, int sy, int sw, int sh, float alpha) {
-    SDL_Texture* tex = texture_of(name);
+    SDL_Texture* tex = sil_ ? silhouette_of(name) : texture_of(name);
     if (!tex || w <= 0.f || h <= 0.f) return;
     if (alpha < 0.f) alpha = 0.f;
     if (alpha > 1.f) alpha = 1.f;
     SDL_SetTextureAlphaMod(tex, (Uint8)(alpha * 255.f));
+    SDL_SetTextureColorMod(tex, tint_[0], tint_[1], tint_[2]);
     SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
     SDL_Rect dst = { (int)x, (int)y, (int)w, (int)h };
     SDL_Rect src = { sx, sy, sw, sh };
@@ -405,6 +407,43 @@ private:
     tex_.clear();
   }
 
+  void set_sprite_tint(float r, float g, float b) {
+    tint_[0] = (Uint8)(r * 255.f + 0.5f); tint_[1] = (Uint8)(g * 255.f + 0.5f); tint_[2] = (Uint8)(b * 255.f + 0.5f);
+  }
+  void set_sprite_silhouette(bool on) { sil_ = on; }
+
+  // White copy of a sheet (RGB = 255, alpha kept): colour-modded to the outline colour.
+  SDL_Texture* silhouette_of(const char* name) {
+    if (!texture_of(name)) return 0;
+    std::map<std::string, SDL_Texture*>::iterator it = sil_tex_.find(name);
+    if (it != sil_tex_.end()) return it->second;
+    char path[768];
+    std::snprintf(path, sizeof(path), std::strstr(name, ".png") ? "%s/%s" : "%s/%s.png", images_dir_, name);
+    char* file_data = 0; std::size_t file_size = 0;
+    SDL_Texture* t = 0;
+    if (read_file(path, &file_data, &file_size) && file_data) {
+      int w = 0, h = 0, comp = 0;
+      unsigned char* px = stbi_load_from_memory(reinterpret_cast<unsigned char*>(file_data),
+                                                static_cast<int>(file_size), &w, &h, &comp, 4);
+      delete[] file_data;
+      if (px) {
+        for (int i = 0; i < w * h; ++i) { px[i * 4] = 255; px[i * 4 + 1] = 255; px[i * 4 + 2] = 255; }
+        SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(px, w, h, 32, w * 4,
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+          0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff
+#else
+          0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000
+#endif
+        );
+        if (surf) { t = SDL_CreateTextureFromSurface(renderer_, surf); SDL_FreeSurface(surf); }
+        stbi_image_free(px);
+        if (t) SDL_SetTextureScaleMode(t, SDL_ScaleModeNearest);
+      }
+    }
+    sil_tex_[name] = t;
+    return t;
+  }
+
   SDL_Texture* texture_of(const char* name) {
     if (!name || !name[0] || !renderer_ || !images_dir_[0]) return 0;
     std::map<std::string, TexEntry>::iterator it = tex_.find(name);
@@ -482,6 +521,9 @@ private:
   int w_, h_;
   char images_dir_[512];
   std::map<std::string, TexEntry> tex_;
+  std::map<std::string, SDL_Texture*> sil_tex_;
+  Uint8 tint_[3] = {255, 255, 255};
+  bool sil_ = false;
   bool prev_attack_, prev_interact_, prev_inventory_, prev_bag_, prev_reload_, prev_pause_,
       prev_confirm_;
   bool prev_save_, prev_load_, prev_torch_;
