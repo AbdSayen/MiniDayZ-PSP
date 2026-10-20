@@ -105,6 +105,28 @@ int test_trees() {
     check(!g.iv41_for_test(), "IV41 cleared when not overlapping any house (t943 Outline width 0)");
     check(!g.location_above_for_test(5, "b_military_barrack-sheet0", o, roof) && !roof, "house t928: not overlapping -> Buildings_bg, 100");
   }
+  // 7e: map props on their C2 layers (Obstacles_transparenting ip2 rule) and car-breaks-props.
+  {
+    g.start_new_game(Difficulty_Regular);
+    const int k = g.find_prop_type_for_test(305);
+    check(k >= 0, "map has an obst_trash_container (t305) prop");
+    if (k >= 0) {
+      Player& p = g.player_mut();
+      const Vec2 o = g.prop_pos_for_test(k);
+      const float ip2 = g.prop_ip2_for_test(k);
+      p.pos = Vec2(o.x, ip2 - 2.f);
+      check(g.prop_layer_for_test(k) == 2, "trash: overlapping, Y < ip2 -> Buildings");
+      p.pos = Vec2(o.x, ip2 + 2.f);
+      check(g.prop_layer_for_test(k) == 1, "trash: overlapping, Y > ip2 -> Buildings_bg");
+      p.pos = Vec2(o.x, ip2 - 2.f);
+      g.prop_layer_for_test(k);
+      p.pos = Vec2(o.x + 5000.f, o.y + 5000.f);
+      check(g.prop_layer_for_test(k) == 1, "trash: TriggerOnce reset -> Buildings_bg");
+      const int before = g.props_broken_for_test();
+      check(g.car_break_for_test(o, 40.f) == before && g.prop_alive_for_test(k), "car at speed 40 (<= 50): prop kept");
+      check(g.car_break_for_test(o, 60.f) > before && !g.prop_alive_for_test(k), "car at speed 60 (> 50): trash container destroyed");
+    }
+  }
   delete gp;
   return g_fail;
 }

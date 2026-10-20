@@ -278,6 +278,22 @@ bool rect_poly_overlap(float x0, float y0, float x1, float y1, const float* px, 
   return false;
 }
 
+bool pt_in_poly_g(float x, float y, const float* px, const float* py, int n) {
+  bool in = false;
+  for (int i = 0, j = n - 1; i < n; j = i++)
+    if ((py[i] > y) != (py[j] > y) && x < (px[j] - px[i]) * (y - py[i]) / (py[j] - py[i]) + px[i]) in = !in;
+  return in;
+}
+// Polygon vs polygon (world coords): a vertex inside the other or crossing edges.
+bool poly_poly_overlap(const float* ax, const float* ay, int an, const float* bx, const float* by, int bn) {
+  for (int i = 0; i < an; ++i) if (pt_in_poly_g(ax[i], ay[i], bx, by, bn)) return true;
+  for (int i = 0; i < bn; ++i) if (pt_in_poly_g(bx[i], by[i], ax, ay, an)) return true;
+  for (int i = 0, j = an - 1; i < an; j = i++)
+    for (int k = 0, l = bn - 1; k < bn; l = k++)
+      if (seg_x(ax[i], ay[i], ax[j], ay[j], bx[k], by[k], bx[l], by[l])) return true;
+  return false;
+}
+
 // Draw a C2 tree whose trunk (Imagepoint 1) is at screen (sx, sy); sc = world->screen scale.
 void draw_c2_tree(IPlatform* p, int sub, float sx, float sy, float sc) {
   if (!p) return;
@@ -3036,6 +3052,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   car_layer_tick_ = car_layer_t_ >= 0.5f;
   if (car_layer_tick_) car_layer_t_ -= 0.5f;
   update_house_layers(dt);
+  update_obstacle_layers();
+  update_car_breaks_props(dt);
+  update_prop_pieces(dt);
   trunk_walk_drive_ = pump_drive;   // AltMove SetSpeed 100 (pump / chop walk_marker too)
   if (trunk_walk_ >= 0) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
@@ -4342,6 +4361,42 @@ void Game::render() {
     // C2 layers (Map layout): Buildings_base 17 < items_on_ground 18 < ... Zeds 29 < vehicles 30 <
     // Buildings_bg 31 < player 32 < Buildings 41 < Trees 43. layer 0 = interiors + loot,
     // 1 = Buildings_bg (exteriors, trees below the player), 2 = Buildings (trees above the player).
+    // Props on one C2 layer; car-broken pieces (eff_*_piece, layer Buildings) with layer 2.
+    auto draw_props = [&](int code) {
+      const int pcellx = static_cast<int>(std::floor((camv.y - kC2CellOriginY) / kC2CellSize));
+      const int pcelly = static_cast<int>(std::floor((camv.x - kC2CellOriginX) / kC2CellSize));
+      for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
+        for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
+          int f0 = 0, pn = 0;
+          c2_props_.cell_range(ax, ay, f0, pn);
+          for (int k = f0; k < f0 + pn; ++k) {
+            if (!c2_props_.alive(k) || k >= MapProps::kMax || prop_layer_[k] != code) continue;
+            const MapProp& mp = c2_props_.at(k);
+            const PropFrame* pf = c2_props_.frame_of(mp);
+            const float big = static_cast<float>(pf->w > pf->h ? pf->w : pf->h);
+            if (!view.vis(Vec2(mp.x, mp.y), sc, big * sc)) continue;
+            const float sx = cx + (mp.x - camv.x) * sc, sy = cy + (mp.y - camv.y) * sc;
+            platform_->draw_sprite_frame(pf->sheet, sx - pf->hx * pf->w * sc, sy - pf->hy * pf->h * sc,
+                                         pf->w * sc, pf->h * sc, pf->x, pf->y, pf->w, pf->h, 0.f, 1.f);
+          }
+        }
+      if (code != 2) return;
+      for (int z = 0; z < kMaxPropPieces; ++z) {
+        const PropPiece& pc = pieces_[z];
+        if (pc.life <= 0.f) continue;
+        // eff_fence_piece 17x16 (.53,.5); eff_trash_piece 19x14 (.53,.5) / 16x16 sheet1; eff_lavka_piece 19x9 (.47,.56)
+        const char* sh = pc.type == 310 ? "eff_fence_piece-sheet0" : pc.type == 306 ? "eff_lavka_piece-sheet0"
+                         : (pc.frame ? "eff_trash_piece-sheet1" : "eff_trash_piece-sheet0");
+        const float w = pc.type == 310 ? 17.f : pc.type == 306 ? 19.f : (pc.frame ? 16.f : 19.f);
+        const float h = pc.type == 310 ? 16.f : pc.type == 306 ? 9.f : (pc.frame ? 16.f : 14.f);
+        const float sx = cx + (pc.pos.x - camv.x) * sc, sy = cy + (pc.pos.y - camv.y) * sc;
+        const float al = pc.life / 0.5f;
+        if (pc.mirrored)
+          platform_->draw_sprite_frame_mirrored(sh, sx - w * sc * 0.5f, sy - h * sc * 0.5f, w * sc, h * sc, 0, 0, (int)w, (int)h, al);
+        else
+          platform_->draw_sprite_frame(sh, sx - w * sc * 0.5f, sy - h * sc * 0.5f, w * sc, h * sc, 0, 0, (int)w, (int)h, pc.rot, al);
+      }
+    };
     auto draw_world_objects = [&](int layer) {
       // Forest trees — crop first pine frame (47×92), not whole sheet
       if (layer != 0) for (int i = 0; i < tree_count_; ++i) {
@@ -4597,24 +4652,12 @@ void Game::render() {
       }
 
       // create_map_element props (bushes, pumps, obstacles, pillars, cars, deer stands): the
-      // object frame drawn with its hotspot on the map_element origin.
+      // object frame drawn with its hotspot on the map_element origin, on its current layer
+      // (prop_layer_: 0 items_on_ground, 1 Buildings_bg, 2 Buildings).
+      draw_props(0);
       {
         const int pcellx = static_cast<int>(std::floor((camv.y - kC2CellOriginY) / kC2CellSize));
         const int pcelly = static_cast<int>(std::floor((camv.x - kC2CellOriginX) / kC2CellSize));
-        for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
-          for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
-            int f0 = 0, pn = 0;
-            c2_props_.cell_range(ax, ay, f0, pn);
-            for (int k = f0; k < f0 + pn; ++k) {
-              const MapProp& mp = c2_props_.at(k);
-              const PropFrame* pf = c2_props_.frame_of(mp);
-              const float big = static_cast<float>(pf->w > pf->h ? pf->w : pf->h);
-              if (!view.vis(Vec2(mp.x, mp.y), sc, big * sc)) continue;
-              const float sx = cx + (mp.x - camv.x) * sc, sy = cy + (mp.y - camv.y) * sc;
-              platform_->draw_sprite_frame(pf->sheet, sx - pf->hx * pf->w * sc, sy - pf->hy * pf->h * sc,
-                                           pf->w * sc, pf->h * sc, pf->x, pf->y, pf->w, pf->h, 0.f, 1.f);
-            }
-          }
         // car_loot_point (layer Sunset_Dawn, above Buildings): white trunk outline once visible.
         for (int ax = pcellx - 1; ax <= pcellx + 1; ++ax)
           for (int ay = pcelly - 1; ay <= pcelly + 1; ++ay) {
@@ -4953,6 +4996,7 @@ void Game::render() {
     }
 
     if (!in_bunker_) draw_world_objects(1);   // Buildings_bg 31
+    if (!in_bunker_) draw_props(1);
     if (!in_bunker_) draw_bandits(true);       // player 32: bot_enemy_bandit#827
     // Player — C2 idle/run/axe/pistol/twohand/using_item
     {
@@ -4980,6 +5024,7 @@ void Game::render() {
 
     }
 
+    if (!in_bunker_) draw_props(2);           // Buildings 41
     if (!in_bunker_) draw_world_objects(2);   // Buildings 41 / Trees 43
 
     // Muzzle / hit / explode FX
@@ -5332,7 +5377,7 @@ bool Game::location_above_player(int li, const char* sheet, Vec2 o, bool& roof_f
       fg = car_fg_[li] != 0;
     }
   }
-  if (g->groups & (G914 | G930)) fg = ov && py <= ip2;   // reset to Buildings_bg when not overlapping
+  if (g->groups & (G914 | G930)) fg = ov && py < ip2;   // <= ip2 Buildings then >= ip2 Buildings_bg; reset to bg
   return fg;
 }
 
@@ -5375,9 +5420,10 @@ void Game::update_house_layers(float dt) {
   house_any_ov_ = any;
 }
 
-bool Game::tree_above_player(int ti) const {
+// -1: player_collision_base not overlapping; 1: Y < Imagepoint 2 (Buildings); 0: Buildings_bg.
+int Game::tree_player_test(int ti) const {
   const int sub = tree_sub_[ti];
-  if (sub < 1 || sub > 10) return false;
+  if (sub < 1 || sub > 10) return -1;
   const C2TreeSprite& ts = c2_tree_sprite(sub);
   // Object position (hotspot) from the stored trunk point (Imagepoint 1 of frame 0).
   const float ox = trees_[ti].x - (ts.ipx - ts.hx) * ts.w, oy = trees_[ti].y - (ts.ipy - ts.hy) * ts.h;
@@ -5392,9 +5438,151 @@ bool Game::tree_above_player(int ti) const {
     for (int k = 0; k < n; ++k) { px[k] = ox + g.p[k * 2] * g.w; py[k] = oy + g.p[k * 2 + 1] * g.h; }
   }
   const Vec2 pp = player_.pos;
-  if (!rect_poly_overlap(pp.x - 15.f, pp.y - 15.f, pp.x + 15.f, pp.y + 15.f, px, py, n)) return false;
+  if (!rect_poly_overlap(pp.x - 15.f, pp.y - 15.f, pp.x + 15.f, pp.y + 15.f, px, py, n)) return -1;
   const float ip2y = oy + (g.ip2y - g.hy) * g.h;
-  return pp.y <= ip2y;   // CompareY [8,3] (<=) -> Buildings
+  // CompareY <= ip2 -> Buildings, then CompareY >= ip2 -> Buildings_bg: equal Y ends on Buildings_bg.
+  return pp.y < ip2y ? 1 : 0;
+}
+
+bool Game::tree_above_player(int ti) const { return ti >= 0 && ti < kMaxTrees && tree_fg_[ti] != 0; }
+
+// Prop layer after spawn: pillars on Buildings, cars (t920) spawn on Buildings, t914 / t930 members
+// end on Buildings_bg at the layout-start TriggerOnce, others stay on items_on_ground.
+void Game::init_prop_layers() {
+  for (int i = 0; i < c2_props_.count() && i < MapProps::kMax; ++i) {
+    const PropLayer& L = c2_props_.layer_of(i);
+    if (L.groups & (G914 | G930)) prop_layer_[i] = 1;
+    else if (L.groups & G920) prop_layer_[i] = 2;
+    else prop_layer_[i] = (L.type == 432) ? 2 : 0;
+  }
+  std::memset(tree_fg_, 0, sizeof(tree_fg_));
+  obst_reset_done_[0] = obst_reset_done_[1] = true;
+  prop_layer_n_ = c2_props_.count();
+}
+
+// Obstacles_transparenting (t914: props, sprite trees), Big_Obstacles_transparenting (t930) every
+// tick and the t920 origin rule every 0.5 s, then the TriggerOnce resets.
+void Game::update_obstacle_layers() {
+  if (prop_layer_n_ != c2_props_.count()) init_prop_layers();
+  if (in_bunker_) return;
+  const Vec2 pp = player_.pos;
+  bool any914 = false, any930 = false;
+  for (int ti = 0; ti < tree_count_; ++ti) {
+    const float dx = trees_[ti].x - pp.x, dy = trees_[ti].y - pp.y;
+    if (dx * dx + dy * dy > 250.f * 250.f) continue;
+    const int t = tree_player_test(ti);
+    if (t < 0) continue;
+    any914 = true;
+    tree_fg_[ti] = static_cast<unsigned char>(t);
+  }
+  const int pcx = static_cast<int>(std::floor((pp.y - kC2CellOriginY) / kC2CellSize));
+  const int pcy = static_cast<int>(std::floor((pp.x - kC2CellOriginX) / kC2CellSize));
+  for (int ax = pcx - 1; ax <= pcx + 1; ++ax)
+    for (int ay = pcy - 1; ay <= pcy + 1; ++ay) {
+      int f0 = 0, pn = 0;
+      c2_props_.cell_range(ax, ay, f0, pn);
+      for (int k = f0; k < f0 + pn && k < MapProps::kMax; ++k) {
+        if (!c2_props_.alive(k)) continue;
+        const PropLayer& L = c2_props_.layer_of(k);
+        if (!(L.groups & (G914 | G920 | G930))) continue;
+        const MapProp& mp = c2_props_.at(k);
+        if ((mp.x - pp.x) * (mp.x - pp.x) + (mp.y - pp.y) * (mp.y - pp.y) > 400.f * 400.f) continue;
+        float xs[12], ys[12];
+        const int n = c2_props_.sprite_poly(k, xs, ys);
+        if (!rect_poly_overlap(pp.x - 15.f, pp.y - 15.f, pp.x + 15.f, pp.y + 15.f, xs, ys, n)) continue;
+        const PropFrame* f = c2_props_.frame_of(mp);
+        const float ip2 = mp.y + (L.ip2 - f->hy) * f->h;
+        if ((L.groups & G920) && car_layer_tick_) prop_layer_[k] = pp.y < mp.y ? 2 : 1;   // origin
+        if (L.groups & G914) { any914 = true; prop_layer_[k] = pp.y < ip2 ? 2 : 1; }
+        if (L.groups & G930) { any930 = true; prop_layer_[k] = pp.y < ip2 ? 2 : 1; }
+      }
+    }
+  for (int fam = 0; fam < 2; ++fam) {
+    const bool any = fam == 0 ? any914 : any930;
+    if (any) { obst_reset_done_[fam] = false; continue; }
+    if (obst_reset_done_[fam]) continue;
+    obst_reset_done_[fam] = true;   // TriggerOnce: every member -> Buildings_bg
+    const int g = fam == 0 ? G914 : G930;
+    for (int i = 0; i < c2_props_.count() && i < MapProps::kMax; ++i)
+      if (c2_props_.layer_of(i).groups & g) prop_layer_[i] = 1;
+    if (fam == 0) std::memset(tree_fg_, 0, sizeof(tree_fg_));
+  }
+}
+
+// t946 (car_uaz_base / car_volga_base) OnCollision obst_fence 310 / obst_trash_container 305 /
+// obst_lavka 306 at Car speed > 50: condition -15, 4 pieces, sound, prop + obst_base destroyed.
+void Game::update_car_breaks_props(float dt) {
+  Vehicle* v = vehicles_.player_driving() ? vehicles_.driven() : 0;
+  if (!v || dt <= 0.f || (v->type != Vehicle_Car && v->type != Vehicle_Volga)) { car_prev_valid_ = false; return; }
+  const float spd = car_prev_valid_ ? std::sqrt(dist2(v->pos, car_prev_pos_)) / dt : 0.f;
+  car_prev_pos_ = v->pos; car_prev_valid_ = true;
+  car_break_props_at(*v, spd);
+}
+
+void Game::car_break_props_at(Vehicle& vr, float spd) {
+  Vehicle* v = &vr;
+  if (spd <= 50.f) return;   // Car.CompareSpeed > 50
+  // Car base frame: uaz 72x32 hotspot (0.5, 0.406), volga 89x35 (0.506, 0.4); empty poly = box.
+  const bool uaz = v->type == Vehicle_Car;
+  const float w = uaz ? 72.f : 89.f, h = uaz ? 32.f : 35.f, hx = uaz ? 0.5f : 0.506f, hy = uaz ? 0.40625f : 0.4f;
+  const float a = v->facing_deg * 0.0174532925f, ca = std::cos(a), sa = std::sin(a);
+  const float lx[4] = {-hx * w, (1.f - hx) * w, (1.f - hx) * w, -hx * w};
+  const float ly[4] = {-hy * h, -hy * h, (1.f - hy) * h, (1.f - hy) * h};
+  float cx4[4], cy4[4];
+  for (int k = 0; k < 4; ++k) { cx4[k] = v->pos.x + lx[k] * ca - ly[k] * sa; cy4[k] = v->pos.y + lx[k] * sa + ly[k] * ca; }
+  const int pcx = static_cast<int>(std::floor((v->pos.y - kC2CellOriginY) / kC2CellSize));
+  const int pcy = static_cast<int>(std::floor((v->pos.x - kC2CellOriginX) / kC2CellSize));
+  for (int ax = pcx - 1; ax <= pcx + 1; ++ax)
+    for (int ay = pcy - 1; ay <= pcy + 1; ++ay) {
+      int f0 = 0, pn = 0;
+      c2_props_.cell_range(ax, ay, f0, pn);
+      for (int k = f0; k < f0 + pn; ++k) {
+        if (!c2_props_.alive(k)) continue;
+        const int type = c2_props_.layer_of(k).type;
+        if (type != 310 && type != 305 && type != 306) continue;
+        const MapProp& mp = c2_props_.at(k);
+        if ((mp.x - v->pos.x) * (mp.x - v->pos.x) + (mp.y - v->pos.y) * (mp.y - v->pos.y) > 150.f * 150.f) continue;
+        float xs[12], ys[12];
+        const int n = c2_props_.sprite_poly(k, xs, ys);
+        if (!poly_poly_overlap(cx4, cy4, 4, xs, ys, n)) continue;
+        vehicles_.apply_crash_damage(*v, 15.f);   // SubInstanceVar IV1 15
+        static const float kDx[4] = {5.f, -5.f, -10.f, 10.f};
+        for (int q = 0; q < 4; ++q) {
+          PropPiece* pc = 0;
+          for (int z = 0; z < kMaxPropPieces; ++z) if (pieces_[z].life <= 0.f) { pc = &pieces_[z]; break; }
+          if (!pc) break;
+          const float ang = (270.f + (-70.f + rng_.next_float() * 140.f)) * 0.0174532925f;
+          const float base = type == 305 ? 100.f : 200.f;
+          const float sp = base + 50.f + rng_.next_float() * 50.f;           // + random(50, 100)
+          pc->pos = Vec2(mp.x + kDx[q], mp.y);
+          pc->vel = Vec2(std::cos(ang) * sp, std::sin(ang) * sp);
+          pc->rot = 0.f;
+          pc->rot_speed = (type == 306 ? 100.f : 0.f) + rng_.next_float() * 360.f;
+          pc->life = 0.5f;                                                   // Fade out 0.5, destroy
+          pc->type = type;
+          pc->frame = (type == 305 && (q == 2 || q == 3)) ? 1 : 0;
+          pc->mirrored = (type == 305 && (q == 2 || q == 3));
+        }
+        if (type == 310) sfx_at(c2_choose_fence_destroy(sfx_rng_), 0.f, Vec2(mp.x, mp.y));
+        else {
+          static const char* kCrash[3] = {"car_crash_1", "car_crash_2", "car_crash_3"};
+          sfx_at(kCrash[static_cast<int>(sfx_rng_.next_float() * 3.f) % 3], 0.f, v->pos);
+        }
+        c2_props_.destroy(k);
+        ++props_broken_;
+      }
+    }
+}
+
+void Game::update_prop_pieces(float dt) {
+  for (int z = 0; z < kMaxPropPieces; ++z) {
+    PropPiece& p = pieces_[z];
+    if (p.life <= 0.f) continue;
+    p.life -= dt;
+    p.vel.y += 400.f * dt;   // Bullet gravity 400
+    p.pos.x += p.vel.x * dt; p.pos.y += p.vel.y * dt;
+    p.rot += p.rot_speed * dt;
+  }
 }
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {

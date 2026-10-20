@@ -7,6 +7,7 @@
 namespace mdaz {
 namespace {
 #include "map_props.inc"
+#include "map_props_layers.inc"
 struct CarTrunkDef { int frame, mirror; float ox, oy; };
 struct CarTrunkFrame { const char* sheet; int sx, sy, w, h; float hx, hy, lx, ly, w1x, w1y, w2x, w2y; int n; float pts[8]; };
 #include "car_trunk.inc"
@@ -105,7 +106,26 @@ void MapProps::build(const C2Map& m, Rng& rng) {
   mark_trunks(false);
 }
 
+const PropLayer& MapProps::layer_of(int i) const {
+  const PropSheet& s = kPropSheets[kPropDefs[props_[i].def].sheet];
+  return kPropLayers[s.first + (props_[i].frame & 0x3FFF)];
+}
+
+int MapProps::sprite_poly(int i, float* xs, float* ys) const {
+  const PropFrame* f = frame_of(props_[i]);
+  const PropLayer& L = layer_of(i);
+  const float ox = props_[i].x, oy = props_[i].y;
+  if (L.n == 0) {
+    const float l = ox - f->hx * f->w, t = oy - f->hy * f->h;
+    xs[0] = l; ys[0] = t; xs[1] = l + f->w; ys[1] = t; xs[2] = l + f->w; ys[2] = t + f->h; xs[3] = l; ys[3] = t + f->h;
+    return 4;
+  }
+  for (int k = 0; k < L.n; ++k) { xs[k] = ox + L.p[k * 2] * f->w; ys[k] = oy + L.p[k * 2 + 1] * f->h; }
+  return L.n;
+}
+
 void MapProps::mark_trunks(bool tutorial) {
+  for (int i = 0; i < kMax / 8 + 1; ++i) gone_[i] = 0;
   for (int i = 0; i < kMax / 8 + 1; ++i) { trunk_[i] = 0; trunk_vis_[i] = 0; trunk_opened_[i] = 0; }
   for (int i = 0; i < count_; ++i) {
     const bool flag = (props_[i].frame & 0x4000) != 0;
@@ -219,6 +239,7 @@ bool MapProps::blocks(Vec2 a, Vec2 b, float r) const {
       cell_range(ax, ay, f, n);
       for (int i = f; i < f + n; ++i) {
         const MapProp& p = props_[i];
+        if (gone_[i >> 3] & (1u << (i & 7))) continue;
         const float dx = b.x - p.x, dy = b.y - p.y;
         if (dx * dx + dy * dy > 300.f * 300.f) continue;
         const PropDef& d = kPropDefs[p.def];

@@ -16,6 +16,11 @@ struct PropSheet { int first, count; };
 struct PropBase { int mframe, big, frame; float ox, oy; int n; float pts[16]; };
 struct PropDef { int cat, sub, iv6, sheet, fmode, fconst, f_iv3_1, first_base, base_count; };
 
+// Layer data of a prop frame (map_props_layers.inc, same order as kPropFrames): C2 object type,
+// layer families (1 = t914 Obstacles, 2 = t920, 4 = t930 Big_Obstacles, 8 = t928), Imagepoint 1/2
+// Y (fraction of h) and the frame collision poly (fractions of w,h from the hotspot, n = 0: box).
+struct PropLayer { int type, groups; float ip1, ip2; int n; float p[24]; };
+
 struct MapProp {
   float x, y;
   short def;
@@ -71,8 +76,16 @@ public:
   static const int kTrunkBytes = kMax / 8 + 1;
   void apply_trunks_opened(const unsigned char* bits, int nbytes);
   bool trunk_sprite(int i, const char*& sheet, int& sx, int& sy, int& w, int& h, float& hx, float& hy, bool& mirror) const;
+  const PropLayer& layer_of(int i) const;
+  // Destroyed by a car (t946 OnCollision 305/306/310): sprite and its obst_base gone.
+  bool alive(int i) const { return i >= 0 && i < count_ && (gone_[i >> 3] & (1u << (i & 7))) == 0; }
+  void destroy(int i) { if (i >= 0 && i < count_) gone_[i >> 3] |= static_cast<unsigned char>(1u << (i & 7)); }
+  // World polygon of the prop sprite's collision (frame poly / bounding box); returns n.
+  int sprite_poly(int i, float* xs, float* ys) const;
+
 private:
   void mark_trunks(bool tutorial);
+  unsigned char gone_[kMax / 8 + 1];
   unsigned char trunk_[kMax / 8 + 1];
   unsigned char trunk_vis_[kMax / 8 + 1];
   unsigned char trunk_opened_[kMax / 8 + 1];

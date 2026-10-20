@@ -165,6 +165,12 @@ public:
   // --shots-building: test-only placement next to a Solid building, then walk into its walls.
   bool poll_building(mdaz::InputState& in) {
     if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
+    if (std::getenv("MDAZ_HARNESS_PROPS")) {   // 7e: props layers + car breaks a trash container
+      if (frame_ == 200 && game_) game_->harness_place_at_prop(305, -3.f);
+      if (frame_ == 280 && game_) game_->harness_place_at_prop(305, 12.f);
+      if (frame_ == 360 && game_) { game_->harness_place_at_prop(305, 40.f); std::printf("broken %d\n", game_->harness_break_prop()); }
+      return frame_ < 400;
+    }
     if (std::getenv("MDAZ_HARNESS_ROOF")) {   // 7d: transparent roof + Tint + Outline
       if (frame_ == 200 && game_) game_->harness_place_at_building(4);
       if (frame_ == 300 && game_) game_->harness_place_at_building(1);   // south: roof opaque
@@ -434,6 +440,7 @@ public:
       static const struct { int frame; const char* name; } kB[] = {
         { 250, "bld_outside" }, { 430, "bld_north_wall" }, { 530, "bld_inside" }, { 710, "bld_west_wall" },
         { 260, "roof_0_faded_tint_outline" }, { 340, "roof_1_south_opaque" },
+        { 262, "props_0_trash_north_of_ip2" }, { 342, "props_1_trash_south_of_ip2" }, { 368, "props_2_car_break_pieces" },
       };
       for (unsigned i = 0; i < sizeof(kB) / sizeof(kB[0]); ++i) {
         if (kB[i].frame != frame_) continue;

@@ -74,3 +74,6 @@
 
 ## 7d (2026-10-20)
 - Tint/Outline в платформах SDL/PSP; House_transparenting с таймером 0.1 s, интерьер под прозрачной крышей с Tint 0.5, аутлайн игрока (IV41). Режим скриншотов --shots-building + MDAZ_HARNESS_ROOF.
+
+## 7e (2026-10-20)
+- Слои пропсов по Obstacles/Big_Obstacles/t920 с состоянием и TriggerOnce, деревья со состоянием, равенство Y = ip2 → Buildings_bg; машина ломает заборы/мусорки/лавки (+6 тестов). Режим скриншотов MDAZ_HARNESS_PROPS.

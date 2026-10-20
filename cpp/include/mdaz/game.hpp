@@ -353,7 +353,7 @@ public:
   // Item 5 test accessors.
   int tree_count_for_test() const { return tree_count_; }
   bool blocks_for_test(Vec2 p) const { return building_blocks(p, p); }
-  bool tree_above_for_test(int i) const { return tree_above_player(i); }
+  bool tree_above_for_test(int i) { update_obstacle_layers(); return tree_above_player(i); }
   int tree_sub_for_test(int i) const { return tree_sub_[i]; }
   int tree_iv0_for_test(int i) const { return tree_hp_[i]; }
   int tree_frame_for_test(int i) const { return tree_frame_[i]; }
@@ -594,7 +594,60 @@ public:
 private:
   bool building_blocks(Vec2 a, Vec2 b) const; // C2 *_int Solid polygons
   bool animal_swing_hit(int ai, Vec2 a, Vec2 b);
-  bool tree_above_player(int ti) const;        // Obstacles_transparenting layer swap
+  bool tree_above_player(int ti) const;
+  int tree_player_test(int ti) const;
+  void init_prop_layers();
+  void update_obstacle_layers();
+  void update_car_breaks_props(float dt);
+  void update_prop_pieces(float dt);
+  void car_break_props_at(Vehicle& v, float spd);
+  unsigned char tree_fg_[4096] = {0};
+  unsigned char prop_layer_[6000] = {0};
+  int prop_layer_n_ = -1;
+  bool obst_reset_done_[2] = {true, true};
+  Vec2 car_prev_pos_;
+  bool car_prev_valid_ = false;
+  int props_broken_ = 0;
+  struct PropPiece { Vec2 pos, vel; float rot = 0.f, rot_speed = 0.f, life = 0.f; int type = 0, frame = 0; bool mirrored = false; };
+  static const int kMaxPropPieces = 32;
+  PropPiece pieces_[kMaxPropPieces];
+public:
+  int props_broken_for_test() const { return props_broken_; }
+  // Harness (--shots-building + MDAZ_HARNESS_PROPS): player at the first live prop of `type`,
+  // dy px from its Imagepoint 2 (negative = north of it).
+  bool harness_place_at_prop(int type, float dy) {
+    const int k = find_prop_type_for_test(type);
+    if (k < 0) return false;
+    harness_prop_ = k;
+    player_.pos = Vec2(c2_props_.at(k).x, prop_ip2_for_test(k) + dy);
+    player_.vel = Vec2();
+    return true;
+  }
+  int harness_break_prop() {
+    if (harness_prop_ < 0) return -1;
+    return car_break_for_test(Vec2(c2_props_.at(harness_prop_).x, c2_props_.at(harness_prop_).y), 60.f);
+  }
+  int harness_prop_ = -1;
+  int find_prop_type_for_test(int type) const {
+    for (int i = 0; i < c2_props_.count(); ++i) if (c2_props_.layer_of(i).type == type && c2_props_.alive(i)) return i;
+    return -1;
+  }
+  Vec2 prop_pos_for_test(int i) const { return Vec2(c2_props_.at(i).x, c2_props_.at(i).y); }
+  float prop_ip2_for_test(int i) const {
+    const PropFrame* f = c2_props_.frame_of(c2_props_.at(i));
+    return c2_props_.at(i).y + (c2_props_.layer_of(i).ip2 - f->hy) * f->h;
+  }
+  bool prop_alive_for_test(int i) const { return c2_props_.alive(i); }
+  int car_break_for_test(Vec2 at, float spd) {
+    Vehicle* v = vehicles_.spawn(Vehicle_Car, at);
+    if (!v) return -1;
+    v->facing_deg = 0.f;
+    car_break_props_at(*v, spd);
+    return props_broken_;
+  }
+  int prop_layer_for_test(int i) { update_obstacle_layers(); return prop_layer_[i]; }
+  void obstacle_tick_for_test() { update_obstacle_layers(); }
+private:        // Obstacles_transparenting layer swap
   bool player_overlaps_prop(const void* prop, Vec2 o) const;
   bool location_above_player(int li, const char* sheet, Vec2 o, bool& roof_fade);
   unsigned char car_fg_[512];                  // t920 layer state (1 = Buildings), per location
