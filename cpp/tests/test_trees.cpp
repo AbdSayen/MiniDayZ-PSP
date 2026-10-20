@@ -49,6 +49,29 @@ int test_trees() {
     check(!g.blocks_for_test(Vec2(t.x, t.y - 15.f)), "sprite tree: 15 px above the trunk is free");
     break;
   }
+  // Item 7: Obstacles_transparenting — tree above the player only when overlapping and player Y <= Imagepoint 2.
+  for (int i = 0; i < g.tree_count_for_test(); ++i) {
+    if (g.tree_sub_for_test(i) != 1) continue;
+    const Vec2 t = g.tree_trunk_for_test(i);
+    Player& p = g.player_mut();
+    p.pos = Vec2(t.x, t.y - 40.f);
+    check(g.tree_above_for_test(i), "pine: player 40 px north of the trunk (inside crown, Y <= ip2) -> Buildings (above)");
+    p.pos = Vec2(t.x, t.y + 2.f);
+    check(!g.tree_above_for_test(i), "pine: player at the trunk (Y > ip2) -> Buildings_bg (below)");
+    p.pos = Vec2(t.x + 200.f, t.y - 40.f);
+    check(!g.tree_above_for_test(i), "pine: not overlapping -> Buildings_bg");
+    break;
+  }
+  for (int i = 0; i < g.tree_count_for_test(); ++i) {
+    if (g.tree_sub_for_test(i) != 9) continue;
+    const Vec2 t = g.tree_trunk_for_test(i);
+    Player& p = g.player_mut();
+    p.pos = Vec2(t.x, t.y - 20.f);   // ip2 of frame 2 is 0.144*167 = 24 px below the origin
+    check(g.tree_above_for_test(i), "tree_block f2: player above Imagepoint 2 -> above");
+    p.pos = Vec2(t.x, t.y + 40.f);
+    check(!g.tree_above_for_test(i), "tree_block f2: player below Imagepoint 2 -> below");
+    break;
+  }
   std::printf("     tree_block subs on Map: 7=%d 8=%d 9=%d 10=%d\n", seen[7], seen[8], seen[9], seen[10]);
   // Tutorial: tree_block instances keep their layout frame.
   g.start_tutorial();

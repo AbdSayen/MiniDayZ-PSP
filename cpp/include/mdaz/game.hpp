@@ -352,6 +352,7 @@ public:
   // Item 5 test accessors.
   int tree_count_for_test() const { return tree_count_; }
   bool blocks_for_test(Vec2 p) const { return building_blocks(p, p); }
+  bool tree_above_for_test(int i) const { return tree_above_player(i); }
   int tree_sub_for_test(int i) const { return tree_sub_[i]; }
   int tree_iv0_for_test(int i) const { return tree_hp_[i]; }
   int tree_frame_for_test(int i) const { return tree_frame_[i]; }
@@ -591,6 +592,7 @@ public:
   bool los_blocked_world(Vec2 a, Vec2 b) const; // buildings + big obstacles (C2 LOS)
 private:
   bool building_blocks(Vec2 a, Vec2 b) const; // C2 *_int Solid polygons
+  bool tree_above_player(int ti) const;        // Obstacles_transparenting layer swap
   void zed_check_bunker();           // C2 Zed_check_bunker (every 3 s while inBunker)
   bool bunker_spawner_used_[32];
   float bunker_zed_check_t_;

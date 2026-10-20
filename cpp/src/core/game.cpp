@@ -219,6 +219,54 @@ const C2TreeSprite kC2Trees[10] = {
 };
 const C2TreeSprite& c2_tree_sprite(int sub) { return kC2Trees[(sub >= 1 && sub <= 10) ? sub - 1 : 6]; }
 
+// Obstacles_transparenting (t914: sprite trees) / Big_Obstacles_transparenting (t930: tree_block):
+// player_collision_base (30x30 bbox) overlapping the tree's collision polygon (bbox when the frame
+// has none) and player Y <= tree Imagepoint 2 -> layer Buildings (above the player), else
+// Buildings_bg. Frame 0 = tree, frame 1 = stump (subs 1..6). Polys: fractions of w,h from the hotspot.
+struct TreeLayerGeom { float w, h, hx, hy, ip2y; int n; float p[10]; };
+const TreeLayerGeom kTreeLayer0[10] = {
+  {47, 92, 0.5106f, 0.5f, 0.8152f, 3, {0.0319f, -0.5f, 0.4894f, 0.4266f, -0.5106f, 0.4565f}},
+  {53, 97, 0.5094f, 0.5052f, 0.8351f, 5, {-0.0660f, -0.5052f, 0.4906f, -0.1624f, 0.0896f, 0.4330f, -0.2877f, 0.4330f, -0.5094f, -0.2655f}},
+  {57, 94, 0.4561f, 0.5106f, 0.8511f, 5, {-0.4561f, -0.3484f, -0.0044f, -0.5f, 0.5263f, -0.2181f, 0.1667f, 0.4362f, -0.2325f, 0.4335f}},
+  {50, 119, 0.52f, 0.5126f, 0.9496f, 5, {-0.0766f, -0.5126f, 0.48f, -0.1698f, 0.0791f, 0.4255f, -0.2983f, 0.4255f, -0.52f, -0.2729f}},
+  {53, 117, 0.5094f, 0.5043f, 0.9231f, 0, {}},
+  {64, 115, 0.5156f, 0.5130f, 0.9217f, 5, {-0.0722f, -0.5130f, 0.4844f, -0.1703f, 0.0834f, 0.4251f, -0.2939f, 0.4251f, -0.5156f, -0.2734f}},
+  {146, 166, 0.5068f, 0.4759f, 0.5783f, 0, {}},
+  {160, 132, 0.5f, 0.5f, 0.7348f, 0, {}},
+  {140, 167, 0.5f, 0.50299f, 0.6467f, 0, {}},
+  {149, 169, 0.50336f, 0.50296f, 0.7396f, 0, {}},
+};
+const TreeLayerGeom kTreeLayer1[6] = {
+  {78, 32, 0.6923f, -0.375f, 0.5f, 5, {-0.6923f, 0.6641f, -0.1218f, 0.375f, 0.3077f, 1.0234f, 0.3077f, 1.375f, -0.6923f, 1.375f}},
+  {71, 52, 0.6761f, 0.0385f, 0.5962f, 5, {-0.6761f, 0.4628f, -0.1373f, 0.0245f, 0.3239f, 0.5283f, 0.3239f, 0.9615f, -0.6761f, 0.9615f}},
+  {85, 44, 0.6706f, -0.0455f, 0.6136f, 5, {-0.4088f, 0.0455f, -0.0794f, 0.0455f, 0.3294f, 1.0455f, -0.6706f, 1.0455f, -0.6706f, 0.5625f}},
+  {110, 44, 0.8f, -0.3864f, 0.8409f, 5, {-0.8f, 0.8876f, -0.2613f, 0.4494f, 0.2f, 0.9532f, 0.2f, 1.3864f, -0.8f, 1.3864f}},
+  {87, 52, 0.8276f, -0.1538f, 0.8077f, 5, {-0.8276f, 0.6551f, -0.2889f, 0.2169f, 0.1724f, 0.7206f, 0.1724f, 1.1538f, -0.8276f, 1.1538f}},
+  {107, 54, 0.7757f, -0.1667f, 0.7778f, 5, {-0.7757f, 0.6679f, -0.2370f, 0.2297f, 0.2243f, 0.7335f, 0.2243f, 1.1667f, -0.7757f, 1.1667f}},
+};
+bool seg_x(float ax, float ay, float bx, float by, float cx, float cy, float dx, float dy) {
+  const float d1 = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+  const float d2 = (bx - ax) * (dy - ay) - (by - ay) * (dx - ax);
+  const float d3 = (dx - cx) * (ay - cy) - (dy - cy) * (ax - cx);
+  const float d4 = (dx - cx) * (by - cy) - (dy - cy) * (bx - cx);
+  return ((d1 > 0) != (d2 > 0)) && ((d3 > 0) != (d4 > 0));
+}
+// Axis-aligned rect [x0,x1]x[y0,y1] vs polygon (world coords, n points).
+bool rect_poly_overlap(float x0, float y0, float x1, float y1, const float* px, const float* py, int n) {
+  for (int i = 0; i < n; ++i) if (px[i] >= x0 && px[i] <= x1 && py[i] >= y0 && py[i] <= y1) return true;
+  const float cxs[4] = {x0, x1, x1, x0}, cys[4] = {y0, y0, y1, y1};
+  for (int c = 0; c < 4; ++c) {
+    bool in = false;
+    for (int i = 0, j = n - 1; i < n; j = i++)
+      if ((py[i] > cys[c]) != (py[j] > cys[c]) && cxs[c] < (px[j] - px[i]) * (cys[c] - py[i]) / (py[j] - py[i]) + px[i]) in = !in;
+    if (in) return true;
+  }
+  for (int i = 0, j = n - 1; i < n; j = i++)
+    for (int c = 0; c < 4; ++c)
+      if (seg_x(px[i], py[i], px[j], py[j], cxs[c], cys[c], cxs[(c + 1) & 3], cys[(c + 1) & 3])) return true;
+  return false;
+}
+
 // Draw a C2 tree whose trunk (Imagepoint 1) is at screen (sx, sy); sc = world->screen scale.
 void draw_c2_tree(IPlatform* p, int sub, float sx, float sy, float sc) {
   if (!p) return;
@@ -4275,6 +4323,65 @@ void Game::render() {
         }
       }
     };
+    // C2 layers (Map layout): Buildings_base 17 < items_on_ground 18 < ... Zeds 29 < vehicles 30 <
+    // Buildings_bg 31 < player 32 < Buildings 41 < Trees 43. layer 0 = interiors + loot,
+    // 1 = Buildings_bg (exteriors, trees below the player), 2 = Buildings (trees above the player).
+    auto draw_world_objects = [&](int layer) {
+      // Forest trees — crop first pine frame (47×92), not whole sheet
+      if (layer != 0) for (int i = 0; i < tree_count_; ++i) {
+        if (!view.vis(trees_[i], sc, tree_sub_[i] >= 7 ? 170.f : 120.f)) continue;
+        if (tree_above_player(i) != (layer == 2)) continue;   // Obstacles_transparenting
+        float sx = cx + (trees_[i].x - camv.x) * sc;
+        float sy = cy + (trees_[i].y - camv.y) * sc;
+        if (tree_frame_[i]) draw_c2_tree_stump(platform_, tree_sub_[i], sx, sy, sc);
+        else draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
+      }
+
+      // Map POIs — interiors when standing inside, else exterior shells
+      for (int pass = 0; pass < 2; ++pass) {
+      if (layer == 2 || (layer == 0) != (pass == 0)) continue;
+      for (int i = 0; i < mapgen_.location_count(); ++i) {
+        const MapLocation& L = mapgen_.location(i);
+        float sx = cx + (L.pos.x - camv.x) * sc;
+        float sy = cy + (L.pos.y - camv.y) * sc;
+        // Buildings are drawn at their native data.js frame size in world units, scaled by
+        // the same world->screen factor as positions/terrain. (Bug fix 2026-10-19: this used
+        // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
+        // ~100x and covered the screen with flat colour squares.)
+        const char* ext_spr = poi_building_sprite(L.type, i);
+        const BuildingShape* bs = loc_shape(L);
+        int nat_w = 100, nat_h = 100;
+        poi_native_px(ext_spr, nat_w, nat_h);
+        if (bs) { nat_w = bs->ext_w; nat_h = bs->ext_h; }
+        const float max_dim = static_cast<float>(nat_w > nat_h ? nat_w : nat_h) * sc;
+        if (!view.vis(L.pos, sc, max_dim + 12.f)) continue; // hotspot need not be centred
+        // Indoor = C2 warmzone rect (spawned at image point w1, sized to w2).
+        const bool inside = bs && building_in_warmzone(*bs, L.pos, player_.pos);
+        // pass 0 = interiors the player stands in (Buildings_base); pass 1 = everything else.
+        if ((pass == 0) != (bs && inside)) continue;
+        if (bs) {
+          if (inside) {
+            if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
+            draw_hotspot_sprite(platform_, sx, sy, bs->int_sprite, bs->int_w, bs->int_h,
+                                bs->int_hx, bs->int_hy, sc);
+          } else {
+            draw_hotspot_sprite(platform_, sx, sy, bs->ext_sprite, bs->ext_w, bs->ext_h,
+                                bs->ext_hx, bs->ext_hy, sc);
+          }
+        } else if (const WreckDef* wd = wreck_def(L)) {
+          draw_hotspot_sprite(platform_, sx, sy, wd->sheet, wd->w, wd->h, wd->hx, wd->hy, sc);
+        } else {
+          draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
+        }
+        // (Invented world nameplate removed: the original draws no location names.)
+        if (L.type == Loc_BunkerEntrance &&
+            platform_->has_sprite("alife_marker-sheet0"))
+          platform_->draw_sprite("alife_marker-sheet0",
+            sx - 6.f, sy - max_dim * 0.55f - 14.f, 12.f, 12.f, 0.f, 1.f);
+      }
+      }
+      if (layer == 0) draw_loot();
+    };
     if (in_bunker_ && bunker_.width > 0) {
       platform_->ground_cache_invalidate();
       // World cell 8×8 (collision); atlas tilemap_bunker 150×300 = 5×10 of 30×30
@@ -4535,58 +4642,7 @@ void Game::render() {
             }
       }
 
-      // Forest trees — crop first pine frame (47×92), not whole sheet
-      for (int i = 0; i < tree_count_; ++i) {
-        if (!view.vis(trees_[i], sc, tree_sub_[i] >= 7 ? 170.f : 120.f)) continue;
-        float sx = cx + (trees_[i].x - camv.x) * sc;
-        float sy = cy + (trees_[i].y - camv.y) * sc;
-        if (tree_frame_[i]) draw_c2_tree_stump(platform_, tree_sub_[i], sx, sy, sc);
-        else draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
-      }
-
-      // Map POIs — interiors when standing inside, else exterior shells
-      for (int pass = 0; pass < 2; ++pass) {
-      if (pass == 1) draw_loot();
-      for (int i = 0; i < mapgen_.location_count(); ++i) {
-        const MapLocation& L = mapgen_.location(i);
-        float sx = cx + (L.pos.x - camv.x) * sc;
-        float sy = cy + (L.pos.y - camv.y) * sc;
-        // Buildings are drawn at their native data.js frame size in world units, scaled by
-        // the same world->screen factor as positions/terrain. (Bug fix 2026-10-19: this used
-        // to pass a 48..140 "max_dim" as the scale, so one building sheet was blown up
-        // ~100x and covered the screen with flat colour squares.)
-        const char* ext_spr = poi_building_sprite(L.type, i);
-        const BuildingShape* bs = loc_shape(L);
-        int nat_w = 100, nat_h = 100;
-        poi_native_px(ext_spr, nat_w, nat_h);
-        if (bs) { nat_w = bs->ext_w; nat_h = bs->ext_h; }
-        const float max_dim = static_cast<float>(nat_w > nat_h ? nat_w : nat_h) * sc;
-        if (!view.vis(L.pos, sc, max_dim + 12.f)) continue; // hotspot need not be centred
-        // Indoor = C2 warmzone rect (spawned at image point w1, sized to w2).
-        const bool inside = bs && building_in_warmzone(*bs, L.pos, player_.pos);
-        // pass 0 = interiors the player stands in (Buildings_base); pass 1 = everything else.
-        if ((pass == 0) != (bs && inside)) continue;
-        if (bs) {
-          if (inside) {
-            if (indoor_t_ < 8.f) indoor_t_ = 8.f; // passive shelter while standing in
-            draw_hotspot_sprite(platform_, sx, sy, bs->int_sprite, bs->int_w, bs->int_h,
-                                bs->int_hx, bs->int_hy, sc);
-          } else {
-            draw_hotspot_sprite(platform_, sx, sy, bs->ext_sprite, bs->ext_w, bs->ext_h,
-                                bs->ext_hx, bs->ext_hy, sc);
-          }
-        } else if (const WreckDef* wd = wreck_def(L)) {
-          draw_hotspot_sprite(platform_, sx, sy, wd->sheet, wd->w, wd->h, wd->hx, wd->hy, sc);
-        } else {
-          draw_poi_sprite(platform_, sx, sy, ext_spr, sc);
-        }
-        // (Invented world nameplate removed: the original draws no location names.)
-        if (L.type == Loc_BunkerEntrance &&
-            platform_->has_sprite("alife_marker-sheet0"))
-          platform_->draw_sprite("alife_marker-sheet0",
-            sx - 6.f, sy - max_dim * 0.55f - 14.f, 12.f, 12.f, 0.f, 1.f);
-      }
-      }
+      draw_world_objects(0);   // Buildings_base 17 (interiors) + items_on_ground 18 (loot)
     }
     if (!loot_drawn) draw_loot();
 
@@ -4850,6 +4906,65 @@ void Game::render() {
       }
     }
 
+    if (!in_bunker_) draw_world_objects(1);   // Buildings_bg 31
+    // Player — C2 idle/run/axe/pistol/twohand/using_item
+    {
+      const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
+      const bool moving = spd2 > 4.f;
+      const float psz = crouching_ ? 26.f : 30.f;
+      const InvSlot& eq = inventory_.slot(equipped_slot_);
+      const WeaponDef* w = eq.empty() ? 0 : find_weapon(eq.id);
+      const HoldPose hold = hold_pose_for(w);
+      platform_->draw_rect(pcx - 11.f, pcy + 12.f, 22.f, 4.f, 0.f, 0.f, 0.f, 0.3f);
+      const char* body = player_body_skin(inventory_);
+      char body_probe[64];
+      sprite_sheet_name(body_probe, (int)sizeof(body_probe), body, 0);
+      if (platform_->has_sprite(body_probe) ||
+          platform_->has_sprite("player_skin_def_1-sheet0"))
+        draw_player_c2(platform_, &char_anims_, pcx, pcy, psz, player_.facing_deg,
+                       player_anim_t_, melee_anim_t_, use_anim_t_,
+                       moving, player_.running, hold, body);
+      else
+        platform_->draw_rect(pcx - 6, pcy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
+      // Gasmask / helmet badge overlay (inventory icon cropped small on head)
+      if (wearing_gasmask() && platform_->has_sprite("gasmask-sheet0"))
+        platform_->draw_sprite_frame("gasmask-sheet0",
+          pcx - 6.f, pcy - psz * 0.45f, 12.f, 12.f, 1, 1, 30, 30, 0.f, 0.95f);
+
+      // Original crosshair when holding a firearm (best scope in bag)
+      if (w && !w->stats.is_melee && !vehicles_.player_driving()) {
+        const char* ch = "crosshair_rds-sheet0";
+        int cw = 8, chh = 7;
+        int best = 0; // 0 none, 1 rds, 2 pu, 3 pso, 4 acog, 5 long
+        for (int i = 0; i < inventory_.slot_count(); ++i) {
+          const ItemId sid = inventory_.slot(i).id;
+          int rank = 0;
+          if (sid == 76) rank = 1;
+          else if (sid == 77) rank = 2;
+          else if (sid == 78) rank = 3;
+          else if (sid == 79) rank = 4;
+          else if (sid == 98) rank = 5;
+          if (rank > best) best = rank;
+        }
+        if (best == 5) { ch = "crosshair_long-sheet0"; cw = 11; chh = 5; }
+        else if (best == 4) { ch = "crosshair_acog-sheet0"; cw = 10; chh = 7; }
+        else if (best == 3) { ch = "crosshair_pso-sheet0"; cw = 11; chh = 8; }
+        else if (best == 2) { ch = "crosshair_pu-sheet0"; cw = 11; chh = 6; }
+        else if (best == 1) { ch = "crosshair_rds-sheet0"; cw = 8; chh = 7; }
+        const float rad = player_.facing_deg * 0.01745329252f;
+        const float reach = crouching_ ? 48.f : 40.f;
+        const float hx = pcx + std::cos(rad) * reach;
+        const float hy = pcy + std::sin(rad) * reach;
+        if (platform_->has_sprite(ch))
+          platform_->draw_sprite(ch, hx - cw * 0.5f, hy - chh * 0.5f,
+                                 static_cast<float>(cw), static_cast<float>(chh), 0.f, 0.95f);
+        else
+          platform_->draw_rect(hx - 1, hy - 1, 2, 2, 0.95f, 0.9f, 0.5f, 0.9f);
+      }
+    }
+
+    if (!in_bunker_) draw_world_objects(2);   // Buildings 41 / Trees 43
+
     // Muzzle / hit / explode FX
     {
       const float bsc = in_bunker_ ? 1.f : sc;
@@ -5040,62 +5155,6 @@ void Game::render() {
       platform_->draw_rect(0, 0, 480, 272, 0.15f, 0.35f, 0.1f, 0.08f);
     }
 
-    // Player — C2 idle/run/axe/pistol/twohand/using_item
-    {
-      const float spd2 = player_.vel.x * player_.vel.x + player_.vel.y * player_.vel.y;
-      const bool moving = spd2 > 4.f;
-      const float psz = crouching_ ? 26.f : 30.f;
-      const InvSlot& eq = inventory_.slot(equipped_slot_);
-      const WeaponDef* w = eq.empty() ? 0 : find_weapon(eq.id);
-      const HoldPose hold = hold_pose_for(w);
-      platform_->draw_rect(pcx - 11.f, pcy + 12.f, 22.f, 4.f, 0.f, 0.f, 0.f, 0.3f);
-      const char* body = player_body_skin(inventory_);
-      char body_probe[64];
-      sprite_sheet_name(body_probe, (int)sizeof(body_probe), body, 0);
-      if (platform_->has_sprite(body_probe) ||
-          platform_->has_sprite("player_skin_def_1-sheet0"))
-        draw_player_c2(platform_, &char_anims_, pcx, pcy, psz, player_.facing_deg,
-                       player_anim_t_, melee_anim_t_, use_anim_t_,
-                       moving, player_.running, hold, body);
-      else
-        platform_->draw_rect(pcx - 6, pcy - 6, 12, 12, 0.25f, 0.75f, 0.35f, 1.f);
-      // Gasmask / helmet badge overlay (inventory icon cropped small on head)
-      if (wearing_gasmask() && platform_->has_sprite("gasmask-sheet0"))
-        platform_->draw_sprite_frame("gasmask-sheet0",
-          pcx - 6.f, pcy - psz * 0.45f, 12.f, 12.f, 1, 1, 30, 30, 0.f, 0.95f);
-
-      // Original crosshair when holding a firearm (best scope in bag)
-      if (w && !w->stats.is_melee && !vehicles_.player_driving()) {
-        const char* ch = "crosshair_rds-sheet0";
-        int cw = 8, chh = 7;
-        int best = 0; // 0 none, 1 rds, 2 pu, 3 pso, 4 acog, 5 long
-        for (int i = 0; i < inventory_.slot_count(); ++i) {
-          const ItemId sid = inventory_.slot(i).id;
-          int rank = 0;
-          if (sid == 76) rank = 1;
-          else if (sid == 77) rank = 2;
-          else if (sid == 78) rank = 3;
-          else if (sid == 79) rank = 4;
-          else if (sid == 98) rank = 5;
-          if (rank > best) best = rank;
-        }
-        if (best == 5) { ch = "crosshair_long-sheet0"; cw = 11; chh = 5; }
-        else if (best == 4) { ch = "crosshair_acog-sheet0"; cw = 10; chh = 7; }
-        else if (best == 3) { ch = "crosshair_pso-sheet0"; cw = 11; chh = 8; }
-        else if (best == 2) { ch = "crosshair_pu-sheet0"; cw = 11; chh = 6; }
-        else if (best == 1) { ch = "crosshair_rds-sheet0"; cw = 8; chh = 7; }
-        const float rad = player_.facing_deg * 0.01745329252f;
-        const float reach = crouching_ ? 48.f : 40.f;
-        const float hx = pcx + std::cos(rad) * reach;
-        const float hy = pcy + std::sin(rad) * reach;
-        if (platform_->has_sprite(ch))
-          platform_->draw_sprite(ch, hx - cw * 0.5f, hy - chh * 0.5f,
-                                 static_cast<float>(cw), static_cast<float>(chh), 0.f, 0.95f);
-        else
-          platform_->draw_rect(hx - 1, hy - 1, 2, 2, 0.95f, 0.9f, 0.5f, 0.9f);
-      }
-    }
-
     if (tut_.active) {
       render_tutorial_world_top(cx, cy, sc);
       // Tutorial Forests layer (tilemap_forest|top) above the objects.
@@ -5160,6 +5219,28 @@ void Game::install_los() { set_los_blocker(&game_los_cb, this); }
 // The LOS hook is a global (building_interior.cpp); without this the next ZombieSystem
 // user after a deleted Game read freed memory (ASan heap-use-after-free, test_combat).
 Game::~Game() { clear_los_blocker(this); }
+
+bool Game::tree_above_player(int ti) const {
+  const int sub = tree_sub_[ti];
+  if (sub < 1 || sub > 10) return false;
+  const C2TreeSprite& ts = c2_tree_sprite(sub);
+  // Object position (hotspot) from the stored trunk point (Imagepoint 1 of frame 0).
+  const float ox = trees_[ti].x - (ts.ipx - ts.hx) * ts.w, oy = trees_[ti].y - (ts.ipy - ts.hy) * ts.h;
+  const TreeLayerGeom& g = (tree_frame_[ti] && sub <= 6) ? kTreeLayer1[sub - 1] : kTreeLayer0[sub - 1];
+  float px[5], py[5];
+  int n = g.n;
+  if (n == 0) {
+    const float l = ox - g.hx * g.w, t = oy - g.hy * g.h;
+    px[0] = l; py[0] = t; px[1] = l + g.w; py[1] = t; px[2] = l + g.w; py[2] = t + g.h; px[3] = l; py[3] = t + g.h;
+    n = 4;
+  } else {
+    for (int k = 0; k < n; ++k) { px[k] = ox + g.p[k * 2] * g.w; py[k] = oy + g.p[k * 2 + 1] * g.h; }
+  }
+  const Vec2 pp = player_.pos;
+  if (!rect_poly_overlap(pp.x - 15.f, pp.y - 15.f, pp.x + 15.f, pp.y + 15.f, px, py, n)) return false;
+  const float ip2y = oy + (g.ip2y - g.hy) * g.h;
+  return pp.y <= ip2y;   // CompareY [8,3] (<=) -> Buildings
+}
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_ && c2_props_.blocks(a, b, 1.f)) return true;  // obst_base / big_obstacle_base
