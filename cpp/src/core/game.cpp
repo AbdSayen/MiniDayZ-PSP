@@ -22,6 +22,25 @@
 #include "mdaz/die_anims.hpp"
 
 namespace mdaz {
+
+struct CarAnimFrame { const char* sheet; int x, y, w, h; float ox, oy; };
+#include "car_anims.inc"
+// C2 Sprite.C.AngleWithin: cr.angleDiff(angle, 30k) <= 15 deg; 12 events in order, last match wins.
+static const CarAnimFrame& car_anim_frame(const CarAnimFrame* tab, float angle_deg) {
+  int pick = 0;
+  for (int k = 0; k < 12; ++k) {
+    float d = std::fmod(std::fabs(angle_deg - 30.f * (float)k), 360.f);
+    if (d > 180.f) d = 360.f - d;
+    if (d <= 15.f) pick = k;
+  }
+  return tab[pick];
+}
+int car_anim_frame_for_test(float angle_deg) {
+  const CarAnimFrame& f = car_anim_frame(kUazAnims, angle_deg);
+  for (int k = 0; k < 12; ++k) if (&kUazAnims[k] == &f) return k;
+  return -1;
+}
+
 void draw_c2_tree_stump(IPlatform* p, int sub, float sx, float sy, float sc);   // game_chop.cpp
 }
 
@@ -4981,13 +5000,26 @@ void Game::render() {
           else
             platform_->draw_rect(sx - 10, sy - 4, 20, 8, 0.25f, 0.45f, 0.55f, 1.f);
         } else if (v->type == Vehicle_Bike) {
+          // Not a C2 vehicle (see KNOWN_ISSUES): drawn with car_hatch_red frame 0 (t858 Default).
           if (platform_->has_sprite("car_hatch_red-sheet0"))
-            platform_->draw_sprite("car_hatch_red-sheet0", sx - 22, sy - 12, 44, 24, v->facing_deg, 1.f);
+            platform_->draw_sprite_frame("car_hatch_red-sheet0", sx - 78.f * 0.461538f, sy - 41.f * 0.463415f,
+                                         78.f, 41.f, 1, 56, 78, 41, v->facing_deg, 1.f);
           else
             platform_->draw_rect(sx - 6, sy - 3, 12, 6, 0.55f, 0.35f, 0.2f, 1.f);
+        } else if (v->type == Vehicle_Truck) {
+          // No drivable truck in C2 (never spawned by the port either); t263 car_truck art.
+          if (platform_->has_sprite("car_truck-sheet0"))
+            platform_->draw_sprite_frame("car_truck-sheet0", sx - 139.f * 0.510791f, sy - 68.f * 0.5f,
+                                         139.f, 68.f, 0, 0, 139, 68, v->facing_deg, 1.f);
         } else {
-          if (platform_->has_sprite("car_uaz_base-sheet0"))
-            platform_->draw_sprite("car_uaz_base-sheet0", sx - 36, sy - 16, 72, 32, v->facing_deg, 1.f);
+          // C2: car_uaz_base#806 / car_volga_base#812 are invisible collision bases; the visible
+          // car is the container sprite car_uaz_anims#805 / car_volga_anims#813, Pin position-only,
+          // unrotated, frame = AngleWithin(base.angle, 15, 30*k) (events in order, last wins).
+          const CarAnimFrame& f = car_anim_frame(v->type == Vehicle_Volga ? kVolgaAnims : kUazAnims,
+                                                 v->facing_deg);
+          if (platform_->has_sprite(f.sheet))
+            platform_->draw_sprite_frame(f.sheet, sx - f.w * f.ox, sy - f.h * f.oy, (float)f.w, (float)f.h,
+                                         f.x, f.y, f.w, f.h, 0.f, 1.f);
           else
             platform_->draw_rect(sx - 8, sy - 5, 16, 10, 0.4f, 0.4f, 0.45f, 1.f);
         }

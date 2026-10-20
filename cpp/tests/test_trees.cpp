@@ -1,6 +1,7 @@
 // Item 6: tree collision 1:1 (obst_base 10 for sprites 1..6, big_obstacle_base 17/21/22/23 for
 // tree_block frames 0..3 = create_map_element sub 7..10; tutorial tree_block keeps its frame).
 #include "mdaz/game.hpp"
+namespace mdaz { int car_anim_frame_for_test(float angle_deg); }
 #include <cstdio>
 #include <new>
 
@@ -127,6 +128,11 @@ int test_trees() {
       check(g.car_break_for_test(o, 60.f) > before && !g.prop_alive_for_test(k), "car at speed 60 (> 50): trash container destroyed");
     }
   }
+  // 8a: visible car sprite = car_uaz_anims frame by AngleWithin(15, 30k), last match wins.
+  check(mdaz::car_anim_frame_for_test(0.f) == 0 && mdaz::car_anim_frame_for_test(14.f) == 0, "uaz anims: 0..14 deg -> frame 0");
+  check(mdaz::car_anim_frame_for_test(15.f) == 1, "uaz anims: 15 deg (both 0 and 1 match) -> frame 1 (later event)");
+  check(mdaz::car_anim_frame_for_test(90.f) == 3 && mdaz::car_anim_frame_for_test(-90.f) == 9, "uaz anims: 90 -> 3, -90 -> 9");
+  check(mdaz::car_anim_frame_for_test(345.f) == 11 && mdaz::car_anim_frame_for_test(-10.f) == 0, "uaz anims: 345 -> 11, -10 -> 0");
   delete gp;
   return g_fail;
 }

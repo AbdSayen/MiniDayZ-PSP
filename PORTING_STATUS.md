@@ -726,3 +726,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 
 ## 7e (2026-10-20)
 - Слои пропсов по Obstacles/Big_Obstacles/t920 с состоянием и TriggerOnce, деревья со состоянием, равенство Y = ip2 → Buildings_bg; машина ломает заборы/мусорки/лавки (+6 тестов). Режим скриншотов MDAZ_HARNESS_PROPS.
+
+- 8a: машины рисуются видимыми car_uaz_anims/car_volga_anims (12 ракурсов по углу), тест кадров в test_trees.
