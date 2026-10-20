@@ -234,7 +234,8 @@ private:
   void render_tutorial_overlay() const;
   void tut_leave_to_menu();
   // C2 trees: IV0 hit points (2 for tree types 1..6) -> fall at 0 (2x Wood sticks + 1 Wood piles).
-  unsigned char tree_hp_[4096];
+  unsigned char tree_hp_[4096];     // tree IV0 (layout default 2)
+  unsigned char tree_frame_[4096];  // tree anim frame: 0 standing, 1 stump (obst_base 10 -> 8)
 
   IPlatform* platform_;
   IAudio* audio_;
@@ -300,6 +301,23 @@ private:
   int nearest_pump(Vec2 p, float& d2) const;
   bool pump_overlaps_player(int k) const;
   void pump_drink(int k);
+  // ---- Item 5: chopping (Hitting_obstacles sid5202978245239527 + walk_marker IV0 = 8) ----
+  struct MeleeSwing { Vec2 pos; float ang; float life; bool chop; bool alive; };
+  static const int kMaxSwings = 4;
+  MeleeSwing swings_[kMaxSwings];
+  int chop_walk_ = -1;              // walk_marker IV0 = 8 target tree
+  Vec2 chop_walk_tgt_;
+  int ach_lumberjack_ = 0;          // ach_lumberjack IV2 (SEED_RUN = 0)
+  int tutor_tree_chopped_ = 0;      // global tutorTreeChopped
+  void reset_chop_state();
+  bool tree_obst_contains(int ti, float px, float py) const;  // obst_base frame 10 / 8 poly
+  Vec2 tree_object_pos(int ti) const;                         // tree sprite position (hotspot)
+  int nearest_tree_obst(Vec2 p, float& d2) const;             // PickDistance obst_base (trees)
+  void spawn_melee_swing(float ang_deg, bool chop);
+  void update_melee_swings(float dt);
+  void chop_tree_hit(int ti, Vec2 at);
+  bool start_chop_walk();
+  bool tick_chop_walk(InputState& in);
   float pump_respawn_start_t_ = -1.f;     // Start events sid6396414627891676: Wait 0.1 -> Global_respawn
   void global_respawn_pumps();            // LOOT Respawn sid703496838047803 (pump part)
   void tick_pump_respawn_start(float dt);
@@ -311,6 +329,23 @@ public:
   void pump_drink_for_test(int k) { pump_drink(k); }
   void tick_pump_for_test(float dt);
   void global_respawn_pumps_for_test() { global_respawn_pumps(); }
+  // Item 5 test accessors.
+  int tree_count_for_test() const { return tree_count_; }
+  int tree_sub_for_test(int i) const { return tree_sub_[i]; }
+  int tree_iv0_for_test(int i) const { return tree_hp_[i]; }
+  int tree_frame_for_test(int i) const { return tree_frame_[i]; }
+  Vec2 tree_trunk_for_test(int i) const { return trees_[i]; }
+  Vec2 tree_pos_for_test(int i) const { return tree_object_pos(i); }
+  void swing_for_test(float ang_deg, bool chop) { spawn_melee_swing(ang_deg, chop); }
+  void tick_swings_for_test(float dt) { update_melee_swings(dt); }
+  int ach_lumberjack_for_test() const { return ach_lumberjack_; }
+  bool start_chop_for_test() { return start_chop_walk(); }
+  bool tick_chop_for_test(InputState& in) { return tick_chop_walk(in); }
+  bool tree_blocks_for_test(int ti, Vec2 p) const { return tree_obst_contains(ti, p.x, p.y); }
+  void equip_for_test(int id) { harness_give_item(id, 1); for (int s = 0; s < inventory_.slot_count(); ++s) if (inventory_.slot(s).id == id) { equipped_slot_ = s; break; } }
+  int ground_count_for_test(int id) const { return harness_loot_count(id); }
+  float attack_cd_for_test() const { return attack_cd_; }
+  void set_attack_cd_for_test(float v) { attack_cd_ = v; }
   int pump_count_for_test() const;
   const MapProp& prop_for_test(int i) const { return c2_props_.at(i); }
   int pump_index_for_test(int n) const;

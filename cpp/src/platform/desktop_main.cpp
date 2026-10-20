@@ -99,12 +99,13 @@ public:
     if (chop_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
       if (game_ && frame_ == 200) { chop_tree_ = game_->harness_place_at_tree(); chop_log("placed"); }
-      if (frame_ == 210 || frame_ == 250) in.interact = in.interact_pressed = true;   // Circle
-      if (game_ && (frame_ == 212 || frame_ == 252)) chop_log(frame_ == 212 ? "hit1" : "hit2");
-      if (frame_ == 290 || frame_ == 300 || frame_ == 310) in.interact = in.interact_pressed = true;  // pick up
-      if (game_ && frame_ == 320) chop_log("pickup");
-      if (frame_ == 330) { in.bag = in.bag_pressed = true; }
-      return frame_ < 350;
+      // Circle at frame 7: walk_marker -> swing; second Circle after Reloading_time_melee (1.6 s).
+      if (frame_ == 240 || frame_ == 360) in.interact = in.interact_pressed = true;
+      if (game_ && (frame_ == 300 || frame_ == 420)) chop_log(frame_ == 300 ? "hit1" : "hit2");
+      if (frame_ == 470 || frame_ == 500 || frame_ == 530) in.interact = in.interact_pressed = true;  // pick up
+      if (game_ && frame_ == 560) chop_log("pickup");
+      if (frame_ == 570) { in.bag = in.bag_pressed = true; }
+      return frame_ < 600;
     }
     if (death_) {
       if (frame_ == 60) { in.confirm = in.confirm_pressed = true; }
@@ -350,7 +351,7 @@ public:
     }
     if (chop_) {
       static const struct { int frame; const char* name; } kC[] = {
-        { 205, "chop_0_before" }, { 240, "chop_1_hit1" }, { 280, "chop_2_hit2_drop" }, { 345, "chop_3_inventory" },
+        { 235, "chop_0_before_prompt" }, { 300, "chop_1_hit1" }, { 440, "chop_2_hit2_stump_drop" }, { 595, "chop_3_inventory" },
       };
       for (unsigned i = 0; i < sizeof(kC) / sizeof(kC[0]); ++i) {
         if (kC[i].frame != frame_) continue;

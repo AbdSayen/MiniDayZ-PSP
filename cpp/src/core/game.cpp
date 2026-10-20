@@ -22,6 +22,10 @@
 #include "mdaz/die_anims.hpp"
 
 namespace mdaz {
+void draw_c2_tree_stump(IPlatform* p, int sub, float sx, float sy, float sc);   // game_chop.cpp
+}
+
+namespace mdaz {
 
 namespace {
 
@@ -399,6 +403,7 @@ Game::Game()
   tut_.active = false;
   tutorial_finished_ = false;
   std::memset(tree_hp_, 2, sizeof(tree_hp_));
+  reset_chop_state();
   last_airdrop_pos_ = Vec2();
   for (int i = 0; i < kMapSectorsX * kMapSectorsY; ++i) visited_sectors_[i] = false;
   prev_scream_ = false;
@@ -688,6 +693,7 @@ void Game::start_new_game(Difficulty d) {
   }
   tut_.active = false;
   std::memset(tree_hp_, 2, sizeof(tree_hp_));
+  reset_chop_state();
   install_los();
   player_.reset_new_game(d);
   set_npc_damage_for_difficulty(d);
@@ -1150,6 +1156,9 @@ void Game::try_melee_attack() {
   melee_anim_t_ = 0.35f; // C2 axe_* ~3 frames @ speed 10
   // C2 Punch_Swipes_0/1 [zmb] at the player only for fists (player_weapons IV4 == 0).
   if (!using_melee_item) sfx_at(c2_choose_punch(sfx_rng_), 0.f, player_.pos, "zmb");
+  // Melee_2_auto sid6326427994993125 (+ Merged pick sid1571569711919539): IV4 == 1 (Split Axe 202) / 5 (Fireaxe 204) -> the
+  // melee_swing_general gets IV7 and chops a trunk it collides with (game_chop.cpp).
+  if (using_melee_item && (eq.id == 202 || eq.id == 204)) spawn_melee_swing(player_.facing_deg, true);
 
   bool hit_something = false;
   for (Zombie* z = zombies_.begin(); z != zombies_.end(); ++z) {
@@ -2882,6 +2891,7 @@ const char* Game::interact_hint() const {
   if (vehicles_.player_driving()) return "EXIT CAR";
   if (trunk_avail_ >= 0) return "TRUNK";
   if (avail_interaction_ == 4) return "PUMP";   // gui_btn_interact frame 4
+  if (avail_interaction_ == 7) return "CHOP";   // gui_btn_interact frame 7
   for (int i = 0; i < loot_.count(); ++i) {
     const LootPile* p = loot_.at(i);
     if (p->active && p->item_count > 0 && dist2(p->pos, player_.pos) < 40.f * 40.f) return "LOOT";
@@ -2892,8 +2902,6 @@ const char* Game::interact_hint() const {
     if (L.type == Loc_BunkerEntrance && dist2(L.pos, player_.pos) < 80.f * 80.f) return "BUNKER";
   }
   if (in_bunker_) return "SEARCH";
-  const ItemId eq = inventory_.slot(equipped_slot_).id;
-  if ((eq == 202 || eq == 204 || eq == 206) && near_choppable_tree()) return "CHOP";
   return 0;
 }
 
@@ -2973,7 +2981,9 @@ void Game::update_playing(float dt, const InputState& in_raw) {
       }
     }
   }
-  trunk_walk_drive_ = pump_drive;   // AltMove SetSpeed 100 (pump walk_marker too)
+  if (tick_chop_walk(in)) pump_drive = true;   // walk_marker IV0 = 8 (chop)
+  update_melee_swings(dt);
+  trunk_walk_drive_ = pump_drive;   // AltMove SetSpeed 100 (pump / chop walk_marker too)
   if (trunk_walk_ >= 0) {
     if (in.move_x != 0.f || in.move_y != 0.f) {
       trunk_walk_ = -1;
@@ -3157,6 +3167,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         trees_[ti] = trees_[tree_count_ - 1];
         tree_sub_[ti] = tree_sub_[tree_count_ - 1];
         tree_hp_[ti] = tree_hp_[tree_count_ - 1];
+        tree_frame_[ti] = tree_frame_[tree_count_ - 1];
         tree_count_ -= 1;
         sfx_at(c2_choose_treefall(sfx_rng_), -5.f, fell);
         break;
@@ -3704,6 +3715,10 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         picked = true;
       }
     }
+    // gui_btn_interact frame 7 (sid7921730188078593): walk_marker IV0 = 8 at the nearest trunk.
+    if (!picked && !in_bunker_ && avail_interaction_ == 7 && start_chop_walk()) {
+      pump_walk_ = -1; trunk_walk_ = -1; picked = true;
+    }
     if (!picked && !in_bunker_ && berry_t_ <= 0.f) {
       // C2 berry bush: player overlaps a bush with frame 1 -> "bushsearch", frame 0, wait 3 s,
       // Check_space_inventory(-1, 27/73/74, perk_agronom ? 2 : 1).
@@ -3741,36 +3756,8 @@ void Game::update_playing(float dt, const InputState& in_raw) {
         }
       }
       if (has_axe) {
-        // Prefer chopping a nearby tree stub (removes it); else ambient wood chance
-        int near_tree = -1;
-        float best = 55.f * 55.f;
-        for (int ti = 0; ti < tree_count_; ++ti) {
-          const float d2t = dist2(trees_[ti], player_.pos);
-          if (d2t < best) { best = d2t; near_tree = ti; }
-        }
-        if (near_tree >= 0 && tree_sub_[near_tree] >= 1 && tree_sub_[near_tree] <= 6) {
-          // C2 tree IV0 = 2 hits; at 0: Spawn_drop 2x Wood sticks (38) + 1x Wood piles (50) at
-          // x +- 30, y + 40 + random(10); the tree turns into a stump (frame 1, obst_base 8).
-          // Port: the stump sprite/obstacle is not drawn, the tree is removed (KNOWN_ISSUES).
-          const Vec2 chop_pos = trees_[near_tree];
-          sfx_at(c2_choose_chop(sfx_rng_), 0.f, chop_pos);   // tree hit: chop*
-          if (tree_hp_[near_tree] > 0) --tree_hp_[near_tree];
-          if (tree_hp_[near_tree] == 0) {
-            const Vec2 tp = trees_[near_tree];
-            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 38, 1);
-            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 38, 1);
-            loot_.spawn_item(Vec2(tp.x - 30.f + rng_.next_float() * 60.f, tp.y + 40.f + rng_.next_float() * 10.f), 50, 1);
-            trees_[near_tree] = trees_[tree_count_ - 1];
-            tree_sub_[near_tree] = tree_sub_[tree_count_ - 1];
-            tree_hp_[near_tree] = tree_hp_[tree_count_ - 1];
-            tree_count_ -= 1;
-            sfx_at(c2_choose_treefall(sfx_rng_), -5.f, chop_pos);
-          }
-          // Axe wear: ~6% break on chop (duct tape helps)
-          // Tool break-on-chop: no C2 evidence in 1.4.1 export — not invented.
-        } else if (rng_.next_float() < 0.35f) {
-          inventory_.add_item(38, 1, items_);
-        }
+        // Chopping moved to game_chop.cpp (item 5): interact frame 7 -> walk_marker IV0 = 8 ->
+        // melee_swing_general IV7. The old radius chop and 35% ambient sticks were invented.
       } else if (has_rod) {
         // Fishing only near map-edge water band
         const float margin = 400.f;
@@ -4584,7 +4571,8 @@ void Game::render() {
         if (!view.vis(trees_[i], sc, tree_sub_[i] >= 7 ? 170.f : 120.f)) continue;
         float sx = cx + (trees_[i].x - camv.x) * sc;
         float sy = cy + (trees_[i].y - camv.y) * sc;
-        draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
+        if (tree_frame_[i]) draw_c2_tree_stump(platform_, tree_sub_[i], sx, sy, sc);
+        else draw_c2_tree(platform_, tree_sub_[i], sx, sy, sc);
       }
 
       // Map POIs — interiors when standing inside, else exterior shells
@@ -5249,18 +5237,7 @@ bool Game::building_blocks(Vec2 a, Vec2 b) const {
         continue;
       }
       if (px * px + py * py > 20.f * 20.f) continue;
-      bool inside = true;
-      float sign = 0.f;
-      for (int e = 0; e < 3; ++e) {
-        const float x0 = kTri[e * 2], y0 = kTri[e * 2 + 1];
-        const float x1 = kTri[((e + 1) % 3) * 2], y1 = kTri[((e + 1) % 3) * 2 + 1];
-        const float c = (x1 - x0) * (py - y0) - (y1 - y0) * (px - x0);
-        if (c != 0.f) {
-          if (sign == 0.f) sign = c;
-          else if ((c > 0.f) != (sign > 0.f)) { inside = false; break; }
-        }
-      }
-      if (inside) return true;
+      if (tree_obst_contains(ti, b.x, b.y)) return true;   // obst_base frame 10 / stump frame 8
     }
   }
   return false;

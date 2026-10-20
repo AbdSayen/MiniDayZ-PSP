@@ -23,6 +23,7 @@ int test_queue_q1();
 int test_fidelity2();
 int test_audio();
 int test_pump();
+int test_chop();
 int test_fidelity2_more();
 
 int main(int argc, char** argv) {
@@ -32,6 +33,7 @@ int main(int argc, char** argv) {
   int failed = 0;
   failed += test_audio();
   if (!pump_last) failed += test_pump();
+  failed += test_chop();
   failed += test_balance();
   failed += test_weather();
   failed += test_survival();

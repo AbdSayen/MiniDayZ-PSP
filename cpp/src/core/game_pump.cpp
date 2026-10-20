@@ -14,6 +14,9 @@ float d2v(float ax, float ay, Vec2 b) { const float x = ax - b.x, y = ay - b.y; 
 const char* kLog12 = "There's no water in this pump.";
 const char* kLog13 = "I don't want to drink.";
 const char* kLog77 = "I've drunk from the water pump.";
+// player_base LOS behaviours interactor (Solid) and doorchecker (custom): range 70, cone 360
+// (Map instance props). HasLOSToObject fails beyond the range before any distance compare.
+const float kLosRange = 70.f;
 } // namespace
 
 // create_map_element cat 3 sub 2 (sid8279941300293499): Spawn waterpump; map_element IV3 == 0 ->
@@ -132,7 +135,7 @@ void Game::update_avalible_interaction(float dt) {
       if (best < 0 || d < bd) { best = i; bd = d; }
     }
     if (best >= 0 && bd <= 100.f * 100.f &&
-        (!los_blocked_world(player_.pos, loot_.at(best)->pos) || bd < 15.f * 15.f)) ai = 5;
+        ((bd <= kLosRange * kLosRange && !los_blocked_world(player_.pos, loot_.at(best)->pos)) || bd < 15.f * 15.f)) ai = 5;
   }
   // 6: t909 (port has no separate t909 object; KNOWN_ISSUES).
   if (ai != 5 && ai != 6) {
@@ -144,7 +147,7 @@ void Game::update_avalible_interaction(float dt) {
         const float d = d2v(crops_[i].pos.x, crops_[i].pos.y, player_.pos);
         if (best < 0 || d < bd) { best = i; bd = d; }
       }
-      if (best >= 0 && crops_[best].ready && bd <= 100.f * 100.f &&
+      if (best >= 0 && crops_[best].ready && bd <= kLosRange * kLosRange &&
           !los_blocked_world(player_.pos, crops_[best].pos)) ai = 1;
     }
     // 2: berry bush (nearest), interactor LOS, <= 100, frame 1.
@@ -158,7 +161,7 @@ void Game::update_avalible_interaction(float dt) {
       }
       if (best >= 0) {
         const MapProp& mp = c2_props_.at(best);
-        if (bd <= 100.f * 100.f && mp.frame == 1 && !los_blocked_world(player_.pos, Vec2(mp.x, mp.y))) ai = 2;
+        if (bd <= kLosRange * kLosRange && mp.frame == 1 && !los_blocked_world(player_.pos, Vec2(mp.x, mp.y))) ai = 2;
       }
     }
     // 3: car_loot_point < 50 with doorchecker LOS (trunk_avail_, computed every tick).
@@ -167,12 +170,27 @@ void Game::update_avalible_interaction(float dt) {
     {
       float pd = 0.f;
       const int pk = nearest_pump(player_.pos, pd);
-      if (pk >= 0 && pd <= 100.f * 100.f) {
+      if (pk >= 0 && pd <= kLosRange * kLosRange) {   // LOS range 70 < the 100 px compare
         const MapProp& mp = c2_props_.at(pk);
         if (!doorchecker_blocked(player_.pos, Vec2(mp.x, mp.y))) { ai = 4; avail_pump_ = pk; }
       }
     }
-    // 8: panel_button and 7: obst_base frame 10 - no port objects (KNOWN_ISSUES).
+    // 8: panel_button - no port object (KNOWN_ISSUES).
+    // 7 (sid5546315147952857): player IV3 == 0, IV4 == 1 or 5 (equipped 202 / 204); doorchecker
+    // HasLOSToObject obst_base (range 70: picks the visible ones), frame 10, distance <= 100.
+    {
+      const ItemId eq = inventory_.slot(equipped_slot_).id;
+      if (eq == 202 || eq == 204) {
+        for (int ti = 0; ti < tree_count_; ++ti) {
+          if (tree_sub_[ti] < 1 || tree_sub_[ti] > 6 || tree_frame_[ti] != 0) continue;
+          const float d = d2v(trees_[ti].x, trees_[ti].y, player_.pos);
+          if (d > kLosRange * kLosRange) continue;
+          if (doorchecker_blocked(player_.pos, trees_[ti])) continue;
+          ai = 7;
+          break;
+        }
+      }
+    }
   }
   avail_interaction_ = ai;
 }

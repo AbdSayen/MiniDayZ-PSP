@@ -88,6 +88,7 @@ void Game::start_tutorial() {
   // Base session reset (Game_events start of layout: stats, inventory, timers).
   start_new_game(menu_difficulty_);
   std::memset(tree_hp_, 2, sizeof(tree_hp_));
+  reset_chop_state();
   TutorialRun& t = tut_;
   t.active = true; t.t = 0.f; t.start_phase = 0;
   t.moveblock = 0; t.blocked_gui = 0; t.onscreen = 1;   // Tutor_hint_onscreen = 1

@@ -696,3 +696,10 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Причина падения test_combat найдена (ASan): висячий глобальный LOS-хук на удалённый Game. Добавлен ~Game() с clear_los_blocker. Тесты: оба порядка ALL TESTS PASSED.
 - Global_respawn: перезаполнение колонок >= 500 px (старт Map 0.1 с + таймер Check_loot). Тесты test_pump +3.
 - Скриншоты колонки: docs/screenshots/pump_*.png (подсказка PUMP, тост «I've drunk from the water pump.»).
+
+## Пункт 5: рубка деревьев — 1:1
+- avalible_interaction 7: в руках Split Axe (202, IV4=1) или Fireaxe (204, IV4=5), ствол (obst_base кадр 10) в зоне doorchecker LOS (70 px). Подсказка CHOP.
+- Кружок: walk_marker IV0=8 в 10 px от ствола к игроку (или на игроке при ≤ 30 px), AltMove 100, игрок смотрит на ствол; по достижении — melee_swing_general (Bullet 100 px/с, Fade 0.1+0.1 с, полоса 10x1 px), Punch_Swipes_0/1 [zmb], Reloading_time_melee = IV4 (1.5 / 1.6 с).
+- Атака (Melee_2_auto) топором тоже даёт рубящий взмах (IV7).
+- Попадание по стволу с IV0 > 0: IV0 -= 1, chop/chop2/3/4 в точке взмаха. IV0 ≤ 0: treefall_02/03 (-5 дБ, не позиционно), дерево -> кадр 1 (пень/лежащий ствол, спрайт из data.js), obst_base -> кадр 8 (своя коллизия), Spawn_drop по типу дерева: t175/t569 50,50; t198 38,38,50; t200 38,38,50,37; t570 50,50,38; t574 50,50,38,38 (x ± random 30, y + 40 + random 10 от позиции спрайта дерева); tutorTreeChopped = 1; ach_lumberjack += 1. Взмах уничтожается (test_bullet_hit).
+- Тесты: test_chop (17 проверок). Скриншоты: docs/screenshots/chop_*.png.
