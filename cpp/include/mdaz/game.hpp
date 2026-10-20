@@ -660,6 +660,35 @@ private:        // Obstacles_transparenting layer swap
   bool iv41_ = false;                          // player_collision_base IV41 -> t943 Outline                // Every 0.5 s (House_transparenting t920 rule)
   float car_layer_t_ = 0.f;
 public:
+  // door#340 (Doors_auto, House_transparenting door opacity, big_obstacle_base#339 blocker).
+  struct DoorInst {
+    short loc; unsigned char anim, frame;
+    float x, y;            // door origin (exterior Imagepoint N)
+    float opacity;         // 1 or 0.25
+    float blk_t;           // OnCreated Wait 1 s -> spawn blocker
+    bool blk; float bx, by, bw;   // blocker (frame 15, 22 px high, hotspot 0.5/0.5)
+    float pend_t; signed char pend; // Wait 0.01 then SetAnimFrame pend (0 close / 1 open)
+    bool was_active;
+  };
+private:
+  DoorInst doors_[256];
+  int door_count_ = 0;
+  bool doors_built_ = false;
+  bool door_open_prev_ = false, door_close_prev_ = false;   // TriggerOnce
+  Rng door_rng_;
+  void build_doors();
+  void update_doors(float dt);
+  void door_spawn_blocker(DoorInst& d);
+  int door_poly(const DoorInst& d, float* xs, float* ys) const;
+  bool doors_block(Vec2 a, Vec2 b, float r) const;
+  void door_house_opacity(bool in_wz);
+public:
+  int door_count_for_test() { if (!doors_built_) build_doors(); return door_count_; }
+  const DoorInst& door_for_test(int i) const { return doors_[i]; }
+  void doors_tick_for_test(float dt) { update_doors(dt); }
+  void door_activate_for_test(int i) { mapgen_.location_mut(doors_[i].loc).active = true; }
+  bool doors_block_for_test(Vec2 a, Vec2 b) const { return doors_block(a, b, 1.f); }
+public:
   bool iv41_for_test() const { return iv41_; }
   void house_layers_tick_for_test() { house_any_ov_ = true; update_house_layers(0.1f); }
   bool location_above_for_test(int li, const char* sheet, Vec2 o, bool& roof) { car_layer_tick_ = true; house_tick_ = true; return location_above_player(li, sheet, o, roof); }

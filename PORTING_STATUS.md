@@ -728,3 +728,5 @@ Status: **Протестирована** (unit tests on Windows and the box; des
 - Слои пропсов по Obstacles/Big_Obstacles/t920 с состоянием и TriggerOnce, деревья со состоянием, равенство Y = ip2 → Buildings_bg; машина ломает заборы/мусорки/лавки (+6 тестов). Режим скриншотов MDAZ_HARNESS_PROPS.
 
 - 8a: машины рисуются видимыми car_uaz_anims/car_volga_anims (12 ракурсов по углу), тест кадров в test_trees.
+
+- 8b: двери door#340 — спавн, авто-открытие/закрытие по «in», блокер 339, звуки, прозрачность 100/25.

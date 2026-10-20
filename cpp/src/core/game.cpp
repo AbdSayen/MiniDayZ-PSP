@@ -23,6 +23,11 @@
 
 namespace mdaz {
 
+struct DoorFrame { int sx, sy, w, h; float hx, hy, ip1x, ip1y, in_y; int n; float p[12]; };
+struct DoorSpawn { int int_type, ext_type, ip; float dx, dy; int anim; };
+#include "doors.inc"
+static const int kDoorSpawnCount = static_cast<int>(sizeof(kDoorSpawns) / sizeof(kDoorSpawns[0]));
+static const DoorFrame& door_frame_for_draw(int a, int f) { return kDoorFrames[a][f]; }
 struct CarAnimFrame { const char* sheet; int x, y, w, h; float ox, oy; };
 #include "car_anims.inc"
 // C2 Sprite.C.AngleWithin: cr.angleDiff(angle, 30k) <= 15 deg; 12 events in order, last match wins.
@@ -3071,6 +3076,7 @@ void Game::update_playing(float dt, const InputState& in_raw) {
   car_layer_tick_ = car_layer_t_ >= 0.5f;
   if (car_layer_tick_) car_layer_t_ -= 0.5f;
   update_house_layers(dt);
+  update_doors(dt);
   update_obstacle_layers();
   update_car_breaks_props(dt);
   update_prop_pieces(dt);
@@ -4479,6 +4485,15 @@ void Game::render() {
             sx - 6.f, sy - max_dim * 0.55f - 14.f, 12.f, 12.f, 0.f, 1.f);
       }
       }
+      // door#340 on Buildings (41), spawned after its exterior -> above it.
+      if (layer == 2) for (int i = 0; i < door_count_; ++i) {
+        const DoorInst& d = doors_[i];
+        if (!d.was_active || !view.vis(Vec2(d.x, d.y), sc, 90.f)) continue;
+        const DoorFrame& f = door_frame_for_draw(d.anim, d.frame);
+        const float sx = cx + (d.x - camv.x) * sc, sy = cy + (d.y - camv.y) * sc;
+        platform_->draw_sprite_frame("door-sheet0", sx - f.hx * f.w * sc, sy - f.hy * f.h * sc,
+                                     f.w * sc, f.h * sc, f.sx, f.sy, f.w, f.h, 0.f, d.opacity);
+      }
       if (layer == 0) draw_loot();
     };
     if (in_bunker_ && bunker_.width > 0) {
@@ -5325,6 +5340,7 @@ bool Game::bullet_hits_obstacle(Vec2 a, Vec2 b) const { return building_blocks(a
 
 bool Game::los_blocked_world(Vec2 a, Vec2 b) const {
   if (in_bunker_) return false;
+  if (doors_block(a, b, 0.f)) return true;
   for (int i = 0; i < mapgen_.location_count(); ++i) {
     const MapLocation& L = mapgen_.location(i);
     if (!L.active) continue;
@@ -5448,8 +5464,173 @@ void Game::update_house_layers(float dt) {
       if (player_.pos.y < ip1) roof = true;
     }
     iv41_ = roof;
+    bool in_wz = false;
+    for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations && !in_wz; ++i) {
+      const MapLocation& L = mapgen_.location(i);
+      const BuildingShape* bs = loc_shape(L);
+      if (bs && L.active && bs->has_wz && building_in_warmzone(*bs, L.pos, player_.pos)) in_wz = true;
+    }
+    door_house_opacity(in_wz);
   }
   house_any_ov_ = any;
+}
+
+// ---- door#340 -------------------------------------------------------------------------------
+static bool door_anim_is(int a, const char* n) { return std::strcmp(kDoorAnimNames[a], n) == 0; }
+
+static int layer_prop_poly(const LayerProp& g, Vec2 o, float* xs, float* ys) {
+  if (g.n == 0) {
+    const float l = o.x - g.hx * g.w, t = o.y - g.hy * g.h;
+    xs[0] = l; ys[0] = t; xs[1] = l + g.w; ys[1] = t; xs[2] = l + g.w; ys[2] = t + g.h; xs[3] = l; ys[3] = t + g.h;
+    return 4;
+  }
+  for (int k = 0; k < g.n; ++k) { xs[k] = o.x + g.p[k * 2] * g.w; ys[k] = o.y + g.p[k * 2 + 1] * g.h; }
+  return g.n;
+}
+
+// map_element IV1 = 7 / IV2 rows: <exterior> Spawn door#340 at Imagepoint N, SetAnim <name>.
+void Game::build_doors() {
+  doors_built_ = true;
+  door_count_ = 0;
+  for (int i = 0; i < mapgen_.location_count() && i < kMaxLocations; ++i) {
+    const MapLocation& L = mapgen_.location(i);
+    const BuildingShape* bs = loc_shape(L);
+    if (!bs) continue;
+    for (int k = 0; k < kDoorSpawnCount && door_count_ < 256; ++k) {
+      if (kDoorSpawns[k].int_type != bs->c2_type) continue;
+      DoorInst& d = doors_[door_count_++];
+      std::memset(&d, 0, sizeof(d));
+      d.loc = static_cast<short>(i);
+      d.anim = static_cast<unsigned char>(kDoorSpawns[k].anim);
+      d.x = L.pos.x + kDoorSpawns[k].dx;
+      d.y = L.pos.y + kDoorSpawns[k].dy;
+      d.was_active = false;
+    }
+  }
+}
+
+int Game::door_poly(const DoorInst& d, float* xs, float* ys) const {
+  const DoorFrame& f = kDoorFrames[d.anim][d.frame];
+  if (f.n == 0) {
+    const float l = d.x - f.hx * f.w, t = d.y - f.hy * f.h;
+    xs[0] = l; ys[0] = t; xs[1] = l + f.w; ys[1] = t; xs[2] = l + f.w; ys[2] = t + f.h; xs[3] = l; ys[3] = t + f.h;
+    return 4;
+  }
+  for (int k = 0; k < f.n; ++k) { xs[k] = d.x + f.p[k * 2] * f.w; ys[k] = d.y + f.p[k * 2 + 1] * f.h; }
+  return f.n;
+}
+
+// OnCreated: Wait 1; Spawn big_obstacle_base#339 at Imagepoint 1, frame 15 (160x22 from the
+// 110x59 frame-0 template -> 160 x 22), SetWidth(door.Width + 6).
+void Game::door_spawn_blocker(DoorInst& d) {
+  const DoorFrame& f = kDoorFrames[d.anim][d.frame];
+  d.blk = true;
+  d.bx = d.x + (f.ip1x - f.hx) * f.w;
+  d.by = d.y + (f.ip1y - f.hy) * f.h;
+  d.bw = static_cast<float>(f.w) + 6.f;
+}
+
+bool Game::doors_block(Vec2 a, Vec2 b, float r) const {
+  for (int i = 0; i < door_count_; ++i) {
+    const DoorInst& d = doors_[i];
+    if (!d.blk || !mapgen_.location(d.loc).active) continue;
+    const float x0 = d.bx - d.bw * 0.5f, x1 = d.bx + d.bw * 0.5f, y0 = d.by - 11.f, y1 = d.by + 11.f;
+    if (b.x > x0 - r && b.x < x1 + r && b.y > y0 - r && b.y < y1 + r) return true;
+    // segment crossing (fast movers)
+    const float xs[4] = {x0, x1, x1, x0}, ys[4] = {y0, y0, y1, y1};
+    for (int k = 0; k < 4; ++k) {
+      const int j = (k + 1) & 3;
+      if (seg_x(a.x, a.y, b.x, b.y, xs[k], ys[k], xs[j], ys[j])) return true;
+    }
+  }
+  return false;
+}
+
+static void door_sound(IAudio* au, int anim, bool open) {
+  if (!au) return;
+  // [OR] firestation / ga_brown / ga_blue -> *_metal at -5 dB; NOT firestation -> plain at 0 dB
+  // (ga_* doors therefore play both, as in the original event sheet).
+  if (door_anim_is(anim, "firestation") || door_anim_is(anim, "ga_brown") || door_anim_is(anim, "ga_blue"))
+    au->play(open ? "open_door_metal" : "close_door_metal", false, -5.f, "");
+  if (!door_anim_is(anim, "firestation"))
+    au->play(open ? "open_door" : "close_door", false, 0.f, "");
+}
+
+void Game::update_doors(float dt) {
+  if (!doors_built_) build_doors();
+  if (in_bunker_) { door_open_prev_ = door_close_prev_ = false; return; }
+  for (int i = 0; i < door_count_; ++i) {
+    DoorInst& d = doors_[i];
+    const bool act = mapgen_.location(d.loc).active;
+    if (!act) { d.was_active = false; continue; }
+    if (!d.was_active) {   // (re)created with its map element: closed, opacity 100, Wait 1 -> blocker
+      d.was_active = true; d.frame = 0; d.opacity = 1.f; d.blk = false; d.blk_t = 1.f; d.pend = -1; d.pend_t = 0.f;
+    }
+    if (d.blk_t > 0.f) { d.blk_t -= dt; if (d.blk_t <= 0.f) door_spawn_blocker(d); }
+    if (d.pend >= 0) {
+      d.pend_t -= dt;
+      if (d.pend_t <= 0.f) {
+        d.frame = static_cast<unsigned char>(d.pend);
+        if (d.pend == 0) door_spawn_blocker(d);
+        door_sound(audio_, d.anim, d.pend == 1);
+        d.pend = -1;
+      }
+    }
+  }
+  // Doors_auto: player_collision_base overlapping door, PickRandom door.
+  int cand[256], nc = 0;
+  for (int i = 0; i < door_count_; ++i) {
+    const DoorInst& d = doors_[i];
+    if (!d.was_active) continue;
+    if (dist2(Vec2(d.x, d.y), player_.pos) > 200.f * 200.f) continue;
+    float xs[8], ys[8];
+    const int n = door_poly(d, xs, ys);
+    const Vec2 pp = player_.pos;
+    if (rect_poly_overlap(pp.x - 15.f, pp.y - 15.f, pp.x + 15.f, pp.y + 15.f, xs, ys, n)) cand[nc++] = i;
+  }
+  if (nc == 0) { door_open_prev_ = door_close_prev_ = false; return; }
+  DoorInst& d = doors_[cand[nc == 1 ? 0 : door_rng_.next_int(0, nc - 1)]];
+  const DoorFrame& f = kDoorFrames[d.anim][d.frame];
+  const float in_y = d.y + (f.in_y - f.hy) * f.h;
+  const bool open_c = player_.pos.y >= in_y, close_c = player_.pos.y < in_y;
+  if (open_c && !door_open_prev_ && d.frame == 0 && d.pend < 0) {
+    d.blk = false;                          // PickByUID(IV0) blocker Destroy
+    d.pend = 1; d.pend_t = 0.01f;           // Wait 0.01 -> frame 1 + sound
+  }
+  if (close_c && !door_close_prev_ && d.frame == 1 && d.pend < 0) {
+    d.pend = 0; d.pend_t = 0.01f;           // Wait 0.01 -> frame 0, Spawn blocker, sound
+  }
+  door_open_prev_ = open_c;
+  door_close_prev_ = close_c;
+}
+
+// House_transparenting (every 0.1 s while the player overlaps a t928): outside the warmzone
+// doors overlapping a t928 -> opacity 100; inside it doors overlapping a warmzone -> 25.
+void Game::door_house_opacity(bool in_wz) {
+  for (int i = 0; i < door_count_; ++i) {
+    DoorInst& d = doors_[i];
+    if (!d.was_active) continue;
+    float dx[8], dy[8];
+    const int dn = door_poly(d, dx, dy);
+    bool hit = false;
+    for (int j = 0; j < mapgen_.location_count() && j < kMaxLocations && !hit; ++j) {
+      const MapLocation& L = mapgen_.location(j);
+      if (!L.active || dist2(L.pos, Vec2(d.x, d.y)) > 700.f * 700.f) continue;
+      const BuildingShape* bs = loc_shape(L);
+      if (!bs) continue;
+      if (in_wz) {
+        if (!bs->has_wz) continue;
+        hit = rect_poly_overlap(L.pos.x + bs->wz_x0, L.pos.y + bs->wz_y0, L.pos.x + bs->wz_x1, L.pos.y + bs->wz_y1, dx, dy, dn);
+      } else {
+        const LayerProp* g = find_layer_prop(bs->ext_sprite);
+        if (!g || !(g->groups & G928)) continue;
+        float gx[24], gy[24];
+        const int gn = layer_prop_poly(*g, L.pos, gx, gy);
+        hit = poly_poly_overlap(dx, dy, dn, gx, gy, gn);
+      }
+    }
+    if (hit) d.opacity = in_wz ? 0.25f : 1.f;
+  }
 }
 
 // -1: player_collision_base not overlapping; 1: Y < Imagepoint 2 (Buildings); 0: Buildings_bg.
@@ -5619,6 +5800,7 @@ void Game::update_prop_pieces(float dt) {
 
 bool Game::building_blocks(Vec2 a, Vec2 b) const {
   if (!in_bunker_ && c2_props_.blocks(a, b, 1.f)) return true;  // obst_base / big_obstacle_base
+  if (!in_bunker_ && doors_block(a, b, 1.f)) return true;      // door big_obstacle_base#339
   if (!in_bunker_) {
     for (int i = 0; i < mapgen_.location_count(); ++i) {
       const MapLocation& L = mapgen_.location(i);

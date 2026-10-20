@@ -133,6 +133,32 @@ int test_trees() {
   check(mdaz::car_anim_frame_for_test(15.f) == 1, "uaz anims: 15 deg (both 0 and 1 match) -> frame 1 (later event)");
   check(mdaz::car_anim_frame_for_test(90.f) == 3 && mdaz::car_anim_frame_for_test(-90.f) == 9, "uaz anims: 90 -> 3, -90 -> 9");
   check(mdaz::car_anim_frame_for_test(345.f) == 11 && mdaz::car_anim_frame_for_test(-10.f) == 0, "uaz anims: 345 -> 11, -10 -> 0");
+  // 8b: door#340 Doors_auto + blocker (big_obstacle_base#339, Wait 1 after OnCreated).
+  {
+    g.start_new_game(Difficulty_Regular);
+    const int nd = g.door_count_for_test();
+    check(nd > 0, "doors spawned for buildings with door rows");
+    if (nd > 0) {
+      g.door_activate_for_test(0);
+      Player& p = g.player_mut();
+      const mdaz::Game::DoorInst& d = g.door_for_test(0);
+      p.pos = Vec2(d.x - 400.f, d.y - 400.f);
+      g.doors_tick_for_test(0.5f);
+      check(!d.blk && d.frame == 0, "door: closed, no blocker before Wait 1");
+      g.doors_tick_for_test(0.6f);
+      check(d.blk, "door: blocker spawned after 1 s");
+      check(g.doors_block_for_test(Vec2(d.bx, d.by + 40.f), Vec2(d.bx, d.by)), "door: closed blocker blocks movement");
+      p.pos = Vec2(d.x + 6.f, d.y + 28.f);     // overlapping, below the 'in' imagepoint
+      g.doors_tick_for_test(0.016f);
+      check(!d.blk, "door: player south of 'in' -> blocker destroyed");
+      g.doors_tick_for_test(0.016f);
+      check(d.frame == 1, "door: frame 1 after Wait 0.01");
+      p.pos = Vec2(d.x + 6.f, d.y + 2.f);      // above 'in'
+      g.doors_tick_for_test(0.016f);
+      g.doors_tick_for_test(0.016f);
+      check(d.frame == 0 && d.blk, "door: player north of 'in' -> closed, blocker respawned");
+    }
+  }
   delete gp;
   return g_fail;
 }
